@@ -399,7 +399,6 @@ export const useChat = () => {
 
   // Track ping interval to avoid leaks
   const pingIntervalRef = useRef<number | null>(null);
-  const onlineUsersIntervalRef = useRef<number | null>(null);
 
   // 🔥 SIMPLIFIED Socket event handling - حذف التضارب
   const setupSocketListeners = useCallback((socketInstance: Socket) => {
@@ -1122,10 +1121,7 @@ export const useChat = () => {
         clearInterval(pingIntervalRef.current);
         pingIntervalRef.current = null;
       }
-      if (onlineUsersIntervalRef.current) {
-        clearInterval(onlineUsersIntervalRef.current);
-        onlineUsersIntervalRef.current = null;
-      }
+      // no online users polling interval anymore
       // clear typing timers
       typingTimersRef.current.forEach((id) => {
         try {

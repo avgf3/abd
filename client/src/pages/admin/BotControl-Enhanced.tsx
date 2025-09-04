@@ -153,15 +153,20 @@ export function BotControlEnhanced() {
       
       const [statusRes, botsRes] = await Promise.all([
         api.get('/api/admin/bots/status', { headers } as any).catch(() => null),
-        api.get('/api/admin/bots', { headers } as any).catch(() => null)
+        api.get('/api/admin/bots/bots', { headers } as any).catch(() => null)
       ]);
 
-      if (statusRes) setStatus(statusRes);
-      if (botsRes) {
-        setBots(botsRes);
-        updateAnalytics(botsRes);
-        checkSystemHealth(botsRes);
-      }
+      if (statusRes) setStatus(statusRes as any);
+
+      const botsList = Array.isArray(botsRes)
+        ? (botsRes as BotInfo[])
+        : Array.isArray((botsRes as any)?.data)
+          ? ((botsRes as any).data as BotInfo[])
+          : [];
+
+      setBots(botsList);
+      updateAnalytics(botsList);
+      checkSystemHealth(botsList);
     } catch (error) {
       console.error('خطأ في تحميل البيانات:', error);
       setSystemHealth('error');
@@ -207,7 +212,7 @@ export function BotControlEnhanced() {
     setLoading(true);
     try {
       await api.post(
-        `/api/admin/bots/${selectedBot.id}/message`,
+        `/api/admin/bots/bots/${selectedBot.id}/message`,
         { content: message, room: selectedBot.currentRoom },
         { headers: { Authorization: `Bearer ${adminToken}` } } as any
       );
@@ -237,7 +242,7 @@ export function BotControlEnhanced() {
     setLoading(true);
     try {
       await api.post(
-        `/api/admin/bots/${selectedBot.id}/move`,
+        `/api/admin/bots/bots/${selectedBot.id}/move`,
         { room: selectedRoom },
         { headers: { Authorization: `Bearer ${adminToken}` } } as any
       );
@@ -457,7 +462,7 @@ export function BotControlEnhanced() {
                       </CardHeader>
                       <CardContent>
                         <div className="space-y-2">
-                          {status?.roomDistribution && Object.entries(status.roomDistribution).map(([room, count]) => (
+                          {status?.roomDistribution && Array.isArray(Object.entries(status.roomDistribution)) && Object.entries(status.roomDistribution).map(([room, count]) => (
                             <div key={room} className="flex items-center justify-between">
                               <span className="text-sm">{room}</span>
                               <div className="flex items-center gap-2">
@@ -526,7 +531,7 @@ export function BotControlEnhanced() {
                     <CardContent>
                       <ScrollArea className="h-[400px]">
                         <div className="space-y-2">
-                          {bots.map((bot) => (
+                          {Array.isArray(bots) && bots.length > 0 ? bots.map((bot) => (
                             <div
                               key={bot.id}
                               className={`flex items-center justify-between rounded-lg border p-3 transition-colors cursor-pointer
@@ -555,7 +560,9 @@ export function BotControlEnhanced() {
                                 {new Date(bot.lastActivity).toLocaleTimeString('ar')}
                               </div>
                             </div>
-                          ))}
+                          )) : (
+                            <div className="text-sm text-muted-foreground p-3">لا توجد بوتات حالياً</div>
+                          )}
                         </div>
                       </ScrollArea>
                     </CardContent>
