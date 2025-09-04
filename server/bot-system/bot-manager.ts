@@ -290,7 +290,7 @@ export class BotManager extends EventEmitter {
 
   private scheduleBotReaction(bot: BotState, messageData: any): void {
     const readingTime = this.behavior.calculateReadingTime(messageData.content);
-    const typingTime = this.behavior.calculateTypingTime();
+    const typingTime = Math.random() * 3000 + 2000; // 2-5 ثواني للكتابة
     const response = this.behavior.generateResponse(bot, messageData);
 
     if (!response) return;
