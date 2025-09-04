@@ -23,9 +23,15 @@ function randomChoice<T>(arr: readonly T[]): T {
 }
 
 function generateUsername(displayName: string): string {
-  const base = displayName.replace(/\s+/g, '_');
-  const suffix = Math.floor(100 + Math.random() * 900);
-  return `${base}_${suffix}`;
+  // Ensure username length complies with server limit (<= 14 chars)
+  // Reserve 1 for '_' and 3 for numeric suffix => base max 10
+  const suffixNum = Math.floor(100 + Math.random() * 900);
+  const maxBaseLength = 14 - 1 - String(suffixNum).length; // typically 10
+  const baseRaw = displayName
+    .replace(/\s+/g, '')
+    .replace(/[^\u0600-\u06FFa-zA-Z0-9_]/g, '');
+  const base = (baseRaw || 'user').slice(0, Math.max(1, maxBaseLength));
+  return `${base}_${suffixNum}`;
 }
 
 function generateEmail(username: string): string {
