@@ -450,7 +450,7 @@ export default function BotsManagement({ currentUser }: BotsManagementProps) {
                     </TableCell>
                     <TableCell>
                       <span className={`text-sm px-2 py-1 rounded-full ${bot.isOnline ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
-                        {bot.isOnline ? '🟢 متصل' : '⚫ غير متصل'}
+                        {`${bot.gender === 'female' ? '♀' : '♂'} ${bot.isOnline ? 'متصل' : 'غير متصل'}`}
                       </span>
                     </TableCell>
                     <TableCell>
