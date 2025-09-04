@@ -83,7 +83,7 @@ export default function MessagesPanel({
 
   // جلب بيانات المستخدم من الخادم عند الحاجة وملء الكاش
   useEffect(() => {
-    const onlineSet = new Set(onlineUsers.map((u) => u.id));
+    const onlineSet = new Set((onlineUsers || []).map((u) => u.id));
     const targetIds = new Set<number>();
 
     // من محادثات الخادم: التقط المعرفات التي لا يوجد لها otherUser ولا في الكاش ولا أونلاين

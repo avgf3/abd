@@ -67,7 +67,15 @@ async function buildOnlineUsersForRoom(roomId: string) {
     }
   }
   const { sanitizeUsersArray } = await import('./utils/data-sanitizer');
-  const sanitized = sanitizeUsersArray(Array.from(userMap.values()));
+  const usersArray = Array.from(userMap.values());
+  const sanitized = sanitizeUsersArray(usersArray);
+  
+  // تحقق إضافي للتأكد من أن sanitized هو array
+  if (!Array.isArray(sanitized)) {
+    console.error('buildOnlineUsersForRoom: sanitized is not an array:', typeof sanitized);
+    return [];
+  }
+  
   const users = sanitized.map((u: any) => {
     try {
       const versionTag = (u as any).avatarHash || (u as any).avatarVersion;
