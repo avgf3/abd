@@ -109,7 +109,7 @@ export function BotControl() {
 
     try {
       const headers = adminToken ? { Authorization: `Bearer ${adminToken}` } : undefined;
-      await api.post(`/api/admin/bots/${selectedBot.id}/message`, { message, ...(headers ? { headers } : {}) } as any);
+      await api.post(`/api/admin/bots/${selectedBot.id}/message`, { message }, { headers } as any);
       setMessage('');
       setAlert({ type: 'success', message: 'تم إرسال الرسالة بنجاح' });
     } catch (error) {
@@ -122,7 +122,7 @@ export function BotControl() {
 
     try {
       const headers = adminToken ? { Authorization: `Bearer ${adminToken}` } : undefined;
-      await api.post(`/api/admin/bots/${selectedBot.id}/move`, { room: selectedRoom, ...(headers ? { headers } : {}) } as any);
+      await api.post(`/api/admin/bots/${selectedBot.id}/move`, { room: selectedRoom }, { headers } as any);
       setAlert({ type: 'success', message: 'تم نقل البوت بنجاح' });
       loadBotData();
     } catch (error) {
@@ -133,7 +133,7 @@ export function BotControl() {
   const executeCommand = async (command: string) => {
     try {
       const headers = adminToken ? { Authorization: `Bearer ${adminToken}` } : undefined;
-      await api.post('/api/admin/bots/command', { command, ...(headers ? { headers } : {}) } as any);
+      await api.post('/api/admin/bots/command', { command }, { headers } as any);
       setAlert({ type: 'success', message: 'تم تنفيذ الأمر بنجاح' });
       loadBotData();
     } catch (error) {
