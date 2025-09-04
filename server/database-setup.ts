@@ -20,6 +20,7 @@ import {
 import { ensureStoriesTables } from './database-adapter';
 import { ensureUserProfileMusicColumns } from './database-adapter';
 import { ensureRoomsColumns } from './database-adapter';
+import { ensureBotsTable } from './database-adapter';
 
 // إعادة تصدير دالة التهيئة من المحول
 export { initializeDatabase } from './database-adapter';
@@ -254,6 +255,13 @@ export async function initializeSystem(): Promise<boolean> {
       await ensureStoriesTables();
     } catch (e) {
       console.warn('⚠️ تعذر ضمان جداول القصص:', (e as any)?.message || e);
+    }
+
+    // ضمان إنشاء جدول البوتات
+    try {
+      await ensureBotsTable();
+    } catch (e) {
+      console.warn('⚠️ تعذر ضمان جدول البوتات:', (e as any)?.message || e);
     }
 
     // ضمان أعمدة موسيقى البروفايل في حال لم تُطبق الهجرات

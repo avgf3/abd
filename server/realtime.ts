@@ -834,5 +834,58 @@ export function setupRealtime(httpServer: HttpServer): IOServer {
     });
   });
 
+  // تحميل البوتات النشطة عند بدء التشغيل
+  loadActiveBots();
+
   return io;
+}
+
+// دالة لتحميل البوتات النشطة
+async function loadActiveBots() {
+  try {
+    const { db } = await import('./database-adapter');
+    const { bots } = await import('../shared/schema');
+    const { eq } = await import('drizzle-orm');
+    
+    if (!db) return;
+    
+    // جلب البوتات النشطة
+    const activeBots = await db.select().from(bots).where(eq(bots.isActive, true));
+    
+    for (const bot of activeBots) {
+      const botUser = {
+        id: bot.id,
+        username: bot.username,
+        userType: 'bot',
+        role: 'bot',
+        profileImage: bot.profileImage,
+        profileBanner: bot.profileBanner,
+        profileBackgroundColor: bot.profileBackgroundColor,
+        status: bot.status,
+        gender: bot.gender,
+        country: bot.country,
+        relation: bot.relation,
+        bio: bot.bio,
+        usernameColor: bot.usernameColor,
+        profileEffect: bot.profileEffect,
+        points: bot.points,
+        level: bot.level,
+        totalPoints: bot.totalPoints,
+        levelProgress: bot.levelProgress,
+        isOnline: true,
+        currentRoom: bot.currentRoom || GENERAL_ROOM,
+        joinDate: bot.createdAt,
+        lastSeen: bot.lastActivity,
+      };
+      
+      // إضافة البوت لقائمة المستخدمين المتصلين
+      updateConnectedUserCache(bot.id, botUser);
+      
+      console.log(`✓ تم تحميل البوت: ${bot.username} في الغرفة ${bot.currentRoom}`);
+    }
+    
+    console.log(`✓ تم تحميل ${activeBots.length} بوت نشط`);
+  } catch (error) {
+    console.error('خطأ في تحميل البوتات:', error);
+  }
 }

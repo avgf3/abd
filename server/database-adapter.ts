@@ -299,3 +299,62 @@ export async function ensureRoomsColumns(): Promise<void> {
     console.warn('⚠️ تعذر ضمان أعمدة جدول الغرف:', (e as any)?.message || e);
   }
 }
+
+// دالة لضمان وجود جدول البوتات
+export async function ensureBotsTable(): Promise<void> {
+  try {
+    if (!dbAdapter.client) return;
+
+    // قراءة ملف migration البوتات
+    const fs = await import('fs/promises');
+    const path = await import('path');
+    const migrationPath = path.join(process.cwd(), 'migrations', 'add-bots-table.sql');
+    
+    try {
+      const migrationSQL = await fs.readFile(migrationPath, 'utf-8');
+      await dbAdapter.client.unsafe(migrationSQL);
+      console.log('✓ تم إنشاء جدول البوتات بنجاح');
+    } catch (error) {
+      // إذا فشلت قراءة الملف، نقوم بإنشاء الجدول مباشرة
+      await dbAdapter.client.unsafe(`
+        CREATE TABLE IF NOT EXISTS bots (
+          id SERIAL PRIMARY KEY,
+          username TEXT NOT NULL UNIQUE,
+          password TEXT NOT NULL,
+          user_type TEXT NOT NULL DEFAULT 'bot',
+          role TEXT NOT NULL DEFAULT 'bot',
+          profile_image TEXT,
+          profile_banner TEXT,
+          profile_background_color TEXT DEFAULT '#4a4a4a',
+          status TEXT DEFAULT 'بوت نشط',
+          gender TEXT DEFAULT 'غير محدد',
+          country TEXT DEFAULT 'غير محدد',
+          relation TEXT DEFAULT 'غير محدد',
+          bio TEXT DEFAULT 'أنا بوت آلي',
+          is_online BOOLEAN DEFAULT true,
+          current_room TEXT DEFAULT 'general',
+          username_color TEXT DEFAULT '#00FF00',
+          profile_effect TEXT DEFAULT 'none',
+          points INTEGER DEFAULT 0,
+          level INTEGER DEFAULT 1,
+          total_points INTEGER DEFAULT 0,
+          level_progress INTEGER DEFAULT 0,
+          created_by INTEGER REFERENCES users(id),
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          last_activity TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          is_active BOOLEAN DEFAULT true,
+          bot_type TEXT DEFAULT 'system',
+          settings JSONB DEFAULT '{}'::jsonb
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_bots_username ON bots(username);
+        CREATE INDEX IF NOT EXISTS idx_bots_current_room ON bots(current_room);
+        CREATE INDEX IF NOT EXISTS idx_bots_is_active ON bots(is_active);
+        CREATE INDEX IF NOT EXISTS idx_bots_bot_type ON bots(bot_type);
+      `);
+      console.log('✓ تم إنشاء جدول البوتات بنجاح (من الكود)');
+    }
+  } catch (e) {
+    console.error('❌ خطأ في إنشاء جدول البوتات:', (e as any)?.message || e);
+  }
+}

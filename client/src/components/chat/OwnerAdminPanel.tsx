@@ -1,5 +1,6 @@
-import { Shield, Users, Ban, UserX, Clock, Crown, Settings } from 'lucide-react';
+import { Shield, Users, Ban, UserX, Clock, Crown, Settings, Bot } from 'lucide-react';
 import { useState, useEffect, useMemo, useRef } from 'react';
+import BotsManagement from './bots/BotsManagement';
 
 import {
   AlertDialog,
@@ -92,7 +93,7 @@ export default function OwnerAdminPanel({
         const match = hash.match(/ownerTab=([^&]+)/);
         if (match && match[1]) {
           const tab = decodeURIComponent(match[1]);
-          if (tab === 'staff' || tab === 'log' || tab === 'ban_tab') {
+          if (tab === 'staff' || tab === 'log' || tab === 'ban_tab' || tab === 'bots') {
             setSelectedTab(tab);
           }
         }
@@ -390,7 +391,7 @@ export default function OwnerAdminPanel({
           </DialogHeader>
 
           <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-3 bg-gradient-to-r from-purple-100 to-blue-100 rounded-xl p-1">
+            <TabsList className="grid w-full grid-cols-4 bg-gradient-to-r from-purple-100 to-blue-100 rounded-xl p-1">
               <TabsTrigger
                 value="staff"
                 className="flex items-center gap-2 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-lg transition-all"
@@ -411,6 +412,13 @@ export default function OwnerAdminPanel({
               >
                 <Ban className="w-4 h-4" />
                 تبويب الحظر
+              </TabsTrigger>
+              <TabsTrigger
+                value="bots"
+                className="flex items-center gap-2 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-lg transition-all"
+              >
+                <Bot className="w-4 h-4" />
+                نظام البوتات
               </TabsTrigger>
             </TabsList>
 
@@ -697,6 +705,10 @@ export default function OwnerAdminPanel({
                   }}
                 />
               </div>
+            </TabsContent>
+            
+            <TabsContent value="bots" className="space-y-6">
+              <BotsManagement currentUser={currentUser} />
             </TabsContent>
           </Tabs>
         </DialogContent>
