@@ -564,3 +564,66 @@ export const insertStoryReactionSchema = z.object({
 
 export type InsertStoryReaction = z.infer<typeof insertStoryReactionSchema>;
 export type StoryReaction = typeof storyReactions.$inferSelect;
+
+// جدول البوتات
+export const bots = pgTable('bots', {
+  id: serial('id').primaryKey(),
+  username: text('username').notNull().unique(),
+  password: text('password').notNull(),
+  userType: text('user_type').notNull().default('bot'),
+  role: text('role').notNull().default('bot'),
+  profileImage: text('profile_image'),
+  profileBanner: text('profile_banner'),
+  profileBackgroundColor: text('profile_background_color').default('#4a4a4a'),
+  status: text('status').default('بوت نشط'),
+  gender: text('gender').default('غير محدد'),
+  country: text('country').default('غير محدد'),
+  relation: text('relation').default('غير محدد'),
+  bio: text('bio').default('أنا بوت آلي'),
+  isOnline: boolean('is_online').default(true),
+  currentRoom: text('current_room').default('general'),
+  usernameColor: text('username_color').default('#00FF00'), // لون أخضر للبوتات
+  profileEffect: text('profile_effect').default('none'),
+  points: integer('points').default(0),
+  level: integer('level').default(1),
+  totalPoints: integer('total_points').default(0),
+  levelProgress: integer('level_progress').default(0),
+  createdBy: integer('created_by').references(() => users.id), // من قام بإنشاء البوت
+  createdAt: timestamp('created_at').defaultNow(),
+  lastActivity: timestamp('last_activity').defaultNow(),
+  isActive: boolean('is_active').default(true), // هل البوت نشط أم معطل
+  botType: text('bot_type').default('system'), // نوع البوت: system, chat, moderator
+  settings: jsonb('settings').default({}), // إعدادات إضافية للبوت
+});
+
+// علاقات البوتات
+export const botsRelations = relations(bots, ({ one }) => ({
+  creator: one(users, {
+    fields: [bots.createdBy],
+    references: [users.id],
+  }),
+}));
+
+// مخطط إدخال البوت
+export const insertBotSchema = z.object({
+  username: z.string().min(3).max(20),
+  password: z.string().min(6),
+  userType: z.literal('bot').default('bot'),
+  role: z.literal('bot').default('bot'),
+  profileImage: z.string().optional(),
+  profileBanner: z.string().optional(),
+  profileBackgroundColor: z.string().optional(),
+  status: z.string().optional(),
+  gender: z.string().optional(),
+  country: z.string().optional(),
+  relation: z.string().optional(),
+  bio: z.string().optional(),
+  currentRoom: z.string().default('general'),
+  usernameColor: z.string().optional(),
+  profileEffect: z.string().optional(),
+  botType: z.enum(['system', 'chat', 'moderator']).default('system'),
+  settings: z.record(z.any()).optional(),
+});
+
+export type InsertBot = z.infer<typeof insertBotSchema>;
+export type Bot = typeof bots.$inferSelect;
