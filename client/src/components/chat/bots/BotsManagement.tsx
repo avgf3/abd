@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Bot, Plus, Trash2, Edit, ToggleLeft, ToggleRight, ArrowRight, RefreshCw } from 'lucide-react';
+import { Bot, Plus, Trash2, Edit, ToggleLeft, ToggleRight, ArrowRight, RefreshCw, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -9,9 +9,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
-import { apiRequest } from '@/lib/queryClient';
+import { apiRequest, api } from '@/lib/queryClient';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import type { ChatUser } from '@/types/chat';
+import { Table, TableHeader, TableHead, TableRow, TableBody, TableCell } from '@/components/ui/table';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { getImageSrc } from '@/utils/imageUtils';
+import { validateFile, getUploadTimeout } from '@/lib/uploadConfig';
 
 interface Bot {
   id: number;
@@ -63,6 +67,8 @@ export default function BotsManagement({ currentUser }: BotsManagementProps) {
   const [movingBotId, setMovingBotId] = useState<number | null>(null);
   const [selectedRoom, setSelectedRoom] = useState<string>('');
   const { toast } = useToast();
+  const [uploadingId, setUploadingId] = useState<number | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<number>(0);
 
   // بيانات البوت الجديد
   const [newBot, setNewBot] = useState({
@@ -349,148 +355,180 @@ export default function BotsManagement({ currentUser }: BotsManagementProps) {
         </div>
       </div>
 
-      {/* قائمة البوتات */}
+      {/* جدول البوتات بشكل موحّد مع جدول المستخدمين */}
       <ScrollArea className="h-[500px] rounded-xl border bg-white/50">
-        <div className="grid gap-4 p-6">
+        <div className="p-4">
           {bots.length === 0 ? (
             <div className="text-center py-12">
               <Bot className="w-16 h-16 mx-auto text-gray-400 mb-4" />
               <p className="text-gray-600">لا توجد بوتات حالياً</p>
-              <Button
-                onClick={handleCreateDefaultBots}
-                variant="outline"
-                className="mt-4"
-              >
+              <Button onClick={handleCreateDefaultBots} variant="outline" className="mt-4">
                 <Bot className="w-4 h-4 ml-2" />
                 إنشاء البوتات الافتراضية
               </Button>
             </div>
           ) : (
-            bots.map((bot) => (
-              <Card key={bot.id} className="relative overflow-hidden hover:shadow-lg transition-shadow">
-                <div
-                  className="absolute inset-0 opacity-10"
-                  style={{ backgroundColor: bot.usernameColor }}
-                />
-                <CardHeader className="relative">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div
-                        className="w-12 h-12 rounded-full flex items-center justify-center"
-                        style={{ backgroundColor: bot.usernameColor }}
-                      >
-                        <Bot className="w-6 h-6 text-white" />
+            <Table className="min-w-full">
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-12 text-center">#</TableHead>
+                  <TableHead>البوت</TableHead>
+                  <TableHead>الحالة</TableHead>
+                  <TableHead>الغرفة</TableHead>
+                  <TableHead>المستوى</TableHead>
+                  <TableHead>النقاط</TableHead>
+                  <TableHead className="w-[240px]">إجراءات</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {bots.map((bot) => (
+                  <TableRow key={bot.id} className="hover:bg-muted/30">
+                    <TableCell className="text-center">{bot.id}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-10 w-10 ring-2 ring-offset-2 ring-offset-white" style={{ boxShadow: `0 0 0 2px ${bot.usernameColor}33` }}>
+                          <AvatarImage src={getImageSrc(bot.profileImage)} alt={bot.username} />
+                          <AvatarFallback>{bot.username?.slice(0,2).toUpperCase()}</AvatarFallback>
+                        </Avatar>
+                        <div className="flex flex-col">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium" style={{ color: bot.usernameColor }}>{bot.username}</span>
+                            <Badge className={getBotTypeColor(bot.botType)}>{getBotTypeName(bot.botType)}</Badge>
+                            {bot.isActive ? (
+                              <Badge className="bg-green-100 text-green-800">نشط</Badge>
+                            ) : (
+                              <Badge className="bg-gray-100 text-gray-800">معطل</Badge>
+                            )}
+                          </div>
+                          <span className="text-xs text-gray-500">{bot.status}</span>
+                        </div>
                       </div>
-                      <div>
-                        <CardTitle className="text-lg flex items-center gap-2">
-                          <span style={{ color: bot.usernameColor }}>{bot.username}</span>
-                          <Badge className={getBotTypeColor(bot.botType)}>
-                            {getBotTypeName(bot.botType)}
-                          </Badge>
-                          {bot.isActive ? (
-                            <Badge className="bg-green-100 text-green-800">نشط</Badge>
-                          ) : (
-                            <Badge className="bg-gray-100 text-gray-800">معطل</Badge>
-                          )}
-                        </CardTitle>
-                        <CardDescription>{bot.status}</CardDescription>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handleToggleBot(bot.id)}
-                        className="hover:bg-gray-100"
-                      >
-                        {bot.isActive ? (
-                          <ToggleRight className="w-5 h-5 text-green-600" />
-                        ) : (
-                          <ToggleLeft className="w-5 h-5 text-gray-600" />
-                        )}
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => {
-                          setSelectedBot(bot);
-                          setIsEditDialogOpen(true);
-                        }}
-                        className="hover:bg-blue-50"
-                      >
-                        <Edit className="w-4 h-4 text-blue-600" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => setDeletingBotId(bot.id)}
-                        className="hover:bg-red-50"
-                      >
-                        <Trash2 className="w-4 h-4 text-red-600" />
-                      </Button>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="relative space-y-3">
-                  <p className="text-sm text-gray-600">{bot.bio}</p>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4 text-sm">
-                      <span className="text-gray-500">الغرفة الحالية:</span>
+                    </TableCell>
+                    <TableCell>
+                      <span className={`text-sm px-2 py-1 rounded-full ${bot.isOnline ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
+                        {bot.isOnline ? '🟢 متصل' : '⚫ غير متصل'}
+                      </span>
+                    </TableCell>
+                    <TableCell>
                       <Badge variant="outline">{bot.currentRoom}</Badge>
-                      <span className="text-gray-500">المستوى:</span>
+                    </TableCell>
+                    <TableCell>
                       <Badge variant="outline">{bot.level}</Badge>
-                      <span className="text-gray-500">النقاط:</span>
+                    </TableCell>
+                    <TableCell>
                       <Badge variant="outline">{bot.points}</Badge>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {movingBotId === bot.id ? (
-                        <>
-                          <Select value={selectedRoom} onValueChange={setSelectedRoom}>
-                            <SelectTrigger className="w-32 h-8">
-                              <SelectValue placeholder="اختر غرفة" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {rooms.map((room) => (
-                                <SelectItem key={room.id} value={room.id}>
-                                  {room.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <Button
-                            size="sm"
-                            onClick={() => handleMoveBot(bot.id)}
-                            disabled={!selectedRoom}
-                          >
-                            نقل
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => {
-                              setMovingBotId(null);
-                              setSelectedRoom('');
-                            }}
-                          >
-                            إلغاء
-                          </Button>
-                        </>
-                      ) : (
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-wrap gap-2 items-center">
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => setMovingBotId(bot.id)}
-                          className="text-blue-600 border-blue-300 hover:bg-blue-50"
+                          onClick={() => handleToggleBot(bot.id)}
+                          className="px-2"
+                          title={bot.isActive ? 'تعطيل' : 'تفعيل'}
                         >
-                          <ArrowRight className="w-4 h-4 ml-2" />
-                          نقل لغرفة أخرى
+                          {bot.isActive ? (
+                            <ToggleRight className="w-4 h-4 text-green-600" />
+                          ) : (
+                            <ToggleLeft className="w-4 h-4 text-gray-600" />
+                          )}
                         </Button>
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setSelectedBot(bot);
+                            setIsEditDialogOpen(true);
+                          }}
+                          className="px-2"
+                          title="تعديل"
+                        >
+                          <Edit className="w-4 h-4 text-blue-600" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setDeletingBotId(bot.id)}
+                          className="px-2"
+                          title="حذف"
+                        >
+                          <Trash2 className="w-4 h-4 text-red-600" />
+                        </Button>
+                        {movingBotId === bot.id ? (
+                          <div className="flex items-center gap-2">
+                            <Select value={selectedRoom} onValueChange={setSelectedRoom}>
+                              <SelectTrigger className="w-32 h-8">
+                                <SelectValue placeholder="اختر غرفة" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {rooms.map((room) => (
+                                  <SelectItem key={room.id} value={room.id}>
+                                    {room.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <Button size="sm" onClick={() => handleMoveBot(bot.id)} disabled={!selectedRoom}>نقل</Button>
+                            <Button size="sm" variant="ghost" onClick={() => { setMovingBotId(null); setSelectedRoom(''); }}>إلغاء</Button>
+                          </div>
+                        ) : (
+                          <Button size="sm" variant="outline" onClick={() => setMovingBotId(bot.id)} className="px-2" title="نقل">
+                            <ArrowRight className="w-4 h-4 ml-2" /> نقل
+                          </Button>
+                        )}
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="px-2"
+                          onClick={() => {
+                            const input = document.createElement('input');
+                            input.type = 'file';
+                            input.accept = 'image/*';
+                            input.onchange = async (e: any) => {
+                              const file = e.target.files?.[0];
+                              if (!file) return;
+                              const validation = validateFile(file, 'profile_image');
+                              if (!validation.isValid) {
+                                toast({ title: 'خطأ', description: validation.error, variant: 'destructive' });
+                                return;
+                              }
+                              try {
+                                setUploadingId(bot.id);
+                                setUploadProgress(0);
+                                const formData = new FormData();
+                                formData.append('profileImage', file);
+                                const result = await api.upload(`/api/bots/${bot.id}/upload-profile-image`, formData, {
+                                  timeout: getUploadTimeout('image'),
+                                  onProgress: (p) => setUploadProgress(Math.round(p)),
+                                });
+                                if (!(result as any).success) {
+                                  throw new Error((result as any).error || 'فشل في رفع الصورة');
+                                }
+                                setBots(prev => prev.map(b => b.id === bot.id ? { ...b, profileImage: (result as any).imageUrl } : b));
+                                toast({ title: 'تم', description: 'تم تحديث صورة البوت' });
+                              } catch (err: any) {
+                                toast({ title: 'خطأ', description: err?.message || 'فشل رفع الصورة', variant: 'destructive' });
+                              } finally {
+                                setUploadingId(null);
+                                setUploadProgress(0);
+                              }
+                            };
+                            input.click();
+                          }}
+                          title="رفع صورة"
+                        >
+                          {uploadingId === bot.id ? (
+                            <span className="text-xs">{uploadProgress}%</span>
+                          ) : (
+                            <Upload className="w-4 h-4" />
+                          )}
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           )}
         </div>
       </ScrollArea>

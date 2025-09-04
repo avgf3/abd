@@ -4545,6 +4545,121 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: 'فشل في حذف البوت' });
     }
   });
+ 
+  // رفع صورة البروفايل للبوت - مشابه لرفع صورة المستخدمين
+  app.post(
+    '/api/bots/:id/upload-profile-image',
+    protect.admin,
+    limiters.upload,
+    upload.single('profileImage'),
+    async (req, res) => {
+      try {
+        res.set('Cache-Control', 'no-store');
+        
+        if (!req.file) {
+          return res.status(400).json({
+            success: false,
+            error: "لم يتم رفع أي ملف، أرسل الحقل باسم 'profileImage'",
+          });
+        }
+        
+        if (!db) {
+          try { await fsp.unlink(req.file.path).catch(() => {}); } catch {}
+          return res.status(500).json({ success: false, error: 'قاعدة البيانات غير متصلة' });
+        }
+        
+        const botId = parseInt(req.params.id);
+        if (!botId || isNaN(botId)) {
+          try { await fsp.unlink(req.file.path).catch(() => {}); } catch {}
+          return res.status(400).json({ success: false, error: 'معرف البوت غير صالح' });
+        }
+        
+        const { bots } = await import('../shared/schema');
+        const [bot] = await db.select().from(bots).where(eq(bots.id, botId)).limit(1);
+        if (!bot) {
+          try { await fsp.unlink(req.file.path).catch(() => {}); } catch {}
+          return res.status(404).json({ success: false, error: 'البوت غير موجود' });
+        }
+        
+        // معالجة الصورة عبر النظام الذكي
+        const { smartImageService } = await import('./services/smartImageService');
+        const inputBuffer = await fsp.readFile(req.file.path);
+        
+        const processedImage = await smartImageService.processImage(inputBuffer, {
+          userId: botId,
+          type: 'avatar',
+          originalName: req.file.originalname,
+          mimeType: req.file.mimetype,
+          priority: 'balanced'
+        } as any);
+        
+        // تنظيف الملف المؤقت المرفوع
+        try { await fsp.unlink(req.file.path).catch(() => {}); } catch {}
+        
+        // في حالة التخزين على نظام الملفات، أعد تسمية الملف لتجنب تعارض مع IDs المستخدمين
+        let finalUrl = processedImage.url;
+        try {
+          if (processedImage.url && processedImage.url.startsWith('/uploads/avatars/')) {
+            const urlNoQuery = processedImage.url.split('?')[0];
+            const hashParam = processedImage.metadata?.hash ? `?v=${processedImage.metadata.hash}` : '';
+            const oldName = `${botId}.webp`;
+            const newName = `bot-${botId}.webp`;
+            if (urlNoQuery.endsWith(`/${oldName}`)) {
+              const oldPath = path.join(process.cwd(), 'client', 'public', urlNoQuery);
+              const newPath = path.join(process.cwd(), 'client', 'public', '/uploads/avatars', newName);
+              await fsp.mkdir(path.dirname(newPath), { recursive: true }).catch(() => {});
+              await fsp.rename(oldPath, newPath).catch(() => {});
+              finalUrl = `/uploads/avatars/${newName}${hashParam}`;
+            }
+          }
+        } catch (renameErr) {
+          // تجاهل أي خطأ في إعادة التسمية - نكتفي بالرابط الأصلي
+          console.warn('⚠️ فشل إعادة تسمية ملف صورة البوت:', renameErr);
+        }
+        
+        // تحديث سجل البوت
+        const [updatedBot] = await db
+          .update(bots)
+          .set({ profileImage: finalUrl })
+          .where(eq(bots.id, botId))
+          .returning();
+        
+        // تحديث Cache المتصلين للبوت
+        try {
+          const botUser = {
+            id: updatedBot.id,
+            username: updatedBot.username,
+            userType: 'bot',
+            role: 'bot',
+            profileImage: updatedBot.profileImage,
+            status: updatedBot.status,
+            usernameColor: updatedBot.usernameColor,
+            profileEffect: updatedBot.profileEffect,
+            points: updatedBot.points,
+            level: updatedBot.level,
+            isOnline: updatedBot.isActive,
+            currentRoom: updatedBot.currentRoom,
+          };
+          updateConnectedUserCache(updatedBot.id, botUser);
+        } catch {}
+        
+        return res.json({
+          success: true,
+          imageUrl: finalUrl,
+          avatarHash: processedImage.metadata?.hash,
+          storageType: processedImage.storageType,
+          fallbackUrl: processedImage.fallbackUrl,
+        });
+        
+      } catch (error: any) {
+        console.error('❌ خطأ في رفع صورة بوت:', error);
+        if (req.file?.path) {
+          try { await fsp.unlink(req.file.path).catch(() => {}); } catch {}
+        }
+        return res.status(500).json({ success: false, error: 'خطأ في الخادم أثناء رفع الصورة' });
+      }
+    }
+  );
 
   // إنشاء 10 بوتات افتراضية
   app.post('/api/bots/create-defaults', protect.admin, async (req, res) => {
