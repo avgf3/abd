@@ -3,6 +3,7 @@ import React, { useState, useCallback, useMemo, useRef } from 'react';
 import { Virtuoso } from 'react-virtuoso';
 
 import RoomListItem from './RoomListItem';
+import SmartImage from '@/components/ui/SmartImage';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -81,7 +82,13 @@ const RoomCard: React.FC<RoomCardProps> = ({
       className={`${compact ? 'w-6 h-6' : 'w-8 h-8'} rounded-lg overflow-hidden flex-shrink-0 bg-muted`}
     >
       {room.icon ? (
-        <img src={room.icon} alt={room.name} className="w-full h-full object-cover" />
+        <SmartImage
+          src={room.icon}
+          alt={room.name}
+          className="w-full h-full object-cover"
+          widthPx={compact ? 24 : 32}
+          heightPx={compact ? 24 : 32}
+        />
       ) : (
         <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center">
           <span className={`${compact ? 'text-xs' : 'text-sm'} font-bold text-primary`}>
@@ -149,7 +156,13 @@ const RoomCard: React.FC<RoomCardProps> = ({
         <CardHeader className="text-center pb-2">
           <div className="w-16 h-16 mx-auto mb-2 rounded-xl overflow-hidden border">
             {room.icon ? (
-              <img src={room.icon} alt={room.name} className="w-full h-full object-cover" />
+              <SmartImage
+                src={room.icon}
+                alt={room.name}
+                className="w-full h-full object-cover"
+                widthPx={64}
+                heightPx={64}
+              />
             ) : (
               <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center">
                 <span className="text-xl font-bold text-primary">{room.name.charAt(0)}</span>
@@ -214,7 +227,13 @@ const RoomCard: React.FC<RoomCardProps> = ({
       <CardHeader className="text-center">
         <div className="w-20 h-20 mx-auto mb-4 rounded-xl overflow-hidden border">
           {room.icon ? (
-            <img src={room.icon} alt={room.name} className="w-full h-full object-cover" />
+            <SmartImage
+              src={room.icon}
+              alt={room.name}
+              className="w-full h-full object-cover"
+              widthPx={80}
+              heightPx={80}
+            />
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center">
               <span className="text-2xl font-bold text-primary">{room.name.charAt(0)}</span>
