@@ -33,6 +33,48 @@ const connectedUsers = new Map<
   }
 >();
 
+// Utility: get online user counts per room based on active sockets
+export function getOnlineUserCountsForRooms(roomIds: string[]): Record<string, number> {
+  try {
+    const target = new Set<string>((roomIds || []).map((r) => String(r)));
+    const counts: Record<string, number> = {};
+    for (const id of target) counts[id] = 0;
+
+    for (const [, entry] of connectedUsers.entries()) {
+      // A single user may have multiple sockets; count each user once per room
+      const roomsForUser = new Set<string>();
+      for (const socketMeta of entry.sockets.values()) {
+        if (target.has(socketMeta.room)) {
+          roomsForUser.add(socketMeta.room);
+        }
+      }
+      for (const roomId of roomsForUser) {
+        counts[roomId] = (counts[roomId] || 0) + 1;
+      }
+    }
+
+    return counts;
+  } catch {
+    return Object.create(null);
+  }
+}
+
+export function getOnlineUserCountForRoom(roomId: string): number {
+  if (!roomId) return 0;
+  let count = 0;
+  try {
+    for (const [, entry] of connectedUsers.entries()) {
+      for (const socketMeta of entry.sockets.values()) {
+        if (socketMeta.room === roomId) {
+          count += 1;
+          break; // count each user once per room
+        }
+      }
+    }
+  } catch {}
+  return count;
+}
+
 // إزالة كاش قائمة المتصلين للغرف للاعتماد الكامل على أحداث Socket.IO
 
 export function updateConnectedUserCache(user: any) {
