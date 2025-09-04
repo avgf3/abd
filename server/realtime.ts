@@ -403,10 +403,21 @@ export function setupRealtime(httpServer: HttpServer): IOServer {
       try {
         const handshakeToken = (socket.handshake as any)?.auth?.token;
         if (handshakeToken && typeof handshakeToken === 'string') {
-          // حاكي مسار 'auth' بإرسال الحمولة نفسها
-          socket.emit('client_ping'); // تنشيط الاتصال
-          socket.emit('message', { type: 'info', message: 'auto_auth' });
-          socket.emit('auth', { token: handshakeToken });
+          // استدعِ معالج المصادقة مباشرة دون الحاجة لإرسال أحداث من العميل
+          const payload = { token: handshakeToken } as any;
+          // أعد استخدام نفس المنطق عبر استدعاء الليسنر مباشرة
+          try {
+            // Trigger auth handler inline
+            const authHandler = (socket as any).listeners?.('auth')?.[0];
+            if (typeof authHandler === 'function') {
+              await authHandler(payload);
+            } else {
+              // fallback: أرسل الحدث داخلياً
+              socket.emit('auth', payload);
+            }
+          } catch {
+            socket.emit('auth', payload);
+          }
         }
       } catch {}
     })();

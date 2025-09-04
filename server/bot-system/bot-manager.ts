@@ -469,8 +469,8 @@ export class BotManager extends EventEmitter {
       return;
     }
 
-    bot.socket.emit('leaveRoom', { room: bot.currentRoom });
-    bot.socket.emit('joinRoom', { room });
+    bot.socket.emit('leaveRoom', { roomId: bot.currentRoom });
+    bot.socket.emit('joinRoom', { roomId: room });
     
     bot.currentRoom = room;
     bot.roomHistory.push(room);

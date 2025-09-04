@@ -251,25 +251,25 @@ export class DatabaseService {
 
     try {
       if (this.type === 'postgresql') {
-        // التحقق من عدد المستخدمين الحاليين
-        const userCount = await (this.db as any)
-          .select({ count: sql`count(*)::int` })
-          .from(schema.users);
+        // لا ترفع أول سجل تلقائياً إلى owner إذا تم تمرير userType/role صراحة (لحسابات البوت)
+        // سنحدد هل هذا أول مستخدم فقط عندما لا يُمرر userType/role من قبل المنادي (مثلاً أول عضو فعلي)
+        const shouldAutoAssignOwner = !userData.userType && !userData.role;
+        let isFirstUser = false;
+        if (shouldAutoAssignOwner) {
+          const userCount = await (this.db as any)
+            .select({ count: sql`count(*)::int` })
+            .from(schema.users);
+          isFirstUser = userCount[0]?.count === 0;
+        }
 
-        const isFirstUser = userCount[0]?.count === 0;
-
-        // إذا كان هذا أول مستخدم، اجعله المالك
         const finalUserData = {
           ...userData,
-          userType: isFirstUser ? 'owner' : userData.userType || 'guest',
-          role: isFirstUser ? 'owner' : userData.role || userData.userType || 'guest',
+          userType: (userData.userType as any) || (isFirstUser ? 'owner' : 'guest'),
+          role: (userData.role as any) || (isFirstUser ? 'owner' : (userData.userType as any) || 'guest'),
           joinDate: userData.joinDate || new Date(),
           createdAt: userData.createdAt || new Date(),
           lastSeen: userData.lastSeen || new Date(),
-        };
-
-        if (isFirstUser) {
-          }
+        } as Partial<User>;
 
         const result = await (this.db as any)
           .insert(schema.users)
