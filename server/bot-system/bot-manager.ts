@@ -133,6 +133,14 @@ export class BotManager extends EventEmitter {
         clearTimeout(timeout);
         logger.debug(`البوت ${profile.username} اتصل بنجاح`);
         
+        // إرسال حدث المصادقة بالتوكن فور الاتصال
+        try {
+          const bearerToken = (this as any).lastToken || undefined;
+        } catch {}
+        try {
+          socket.emit('auth', { token });
+        } catch {}
+
         // تطبيق معالجات الأحداث
         this.setupBotEventHandlers(socket, profile);
         
@@ -165,6 +173,10 @@ export class BotManager extends EventEmitter {
       } else if (data?.message) {
         messageContent = data.message.content || '';
         username = data.message.username || '';
+      } else if (typeof data === 'object' && data?.type === 'newMessage') {
+        // تنسيق Socket.IO المباشر
+        messageContent = data.message?.content || '';
+        username = data.message?.sender?.username || data.username || '';
       } else if (typeof data === 'object') {
         messageContent = data.content || '';
         username = data.username || '';
@@ -176,15 +188,18 @@ export class BotManager extends EventEmitter {
       if (messageContent && this.behavior.shouldReactToMessage(bot, { content: messageContent, username })) {
         this.scheduleBotReaction(bot, { content: messageContent, username });
       }
+
+      // الترحيب عند انضمام مستخدم جديد (تنسيق socket الحالي)
+      try {
+        if (typeof data === 'object' && data?.type === 'userJoinedRoom' && data?.username && data.username !== profile.username) {
+          if (this.behavior.shouldWelcomeUser(bot, { username: data.username })) {
+            this.scheduleWelcomeMessage(bot, data.username);
+          }
+        }
+      } catch {}
     });
 
-    // معالج انضمام المستخدمين
-    socket.on('userJoined', (data) => {
-      const bot = this.bots.get(botId);
-      if (bot && data.username !== profile.username && this.behavior.shouldWelcomeUser(bot, data)) {
-        this.scheduleWelcomeMessage(bot, data.username);
-      }
-    });
+    // لم يعد الحدث userJoined مستخدماً في الخادم الحالي
 
     // معالج قطع الاتصال
     socket.on('disconnect', (reason) => {
@@ -226,6 +241,8 @@ export class BotManager extends EventEmitter {
             'Content-Type': 'application/json',
             'X-Device-Id': profile.deviceId,
             'User-Agent': profile.userAgent,
+            // اطلب ترقية البوتات إلى عضو كي تظهر كأعضاء وليس زوار
+            'X-Bot-Member': 'true',
           },
           body: JSON.stringify(payload)
         });
@@ -288,10 +305,10 @@ export class BotManager extends EventEmitter {
         bot.typingState = false;
         bot.socket.emit('typing', { isTyping: false });
         
-        // إرسال الرسالة
-        bot.socket.emit('message', {
+        // إرسال الرسالة إلى الغرفة العامة عبر الحدث الصحيح
+        bot.socket.emit('publicMessage', {
           content: response,
-          room: bot.currentRoom
+          roomId: bot.currentRoom
         });
 
         bot.messageCount++;
@@ -307,9 +324,9 @@ export class BotManager extends EventEmitter {
     setTimeout(() => {
       const welcomeMessage = this.behavior.generateWelcomeMessage(bot, username);
       
-      bot.socket.emit('message', {
+      bot.socket.emit('publicMessage', {
         content: welcomeMessage,
-        room: bot.currentRoom
+        roomId: bot.currentRoom
       });
 
       bot.messageCount++;
@@ -364,8 +381,8 @@ export class BotManager extends EventEmitter {
 
     const newRoom = availableRooms[Math.floor(Math.random() * availableRooms.length)];
     
-    bot.socket.emit('leaveRoom', { room: currentRoom });
-    bot.socket.emit('joinRoom', { room: newRoom });
+    bot.socket.emit('leaveRoom', { roomId: currentRoom });
+    bot.socket.emit('joinRoom', { roomId: newRoom });
     
     bot.currentRoom = newRoom;
     bot.roomHistory.push(newRoom);
@@ -433,9 +450,9 @@ export class BotManager extends EventEmitter {
       throw new Error('البوت غير موجود أو غير نشط');
     }
 
-    bot.socket.emit('message', {
+    bot.socket.emit('publicMessage', {
       content,
-      room: room || bot.currentRoom
+      roomId: room || bot.currentRoom
     });
 
     bot.messageCount++;

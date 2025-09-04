@@ -1660,9 +1660,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'الاسم مستخدم بالفعل' });
       }
 
+      // السماح بترقية البوتات إلى عضو عند تمرير ترويسة خاصة
+      const isBotMember =
+        String(req.headers['x-bot-member'] || '').toLowerCase() === 'true' ||
+        (req.body && (req.body.botMember === true || String(req.body.botMember).toLowerCase() === 'true'));
+
       const user = await storage.createUser({
         username,
-        userType: 'guest',
+        userType: isBotMember ? 'member' : 'guest',
         gender: gender || 'male',
         profileImage: '/default_avatar.svg',
       });
