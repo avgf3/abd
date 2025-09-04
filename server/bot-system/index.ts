@@ -10,7 +10,7 @@ export async function initializeBotSystem(serverUrl: string): Promise<void> {
   try {
     logger.info('بدء تهيئة نظام البوتات...');
 
-    const totalBots = Number(process.env.BOT_TOTAL || (process.env.NODE_ENV === 'development' ? 50 : 300));
+    const totalBots = Number(process.env.BOT_TOTAL || 300);
     const ownerBots = Number(process.env.BOT_OWNER_COUNT || 5);
 
     const config: BotConfig = {

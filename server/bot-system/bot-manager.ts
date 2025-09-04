@@ -40,8 +40,8 @@ export class BotManager extends EventEmitter {
 
   private async createBotsGradually(): Promise<void> {
     const totalBots = this.config.totalBots;
-    const batchSize = process.env.NODE_ENV === 'development' ? 2 : 5;
-    const delayBetweenBatches = 3000; // 3 ثواني بين الدفعات
+    const batchSize = 10; // زيادة حجم الدفعة لإنشاء البوتات بشكل أسرع
+    const delayBetweenBatches = 1000; // ثانية واحدة بين الدفعات
 
     for (let i = 0; i < totalBots; i++) {
       const isOwner = i < this.config.ownerBots;
