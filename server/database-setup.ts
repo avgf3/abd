@@ -160,25 +160,39 @@ export async function createDefaultRooms(): Promise<void> {
     if (!db) return;
 
     const defaultRooms = [
+      // معرف مطابق لما يستخدمه النظام للغرفة العامة
       {
+        id: 'general',
         name: 'العامة',
         description: 'الغرفة العامة للدردشة',
+        type: 'public',
+        maxUsers: 200,
+        isPrivate: false,
+      },
+      // غرفة ترحيب اختيارية
+      {
+        id: 'welcome',
+        name: 'الترحيب',
+        description: 'غرفة الترحيب بالأعضاء الجدد',
         type: 'public',
         maxUsers: 100,
         isPrivate: false,
       },
+      // غرف يزورها نظام البوتات - يجب أن تتطابق المعرفات مع getAvailableRooms()
+      { id: 'games', name: 'الألعاب', description: 'غرفة الألعاب', type: 'public', maxUsers: 150, isPrivate: false },
+      { id: 'tech', name: 'التقنية', description: 'غرفة التقنية', type: 'public', maxUsers: 150, isPrivate: false },
+      { id: 'music', name: 'الموسيقى', description: 'غرفة الموسيقى', type: 'public', maxUsers: 150, isPrivate: false },
+      { id: 'sports', name: 'الرياضة', description: 'غرفة الرياضة', type: 'public', maxUsers: 150, isPrivate: false },
+      { id: 'movies', name: 'الأفلام', description: 'غرفة الأفلام', type: 'public', maxUsers: 150, isPrivate: false },
+      { id: 'food', name: 'الطعام', description: 'غرفة الطعام', type: 'public', maxUsers: 150, isPrivate: false },
+      { id: 'travel', name: 'السفر', description: 'غرفة السفر', type: 'public', maxUsers: 150, isPrivate: false },
+      // غرفة VIP خاصة
       {
-        name: 'الترحيب',
-        description: 'غرفة الترحيب بالأعضاء الجدد',
-        type: 'public',
-        maxUsers: 50,
-        isPrivate: false,
-      },
-      {
+        id: 'vip',
         name: 'VIP',
         description: 'غرفة خاصة للأعضاء المميزين',
         type: 'vip',
-        maxUsers: 25,
+        maxUsers: 50,
         isPrivate: true,
       },
     ];
@@ -189,19 +203,20 @@ export async function createDefaultRooms(): Promise<void> {
           const existing = await (db as any)
             .select()
             .from(rooms)
-            .where(sql`name = ${room.name}`)
+            .where(sql`id = ${((room as any).id || '')} OR name = ${room.name}`)
             .limit(1);
           if (existing.length === 0) {
-            // اشتقاق معرف نصي ثابت للغرفة
+            // استخدم المعرف المحدد أو اشتق اسم مناسب بالحروف اللاتينية عند الحاجة
             const derivedId =
-              room.name === 'العامة'
+              (room as any).id ||
+              (room.name === 'العامة'
                 ? 'general'
                 : room.name === 'الترحيب'
                   ? 'welcome'
                   : room.name
                       .toLowerCase()
                       .replace(/[^a-z0-9]+/gi, '-')
-                      .replace(/^-+|-+$/g, '') || 'room';
+                      .replace(/^-+|-+$/g, '') || 'room');
             await (db as any)
               .insert(rooms)
               .values({
