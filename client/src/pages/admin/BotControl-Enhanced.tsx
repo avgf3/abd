@@ -44,7 +44,7 @@ interface BotAnalytics {
   activityTrend: number[];
 }
 
-export function BotControl() {
+export function BotControlEnhanced() {
   const { user } = useAuth();
   const [showInterface, setShowInterface] = useState(false);
   const [accessCode, setAccessCode] = useState('');
