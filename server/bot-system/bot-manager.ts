@@ -38,17 +38,26 @@ export class BotManager extends EventEmitter {
 
   private async createBotsGradually(): Promise<void> {
     const totalBots = this.config.totalBots;
-    const batchSize = 10; // إنشاء 10 بوتات في كل دفعة
-    const delayBetweenBatches = 5000; // 5 ثواني بين كل دفعة
+    const envBatchSize = parseInt(String(process.env.BOT_BATCH_SIZE || ''));
+    const envBatchDelay = parseInt(String(process.env.BOT_BATCH_DELAY_MS || ''));
+    const defaultBatchSize = process.env.NODE_ENV === 'development' ? 2 : 5;
+    const batchSize = Number.isFinite(envBatchSize) && envBatchSize > 0 ? envBatchSize : defaultBatchSize;
+    const delayBetweenBatches = Number.isFinite(envBatchDelay) && envBatchDelay >= 0 ? envBatchDelay : 8000;
 
     for (let i = 0; i < totalBots; i += batchSize) {
       const currentBatch = Math.min(batchSize, totalBots - i);
-      const promises = [];
+      const promises: Array<Promise<void>> = [];
 
       for (let j = 0; j < currentBatch; j++) {
         const botIndex = i + j;
         const isOwner = botIndex < this.config.ownerBots;
-        promises.push(this.createBot(isOwner));
+        // إضافة تأخير عشوائي صغير لكل بوت لتفادي ضرب Rate Limits دفعة واحدة
+        const jitter = Math.floor(Math.random() * 500);
+        const p = (async () => {
+          await this.delay(jitter);
+          await this.createBot(isOwner);
+        })();
+        promises.push(p);
       }
 
       await Promise.all(promises);
@@ -94,8 +103,11 @@ export class BotManager extends EventEmitter {
       // لا نرسل توكن زائف هنا؛ سنقوم بالمصادقة بعد الاتصال وفق بروتوكول الخادم
       query: {
         username: profile.username,
-        deviceId: profile.deviceId,
         userAgent: profile.userAgent
+      },
+      // Provide deviceId in auth payload so server can read it during handshake
+      auth: {
+        deviceId: profile.deviceId
       },
       reconnection: true,
       reconnectionDelay: 3000 + Math.random() * 2000,
@@ -104,23 +116,42 @@ export class BotManager extends EventEmitter {
     });
 
     return new Promise((resolve, reject) => {
-      socket.on('connect', async () => {
+      let settled = false;
+      const failTimer = setTimeout(() => {
+        if (!settled) {
+          settled = true;
+          reject(new Error('Socket connect timeout'));
+        }
+      }, 30000);
+
+      socket.once('connect', async () => {
         logger.debug(`البوت ${profile.username} اتصل بنجاح`);
         try {
           // 1) الحصول على توكن جلسة صالح من الخادم عبر تسجيل ضيف باسم البوت
           const token = await this.obtainServerToken(profile);
           // 2) إرسال حدث المصادقة وفق ما يتوقعه الخادم
           socket.emit('auth', { token });
-          resolve(socket);
+          if (!settled) {
+            settled = true;
+            clearTimeout(failTimer);
+            resolve(socket);
+          }
         } catch (err) {
           logger.error(`فشل مصادقة البوت ${profile.username}: ${err}`);
-          reject(err);
+          if (!settled) {
+            settled = true;
+            clearTimeout(failTimer);
+            reject(err as any);
+          }
         }
       });
 
+      // لا نرفض الوعد مباشرةً عند أول خطأ اتصال — نترك آلية إعادة المحاولة تعمل
       socket.on('connect_error', (error) => {
-        logger.error(`فشل اتصال البوت ${profile.username}: ${error}`);
-        reject(error);
+        logger.warn(`مشكلة اتصال للبوت ${profile.username}: ${error}`);
+      });
+      socket.on('reconnect_error', (error) => {
+        logger.warn(`فشل إعادة الاتصال للبوت ${profile.username}: ${error}`);
       });
 
       // تطبيق معالجات الأحداث
@@ -133,8 +164,11 @@ export class BotManager extends EventEmitter {
 
     socket.on('message', (data) => {
       const bot = this.bots.get(botId);
-      // يتوقع الخادم رسائل بصيغة { type: 'newMessage', message: {...} }
-      const content = (data?.type === 'newMessage') ? data?.message?.content : data?.content;
+      // يدعم الرد على الصيغتين: { type, message } و { envelope: { type, message } }
+      const envelope = data?.envelope || data;
+      const content = envelope?.type === 'newMessage'
+        ? envelope?.message?.content
+        : (data?.message?.content || data?.content);
       if (bot && content && this.behavior.shouldReactToMessage(bot, { content })) {
         this.scheduleBotReaction(bot, { content });
       }
@@ -285,27 +319,47 @@ export class BotManager extends EventEmitter {
     // يسجل حساب ضيف باسم البوت ويحصل على token من /api/auth/guest
     // نستخدم fetch المدمجة في Node 18+
     const endpoint = `${this.config.serverUrl.replace(/\/$/, '')}/api/auth/guest`;
-    const res = await fetch(endpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username: profile.username, gender: profile.gender })
-    } as any);
-    if (!res.ok) {
+    const payload = { username: profile.username, gender: profile.gender };
+
+    const maxAttempts = 5;
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          // تمرير بصمة الجهاز لتقليل التصادم على محدد المعدل (Rate Limiter)
+          'x-device-id': profile.deviceId,
+          'User-Agent': profile.userAgent,
+        } as any,
+        body: JSON.stringify(payload)
+      } as any);
+
+      if (res.ok) {
+        let token = '';
+        try {
+          const data = await res.json();
+          token = (data && (data.token || data?.data?.token)) || '';
+        } catch {}
+
+        if (!token) {
+          throw new Error('Missing token from /api/auth/guest response');
+        }
+        return token;
+      }
+
+      // Backoff عند 429 أو أخطاء مؤقتة
+      if (res.status === 429 || (res.status >= 500 && res.status < 600)) {
+        const retryHeader = res.headers.get('Retry-After');
+        const retryMs = retryHeader ? parseInt(retryHeader) * 1000 : 1000 * attempt + Math.floor(Math.random() * 500);
+        logger.warn(`Throttle on guest auth (status ${res.status}). Retrying in ${retryMs}ms (attempt ${attempt}/${maxAttempts})`);
+        await this.delay(retryMs);
+        continue;
+      }
+
       throw new Error(`Guest auth failed: ${res.status}`);
     }
-    let token = '';
-    try {
-      // التوكن يعود داخل JSON أيضاً بعد تعديل المسارات
-      const data = await res.json();
-      token = (data && (data.token || data?.data?.token)) || '';
-    } catch {}
-    // احتياطياً، إذا لم يوجد في الجسم، حاول قراءته من Set-Cookie (غير متاح مباشرة عبر fetch)
-    if (!token) {
-      // في حال عدم توفر التوكن ضمن الرد، سنفترض المصادقة عبر الكوكي وتمريرها غير ممكن عبر Socket
-      // لذا نحتاج توكن نصي؛ فإن لم يتوفر، نفشل لنمنع اتصال غير مصادق
-      throw new Error('Missing token from /api/auth/guest response');
-    }
-    return token;
+
+    throw new Error('Guest auth failed after retries');
   }
 
   private handleBotDisconnection(botId: string): void {
@@ -357,8 +411,8 @@ export class BotManager extends EventEmitter {
   async moveBotToRoom(botId: string, room: string): Promise<void> {
     const bot = this.bots.get(botId);
     if (bot && bot.isActive) {
-      bot.socket.emit('leaveRoom', { room: bot.currentRoom });
-      bot.socket.emit('joinRoom', { room });
+      bot.socket.emit('leaveRoom', { roomId: bot.currentRoom });
+      bot.socket.emit('joinRoom', { roomId: room });
       bot.currentRoom = room;
     }
   }

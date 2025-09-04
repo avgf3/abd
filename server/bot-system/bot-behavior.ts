@@ -210,8 +210,8 @@ export class BotBehavior {
 
     const message = idleMessages[Math.floor(Math.random() * idleMessages.length)];
     
-    bot.socket.emit('message', {
-      room: bot.currentRoom,
+    bot.socket.emit('publicMessage', {
+      roomId: bot.currentRoom,
       content: message,
       timestamp: new Date()
     });

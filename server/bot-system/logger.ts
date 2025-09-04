@@ -32,6 +32,10 @@ class BotLogger {
     
     this.logFile = path.join(logsDir, `bot-system-${new Date().toISOString().split('T')[0]}.log`);
     this.writeStream = fs.createWriteStream(this.logFile, { flags: 'a' });
+    // Lower log level in development for better visibility
+    if (process.env.NODE_ENV !== 'production') {
+      (this as any).logLevel = LogLevel.DEBUG;
+    }
   }
 
   private log(level: LogLevel, message: string, data?: any): void {
