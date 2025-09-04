@@ -1577,6 +1577,8 @@ export default function ProfileModal({
           margin-bottom: 12px;
           text-align: center;
           margin-top: 0;
+          direction: ltr;
+          unicode-bidi: plaintext;
         }
 
         .profile-info h3 {
@@ -1587,6 +1589,9 @@ export default function ProfileModal({
           text-shadow: 0 2px 4px rgba(0,0,0,0.5);
           cursor: pointer;
           transition: all 0.3s ease;
+          text-align: center;
+          direction: ltr;
+          unicode-bidi: plaintext;
         }
 
         .profile-info h3:hover {
@@ -2301,7 +2306,11 @@ export default function ProfileModal({
                     fontWeight: 'bold',
                     color: getFinalUsernameColor(localUser || {}),
                     textShadow: '0 2px 4px rgba(0,0,0,0.5)',
-                    cursor: 'pointer'
+                    cursor: 'pointer',
+                    textAlign: 'center',
+                    width: '100%',
+                    direction: 'ltr',
+                    unicodeBidi: 'plaintext'
                   }}
                   onClick={() => openEditModal('name')}
                   >
@@ -2346,7 +2355,11 @@ export default function ProfileModal({
                     fontWeight: 'bold',
                     color: getFinalUsernameColor(localUser || {}),
                     textShadow: '0 2px 4px rgba(0,0,0,0.5)',
-                    cursor: 'pointer'
+                    cursor: 'pointer',
+                    textAlign: 'center',
+                    width: '100%',
+                    direction: 'ltr',
+                    unicodeBidi: 'plaintext'
                   }}
                   onClick={() => openEditModal('name')}
                   >
@@ -2389,7 +2402,11 @@ export default function ProfileModal({
                     fontSize: '18px',
                     fontWeight: 'bold',
                     color: getFinalUsernameColor(localUser || {}),
-                    textShadow: '0 2px 4px rgba(0,0,0,0.5)'
+                    textShadow: '0 2px 4px rgba(0,0,0,0.5)',
+                    textAlign: 'center',
+                    width: '100%',
+                    direction: 'ltr',
+                    unicodeBidi: 'plaintext'
                   }}>
                     {localUser?.username || 'اسم المستخدم'}
                   </h3>
