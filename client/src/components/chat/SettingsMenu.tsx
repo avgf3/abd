@@ -3,6 +3,7 @@ import { User, Home, Moon, Shield, LogOut, Settings, Palette, Brush, Camera } fr
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { getFinalUsernameColor, getUserListItemStyles } from '@/utils/themeUtils';
+import Username from '@/components/ui/Username';
 
 interface SettingsMenuProps {
   onOpenProfile: () => void;
@@ -40,9 +41,9 @@ export default function SettingsMenu({
           <div className="p-3 border-b border-border" style={getUserListItemStyles(currentUser)}>
             <div className="flex items-center gap-2">
               <User className="w-4 h-4" style={{ color: getFinalUsernameColor(currentUser) }} />
-              <span className="font-semibold" style={{ color: getFinalUsernameColor(currentUser) }}>
+              <Username className="font-semibold" style={{ color: getFinalUsernameColor(currentUser) }} title={currentUser.username}>
                 {currentUser.username}
-              </span>
+              </Username>
             </div>
           </div>
         )}

@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import type { ChatUser } from '@/types/chat';
 import { getImageSrc } from '@/utils/imageUtils';
+import Username from '@/components/ui/Username';
 
 interface MessageAlertProps {
   isOpen: boolean;
@@ -55,7 +56,7 @@ export default function MessageAlert({
             }}
           />
           <div className="flex-1 text-white">
-            <h3 className="font-bold text-lg truncate">{sender.username}</h3>
+            <Username as="h3" className="font-bold text-lg truncate" title={sender.username}>{sender.username}</Username>
             <div className="flex items-center gap-1 mt-1">
               <span className="text-yellow-300">✉️</span>
               <span className="text-sm font-medium">رسالة جديدة</span>

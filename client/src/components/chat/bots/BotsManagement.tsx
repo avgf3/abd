@@ -17,6 +17,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { getImageSrc } from '@/utils/imageUtils';
 import { validateFile, getUploadTimeout } from '@/lib/uploadConfig';
 import UserRoleBadge from '@/components/chat/UserRoleBadge';
+import Username from '@/components/ui/Username';
 
 interface Bot {
   id: number;
@@ -443,7 +444,7 @@ export default function BotsManagement({ currentUser }: BotsManagementProps) {
                         </Avatar>
                         <div className="flex flex-col">
                           <div className="flex items-center gap-2">
-                            <span className="font-medium" style={{ color: bot.usernameColor }}>{bot.username}</span>
+                            <Username className="font-medium" style={{ color: bot.usernameColor }} title={bot.username}>{bot.username}</Username>
                             <Badge className={getBotTypeColor(bot.botType)}>{getBotTypeName(bot.botType)}</Badge>
                             {bot.isActive ? (
                               <Badge className="bg-green-100 text-green-800">نشط</Badge>

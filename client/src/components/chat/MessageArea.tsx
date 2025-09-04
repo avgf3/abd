@@ -27,6 +27,7 @@ import {
 import { getDynamicBorderColor } from '@/utils/messageUtils';
 import { getFinalUsernameColor } from '@/utils/themeUtils';
 import { formatTime } from '@/utils/timeUtils';
+import Username from '@/components/ui/Username';
 // Removed ComposerPlusMenu (ready/quick options)
 import { useComposerStyle } from '@/contexts/ComposerStyleContext';
 import { renderMessageWithAnimatedEmojis, convertTextToAnimatedEmojis } from '@/utils/animatedEmojiUtils';
@@ -510,13 +511,15 @@ export default function MessageArea({
                       {message.sender && (
                         <UserRoleBadge user={message.sender} showOnlyIcon={true} hideGuestAndGender={true} size={16} />
                       )}
-                      <button
+                      <Username
+                        as="button"
                         onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
                         className="font-semibold hover:underline transition-colors duration-200 truncate"
                         style={{ color: getFinalUsernameColor(message.sender) }}
+                        title={message.sender?.username}
                       >
                         {message.sender?.username}
-                      </button>
+                      </Username>
 
                       <div className="text-gray-800 break-words truncate flex-1 message-content-fix">
                         {message.messageType === 'image' ? (
