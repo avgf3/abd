@@ -418,7 +418,7 @@ export default function BotsManagement({ currentUser }: BotsManagementProps) {
                 <TableRow>
                   <TableHead className="w-12 text-center">#</TableHead>
                   <TableHead>البوت</TableHead>
-                  <TableHead>الشعار</TableHead>
+                  <TableHead><span className="sr-only">الشعار</span></TableHead>
                   <TableHead>الغرفة</TableHead>
                   <TableHead>المستوى</TableHead>
                   <TableHead>النقاط</TableHead>
