@@ -16,6 +16,7 @@ import { Table, TableHeader, TableHead, TableRow, TableBody, TableCell } from '@
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { getImageSrc } from '@/utils/imageUtils';
 import { validateFile, getUploadTimeout } from '@/lib/uploadConfig';
+import UserRoleBadge from '@/components/chat/UserRoleBadge';
 
 interface Bot {
   id: number;
@@ -417,7 +418,7 @@ export default function BotsManagement({ currentUser }: BotsManagementProps) {
                 <TableRow>
                   <TableHead className="w-12 text-center">#</TableHead>
                   <TableHead>البوت</TableHead>
-                  <TableHead>الحالة</TableHead>
+                  <TableHead>الشعار</TableHead>
                   <TableHead>الغرفة</TableHead>
                   <TableHead>المستوى</TableHead>
                   <TableHead>النقاط</TableHead>
@@ -449,9 +450,18 @@ export default function BotsManagement({ currentUser }: BotsManagementProps) {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <span className={`text-sm px-2 py-1 rounded-full ${bot.isOnline ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
-                        {bot.isOnline ? '🟢 متصل' : '⚫ غير متصل'}
-                      </span>
+                      <UserRoleBadge
+                        user={{
+                          id: bot.id,
+                          username: bot.username,
+                          role: 'member',
+                          isOnline: bot.isOnline,
+                          userType: 'member',
+                          gender: bot.gender,
+                          level: bot.level,
+                        } as unknown as ChatUser}
+                        size={20}
+                      />
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline">{bot.currentRoom}</Badge>
