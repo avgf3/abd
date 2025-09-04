@@ -48,13 +48,15 @@ export class OwnerControlPanel {
     const token = req.headers.authorization?.replace('Bearer ', '');
     
     if (!token) {
-      return res.status(401).json({ error: 'رمز المصادقة مطلوب' });
+      res.status(401).json({ error: 'رمز المصادقة مطلوب' });
+      return;
     }
 
     const tokenData = this.accessTokens.get(token);
     
     if (!tokenData || tokenData.expires < new Date()) {
-      return res.status(401).json({ error: 'رمز مصادقة غير صالح أو منتهي' });
+      res.status(401).json({ error: 'رمز مصادقة غير صالح أو منتهي' });
+      return;
     }
 
     // تحقق إضافي من أن المستخدم أونر
@@ -107,7 +109,8 @@ export class OwnerControlPanel {
       const bot = this.botManager.getBotById(botId);
 
       if (!bot) {
-        return res.status(404).json({ error: 'البوت غير موجود' });
+        res.status(404).json({ error: 'البوت غير موجود' });
+        return;
       }
 
       // إخفاء بعض المعلومات الحساسة
@@ -142,7 +145,8 @@ export class OwnerControlPanel {
       const { message } = req.body;
 
       if (!message || typeof message !== 'string') {
-        return res.status(400).json({ error: 'الرسالة مطلوبة' });
+        res.status(400).json({ error: 'الرسالة مطلوبة' });
+        return;
       }
 
       await this.botManager.sendBotMessage(botId, message);
@@ -160,7 +164,8 @@ export class OwnerControlPanel {
       const { room } = req.body;
 
       if (!room || typeof room !== 'string') {
-        return res.status(400).json({ error: 'اسم الغرفة مطلوب' });
+        res.status(400).json({ error: 'اسم الغرفة مطلوب' });
+        return;
       }
 
       await this.botManager.moveBotToRoom(botId, room);
@@ -199,7 +204,8 @@ export class OwnerControlPanel {
           break;
           
         default:
-          return res.status(400).json({ error: 'أمر غير معروف' });
+          res.status(400).json({ error: 'أمر غير معروف' });
+          return;
       }
 
       res.json({ success: true, message: 'تم تنفيذ الأمر' });
