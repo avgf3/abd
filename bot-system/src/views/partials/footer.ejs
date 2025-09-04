@@ -1,0 +1,64 @@
+            </main>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="/js/dashboard.js"></script>
+    
+    <script>
+        // تهيئة Socket.IO
+        const socket = io();
+        const token = '<%= typeof token !== "undefined" ? token : "" %>';
+        
+        socket.on('connect', () => {
+            console.log('متصل بالخادم');
+            if (token) {
+                socket.emit('authenticate', token);
+            }
+        });
+        
+        socket.on('authenticated', (success) => {
+            if (success) {
+                console.log('تمت المصادقة بنجاح');
+            } else {
+                console.error('فشلت المصادقة');
+            }
+        });
+        
+        // وظائف عامة
+        function startAllBots() {
+            if (confirm('هل أنت متأكد من تشغيل جميع البوتات؟')) {
+                socket.emit('control:command', {
+                    command: 'start_all'
+                });
+                showNotification('تم إرسال أمر تشغيل جميع البوتات', 'success');
+            }
+        }
+        
+        function stopAllBots() {
+            if (confirm('هل أنت متأكد من إيقاف جميع البوتات؟')) {
+                socket.emit('control:command', {
+                    command: 'stop_all'
+                });
+                showNotification('تم إرسال أمر إيقاف جميع البوتات', 'warning');
+            }
+        }
+        
+        function showNotification(message, type = 'info') {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed top-0 end-0 m-3`;
+            alertDiv.style.zIndex = '9999';
+            alertDiv.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.body.appendChild(alertDiv);
+            
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,231 @@
+<%- include('partials/header', { title: 'سجل النشاطات' }) %>
+
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">سجل النشاطات</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="exportLogs()">
+                <i class="fas fa-download"></i> تصدير
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-danger" onclick="clearLogs()">
+                <i class="fas fa-trash"></i> مسح السجلات
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- الفلاتر -->
+<div class="row mb-3">
+    <div class="col-md-3">
+        <select class="form-select" id="filterAction">
+            <option value="">جميع الأنشطة</option>
+            <option value="message">رسائل</option>
+            <option value="room_change">تغيير الغرف</option>
+            <option value="reaction">تفاعلات</option>
+            <option value="manual_message">رسائل يدوية</option>
+        </select>
+    </div>
+    <div class="col-md-3">
+        <input type="date" class="form-control" id="filterDate">
+    </div>
+    <div class="col-md-3">
+        <input type="text" class="form-control" id="filterBot" placeholder="اسم أو معرف البوت...">
+    </div>
+    <div class="col-md-3">
+        <button class="btn btn-primary w-100" onclick="applyLogFilters()">
+            <i class="fas fa-filter"></i> تطبيق الفلاتر
+        </button>
+    </div>
+</div>
+
+<!-- جدول السجلات -->
+<div class="card shadow">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover" id="logsTable">
+                <thead>
+                    <tr>
+                        <th>التوقيت</th>
+                        <th>البوت</th>
+                        <th>النشاط</th>
+                        <th>الغرفة</th>
+                        <th>التفاصيل</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% activities.forEach(activity => { %>
+                    <tr>
+                        <td>
+                            <small><%= new Date(activity.timestamp).toLocaleString('ar-SA') %></small>
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <img src="<%= activity.avatar %>" width="30" height="30" class="rounded-circle me-2">
+                                <span><%= activity.bot_name %></span>
+                            </div>
+                        </td>
+                        <td>
+                            <% if (activity.action_type === 'message') { %>
+                                <span class="badge bg-primary">
+                                    <i class="fas fa-comment"></i> رسالة
+                                </span>
+                            <% } else if (activity.action_type === 'room_change') { %>
+                                <span class="badge bg-info">
+                                    <i class="fas fa-door-open"></i> تغيير غرفة
+                                </span>
+                            <% } else if (activity.action_type === 'reaction') { %>
+                                <span class="badge bg-warning">
+                                    <i class="fas fa-thumbs-up"></i> تفاعل
+                                </span>
+                            <% } else if (activity.action_type === 'manual_message') { %>
+                                <span class="badge bg-success">
+                                    <i class="fas fa-user-edit"></i> رسالة يدوية
+                                </span>
+                            <% } else { %>
+                                <span class="badge bg-secondary">
+                                    <%= activity.action_type %>
+                                </span>
+                            <% } %>
+                        </td>
+                        <td><%= activity.room_name %></td>
+                        <td>
+                            <% 
+                            let details = {};
+                            try {
+                                details = typeof activity.details === 'string' ? JSON.parse(activity.details) : activity.details;
+                            } catch (e) {}
+                            %>
+                            
+                            <% if (activity.action_type === 'message' || activity.action_type === 'manual_message') { %>
+                                <em>"<%= details.message || '' %>"</em>
+                            <% } else if (activity.action_type === 'room_change') { %>
+                                <small>من <%= details.from %> إلى <%= details.to %></small>
+                            <% } else if (activity.action_type === 'reaction') { %>
+                                <span style="font-size: 1.2em;"><%= details.reaction || '' %></span>
+                            <% } else { %>
+                                <small class="text-muted">-</small>
+                            <% } %>
+                        </td>
+                    </tr>
+                    <% }) %>
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- التصفح -->
+        <nav>
+            <ul class="pagination justify-content-center">
+                <% if (currentPage > 1) { %>
+                <li class="page-item">
+                    <a class="page-link" href="?page=<%= currentPage - 1 %>">السابق</a>
+                </li>
+                <% } %>
+                
+                <% for (let i = Math.max(1, currentPage - 2); i <= Math.min(totalPages, currentPage + 2); i++) { %>
+                <li class="page-item <%= i === currentPage ? 'active' : '' %>">
+                    <a class="page-link" href="?page=<%= i %>"><%= i %></a>
+                </li>
+                <% } %>
+                
+                <% if (currentPage < totalPages) { %>
+                <li class="page-item">
+                    <a class="page-link" href="?page=<%= currentPage + 1 %>">التالي</a>
+                </li>
+                <% } %>
+            </ul>
+        </nav>
+    </div>
+</div>
+
+<script>
+    // تطبيق فلاتر السجلات
+    function applyLogFilters() {
+        const action = document.getElementById('filterAction').value;
+        const date = document.getElementById('filterDate').value;
+        const bot = document.getElementById('filterBot').value;
+        
+        let url = '/dashboard/logs?';
+        if (action) url += `action=${action}&`;
+        if (date) url += `date=${date}&`;
+        if (bot) url += `bot=${encodeURIComponent(bot)}&`;
+        
+        window.location.href = url;
+    }
+    
+    // تصدير السجلات
+    async function exportLogs() {
+        try {
+            // جمع البيانات المعروضة حالياً
+            const rows = document.querySelectorAll('#logsTable tbody tr');
+            const logs = [];
+            
+            rows.forEach(row => {
+                const cells = row.cells;
+                logs.push({
+                    timestamp: cells[0].textContent.trim(),
+                    bot: cells[1].textContent.trim(),
+                    action: cells[2].textContent.trim(),
+                    room: cells[3].textContent.trim(),
+                    details: cells[4].textContent.trim()
+                });
+            });
+            
+            // تصدير كـ JSON
+            const dataStr = JSON.stringify(logs, null, 2);
+            const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+            
+            const exportFileDefaultName = `bot_logs_${new Date().toISOString().split('T')[0]}.json`;
+            
+            const linkElement = document.createElement('a');
+            linkElement.setAttribute('href', dataUri);
+            linkElement.setAttribute('download', exportFileDefaultName);
+            linkElement.click();
+            
+            showNotification('تم تصدير السجلات بنجاح', 'success');
+        } catch (error) {
+            showNotification('حدث خطأ في تصدير السجلات', 'danger');
+        }
+    }
+    
+    // مسح السجلات
+    function clearLogs() {
+        if (!confirm('هل أنت متأكد من مسح جميع السجلات؟ هذا الإجراء لا يمكن التراجع عنه.')) {
+            return;
+        }
+        
+        fetch('/api/logs/clear', {
+            method: 'DELETE'
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                showNotification('تم مسح السجلات بنجاح', 'success');
+                setTimeout(() => location.reload(), 1000);
+            }
+        })
+        .catch(error => {
+            showNotification('حدث خطأ في مسح السجلات', 'danger');
+        });
+    }
+    
+    // البحث الفوري في الجدول
+    searchTable('filterBot', 'logsTable');
+    
+    // تحديث تلقائي للصفحة كل دقيقة
+    let autoRefreshInterval = setInterval(() => {
+        if (document.hidden) return; // لا تحدث إذا كانت الصفحة غير مرئية
+        
+        // تحديث فقط إذا لم يكن هناك فلاتر مطبقة
+        const urlParams = new URLSearchParams(window.location.search);
+        if (!urlParams.has('action') && !urlParams.has('date') && !urlParams.has('bot')) {
+            location.reload();
+        }
+    }, 60000); // كل دقيقة
+    
+    // إيقاف التحديث التلقائي عند مغادرة الصفحة
+    window.addEventListener('beforeunload', () => {
+        clearInterval(autoRefreshInterval);
+    });
+</script>
+
+<%- include('partials/footer') %>

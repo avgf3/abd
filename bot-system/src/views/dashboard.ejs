@@ -1,0 +1,292 @@
+<%- include('partials/header', { title: 'لوحة التحكم الرئيسية' }) %>
+
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">لوحة التحكم</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="refreshStats()">
+                <i class="fas fa-sync-alt"></i> تحديث
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- الإحصائيات الرئيسية -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-right-primary shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                            إجمالي البوتات
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800" id="totalBots">
+                            <%= botStats.total %>
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-robot fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-right-success shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                            بوتات نشطة
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800" id="onlineBots">
+                            <%= botStats.online %>
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-circle fa-2x text-success"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-right-info shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                            بوتات متوقفة
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800" id="offlineBots">
+                            <%= botStats.offline %>
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-circle fa-2x text-secondary"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-right-warning shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                            بوتات مشغولة
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800" id="busyBots">
+                            <%= botStats.busy %>
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-circle fa-2x text-warning"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- التحكم السريع -->
+<div class="row mb-4">
+    <div class="col-lg-6">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">التحكم السريع</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <button class="btn btn-success" onclick="startAllBots()">
+                        <i class="fas fa-play"></i> تشغيل جميع البوتات
+                    </button>
+                    <button class="btn btn-danger" onclick="stopAllBots()">
+                        <i class="fas fa-stop"></i> إيقاف جميع البوتات
+                    </button>
+                    <button class="btn btn-primary" onclick="createBots()">
+                        <i class="fas fa-plus"></i> إنشاء بوتات جديدة
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-6">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">توزيع البوتات في الغرف</h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>الغرفة</th>
+                                <th>عدد المستخدمين</th>
+                                <th>إجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% roomStats.forEach(room => { %>
+                            <tr>
+                                <td><%= room.room_name %></td>
+                                <td><%= room.current_users %></td>
+                                <td>
+                                    <button class="btn btn-sm btn-primary" onclick="viewRoom('<%= room.room_name %>')">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <% }) %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- النشاطات الأخيرة -->
+<div class="row">
+    <div class="col-lg-12">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">النشاطات الأخيرة</h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm" id="recentActivities">
+                        <thead>
+                            <tr>
+                                <th>البوت</th>
+                                <th>النشاط</th>
+                                <th>الغرفة</th>
+                                <th>الوقت</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% recentActivities.forEach(activity => { %>
+                            <tr>
+                                <td><%= activity.bot_name %></td>
+                                <td>
+                                    <% if (activity.action_type === 'message') { %>
+                                        <span class="badge bg-primary">رسالة</span>
+                                    <% } else if (activity.action_type === 'room_change') { %>
+                                        <span class="badge bg-info">تغيير غرفة</span>
+                                    <% } else if (activity.action_type === 'reaction') { %>
+                                        <span class="badge bg-warning">تفاعل</span>
+                                    <% } else { %>
+                                        <span class="badge bg-secondary"><%= activity.action_type %></span>
+                                    <% } %>
+                                </td>
+                                <td><%= activity.room_name %></td>
+                                <td><%= new Date(activity.timestamp).toLocaleString('ar-SA') %></td>
+                            </tr>
+                            <% }) %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // تحديث الإحصائيات
+    function refreshStats() {
+        fetch('/api/stats')
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('totalBots').textContent = data.stats.bots.total;
+                    document.getElementById('onlineBots').textContent = data.stats.bots.online;
+                    document.getElementById('offlineBots').textContent = data.stats.bots.offline;
+                    document.getElementById('busyBots').textContent = data.stats.bots.busy;
+                }
+            });
+    }
+    
+    // إنشاء بوتات جديدة
+    function createBots() {
+        const count = prompt('كم عدد البوتات التي تريد إنشاءها؟ (الحد الأقصى 50)');
+        if (count && !isNaN(count)) {
+            fetch('/dashboard/bots/create', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ count: parseInt(count) })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification(data.message, 'success');
+                    setTimeout(() => refreshStats(), 1000);
+                } else {
+                    showNotification(data.error || 'حدث خطأ', 'danger');
+                }
+            });
+        }
+    }
+    
+    // عرض الغرفة
+    function viewRoom(roomName) {
+        window.location.href = `/dashboard/rooms?room=${encodeURIComponent(roomName)}`;
+    }
+    
+    // تحديث النشاطات في الوقت الفعلي
+    socket.on('bot:update', (data) => {
+        refreshStats();
+    });
+    
+    socket.on('new:activity', (activity) => {
+        // إضافة النشاط الجديد إلى الجدول
+        const tbody = document.querySelector('#recentActivities tbody');
+        const newRow = tbody.insertRow(0);
+        
+        newRow.innerHTML = `
+            <td>${activity.bot_name}</td>
+            <td>
+                <span class="badge bg-${getActivityBadgeClass(activity.action_type)}">
+                    ${getActivityLabel(activity.action_type)}
+                </span>
+            </td>
+            <td>${activity.room_name}</td>
+            <td>${new Date(activity.timestamp).toLocaleString('ar-SA')}</td>
+        `;
+        
+        // إزالة الصف الأخير إذا كان هناك أكثر من 10 صفوف
+        if (tbody.rows.length > 10) {
+            tbody.deleteRow(tbody.rows.length - 1);
+        }
+    });
+    
+    function getActivityBadgeClass(type) {
+        const classes = {
+            'message': 'primary',
+            'room_change': 'info',
+            'reaction': 'warning'
+        };
+        return classes[type] || 'secondary';
+    }
+    
+    function getActivityLabel(type) {
+        const labels = {
+            'message': 'رسالة',
+            'room_change': 'تغيير غرفة',
+            'reaction': 'تفاعل'
+        };
+        return labels[type] || type;
+    }
+    
+    // تحديث تلقائي كل 30 ثانية
+    setInterval(refreshStats, 30000);
+</script>
+
+<%- include('partials/footer') %>

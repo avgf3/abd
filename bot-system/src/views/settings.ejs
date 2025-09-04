@@ -1,0 +1,332 @@
+<%- include('partials/header', { title: 'الإعدادات' }) %>
+
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">الإعدادات</h1>
+</div>
+
+<div class="row">
+    <!-- إعدادات الحساب -->
+    <div class="col-lg-6">
+        <div class="card shadow mb-4">
+            <div class="card-header">
+                <h6 class="m-0 font-weight-bold text-primary">إعدادات الحساب</h6>
+            </div>
+            <div class="card-body">
+                <form id="accountForm">
+                    <div class="mb-3">
+                        <label class="form-label">اسم المستخدم</label>
+                        <input type="text" class="form-control" value="<%= user.username %>" disabled>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">الدور</label>
+                        <input type="text" class="form-control" value="<%= user.role === 'owner' ? 'مالك' : 'مدير' %>" disabled>
+                    </div>
+                    <hr>
+                    <h6>تغيير كلمة المرور</h6>
+                    <div class="mb-3">
+                        <label class="form-label">كلمة المرور الحالية</label>
+                        <input type="password" class="form-control" id="currentPassword" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">كلمة المرور الجديدة</label>
+                        <input type="password" class="form-control" id="newPassword" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">تأكيد كلمة المرور الجديدة</label>
+                        <input type="password" class="form-control" id="confirmPassword" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> تغيير كلمة المرور
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- إعدادات النظام -->
+    <div class="col-lg-6">
+        <div class="card shadow mb-4">
+            <div class="card-header">
+                <h6 class="m-0 font-weight-bold text-primary">إعدادات النظام</h6>
+            </div>
+            <div class="card-body">
+                <form id="systemForm">
+                    <div class="mb-3">
+                        <label class="form-label">الحد الأقصى للبوتات</label>
+                        <input type="number" class="form-control" id="max_bots" value="300" min="1" max="1000">
+                        <small class="text-muted">الحد الأقصى لعدد البوتات في النظام</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">تأخير البدء التلقائي (ثانية)</label>
+                        <input type="number" class="form-control" id="auto_start_delay" value="5" min="1" max="60">
+                        <small class="text-muted">التأخير بين تشغيل كل بوت عند البدء الجماعي</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">مستوى النشاط الافتراضي</label>
+                        <input type="range" class="form-range" id="default_activity_level" min="1" max="10" value="5">
+                        <span id="activity_display">5</span>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">الغرفة الافتراضية</label>
+                        <select class="form-select" id="default_room">
+                            <option value="lobby">اللوبي</option>
+                            <option value="general">العامة</option>
+                            <option value="gaming">الألعاب</option>
+                            <option value="music">الموسيقى</option>
+                            <option value="sports">الرياضة</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> حفظ الإعدادات
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- إعدادات الرسائل -->
+<div class="row">
+    <div class="col-lg-12">
+        <div class="card shadow mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold text-primary">رسائل البوتات</h6>
+                <button class="btn btn-sm btn-success" onclick="addNewMessage()">
+                    <i class="fas fa-plus"></i> إضافة رسالة
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>الفئة</th>
+                                <th>الرسالة</th>
+                                <th>مرات الاستخدام</th>
+                                <th>إجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody id="messagesTable">
+                            <!-- سيتم ملؤها بواسطة JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- نافذة إضافة رسالة -->
+<div class="modal fade" id="messageModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">إضافة رسالة جديدة</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="messageForm">
+                    <div class="mb-3">
+                        <label class="form-label">الفئة</label>
+                        <select class="form-select" id="message_category">
+                            <option value="greeting">ترحيب</option>
+                            <option value="chat">محادثة</option>
+                            <option value="reaction">تفاعل</option>
+                            <option value="farewell">وداع</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">الرسالة</label>
+                        <textarea class="form-control" id="message_text" rows="3" required></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                <button type="button" class="btn btn-primary" onclick="saveMessage()">حفظ</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // تحديث عرض مستوى النشاط
+    document.getElementById('default_activity_level').addEventListener('input', function() {
+        document.getElementById('activity_display').textContent = this.value;
+    });
+    
+    // تغيير كلمة المرور
+    document.getElementById('accountForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const newPassword = document.getElementById('newPassword').value;
+        const confirmPassword = document.getElementById('confirmPassword').value;
+        
+        if (newPassword !== confirmPassword) {
+            showNotification('كلمات المرور غير متطابقة', 'danger');
+            return;
+        }
+        
+        try {
+            const response = await fetch('/auth/change-password', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    currentPassword: document.getElementById('currentPassword').value,
+                    newPassword: newPassword
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                showNotification('تم تغيير كلمة المرور بنجاح', 'success');
+                this.reset();
+            } else {
+                showNotification(data.error || 'فشل تغيير كلمة المرور', 'danger');
+            }
+        } catch (error) {
+            showNotification('حدث خطأ في تغيير كلمة المرور', 'danger');
+        }
+    });
+    
+    // حفظ إعدادات النظام
+    document.getElementById('systemForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const settings = {
+            max_bots: document.getElementById('max_bots').value,
+            auto_start_delay: document.getElementById('auto_start_delay').value,
+            default_activity_level: document.getElementById('default_activity_level').value,
+            default_room: document.getElementById('default_room').value
+        };
+        
+        try {
+            const response = await fetch('/api/settings', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(settings)
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                showNotification('تم حفظ الإعدادات بنجاح', 'success');
+            }
+        } catch (error) {
+            showNotification('حدث خطأ في حفظ الإعدادات', 'danger');
+        }
+    });
+    
+    // تحميل الرسائل
+    async function loadMessages() {
+        try {
+            const response = await fetch('/api/messages');
+            const data = await response.json();
+            
+            if (data.success) {
+                const tbody = document.getElementById('messagesTable');
+                tbody.innerHTML = '';
+                
+                data.messages.forEach(message => {
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>
+                                <span class="badge bg-${getCategoryColor(message.category)}">
+                                    ${getCategoryLabel(message.category)}
+                                </span>
+                            </td>
+                            <td>${message.message}</td>
+                            <td>${message.usage_count}</td>
+                            <td>
+                                <button class="btn btn-sm btn-danger" onclick="deleteMessage(${message.id})">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            }
+        } catch (error) {
+            console.error('خطأ في تحميل الرسائل:', error);
+        }
+    }
+    
+    // إضافة رسالة جديدة
+    function addNewMessage() {
+        document.getElementById('messageForm').reset();
+        new bootstrap.Modal(document.getElementById('messageModal')).show();
+    }
+    
+    // حفظ الرسالة
+    async function saveMessage() {
+        const data = {
+            category: document.getElementById('message_category').value,
+            message: document.getElementById('message_text').value
+        };
+        
+        try {
+            const response = await fetch('/api/messages', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                showNotification('تم إضافة الرسالة بنجاح', 'success');
+                bootstrap.Modal.getInstance(document.getElementById('messageModal')).hide();
+                loadMessages();
+            }
+        } catch (error) {
+            showNotification('حدث خطأ في إضافة الرسالة', 'danger');
+        }
+    }
+    
+    // حذف رسالة
+    async function deleteMessage(id) {
+        if (!confirm('هل أنت متأكد من حذف هذه الرسالة؟')) return;
+        
+        try {
+            const response = await fetch(`/api/messages/${id}`, {
+                method: 'DELETE'
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                showNotification('تم حذف الرسالة بنجاح', 'success');
+                loadMessages();
+            }
+        } catch (error) {
+            showNotification('حدث خطأ في حذف الرسالة', 'danger');
+        }
+    }
+    
+    // دوال مساعدة
+    function getCategoryColor(category) {
+        const colors = {
+            'greeting': 'primary',
+            'chat': 'info',
+            'reaction': 'warning',
+            'farewell': 'secondary'
+        };
+        return colors[category] || 'secondary';
+    }
+    
+    function getCategoryLabel(category) {
+        const labels = {
+            'greeting': 'ترحيب',
+            'chat': 'محادثة',
+            'reaction': 'تفاعل',
+            'farewell': 'وداع'
+        };
+        return labels[category] || category;
+    }
+    
+    // تحميل الرسائل عند تحميل الصفحة
+    loadMessages();
+</script>
+
+<%- include('partials/footer') %>

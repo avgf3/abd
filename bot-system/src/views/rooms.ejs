@@ -1,0 +1,249 @@
+<%- include('partials/header', { title: 'إدارة الغرف' }) %>
+
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">إدارة الغرف</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <button type="button" class="btn btn-sm btn-primary" onclick="createNewRoom()">
+            <i class="fas fa-plus"></i> إنشاء غرفة جديدة
+        </button>
+    </div>
+</div>
+
+<div class="row">
+    <% rooms.forEach(room => { %>
+    <div class="col-lg-4 col-md-6 mb-4">
+        <div class="card shadow h-100">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-door-open"></i> <%= room.room_name %>
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-6">
+                        <small class="text-muted">نوع الغرفة</small>
+                        <p class="mb-0"><%= room.room_type === 'public' ? 'عامة' : 'خاصة' %></p>
+                    </div>
+                    <div class="col-6">
+                        <small class="text-muted">الحد الأقصى</small>
+                        <p class="mb-0"><%= room.max_users %> مستخدم</p>
+                    </div>
+                </div>
+                
+                <div class="progress mb-3" style="height: 25px;">
+                    <div class="progress-bar <%= room.current_users >= room.max_users * 0.8 ? 'bg-danger' : 'bg-success' %>" 
+                         style="width: <%= (room.current_users / room.max_users * 100) %>%">
+                        <%= room.current_users %> / <%= room.max_users %>
+                    </div>
+                </div>
+                
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="badge bg-primary">
+                            <i class="fas fa-robot"></i> <%= room.active_bots %> بوت نشط
+                        </span>
+                    </div>
+                    <div class="btn-group btn-group-sm">
+                        <button class="btn btn-info" onclick="viewRoomDetails('<%= room.room_name %>')">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button class="btn btn-warning" onclick="editRoom('<%= room.id %>')">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <% }) %>
+</div>
+
+<!-- نافذة تفاصيل الغرفة -->
+<div class="modal fade" id="roomDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">تفاصيل الغرفة</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="roomDetailsContent">
+                    <div class="text-center">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">جاري التحميل...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- نافذة إنشاء/تعديل الغرفة -->
+<div class="modal fade" id="roomFormModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="roomFormTitle">إنشاء غرفة جديدة</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="roomForm">
+                    <input type="hidden" id="room_id">
+                    <div class="mb-3">
+                        <label class="form-label">اسم الغرفة</label>
+                        <input type="text" class="form-control" id="room_name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">نوع الغرفة</label>
+                        <select class="form-select" id="room_type">
+                            <option value="public">عامة</option>
+                            <option value="private">خاصة</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">الحد الأقصى للمستخدمين</label>
+                        <input type="number" class="form-control" id="max_users" value="100" min="1" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                <button type="button" class="btn btn-primary" onclick="saveRoom()">حفظ</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // عرض تفاصيل الغرفة
+    function viewRoomDetails(roomName) {
+        const modal = new bootstrap.Modal(document.getElementById('roomDetailsModal'));
+        modal.show();
+        
+        // جلب البوتات في الغرفة
+        fetch(`/api/bots?room=${encodeURIComponent(roomName)}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    let content = `
+                        <h6>البوتات في غرفة ${roomName}</h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>الصورة</th>
+                                        <th>الاسم</th>
+                                        <th>الحالة</th>
+                                        <th>مستوى النشاط</th>
+                                        <th>إجراءات</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                    `;
+                    
+                    data.bots.forEach(bot => {
+                        content += `
+                            <tr>
+                                <td><img src="${bot.avatar}" width="30" height="30" class="rounded-circle"></td>
+                                <td>${bot.name}</td>
+                                <td>
+                                    <span class="badge bg-${bot.status === 'online' ? 'success' : 'secondary'}">
+                                        ${bot.status === 'online' ? 'نشط' : 'متوقف'}
+                                    </span>
+                                </td>
+                                <td>${bot.activity_level}/10</td>
+                                <td>
+                                    <button class="btn btn-sm btn-primary" onclick="moveBot('${bot.bot_id}')">
+                                        <i class="fas fa-exchange-alt"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                    
+                    content += `
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                    
+                    if (data.bots.length === 0) {
+                        content = '<p class="text-center text-muted">لا يوجد بوتات في هذه الغرفة حالياً</p>';
+                    }
+                    
+                    document.getElementById('roomDetailsContent').innerHTML = content;
+                }
+            });
+    }
+    
+    // إنشاء غرفة جديدة
+    function createNewRoom() {
+        document.getElementById('roomFormTitle').textContent = 'إنشاء غرفة جديدة';
+        document.getElementById('roomForm').reset();
+        document.getElementById('room_id').value = '';
+        
+        new bootstrap.Modal(document.getElementById('roomFormModal')).show();
+    }
+    
+    // تعديل غرفة
+    function editRoom(roomId) {
+        // في هذا المثال، سنستخدم البيانات الموجودة
+        // في تطبيق حقيقي، يجب جلب البيانات من الخادم
+        document.getElementById('roomFormTitle').textContent = 'تعديل الغرفة';
+        document.getElementById('room_id').value = roomId;
+        
+        new bootstrap.Modal(document.getElementById('roomFormModal')).show();
+    }
+    
+    // حفظ الغرفة
+    function saveRoom() {
+        const roomId = document.getElementById('room_id').value;
+        const data = {
+            room_name: document.getElementById('room_name').value,
+            room_type: document.getElementById('room_type').value,
+            max_users: parseInt(document.getElementById('max_users').value)
+        };
+        
+        const url = roomId ? `/api/rooms/${roomId}` : '/api/rooms';
+        const method = roomId ? 'PUT' : 'POST';
+        
+        fetch(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                showNotification('تم حفظ الغرفة بنجاح', 'success');
+                bootstrap.Modal.getInstance(document.getElementById('roomFormModal')).hide();
+                setTimeout(() => location.reload(), 1000);
+            }
+        });
+    }
+    
+    // نقل بوت إلى غرفة أخرى
+    function moveBot(botId) {
+        const rooms = ['lobby', 'general', 'gaming', 'music', 'sports'];
+        const newRoom = prompt('اختر الغرفة الجديدة:\n' + rooms.join('\n'));
+        
+        if (newRoom && rooms.includes(newRoom)) {
+            socket.emit('control:command', {
+                command: 'move_bot',
+                botId: botId,
+                params: { room: newRoom }
+            });
+            
+            showNotification(`تم نقل البوت إلى ${newRoom}`, 'success');
+            
+            // إغلاق النافذة وإعادة التحميل
+            setTimeout(() => {
+                bootstrap.Modal.getInstance(document.getElementById('roomDetailsModal')).hide();
+                location.reload();
+            }, 1500);
+        }
+    }
+</script>
+
+<%- include('partials/footer') %>
