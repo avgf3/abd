@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Bot, Plus, Trash2, Edit, ToggleLeft, ToggleRight, ArrowRight, RefreshCw, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -69,6 +69,9 @@ export default function BotsManagement({ currentUser }: BotsManagementProps) {
   const { toast } = useToast();
   const [uploadingId, setUploadingId] = useState<number | null>(null);
   const [uploadProgress, setUploadProgress] = useState<number>(0);
+  const [pendingImageFile, setPendingImageFile] = useState<File | null>(null);
+  const [pendingImagePreview, setPendingImagePreview] = useState<string | null>(null);
+  const createImageInputRef = useRef<HTMLInputElement>(null);
 
   // بيانات البوت الجديد
   const [newBot, setNewBot] = useState({
@@ -78,6 +81,7 @@ export default function BotsManagement({ currentUser }: BotsManagementProps) {
     bio: 'أنا بوت آلي',
     botType: 'system' as 'system' | 'chat' | 'moderator',
     usernameColor: '#00FF00',
+    gender: 'male' as 'male' | 'female',
   });
 
   // جلب قائمة البوتات
@@ -128,7 +132,30 @@ export default function BotsManagement({ currentUser }: BotsManagementProps) {
         body: newBot,
       });
 
-      setBots([...bots, response]);
+      let created = response;
+
+      // إذا تم اختيار صورة، ارفعها مباشرة بعد إنشاء البوت
+      if (pendingImageFile) {
+        try {
+          const formData = new FormData();
+          formData.append('profileImage', pendingImageFile);
+          const result = await api.upload(`/api/bots/${response.id}/upload-profile-image`, formData, {
+            timeout: getUploadTimeout('image'),
+            onProgress: (p) => setUploadProgress(Math.round(p)),
+          });
+          if ((result as any)?.success && (result as any)?.imageUrl) {
+            created = { ...response, profileImage: (result as any).imageUrl } as Bot;
+          }
+        } catch (err) {
+          // تجاهل خطأ رفع الصورة، يكفي إنشاء البوت
+        } finally {
+          setPendingImageFile(null);
+          setPendingImagePreview(null);
+          setUploadProgress(0);
+        }
+      }
+
+      setBots([...bots, created]);
       setIsCreateDialogOpen(false);
       setNewBot({
         username: '',
@@ -137,6 +164,7 @@ export default function BotsManagement({ currentUser }: BotsManagementProps) {
         bio: 'أنا بوت آلي',
         botType: 'system',
         usernameColor: '#00FF00',
+        gender: 'male',
       });
 
       toast({
@@ -150,6 +178,22 @@ export default function BotsManagement({ currentUser }: BotsManagementProps) {
         variant: 'destructive',
       });
     }
+  };
+
+  const handleCreateImageFilePick = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const validation = validateFile(file, 'profile_image');
+    if (!validation.isValid) {
+      toast({ title: 'خطأ في الملف', description: validation.error, variant: 'destructive' });
+      return;
+    }
+    setPendingImageFile(file);
+    try {
+      const reader = new FileReader();
+      reader.onload = (ev) => setPendingImagePreview(String(ev.target?.result || ''));
+      reader.readAsDataURL(file);
+    } catch {}
   };
 
   // تحديث بوت
@@ -563,38 +607,17 @@ export default function BotsManagement({ currentUser }: BotsManagementProps) {
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="status">الحالة</Label>
-              <Input
-                id="status"
-                value={newBot.status}
-                onChange={(e) => setNewBot({ ...newBot, status: e.target.value })}
-                placeholder="حالة البوت"
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="bio">الوصف</Label>
-              <Input
-                id="bio"
-                value={newBot.bio}
-                onChange={(e) => setNewBot({ ...newBot, bio: e.target.value })}
-                placeholder="وصف البوت"
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="botType">نوع البوت</Label>
+              <Label htmlFor="gender">الجنس</Label>
               <Select
-                value={newBot.botType}
-                onValueChange={(value: 'system' | 'chat' | 'moderator') => 
-                  setNewBot({ ...newBot, botType: value })
-                }
+                value={newBot.gender}
+                onValueChange={(value: any) => setNewBot({ ...newBot, gender: value as 'male' | 'female' })}
               >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="system">نظام</SelectItem>
-                  <SelectItem value="chat">محادثة</SelectItem>
-                  <SelectItem value="moderator">مشرف</SelectItem>
+                  <SelectItem value="male">ذكر</SelectItem>
+                  <SelectItem value="female">أنثى</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -614,6 +637,28 @@ export default function BotsManagement({ currentUser }: BotsManagementProps) {
                   placeholder="#00FF00"
                 />
               </div>
+            </div>
+            <div className="grid gap-2">
+              <Label>الصورة الشخصية</Label>
+              <div className="flex items-center gap-3">
+                <Button variant="outline" onClick={() => createImageInputRef.current?.click()} className="flex items-center gap-2">
+                  <Upload className="w-4 h-4" />
+                  اختيار صورة
+                </Button>
+                {pendingImagePreview && (
+                  <img src={pendingImagePreview} alt="preview" className="w-10 h-10 rounded-full object-cover border" />
+                )}
+                {uploadProgress > 0 && (
+                  <span className="text-xs text-gray-500">{uploadProgress}%</span>
+                )}
+              </div>
+              <input
+                ref={createImageInputRef}
+                type="file"
+                accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,image/svg+xml"
+                className="hidden"
+                onChange={handleCreateImageFilePick}
+              />
             </div>
           </div>
           <DialogFooter>
