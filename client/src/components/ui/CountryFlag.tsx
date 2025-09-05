@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 
 import { getCountryIso2 } from '@/utils';
 
@@ -24,16 +24,27 @@ export default function CountryFlag({
   rounded = false,
 }: CountryFlagProps) {
   const code = (iso2 || getCountryIso2(country) || '').toLowerCase();
+  const [sourceIndex, setSourceIndex] = useState(0);
   if (!code || code.length !== 2) return null;
 
-  const src = `https://flagcdn.com/${code}.svg`;
-  const alt = title || country || code.toUpperCase();
+  const sources = useMemo(() => [
+    `https://flagcdn.com/${code}.svg`,
+    `https://cdn.jsdelivr.net/npm/country-flag-icons/3x2/${code.toUpperCase()}.svg`,
+    `https://cdnjs.cloudflare.com/ajax/libs/flag-icon-css/6.6.6/flags/4x3/${code}.svg`,
+    `/flags/${code}.svg`,
+  ], [code]);
 
+  const currentSrc = sources[Math.min(sourceIndex, sources.length - 1)];
+  const alt = title || country || code.toUpperCase();
   const borderRadius = rounded ? 999 : 2;
+
+  const handleError = useCallback(() => {
+    setSourceIndex((idx) => (idx + 1 < sources.length ? idx + 1 : idx));
+  }, [sources.length]);
 
   return (
     <img
-      src={src}
+      src={currentSrc}
       alt={alt}
       title={alt}
       width={size}
@@ -51,6 +62,8 @@ export default function CountryFlag({
       loading="lazy"
       decoding="async"
       referrerPolicy="no-referrer"
+      crossOrigin="anonymous"
+      onError={handleError}
     />
   );
 }
