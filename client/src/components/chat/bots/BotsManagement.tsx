@@ -347,27 +347,7 @@ export default function BotsManagement({ currentUser }: BotsManagementProps) {
     }
   };
 
-  // إنشاء البوتات الافتراضية
-  const handleCreateDefaultBots = async () => {
-    try {
-      const response = await apiRequest<{ message: string; bots: Bot[] }>('/api/bots/create-defaults', {
-        method: 'POST',
-      });
-
-      setBots([...bots, ...response.bots]);
-
-      toast({
-        title: 'نجح',
-        description: response.message,
-      });
-    } catch (error) {
-      toast({
-        title: 'خطأ',
-        description: 'فشل في إنشاء البوتات الافتراضية',
-        variant: 'destructive',
-      });
-    }
-  };
+  // تم حذف إنشاء البوتات الافتراضية حسب المتطلبات الجديدة
 
   const getBotTypeColor = (type: string) => {
     switch (type) {
@@ -425,16 +405,7 @@ export default function BotsManagement({ currentUser }: BotsManagementProps) {
               <Plus className="w-4 h-4 ml-2" />
               إضافة بوت
             </Button>
-            {bots.length === 0 && (
-              <Button
-                onClick={handleCreateDefaultBots}
-                variant="outline"
-                className="border-green-500 text-green-700 hover:bg-green-50"
-              >
-                <Bot className="w-4 h-4 ml-2" />
-                إنشاء 10 بوتات افتراضية
-              </Button>
-            )}
+            {/* تم إخفاء زر إنشاء البوتات الافتراضية حسب المتطلبات الجديدة */}
           </div>
         </div>
       </div>
@@ -446,10 +417,6 @@ export default function BotsManagement({ currentUser }: BotsManagementProps) {
             <div className="text-center py-12">
               <Bot className="w-16 h-16 mx-auto text-gray-400 mb-4" />
               <p className="text-gray-600">لا توجد بوتات حالياً</p>
-              <Button onClick={handleCreateDefaultBots} variant="outline" className="mt-4">
-                <Bot className="w-4 h-4 ml-2" />
-                إنشاء البوتات الافتراضية
-              </Button>
             </div>
           ) : (
             <Table className="min-w-full">

@@ -3,6 +3,86 @@ import { promises as fsp } from 'fs';
 import { createServer, type Server } from 'http';
 import path from 'path';
 
+  // تفعيل/تعطيل بوت
+  app.patch('/api/bots/:id/toggle', protect.admin, async (req, res) => {
+    try {
+      if (!db) {
+        return res.status(500).json({ error: 'قاعدة البيانات غير متصلة' });
+      }
+
+      const botId = parseInt(req.params.id);
+      const { bots } = await import('../shared/schema');
+      
+      // جلب البوت الحالي
+      const [currentBot] = await db.select().from(bots).where(eq(bots.id, botId)).limit(1);
+      
+      if (!currentBot) {
+        return res.status(404).json({ error: 'البوت غير موجود' });
+      }
+
+      // تبديل حالة النشاط
+      const newActiveState = !currentBot.isActive;
+      
+      const [updatedBot] = await db.update(bots)
+        .set({ 
+          isActive: newActiveState,
+          isOnline: newActiveState,
+          lastActivity: new Date()
+        })
+        .where(eq(bots.id, botId))
+        .returning();
+
+      // تحديث cache المستخدمين المتصلين
+      if (newActiveState) {
+        const botUser = {
+          id: updatedBot.id,
+          username: updatedBot.username,
+          userType: 'bot',
+          role: 'bot',
+          profileImage: updatedBot.profileImage,
+          status: updatedBot.status,
+          usernameColor: updatedBot.usernameColor,
+          profileEffect: updatedBot.profileEffect,
+          points: updatedBot.points,
+          level: updatedBot.level,
+          gender: updatedBot.gender,
+          country: updatedBot.country,
+          relation: updatedBot.relation,
+          bio: updatedBot.bio,
+          age: (updatedBot as any)?.settings?.age,
+          isOnline: true,
+          currentRoom: updatedBot.currentRoom,
+        };
+
+        updateConnectedUserCache(updatedBot.id, botUser);
+
+        // إشعار بدخول البوت (متوافق مع الواجهة)
+        getIO().to(`room_${updatedBot.currentRoom}`).emit('message', {
+          type: 'userJoinedRoom',
+          userId: updatedBot.id,
+          username: updatedBot.username,
+          roomId: updatedBot.currentRoom,
+        });
+      } else {
+        // إزالة البوت من قائمة المتصلين
+        updateConnectedUserCache(updatedBot.id, null);
+
+        // إشعار بخروج البوت (متوافق مع الواجهة)
+        getIO().to(`room_${updatedBot.currentRoom}`).emit('message', {
+          type: 'userLeftRoom',
+          userId: botId,
+          username: updatedBot.username,
+          roomId: updatedBot.currentRoom,
+        });
+      }
+
+      res.json({ message: newActiveState ? 'تم تفعيل البوت' : 'تم تعطيل البوت', bot: updatedBot });
+    } catch (error) {
+      console.error('خطأ في تبديل حالة البوت:', error);
+      res.status(500).json({ error: 'فشل في تبديل حالة البوت' });
+    }
+  });
+
 import roomRoutes from './routes/rooms';
 import messageRoutes from './routes/messages';
 import storiesRoutes from './routes/stories';
@@ -4382,7 +4462,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         relation: updatedBot.relation,
         bio: updatedBot.bio,
         age: (updatedBot as any)?.settings?.age,
-        isOnline: Boolean((updatedBot as any)?.isOnline),
+        isOnline: updatedBot.isActive,
         currentRoom: updatedBot.currentRoom,
       };
 
@@ -4605,7 +4685,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             relation: updatedBot.relation,
             bio: updatedBot.bio,
             age: (updatedBot as any)?.settings?.age,
-            isOnline: Boolean((updatedBot as any)?.isOnline),
+            isOnline: updatedBot.isActive,
             currentRoom: updatedBot.currentRoom,
           };
           updateConnectedUserCache(updatedBot.id, botUser);
