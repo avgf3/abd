@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import App from './App';
 
 import './index.css';
+import 'flag-icons/css/flag-icons.min.css';
 // import { getSocket } from '@/lib/socket'; // defer dynamic import instead
 import { applyThemeById } from '@/utils/applyTheme';
 

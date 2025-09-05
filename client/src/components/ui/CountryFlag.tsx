@@ -35,25 +35,32 @@ export default function CountryFlag({
   };
 
   if (iso2) {
-    const src = getFlagSvgUrl(iso2, '3x2');
+    // Prefer local CSS flag icons (no network fetch). Fallback to CDN image if CSS missing.
+    const codeLower = iso2.toLowerCase();
     return (
       <span className={className} title={title} style={style} {...rest}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={src}
-          alt={iso2}
-          width={style.width as number}
-          height={style.height as number}
-          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-          onError={(e) => {
-            const target = e.currentTarget as HTMLImageElement;
-            // fallback to emoji
-            target.style.display = 'none';
-            const parent = target.parentElement;
-            if (parent) {
-              parent.textContent = emoji || '';
-              parent.style.fontSize = `${Math.max(12, Math.round(size * 0.85))}px`;
-            }
+        <span
+          className={`fi fi-${codeLower}`}
+          style={{ width: '100%', height: '100%', display: 'block' }}
+          onError={(e: any) => {
+            try {
+              // if CSS icon fails, replace with img
+              const parent = e.currentTarget.parentElement as HTMLElement | null;
+              if (parent) {
+                parent.innerHTML = '';
+                const img = document.createElement('img');
+                img.src = getFlagSvgUrl(iso2, '3x2');
+                img.alt = iso2;
+                img.style.width = '100%';
+                img.style.height = '100%';
+                img.style.objectFit = 'cover';
+                img.onerror = () => {
+                  parent.textContent = emoji || '';
+                  parent.style.fontSize = `${Math.max(12, Math.round(size * 0.85))}px`;
+                };
+                parent.appendChild(img);
+              }
+            } catch {}
           }}
         />
       </span>
