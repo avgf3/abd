@@ -2311,7 +2311,9 @@ export default function ProfileModal({
                     textAlign: 'center',
                     whiteSpace: 'normal',
                     overflowWrap: 'anywhere',
-                    wordBreak: 'break-word'
+                    wordBreak: 'break-word',
+                    maxWidth: '200px',
+                    lineHeight: '1.2'
                   }}
                   onClick={() => openEditModal('name')}
                   >
@@ -2364,7 +2366,9 @@ export default function ProfileModal({
                     textAlign: 'center',
                     whiteSpace: 'normal',
                     overflowWrap: 'anywhere',
-                    wordBreak: 'break-word'
+                    wordBreak: 'break-word',
+                    maxWidth: '200px',
+                    lineHeight: '1.2'
                   }}
                   onClick={() => openEditModal('name')}
                   >
@@ -2415,7 +2419,9 @@ export default function ProfileModal({
                     textAlign: 'center',
                     whiteSpace: 'normal',
                     overflowWrap: 'anywhere',
-                    wordBreak: 'break-word'
+                    wordBreak: 'break-word',
+                    maxWidth: '200px',
+                    lineHeight: '1.2'
                   }}>
                     <bdi>{localUser?.username || 'اسم المستخدم'}</bdi>
                   </h3>
