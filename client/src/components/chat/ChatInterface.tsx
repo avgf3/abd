@@ -718,7 +718,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
     >
       {/* Modern Header */}
       <header
-        className={`sticky top-0 z-40 modern-nav min-h-[2.5rem] py-1.5 px-4 sm:py-1.5 sm:px-8 flex ${isMobile ? 'flex-col gap-2' : 'flex-row flex-nowrap'} justify-between items-center`}
+        className={`fixed top-0 left-0 right-0 z-50 modern-nav app-header safe-area-top min-h-[2.5rem] py-1.5 px-4 sm:py-1.5 sm:px-8 flex ${isMobile ? 'flex-col gap-2' : 'flex-row flex-nowrap'} justify-between items-center`}
       >
         <div
           className={`flex gap-2 ${isMobile ? 'flex-wrap justify-center w-full' : 'flex-1 overflow-x-auto pr-2'} ${chat.currentUser?.userType === 'owner' ? '' : 'max-w-[calc(100%-180px)]'}`}
@@ -902,7 +902,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
       {/* Main Content - تحسين التخطيط لمنع التداخل */}
       <main
         className={`flex flex-1 overflow-hidden min-h-0 ${isMobile ? 'flex-col' : 'flex-col sm:flex-row'}`}
-        style={{ paddingBottom: isMobile ? 'calc(3.5rem + env(safe-area-inset-bottom))' : '3.5rem' }}
+        style={{ paddingTop: '3.25rem', paddingBottom: isMobile ? 'calc(3.5rem + env(safe-area-inset-bottom))' : '3.5rem' }}
       >
         {/* الشريط الجانبي - على الجوال يعرض بملء الشاشة عند اختيار التبويب */}
         {activeView !== 'hidden' && (
@@ -1027,8 +1027,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
 
       {/* Modern Footer Navigation */}
       <footer
-        className={`fixed bottom-0 left-0 right-0 z-10 modern-nav h-14 px-2 sm:px-4 flex justify-start items-center ${isMobile ? 'mobile-footer' : ''}`}
-        style={{ paddingBottom: isMobile ? 'env(safe-area-inset-bottom)' : '0' }}
+        className={`fixed bottom-0 left-0 right-0 z-[60] modern-nav app-footer safe-area-bottom h-14 px-2 sm:px-4 flex justify-start items-center ${isMobile ? 'mobile-footer' : ''}`}
       >
         <div className="flex gap-1 sm:gap-2 overflow-x-auto max-w-full">
           {/* الحوائط */}
