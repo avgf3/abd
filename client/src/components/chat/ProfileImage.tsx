@@ -25,9 +25,8 @@ export default function ProfileImage({
     large: 'w-20 h-20',
   };
 
-  // تحديد لون الإطار حسب الجنس - كما كان سابقاً (ring + border color)
-  const borderColor =
-    user.gender === 'female' ? 'border-pink-400 ring-pink-200' : 'border-blue-400 ring-blue-200';
+  // تحديد لون الإطار - لون أخضر موحد مثل البوتات (#00FF00)
+  const borderColor = 'border-green-400 ring-green-200';
   
 
 
