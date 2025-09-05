@@ -1183,6 +1183,13 @@ body.ltr {
   touch-action: auto;
 }
 
+/* Mobile touch scroll helper - ensures native touch scrolling in scrollables */
+.touch-scroll {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: auto !important;
+  touch-action: pan-y !important;
+}
+
 /* Chat layout improvements - تحسينات خاصة بتخطيط الدردشة */
 .chat-main-container {
   height: calc(100vh - 160px);
