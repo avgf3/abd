@@ -1197,25 +1197,25 @@ body.ltr {
 }
 
 .chat-input-fixed {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  z-index: 20;
-  background: white;
-  border-top: 1px solid #e5e7eb;
-  box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.1);
+  position: static;
+  bottom: auto;
+  left: auto;
+  right: auto;
+  z-index: auto;
+  background: transparent;
+  border-top: none;
+  box-shadow: none;
 }
 
 .chat-footer-tabs {
-  position: fixed;
-  bottom: 80px;
-  left: 0;
-  right: 0;
-  z-index: 10;
-  background: var(--secondary);
-  border-top: 1px solid var(--accent);
-  box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.3);
+  position: static;
+  bottom: auto;
+  left: auto;
+  right: auto;
+  z-index: auto;
+  background: transparent;
+  border-top: none;
+  box-shadow: none;
 }
 
 /* تمت إزالة تحسينات الدردشة للجوال */
@@ -1719,10 +1719,14 @@ li > * > div.effect-crystal {
 
 /* Modern Navigation */
 .modern-nav {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%);
-  backdrop-filter: blur(30px) saturate(200%);
+  background-color: var(--background-solid, rgba(15, 23, 42, 0.98));
+  background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.03) 100%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  backdrop-filter: blur(16px) saturate(180%);
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.15);
+  will-change: transform;
+  backface-visibility: hidden;
 }
 
 /* Modern Tab */
@@ -2023,4 +2027,27 @@ li::before {
 #root li[class*="relative"]::before {
   content: none !important;
   display: none !important;
+}
+
+/* App bars with safe area handling */
+.app-header {
+  background-color: var(--background-solid, rgba(15, 23, 42, 0.98));
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  backdrop-filter: blur(16px) saturate(180%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.app-footer {
+  background-color: var(--background-solid, rgba(15, 23, 42, 0.98));
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  backdrop-filter: blur(16px) saturate(180%);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.safe-area-top {
+  padding-top: env(safe-area-inset-top);
+}
+
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
 }
