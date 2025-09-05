@@ -4290,7 +4290,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         createdBy: req.user?.id,
       }).returning();
 
-      // إضافة البوت لقائمة المتصلين
+      // إضافة البوت لقائمة المتصلين - تضمين الحقول التعريفية كالدولة والجنس وغيرها
       const botUser = {
         id: newBot.id,
         username: newBot.username,
@@ -4302,6 +4302,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         profileEffect: newBot.profileEffect,
         points: newBot.points,
         level: newBot.level,
+        // الحقول الإضافية لتظهر في قائمة المستخدمين
+        gender: newBot.gender,
+        country: newBot.country,
+        relation: newBot.relation,
+        bio: newBot.bio,
+        age: (newBot as any)?.settings?.age,
         isOnline: true,
         currentRoom: newBot.currentRoom,
       };
@@ -4309,12 +4315,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // تحديث cache المستخدمين المتصلين
       updateConnectedUserCache(newBot.id, botUser);
 
-      // إرسال إشعار بدخول البوت
+      // إرسال إشعار بدخول البوت (متوافق مع الواجهة)
       getIO().to(`room_${newBot.currentRoom}`).emit('message', {
-        type: 'userJoined',
-        user: botUser,
-        room: newBot.currentRoom,
-        timestamp: new Date().toISOString(),
+        type: 'userJoinedRoom',
+        userId: newBot.id,
+        username: newBot.username,
+        roomId: newBot.currentRoom,
       });
 
       res.status(201).json(newBot);
@@ -4359,7 +4365,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: 'البوت غير موجود' });
       }
 
-      // تحديث cache المستخدمين المتصلين
+      // تحديث cache المستخدمين المتصلين - تضمين الحقول التعريفية للبوت
       const botUser = {
         id: updatedBot.id,
         username: updatedBot.username,
@@ -4371,6 +4377,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         profileEffect: updatedBot.profileEffect,
         points: updatedBot.points,
         level: updatedBot.level,
+        gender: updatedBot.gender,
+        country: updatedBot.country,
+        relation: updatedBot.relation,
+        bio: updatedBot.bio,
+        age: (updatedBot as any)?.settings?.age,
         isOnline: updatedBot.isActive,
         currentRoom: updatedBot.currentRoom,
       };
@@ -4415,16 +4426,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .where(eq(bots.id, botId))
         .returning();
 
-      // إشعار بمغادرة الغرفة القديمة
+      // إشعار بمغادرة الغرفة القديمة (متوافق مع الواجهة)
       getIO().to(`room_${oldRoom}`).emit('message', {
-        type: 'userLeft',
+        type: 'userLeftRoom',
         userId: botId,
         username: updatedBot.username,
-        room: oldRoom,
-        timestamp: new Date().toISOString(),
+        roomId: oldRoom,
       });
 
-      // إشعار بدخول الغرفة الجديدة
+      // إشعار بدخول الغرفة الجديدة - تضمين الحقول التعريفية للبوت
       const botUser = {
         id: updatedBot.id,
         username: updatedBot.username,
@@ -4436,15 +4446,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         profileEffect: updatedBot.profileEffect,
         points: updatedBot.points,
         level: updatedBot.level,
+        gender: updatedBot.gender,
+        country: updatedBot.country,
+        relation: updatedBot.relation,
+        bio: updatedBot.bio,
+        age: (updatedBot as any)?.settings?.age,
         isOnline: true,
         currentRoom: roomId,
       };
 
       getIO().to(`room_${roomId}`).emit('message', {
-        type: 'userJoined',
-        user: botUser,
-        room: roomId,
-        timestamp: new Date().toISOString(),
+        type: 'userJoinedRoom',
+        userId: updatedBot.id,
+        username: updatedBot.username,
+        roomId: roomId,
       });
 
       res.json({ message: 'تم نقل البوت بنجاح', bot: updatedBot });
@@ -4496,30 +4511,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
           profileEffect: updatedBot.profileEffect,
           points: updatedBot.points,
           level: updatedBot.level,
+          gender: updatedBot.gender,
+          country: updatedBot.country,
+          relation: updatedBot.relation,
+          bio: updatedBot.bio,
+          age: (updatedBot as any)?.settings?.age,
           isOnline: true,
           currentRoom: updatedBot.currentRoom,
         };
 
         updateConnectedUserCache(updatedBot.id, botUser);
 
-        // إشعار بدخول البوت
+        // إشعار بدخول البوت (متوافق مع الواجهة)
         getIO().to(`room_${updatedBot.currentRoom}`).emit('message', {
-          type: 'userJoined',
-          user: botUser,
-          room: updatedBot.currentRoom,
-          timestamp: new Date().toISOString(),
+          type: 'userJoinedRoom',
+          userId: updatedBot.id,
+          username: updatedBot.username,
+          roomId: updatedBot.currentRoom,
         });
       } else {
         // إزالة البوت من قائمة المتصلين
         updateConnectedUserCache(updatedBot.id, null);
 
-        // إشعار بخروج البوت
+        // إشعار بخروج البوت (متوافق مع الواجهة)
         getIO().to(`room_${updatedBot.currentRoom}`).emit('message', {
-          type: 'userLeft',
+          type: 'userLeftRoom',
           userId: botId,
           username: updatedBot.username,
-          room: updatedBot.currentRoom,
-          timestamp: new Date().toISOString(),
+          roomId: updatedBot.currentRoom,
         });
       }
 
@@ -4553,13 +4572,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // إزالة البوت من قائمة المتصلين
       updateConnectedUserCache(botId, null);
 
-      // إشعار بخروج البوت
+      // إشعار بخروج البوت (متوافق مع الواجهة)
       getIO().to(`room_${botToDelete.currentRoom}`).emit('message', {
-        type: 'userLeft',
+        type: 'userLeftRoom',
         userId: botId,
         username: botToDelete.username,
-        room: botToDelete.currentRoom,
-        timestamp: new Date().toISOString(),
+        roomId: botToDelete.currentRoom,
       });
 
       res.json({ message: 'تم حذف البوت بنجاح' });
@@ -4660,6 +4678,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
             profileEffect: updatedBot.profileEffect,
             points: updatedBot.points,
             level: updatedBot.level,
+            gender: updatedBot.gender,
+            country: updatedBot.country,
+            relation: updatedBot.relation,
+            bio: updatedBot.bio,
+            age: (updatedBot as any)?.settings?.age,
             isOnline: updatedBot.isActive,
             currentRoom: updatedBot.currentRoom,
           };
@@ -4737,7 +4760,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           createdBots.push(newBot);
 
-          // إضافة البوت لقائمة المتصلين
+          // إضافة البوت لقائمة المتصلين - تضمين الحقول التعريفية للبوت
           const botUser = {
             id: newBot.id,
             username: newBot.username,
@@ -4749,18 +4772,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
             profileEffect: newBot.profileEffect,
             points: newBot.points,
             level: newBot.level,
+            gender: newBot.gender,
+            country: newBot.country,
+            relation: newBot.relation,
+            bio: newBot.bio,
+            age: (newBot as any)?.settings?.age,
             isOnline: true,
             currentRoom: newBot.currentRoom,
           };
 
           updateConnectedUserCache(newBot.id, botUser);
 
-          // إرسال إشعار بدخول البوت
+          // إرسال إشعار بدخول البوت (متوافق مع الواجهة)
           getIO().to(`room_${newBot.currentRoom}`).emit('message', {
-            type: 'userJoined',
-            user: botUser,
-            room: newBot.currentRoom,
-            timestamp: new Date().toISOString(),
+            type: 'userJoinedRoom',
+            userId: newBot.id,
+            username: newBot.username,
+            roomId: newBot.currentRoom,
           });
         } catch (error) {
           console.error(`خطأ في إنشاء البوت ${botData.name}:`, error);
