@@ -438,20 +438,22 @@ export default function FriendsTabPanel({
                               {renderCountryFlag(friend)}
                             </div>
                           </div>
-                          {/* حالة الاتصال */}
-                          <div className="text-xs text-gray-500 mt-1">
-                            {friend.isOnline ? (
-                              <span className="flex items-center gap-1">
-                                <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                                {friend.status === 'away' ? 'بعيد' : 'متصل الآن'}
-                              </span>
-                            ) : (
-                              <span className="flex items-center gap-1">
-                                <span className="w-2 h-2 bg-gray-400 rounded-full"></span>
-                                غير متصل
-                              </span>
-                            )}
-                          </div>
+                          {/* حالة الاتصال - لا تُعرض للبوت */}
+                          {friend.userType !== 'bot' && (
+                            <div className="text-xs text-gray-500 mt-1">
+                              {friend.isOnline ? (
+                                <span className="flex items-center gap-1">
+                                  <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                                  {friend.status === 'away' ? 'بعيد' : 'متصل الآن'}
+                                </span>
+                              ) : (
+                                <span className="flex items-center gap-1">
+                                  <span className="w-2 h-2 bg-gray-400 rounded-full"></span>
+                                  غير متصل
+                                </span>
+                              )}
+                            </div>
+                          )}
                           {friend.lastMessage && (
                             <div className="text-xs text-gray-500 truncate">
                               {friend.lastMessage}

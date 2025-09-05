@@ -2500,9 +2500,11 @@ export default function ProfileModal({
                   💰 إرسال النقاط: <span>اضغط للإرسال</span>
                 </p>
               )}
-              <p>
-                🧾 الحالة: <span>{localUser?.isOnline ? 'متصل' : 'غير متصل'}</span>
-              </p>
+              {localUser?.userType !== 'bot' && (
+                <p>
+                  🧾 الحالة: <span>{localUser?.isOnline ? 'متصل' : 'غير متصل'}</span>
+                </p>
+              )}
             </div>
 
             {localUser?.id === currentUser?.id && (

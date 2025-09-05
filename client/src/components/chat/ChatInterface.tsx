@@ -1615,7 +1615,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                         </div>
                       )}
                       <span className="font-medium">
-                        {u ? u.username : `مستخدم غير متصل #${id}`}
+                        {u ? u.username : `مستخدم #${id}`}
                       </span>
                     </div>
                     <Button size="sm" variant="outline" onClick={() => chat.unignoreUser?.(id)}>
