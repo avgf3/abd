@@ -530,7 +530,7 @@ export default function UnifiedSidebar({
           </div>
 
           {/* Users List - Virtualized */}
-          <div className={`bg-background users-list-reset`} style={{ maxHeight: isMobile ? 'calc(100vh - 120px)' : 'calc(100vh - 200px)' }}>
+          <div className={"bg-background users-list-reset flex-1 min-h-0 overflow-hidden flex flex-col"}>
             <div className="bg-primary text-primary-foreground mb-1 mx-0 mt-0 rounded-none">
               <div className="flex items-center justify-between px-3 py-1.5">
                 <div className="flex items-center gap-2 font-bold text-sm">
@@ -559,9 +559,9 @@ export default function UnifiedSidebar({
                 )}
               </div>
             ) : (
-              <div className="px-0" role="list">
+              <div className="px-0 flex-1 min-h-0" role="list">
                 <Virtuoso
-                  style={{ height: isMobile ? 'calc(100vh - 180px)' : 'calc(100vh - 260px)' }}
+                  style={{ height: '100%' }}
                   totalCount={filteredUsers.length}
                   itemContent={(index) => {
                     const user = filteredUsers[index];
