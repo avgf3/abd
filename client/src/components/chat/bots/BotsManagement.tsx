@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Bot, Plus, Trash2, Edit, ToggleLeft, ToggleRight, ArrowRight, RefreshCw, Upload } from 'lucide-react';
+import { Bot, Plus, Trash2, Edit, ArrowRight, RefreshCw, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -268,27 +268,7 @@ export default function BotsManagement({ currentUser }: BotsManagementProps) {
     }
   };
 
-  // تبديل حالة البوت (تفعيل/تعطيل)
-  const handleToggleBot = async (botId: number) => {
-    try {
-      const response = await apiRequest<{ message: string; bot: Bot }>(`/api/bots/${botId}/toggle`, {
-        method: 'PATCH',
-      });
-
-      setBots(bots.map(bot => bot.id === botId ? response.bot : bot));
-
-      toast({
-        title: 'نجح',
-        description: response.message,
-      });
-    } catch (error) {
-      toast({
-        title: 'خطأ',
-        description: 'فشل في تبديل حالة البوت',
-        variant: 'destructive',
-      });
-    }
-  };
+  // تمت إزالة تبديل حالة البوت حسب طلب التبسيط
 
   // نقل بوت إلى غرفة أخرى
   const handleMoveBot = async (botId: number) => {
@@ -347,27 +327,7 @@ export default function BotsManagement({ currentUser }: BotsManagementProps) {
     }
   };
 
-  // إنشاء البوتات الافتراضية
-  const handleCreateDefaultBots = async () => {
-    try {
-      const response = await apiRequest<{ message: string; bots: Bot[] }>('/api/bots/create-defaults', {
-        method: 'POST',
-      });
-
-      setBots([...bots, ...response.bots]);
-
-      toast({
-        title: 'نجح',
-        description: response.message,
-      });
-    } catch (error) {
-      toast({
-        title: 'خطأ',
-        description: 'فشل في إنشاء البوتات الافتراضية',
-        variant: 'destructive',
-      });
-    }
-  };
+  // تمت إزالة إنشاء البوتات الافتراضية حسب طلب التبسيط
 
   const getBotTypeColor = (type: string) => {
     switch (type) {
@@ -425,16 +385,7 @@ export default function BotsManagement({ currentUser }: BotsManagementProps) {
               <Plus className="w-4 h-4 ml-2" />
               إضافة بوت
             </Button>
-            {bots.length === 0 && (
-              <Button
-                onClick={handleCreateDefaultBots}
-                variant="outline"
-                className="border-green-500 text-green-700 hover:bg-green-50"
-              >
-                <Bot className="w-4 h-4 ml-2" />
-                إنشاء 10 بوتات افتراضية
-              </Button>
-            )}
+            {/* تمت إزالة زر إنشاء البوتات الافتراضية */}
           </div>
         </div>
       </div>
@@ -446,10 +397,6 @@ export default function BotsManagement({ currentUser }: BotsManagementProps) {
             <div className="text-center py-12">
               <Bot className="w-16 h-16 mx-auto text-gray-400 mb-4" />
               <p className="text-gray-600">لا توجد بوتات حالياً</p>
-              <Button onClick={handleCreateDefaultBots} variant="outline" className="mt-4">
-                <Bot className="w-4 h-4 ml-2" />
-                إنشاء البوتات الافتراضية
-              </Button>
             </div>
           ) : (
             <Table className="min-w-full">
@@ -478,11 +425,7 @@ export default function BotsManagement({ currentUser }: BotsManagementProps) {
                           <div className="flex items-center gap-2">
                             <span className="font-medium" style={{ color: bot.usernameColor }}>{bot.username}</span>
                             <Badge className={getBotTypeColor(bot.botType)}>{getBotTypeName(bot.botType)}</Badge>
-                            {bot.isActive ? (
-                              <Badge className="bg-green-100 text-green-800">نشط</Badge>
-                            ) : (
-                              <Badge className="bg-gray-100 text-gray-800">معطل</Badge>
-                            )}
+                            {/* تمت إزالة شارة النشاط */}
                           </div>
                           <span className="text-xs text-gray-500">{bot.status}</span>
                         </div>
@@ -513,19 +456,7 @@ export default function BotsManagement({ currentUser }: BotsManagementProps) {
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-wrap gap-2 items-center">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleToggleBot(bot.id)}
-                          className="px-2"
-                          title={bot.isActive ? 'تعطيل' : 'تفعيل'}
-                        >
-                          {bot.isActive ? (
-                            <ToggleRight className="w-4 h-4 text-green-600" />
-                          ) : (
-                            <ToggleLeft className="w-4 h-4 text-gray-600" />
-                          )}
-                        </Button>
+                        {/* تمت إزالة زر التفعيل/التعطيل */}
                         <Button
                           size="sm"
                           variant="outline"
