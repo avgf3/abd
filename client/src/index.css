@@ -2057,7 +2057,7 @@ li::before {
 
 /* Stable app viewport sizing and bars (mobile-safe) */
 :root {
-  --app-header-height: 3.25rem; /* ~52px, matches header padding + min-height */
+  --app-header-height: 3.5rem;  /* 56px, matches h-14 */
   --app-footer-height: 3.5rem;  /* 56px, matches h-14 */
   --app-body-height: calc(100dvh - var(--app-header-height) - var(--app-footer-height));
 }

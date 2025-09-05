@@ -384,11 +384,11 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
 
         <div className="flex-1 flex flex-col sm:flex-row overflow-hidden min-h-0">
           {/* منطقة الحائط - أكثر من الثلث قليلاً */}
-          <div className="w-full sm:w-2/5 border-l border-border/50 p-4 sm:p-6 flex flex-col bg-gradient-to-b from-muted/20 to-transparent min-h-0">
+          <div className="w-full sm:w-2/5 border-l border-border/50 p-4 sm:p-6 flex flex-col bg-gradient-to-b from-muted/20 to-transparent min-h-0 max-h-full overflow-hidden">
             <Tabs
               value={activeTab}
               onValueChange={(value) => setActiveTab(value as 'public' | 'friends')}
-              className="flex-1 flex flex-col min-h-0"
+              className="flex-1 flex flex-col min-h-0 overflow-hidden"
             >
               <TabsList className="grid w-full grid-cols-2 mb-6 bg-muted/50 backdrop-blur-sm rounded-xl p-1">
                 <TabsTrigger
@@ -511,11 +511,11 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
                 </Card>
               )}
 
-              <TabsContent value={activeTab} className="flex-1">
+              <TabsContent value={activeTab} className="flex-1 min-h-0">
                 <div
                   ref={panelScrollRef}
                   onScroll={handleWallScroll}
-                  className="relative overflow-y-auto space-y-4 pr-2 pb-24 cursor-grab"
+                  className="h-full overflow-y-auto space-y-4 pr-2 pb-24 cursor-grab"
                 >
                   <WallPostList
                     posts={posts}
