@@ -1435,7 +1435,7 @@ export default function ProfileModal({
 
         .profile-card {
           width: 100%;
-          max-width: 440px;
+          max-width: 396px; /* تصغير من 440px إلى 396px (90%) */
           border-radius: 16px;
           overflow: hidden;
           background: var(--card-bg);
@@ -1443,10 +1443,12 @@ export default function ProfileModal({
           position: relative;
           transition: transform 0.3s ease, box-shadow 0.3s ease;
           height: fit-content;
+          transform: scale(0.9); /* تطبيق زوم 90% على البروفيل فقط */
+          transform-origin: center;
         }
 
         .profile-card:hover {
-          transform: translateY(-5px);
+          transform: scale(0.9) translateY(-5px); /* الحفاظ على الزوم مع التحريك */
           box-shadow: 0 12px 40px rgba(0,0,0,0.9);
         }
 
@@ -1466,7 +1468,7 @@ export default function ProfileModal({
           border-radius: 8px;
           padding: 8px 12px;
           color: #fff;
-          font-size: 12px;
+          font-size: 0.75rem;
           cursor: pointer;
           z-index: 3;
           transition: background 0.3s ease;
@@ -1497,7 +1499,7 @@ export default function ProfileModal({
           padding: 3px 6px; /* تصغير المساحة الداخلية للأزرار أكثر ليظهر زر البلاغ */
           border-radius: 6px;
           font-weight: 600;
-          font-size: 10px; /* تصغير النص ليبقى كل الأزرار ضمن نفس المنطقة */
+          font-size: 0.625rem; /* تصغير النص ليبقى كل الأزرار ضمن نفس المنطقة */
           cursor: pointer;
           color: #fff;
           box-shadow: 0 4px 12px rgba(0,0,0,0.3);
@@ -1553,7 +1555,7 @@ export default function ProfileModal({
           height: 30px;
           text-align: center;
           line-height: 30px;
-          font-size: 14px;
+          font-size: 0.875rem;
           color: #fff;
           cursor: pointer;
           z-index: 3;
@@ -1582,7 +1584,7 @@ export default function ProfileModal({
 
         .profile-info h3 {
           margin: 0 0 6px 0;
-          font-size: 20px;
+          font-size: 1.25rem;
           font-weight: bold;
           color: var(--accent-color);
           text-shadow: 0 2px 4px rgba(0,0,0,0.5);
@@ -1597,7 +1599,7 @@ export default function ProfileModal({
 
         .profile-info small {
           display: block;
-          font-size: 13px;
+          font-size: 0.8125rem;
           color: #ddd;
           opacity: 0.9;
           cursor: pointer;
@@ -1626,7 +1628,7 @@ export default function ProfileModal({
           border-radius: 8px;
           font-weight: bold;
           cursor: pointer;
-          font-size: 12px;
+          font-size: 0.75rem;
           transition: all 0.3s ease;
           box-shadow: 0 4px 12px rgba(0,0,0,0.3);
           border: 1px solid rgba(255,255,255,0.1);
@@ -1646,7 +1648,7 @@ export default function ProfileModal({
 
         .profile-details {
           padding: 12px;
-          font-size: 13px;
+          font-size: 0.8125rem;
           background: rgba(255,255,255,0.08);
           border-radius: 12px;
           margin: 12px 0;
@@ -1697,7 +1699,7 @@ export default function ProfileModal({
 
         .additional-details p {
           margin: 6px 0;
-          font-size: 12px;
+          font-size: 0.75rem;
           color: #eee;
           display: flex;
           justify-content: space-between;
@@ -1748,7 +1750,7 @@ export default function ProfileModal({
           margin: 0 0 16px 0;
           color: var(--accent-color);
           text-align: center;
-          font-size: 18px;
+          font-size: 1.125rem;
         }
         
         .edit-field {
@@ -1760,7 +1762,7 @@ export default function ProfileModal({
           margin-bottom: 6px;
           color: #fff;
           font-weight: bold;
-          font-size: 14px;
+          font-size: 0.875rem;
         }
         
         .edit-field input, .edit-field select, .edit-field textarea {
@@ -1770,7 +1772,7 @@ export default function ProfileModal({
           border-radius: 10px;
           background: linear-gradient(135deg, rgba(255,255,255,0.15), rgba(255,255,255,0.05));
           color: #fff;
-          font-size: 14px;
+          font-size: 0.875rem;
           font-weight: 500;
           backdrop-filter: blur(10px);
           transition: all 0.3s ease;
@@ -1838,7 +1840,7 @@ export default function ProfileModal({
 
         .theme-name {
           flex: 1;
-          font-size: 14px;
+          font-size: 0.875rem;
           font-weight: 500;
         }
 
@@ -1992,7 +1994,7 @@ export default function ProfileModal({
           position: absolute;
           top: 10px;
           right: 10px;
-          font-size: 20px;
+          font-size: 1.25rem;
           animation: starFloat 4s ease-in-out infinite;
           z-index: 10;
           pointer-events: none;
@@ -2003,7 +2005,7 @@ export default function ProfileModal({
           position: absolute;
           bottom: 10px;
           left: 10px;
-          font-size: 16px;
+          font-size: 1rem;
           animation: starFloat 3s ease-in-out infinite reverse;
           z-index: 10;
           pointer-events: none;
@@ -2042,7 +2044,7 @@ export default function ProfileModal({
           position: absolute;
           top: -20px;
           left: 20%;
-          font-size: 16px;
+          font-size: 1rem;
           animation: snowfall 5s linear infinite;
           z-index: 10;
           pointer-events: none;
@@ -2053,7 +2055,7 @@ export default function ProfileModal({
           position: absolute;
           top: -20px;
           right: 30%;
-          font-size: 12px;
+          font-size: 0.75rem;
           animation: snowfall 6s linear infinite 2s;
           z-index: 10;
           pointer-events: none;
@@ -2082,7 +2084,7 @@ export default function ProfileModal({
           position: absolute;
           bottom: 10px;
           right: 10px;
-          font-size: 18px;
+          font-size: 1.125rem;
           animation: smokeRise 4s ease-in-out infinite;
           z-index: 10;
           pointer-events: none;
@@ -2103,7 +2105,7 @@ export default function ProfileModal({
           position: absolute;
           top: 15px;
           left: 15px;
-          font-size: 16px;
+          font-size: 1rem;
           animation: butterflyFly 6s ease-in-out infinite;
           z-index: 10;
           pointer-events: none;
@@ -2130,7 +2132,7 @@ export default function ProfileModal({
           font-weight: bold;
           cursor: pointer;
           transition: all 0.3s;
-          font-size: 13px;
+          font-size: 0.8125rem;
         }
 
         .save-btn {
@@ -2167,7 +2169,7 @@ export default function ProfileModal({
             width: 25px;
             height: 25px;
             line-height: 25px;
-            font-size: 12px;
+            font-size: 0.75rem;
           }
           
           .profile-body {
@@ -2175,7 +2177,7 @@ export default function ProfileModal({
           }
           
           .profile-info h3 {
-            font-size: 18px;
+            font-size: 1.125rem;
           }
           
           /* أنماط الأزرار للأجهزة المحمولة */
@@ -2188,7 +2190,7 @@ export default function ProfileModal({
           
           .profile-actions button {
             padding: 4px 6px;
-            font-size: 10px;
+            font-size: 0.625rem;
           }
         }
       `}</style>
