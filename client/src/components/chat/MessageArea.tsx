@@ -35,6 +35,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 
 interface MessageAreaProps {
@@ -608,12 +609,15 @@ export default function MessageArea({
                         )}
                       </div>
 
-                      {/* Right side: time and report flag */}
-                      <span className="text-xs text-gray-500 whitespace-nowrap ml-2">
-                        {formatTime(message.timestamp)}
-                      </span>
+                      {/* Right side (Desktop): time and actions inline */}
+                      {!isMobile && (
+                        <span className="text-xs text-gray-500 whitespace-nowrap ml-2">
+                          {formatTime(message.timestamp)}
+                        </span>
+                      )}
 
-                      {onReportMessage &&
+                      {!isMobile &&
+                        onReportMessage &&
                         message.sender &&
                         currentUser &&
                         message.sender.id !== currentUser.id && (
@@ -628,7 +632,8 @@ export default function MessageArea({
                           </button>
                         )}
 
-                      {currentUser &&
+                      {!isMobile &&
+                        currentUser &&
                         message.sender &&
                         (() => {
                           const isOwner = currentUser.userType === 'owner';
@@ -659,7 +664,7 @@ export default function MessageArea({
                             </button>
                           );
                         })()}
-                      {/* Reactions (like/dislike/heart) */}
+                      {/* Reactions (Desktop): inline */}
                       {currentUser && !message.isPrivate && !isMobile && (
                         <div className="flex items-center gap-1 ml-2">
                           {(['like', 'dislike', 'heart'] as const).map((r) => {
@@ -703,43 +708,94 @@ export default function MessageArea({
                         </div>
                       )}
 
-                      {/* Mobile: reactions in a three-dots menu */}
-                      {currentUser && !message.isPrivate && isMobile && (
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <button
-                              className="h-6 w-6 p-0 text-gray-600 hover:text-gray-900"
-                              title="المزيد"
-                              aria-label="المزيد"
-                            >
-                              <MoreVertical className="w-4 h-4" />
-                            </button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="start" sideOffset={6} className="min-w-[160px]">
-                            {(['like', 'dislike', 'heart'] as const).map((r) => {
-                              const isMine = message.myReaction === r;
-                              const count = message.reactions?.[r] ?? 0;
-                              const label = r === 'like' ? '👍 إعجاب' : r === 'dislike' ? '👎 عدم إعجاب' : '❤️ قلب';
-                              const toggle = async () => {
-                                try {
-                                  if (isMine) {
-                                    await apiRequest(`/api/messages/${message.id}/reactions`, { method: 'DELETE' });
-                                  } else {
-                                    await apiRequest(`/api/messages/${message.id}/reactions`, { method: 'POST', body: { type: r } });
-                                  }
-                                } catch (e) {
-                                  console.error('reaction error', e);
-                                }
-                              };
-                              return (
-                                <DropdownMenuItem key={r} onClick={toggle} className={`flex items-center justify-between gap-2 ${isMine ? 'text-primary' : ''}`}>
-                                  <span>{label}</span>
-                                  <span className="text-xs text-gray-500">{count}</span>
-                                </DropdownMenuItem>
-                              );
-                            })}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                      {/* Mobile: move time and actions to a bottom row for better readability */}
+                      {isMobile && (
+                        <div className="w-full flex items-center justify-between mt-1">
+                          <span className="text-xs text-gray-500 whitespace-nowrap">
+                            {formatTime(message.timestamp)}
+                          </span>
+                          <div className="flex items-center gap-2">
+                            {currentUser && !message.isPrivate && (
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <button
+                                    className="h-6 w-6 p-0 text-gray-600 hover:text-gray-900"
+                                    title="المزيد"
+                                    aria-label="المزيد"
+                                  >
+                                    <MoreVertical className="w-4 h-4" />
+                                  </button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="start" sideOffset={6} className="min-w-[180px]">
+                                  {(['like', 'dislike', 'heart'] as const).map((r) => {
+                                    const isMine = message.myReaction === r;
+                                    const count = message.reactions?.[r] ?? 0;
+                                    const label = r === 'like' ? '👍 إعجاب' : r === 'dislike' ? '👎 عدم إعجاب' : '❤️ قلب';
+                                    const toggle = async () => {
+                                      try {
+                                        if (isMine) {
+                                          await apiRequest(`/api/messages/${message.id}/reactions`, { method: 'DELETE' });
+                                        } else {
+                                          await apiRequest(`/api/messages/${message.id}/reactions`, { method: 'POST', body: { type: r } });
+                                        }
+                                      } catch (e) {
+                                        console.error('reaction error', e);
+                                      }
+                                    };
+                                    return (
+                                      <DropdownMenuItem key={r} onClick={toggle} className={`flex items-center justify-between gap-2 ${isMine ? 'text-primary' : ''}`}>
+                                        <span>{label}</span>
+                                        <span className="text-xs text-gray-500">{count}</span>
+                                      </DropdownMenuItem>
+                                    );
+                                  })}
+                                  {onReportMessage &&
+                                    message.sender &&
+                                    currentUser &&
+                                    message.sender.id !== currentUser.id && (
+                                      <>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem
+                                          onClick={() =>
+                                            onReportMessage(message.sender!, message.content, message.id)
+                                          }
+                                        >
+                                          🚩 تبليغ
+                                        </DropdownMenuItem>
+                                      </>
+                                    )}
+                                  {currentUser &&
+                                    message.sender &&
+                                    (() => {
+                                      const isOwner = currentUser.userType === 'owner';
+                                      const isAdmin = currentUser.userType === 'admin';
+                                      const isSender = currentUser.id === message.sender.id;
+                                      const canDelete = isSender || isOwner || isAdmin;
+                                      if (!canDelete) return null;
+                                      const handleDelete = async () => {
+                                        try {
+                                          await apiRequest(`/api/messages/${message.id}`, {
+                                            method: 'DELETE',
+                                            body: {
+                                              userId: currentUser.id,
+                                              roomId: message.roomId || 'general',
+                                            },
+                                          });
+                                        } catch (e) {
+                                          console.error('خطأ في حذف الرسالة', e);
+                                        }
+                                      };
+                                      return (
+                                        <DropdownMenuItem onClick={handleDelete} className="text-red-600 focus:text-red-700">
+                                          🗑️ حذف الرسالة
+                                        </DropdownMenuItem>
+                                      );
+                                    })()}
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            )}
+                          </div>
+                        </div>
                       )}
                     </div>
                   </>
