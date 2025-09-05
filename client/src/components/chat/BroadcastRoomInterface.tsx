@@ -809,7 +809,7 @@ export default function BroadcastRoomInterface({
   };
 
   return (
-    <div className="flex-1 flex min-h-0" style={{ maxHeight: 'calc(100vh - 96px)' }}>
+    <div className="flex-1 flex min-h-0" style={{ maxHeight: 'var(--app-body-height)' }}>
       <div className="flex flex-col flex-1 min-h-0">
         {/* شريط علوي بسيط مماثل لباقي الغرف */}
         <div className="modern-nav px-3 py-2 sm:px-4 border-b">

@@ -203,6 +203,7 @@ export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
 
       <div
         className={`min-h-[calc(100dvh-60px)] flex flex-col justify-center items-center welcome-gradient relative overflow-hidden ${isMobile ? 'px-4' : ''}`}
+        style={{ minHeight: 'calc(100dvh - 60px)' }}
       >
         {/* Modern Background Effects */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
