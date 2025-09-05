@@ -186,6 +186,15 @@ export default function UnifiedSidebar({
         border: 'none',
       };
 
+      // تجاهل القيم النصية غير المرغوبة مثل "غير" أو قيم الجنس
+      const rawCountry = (user.country || '').trim();
+      const firstToken = rawCountry.split(' ')[0];
+      const lowered = firstToken.toLowerCase();
+      const invalidTokens = new Set<string>(['غير', 'غير-محدد', 'غير_محدد', 'ذكر', 'أنثى', 'انثى', 'male', 'female']);
+      if (firstToken && (invalidTokens.has(firstToken) || invalidTokens.has(lowered))) {
+        return null;
+      }
+
       if (emoji) {
         return (
           <span style={boxStyle} title={user.country}>
