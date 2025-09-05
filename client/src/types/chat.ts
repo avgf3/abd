@@ -3,7 +3,7 @@ export interface ChatUser {
   username: string;
   displayName?: string;
   profileImage?: string;
-  role: 'guest' | 'member' | 'owner' | 'admin' | 'moderator' | 'system';
+  role: 'guest' | 'member' | 'owner' | 'admin' | 'moderator' | 'system' | 'bot';
   isOnline: boolean;
   roomId?: string;
 
@@ -33,7 +33,7 @@ export interface ChatUser {
   points?: number;
   level?: number; // جعل المستوى اختيارياً للتوافق بين الأنواع
   roomColor?: string;
-  userType: string; // جعل نوع المستخدم مطلوب
+  userType: 'guest' | 'member' | 'owner' | 'admin' | 'moderator' | 'bot'; // جعل نوع المستخدم مطلوب
 
   // خصائص مفقودة - إضافة حديثة
   joinDate?: Date;

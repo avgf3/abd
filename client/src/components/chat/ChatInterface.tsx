@@ -12,7 +12,7 @@ import {
   EyeOff,
   Lock,
 } from 'lucide-react';
-import { lazy, Suspense, useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { lazy, Suspense, useState, useEffect, useCallback, useMemo, useRef, useLayoutEffect } from 'react';
 import { useLocation } from 'wouter';
 
 import BlockNotification from '../moderation/BlockNotification';
@@ -95,6 +95,45 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   const [newRoomName, setNewRoomName] = useState('');
   const [newRoomDescription, setNewRoomDescription] = useState('');
   const [newRoomImage, setNewRoomImage] = useState<File | null>(null);
+  const headerRef = useRef<HTMLDivElement | null>(null);
+  const footerRef = useRef<HTMLDivElement | null>(null);
+
+  const updateLayoutVars = useCallback(() => {
+    try {
+      const headerHeight = Math.round(headerRef.current?.getBoundingClientRect().height || 52);
+      const footerHeight = Math.round(footerRef.current?.getBoundingClientRect().height || 56);
+      const viewportHeight = Math.round((window.visualViewport?.height || window.innerHeight) || 0);
+      document.documentElement.style.setProperty('--app-header-height', `${headerHeight}px`);
+      document.documentElement.style.setProperty('--app-footer-height', `${footerHeight}px`);
+      if (viewportHeight > 0) {
+        const contentHeight = Math.max(0, viewportHeight - headerHeight - footerHeight);
+        document.documentElement.style.setProperty('--app-content-height', `${contentHeight}px`);
+      }
+    } catch {}
+  }, []);
+
+  useLayoutEffect(() => {
+    updateLayoutVars();
+    const onResize = () => updateLayoutVars();
+    window.addEventListener('resize', onResize);
+    window.addEventListener('orientationchange', onResize);
+    try {
+      const vv = window.visualViewport;
+      vv?.addEventListener('resize', onResize);
+      vv?.addEventListener('scroll', onResize);
+      return () => {
+        window.removeEventListener('resize', onResize);
+        window.removeEventListener('orientationchange', onResize);
+        vv?.removeEventListener('resize', onResize);
+        vv?.removeEventListener('scroll', onResize);
+      };
+    } catch {
+      return () => {
+        window.removeEventListener('resize', onResize);
+        window.removeEventListener('orientationchange', onResize);
+      };
+    }
+  }, [updateLayoutVars]);
 
   const queryClient = useQueryClient();
   // 🚀 إدارة الغرف عبر hook موحّد محسن
@@ -290,6 +329,8 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
     show: false,
     sender: null,
   });
+
+  const [mobileSidebar, setMobileSidebar] = useState<'none' | 'users' | 'walls' | 'rooms' | 'friends'>('none');
 
   // === Unread badges logic ===
   const currentUserId = chat.currentUser?.id;
@@ -718,17 +759,18 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
     >
       {/* Modern Header */}
       <header
-        className={`fixed top-0 left-0 right-0 z-50 modern-nav app-header safe-area-top min-h-[2.5rem] py-1.5 px-4 sm:py-1.5 sm:px-8 flex ${isMobile ? 'flex-col gap-2' : 'flex-row flex-nowrap'} justify-between items-center`}
+        ref={headerRef}
+        className={`fixed top-0 left-0 right-0 z-50 modern-nav app-header safe-area-top min-h-[2.5rem] py-1.5 px-2 sm:px-8 flex flex-row flex-nowrap justify-between items-center gap-2`}
       >
         <div
-          className={`flex gap-2 ${isMobile ? 'flex-wrap justify-center w-full' : 'flex-1 overflow-x-auto pr-2'} ${chat.currentUser?.userType === 'owner' ? '' : 'max-w-[calc(100%-180px)]'}`}
+          className={`flex gap-2 ${isMobile ? 'flex-nowrap justify-start w-full overflow-x-auto' : 'flex-1 overflow-x-auto pr-2'} ${chat.currentUser?.userType === 'owner' ? '' : 'max-w-[calc(100%-160px)]'} items-center`}
         >
           <Button
             className="glass-effect px-3 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2"
             onClick={() => setShowSettings(!showSettings)}
           >
             <Settings className="w-4 h-4" />
-            <span className="font-medium">إعدادات</span>
+            <span className="hidden sm:inline font-medium">إعدادات</span>
           </Button>
 
           <Button
@@ -739,7 +781,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             title="الأثرياء"
           >
             <Crown className="w-4 h-4 text-yellow-400" />
-            <span className="font-medium">الأثرياء</span>
+            <span className="hidden sm:inline font-medium">الأثرياء</span>
           </Button>
 
           {/* زر إضافة غرفة جديدة للمالك */}
@@ -763,7 +805,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                 <line x1="12" y1="8" x2="12" y2="16"></line>
                 <line x1="8" y1="12" x2="16" y2="12"></line>
               </svg>
-              <span className="font-medium">إضافة غرفة</span>
+              <span className="hidden sm:inline font-medium">إضافة غرفة</span>
             </Button>
           )}
 
@@ -774,7 +816,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
               onClick={() => setShowOwnerPanel(true)}
             >
               <Crown className="w-4 h-4" />
-              إدارة المالك
+              <span className="hidden sm:inline">إدارة المالك</span>
             </Button>
           )}
 
@@ -789,7 +831,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                     onClick={() => setShowPromotePanel(true)}
                   >
                     <Crown className="w-4 h-4" />
-                    ترقية المستخدمين
+                    <span className="hidden sm:inline">ترقية المستخدمين</span>
                   </Button>
                 )}
 
@@ -861,7 +903,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             title="الرسائل"
           >
             <MessageSquare className="w-4 h-4" />
-            الرسائل
+            <span className="hidden sm:inline">الرسائل</span>
             {totalUnreadPrivateMessages > 0 && (
               <span className="ml-2 inline-flex items-center justify-center text-[10px] min-w-[18px] h-[18px] px-1 rounded-full bg-red-600 text-white">
                 {totalUnreadPrivateMessages}
@@ -874,7 +916,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             onClick={() => setShowNotifications(true)}
           >
             <Bell className="w-4 h-4" />
-            إشعارات
+            <span className="hidden sm:inline">إشعارات</span>
             {unreadNotificationsCount > 0 && (
               <span className="ml-2 inline-flex items-center justify-center text-[10px] min-w-[18px] h-[18px] px-1 rounded-full bg-red-600 text-white">
                 {unreadNotificationsCount}
@@ -892,7 +934,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             }}
           >
             <MessageCircle className="w-5 h-5" style={{ color: '#667eea' }} />
-            <div className="text-lg sm:text-xl font-bold whitespace-nowrap" style={{ color: '#ffffff' }}>
+            <div className="hidden sm:block text-lg sm:text-xl font-bold whitespace-nowrap" style={{ color: '#ffffff' }}>
               Arabic<span style={{ color: '#667eea' }}>Chat</span>
             </div>
           </div>
@@ -902,13 +944,17 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
       {/* Main Content - تحسين التخطيط لمنع التداخل */}
       <main
         className={`flex flex-1 overflow-hidden min-h-0 ${isMobile ? 'flex-col' : 'flex-col sm:flex-row'}`}
-        style={{ paddingTop: '3.25rem', paddingBottom: isMobile ? 'calc(3.5rem + env(safe-area-inset-bottom))' : '3.5rem' }}
+        style={{
+          paddingTop: 'var(--app-header-height, 52px)',
+          paddingBottom: 'var(--app-footer-height, 56px)',
+          minHeight: 'var(--app-content-height, auto)'
+        }}
       >
-        {/* الشريط الجانبي - على الجوال يعرض بملء الشاشة عند اختيار التبويب */}
-        {activeView !== 'hidden' && (
+        {/* الشريط الجانبي على سطح المكتب فقط */}
+        {!isMobile && activeView !== 'hidden' && (
           <div
-            className={`${isMobile ? 'w-full flex-1 min-h-0' : activeView === 'walls' ? 'w-full sm:w-96' : activeView === 'friends' ? 'w-full sm:w-80' : 'w-full sm:w-64'} max-w-full sm:shrink-0 transition-all duration-300 min-h-0 flex flex-col`}
-            style={{ maxHeight: 'calc(100vh - 96px)' }}
+            className={`${activeView === 'walls' ? 'w-full sm:w-96' : activeView === 'friends' ? 'w-full sm:w-80' : 'w-full sm:w-64'} max-w-full sm:shrink-0 transition-all duration-300 min-h-0 flex flex-col`}
+            style={{ maxHeight: 'calc(100dvh - var(--app-header-height, 52px) - var(--app-footer-height, 56px))' }}
           >
             <Suspense
               fallback={
@@ -939,7 +985,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             </Suspense>
           </div>
         )}
-        {!isMobile || activeView === 'hidden'
+        {!isMobile
           ? (() => {
               const currentRoom = rooms.find((room) => room.id === chat.currentRoomId);
 
@@ -1002,7 +1048,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
               return (
                 <div
                   className="flex-1 flex min-h-0"
-                  style={{ maxHeight: 'calc(100vh - 96px)' }}
+                  style={{ maxHeight: 'calc(100dvh - var(--app-header-height, 52px) - var(--app-footer-height, 56px))' }}
                 >
                   <Suspense fallback={<div className="p-4 space-y-3"><SkeletonBlock className="h-6 w-1/3" /><SkeletonBlock className="h-40 w-full" /></div>}>
                     <MessageArea
@@ -1022,21 +1068,102 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                 </div>
               );
             })()
-          : null}
+          : (() => {
+              const currentRoom = rooms.find((room) => room.id === chat.currentRoomId);
+              return (
+                <div
+                  className="flex-1 flex min-h-0"
+                  style={{ maxHeight: 'calc(100dvh - var(--app-header-height, 52px) - var(--app-footer-height, 56px))' }}
+                >
+                  <Suspense fallback={<div className="p-4 space-y-3"><SkeletonBlock className="h-6 w-1/3" /><SkeletonBlock className="h-40 w-full" /></div>}>
+                    {currentRoom?.isBroadcast ? (
+                      <BroadcastRoomInterface
+                        currentUser={chat.currentUser}
+                        room={currentRoom}
+                        onlineUsers={chat.onlineUsers}
+                        onSendMessage={(content) => chat.sendRoomMessage(content, chat.currentRoomId)}
+                        onTyping={(_isTyping) => chat.sendTyping()}
+                        typingUsers={Array.from(chat.typingUsers)}
+                        onReportMessage={handleReportUser}
+                        onUserClick={handleUserClick}
+                        messages={chat.publicMessages}
+                        chat={{
+                          sendPublicMessage: (content: string) =>
+                            chat.sendRoomMessage(content, chat.currentRoomId),
+                          handleTyping: () => chat.sendTyping(),
+                          addBroadcastMessageHandler: (handler: (data: any) => void) =>
+                            chat.addBroadcastMessageHandler?.(handler),
+                          removeBroadcastMessageHandler: (handler: (data: any) => void) =>
+                            chat.removeBroadcastMessageHandler?.(handler),
+                          sendWebRTCIceCandidate: (
+                            toUserId: number,
+                            roomId: string,
+                            candidate: RTCIceCandidateInit
+                          ) => chat.sendWebRTCIceCandidate?.(toUserId, roomId, candidate),
+                          sendWebRTCOffer: (
+                            toUserId: number,
+                            roomId: string,
+                            offer: RTCSessionDescriptionInit
+                          ) => chat.sendWebRTCOffer?.(toUserId, roomId, offer),
+                          sendWebRTCAnswer: (
+                            toUserId: number,
+                            roomId: string,
+                            answer: RTCSessionDescriptionInit
+                          ) => chat.sendWebRTCAnswer?.(toUserId, roomId, answer),
+                          onWebRTCOffer: (handler: (payload: any) => void) =>
+                            chat.onWebRTCOffer?.(handler),
+                          offWebRTCOffer: (handler: (payload: any) => void) =>
+                            chat.offWebRTCOffer?.(handler),
+                          onWebRTCIceCandidate: (handler: (payload: any) => void) =>
+                            chat.onWebRTCIceCandidate?.(handler),
+                          offWebRTCIceCandidate: (handler: (payload: any) => void) =>
+                            chat.offWebRTCIceCandidate?.(handler),
+                          onWebRTCAnswer: (handler: (payload: any) => void) =>
+                            chat.onWebRTCAnswer?.(handler),
+                          offWebRTCAnswer: (handler: (payload: any) => void) =>
+                            chat.offWebRTCAnswer?.(handler),
+                        }}
+                      />
+                    ) : (
+                      <MessageArea
+                        messages={chat.publicMessages}
+                        currentUser={chat.currentUser}
+                        onSendMessage={(content) => chat.sendRoomMessage(content, chat.currentRoomId)}
+                        onTyping={() => chat.sendTyping()}
+                        typingUsers={chat.typingUsers}
+                        onReportMessage={handleReportUser}
+                        onUserClick={handleUserClick}
+                        onlineUsers={chat.onlineUsers}
+                        currentRoomName={currentRoom?.name || 'الدردشة العامة'}
+                        currentRoomId={chat.currentRoomId}
+                        ignoredUserIds={chat.ignoredUsers}
+                      />
+                    )}
+                  </Suspense>
+                </div>
+              );
+            })()}
       </main>
 
       {/* Modern Footer Navigation */}
       <footer
-        className={`fixed bottom-0 left-0 right-0 z-[60] modern-nav app-footer safe-area-bottom h-14 px-2 sm:px-4 flex justify-start items-center ${isMobile ? 'mobile-footer' : ''}`}
+        ref={footerRef}
+        className={`fixed bottom-0 left-0 right-0 z-[60] modern-nav app-footer safe-area-bottom h-14 px-2 sm:px-4 flex ${isMobile ? 'justify-between' : 'justify-start'} items-center ${isMobile ? 'mobile-footer' : ''}`}
       >
-        <div className="flex gap-1 sm:gap-2 overflow-x-auto max-w-full">
+        <div className={`flex gap-1 sm:gap-2 overflow-x-auto max-w-full ${isMobile ? 'w-full' : ''}`}>
           {/* الحوائط */}
           <Button
             size="sm"
             className={`${'glass-effect px-2 py-1.5 rounded-lg transition-all duration-200 flex items-center gap-1.5 text-sm'}${
               activeView === 'walls' ? ' bg-primary text-primary-foreground' : ' hover:bg-accent'
-            }`}
-            onClick={() => setActiveView((prev) => (prev === 'walls' ? 'hidden' : 'walls'))}
+            }${isMobile ? ' flex-1 justify-center' : ''}`}
+            onClick={() => {
+              if (isMobile) {
+                setMobileSidebar((prev) => (prev === 'walls' ? 'none' : 'walls'));
+              } else {
+                setActiveView((prev) => (prev === 'walls' ? 'hidden' : 'walls'));
+              }
+            }}
             title="الحائط"
           >
             <svg
@@ -1055,7 +1182,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
               <line x1="3" y1="12" x2="21" y2="12"></line>
               <line x1="3" y1="18" x2="21" y2="18"></line>
             </svg>
-            الحائط
+            <span className="hidden sm:inline">الحائط</span>
           </Button>
 
           {/* المستخدمون */}
@@ -1063,8 +1190,14 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             size="sm"
             className={`${'glass-effect px-2 py-1.5 rounded-lg transition-all duration-200 flex items-center gap-1.5 text-sm'}${
               activeView === 'users' ? ' bg-primary text-primary-foreground' : ' hover:bg-accent'
-            }`}
-            onClick={() => setActiveView((prev) => (prev === 'users' ? 'hidden' : 'users'))}
+            }${isMobile ? ' flex-1 justify-center' : ''}`}
+            onClick={() => {
+              if (isMobile) {
+                setMobileSidebar((prev) => (prev === 'users' ? 'none' : 'users'));
+              } else {
+                setActiveView((prev) => (prev === 'users' ? 'hidden' : 'users'));
+              }
+            }}
             title="المستخدمون المتصلون"
           >
             <svg
@@ -1084,7 +1217,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
               <circle cx="17" cy="7" r="3"></circle>
               <path d="M14 21c0-1.657 1.343-3 3-3h1c1.657 0 3 1.343 3 3"></path>
             </svg>
-            المستخدمون ({chat.onlineUsers?.length ?? 0})
+            <span className="hidden sm:inline">المستخدمون ({chat.onlineUsers?.length ?? 0})</span>
           </Button>
 
           {/* الغرف */}
@@ -1092,8 +1225,14 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             size="sm"
             className={`${'glass-effect px-2 py-1.5 rounded-lg transition-all duration-200 flex items-center gap-1.5 text-sm'}${
               activeView === 'rooms' ? ' bg-primary text-primary-foreground' : ' hover:bg-accent'
-            }`}
-            onClick={() => setActiveView((prev) => (prev === 'rooms' ? 'hidden' : 'rooms'))}
+            }${isMobile ? ' flex-1 justify-center' : ''}`}
+            onClick={() => {
+              if (isMobile) {
+                setMobileSidebar((prev) => (prev === 'rooms' ? 'none' : 'rooms'));
+              } else {
+                setActiveView((prev) => (prev === 'rooms' ? 'hidden' : 'rooms'));
+              }
+            }}
             title="الغرف"
           >
             <svg
@@ -1112,7 +1251,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
               <path d="M5 10v9a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-9"></path>
               <path d="M9 21v-6h6v6"></path>
             </svg>
-            الغرف
+            <span className="hidden sm:inline">الغرف</span>
           </Button>
 
           {/* الأصدقاء */}
@@ -1120,8 +1259,14 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             size="sm"
             className={`${'glass-effect px-2 py-1.5 rounded-lg transition-all duration-200 flex items-center gap-1.5 text-sm'}${
               activeView === 'friends' ? ' bg-primary text-primary-foreground' : ' hover:bg-accent'
-            }`}
-            onClick={() => setActiveView((prev) => (prev === 'friends' ? 'hidden' : 'friends'))}
+            }${isMobile ? ' flex-1 justify-center' : ''}`}
+            onClick={() => {
+              if (isMobile) {
+                setMobileSidebar((prev) => (prev === 'friends' ? 'none' : 'friends'));
+              } else {
+                setActiveView((prev) => (prev === 'friends' ? 'hidden' : 'friends'));
+              }
+            }}
             title="الأصدقاء"
           >
             <svg
@@ -1141,10 +1286,55 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
               <path d="M19 8v6"></path>
               <path d="M16 11h6"></path>
             </svg>
-            الأصدقاء
+            <span className="hidden sm:inline">الأصدقاء</span>
           </Button>
         </div>
       </footer>
+
+      {/* Mobile sidebar overlay covering chat area fully between header and footer */}
+      {isMobile && mobileSidebar !== 'none' && (
+        <div
+          className="fixed left-0 right-0 z-[65] bg-background"
+          style={{
+            top: 'var(--app-header-height, 52px)',
+            bottom: 'var(--app-footer-height, 56px)'
+          }}
+        >
+          <div className="h-full flex flex-col">
+            <div className="p-2 flex justify-center">
+              <Button variant="outline" size="sm" onClick={() => setMobileSidebar('none')}>إغلاق</Button>
+            </div>
+            <div className="flex-1 min-h-0">
+              <Suspense fallback={<div className="p-4 space-y-2"><SkeletonBlock className="h-6 w-1/2" /><SkeletonBlock className="h-10 w-full" /><SkeletonBlock className="h-10 w-full" /><SkeletonBlock className="h-10 w-3/4" /></div>}>
+                <UnifiedSidebar
+                  users={chat.onlineUsers}
+                  onUserClick={handleUserClick}
+                  currentUser={chat.currentUser}
+                  activeView={mobileSidebar as any}
+                  rooms={rooms}
+                  currentRoomId={chat.currentRoomId}
+                  onRoomChange={(roomId) => {
+                    handleRoomChange(roomId);
+                    setMobileSidebar('none');
+                  }}
+                  onAddRoom={async (roomData) => {
+                    await handleAddRoom(roomData);
+                  }}
+                  onDeleteRoom={async (roomId) => {
+                    await handleDeleteRoom(roomId);
+                  }}
+                  onRefreshRooms={handleRefreshRooms}
+                  onStartPrivateChat={(user) => {
+                    setSelectedPrivateUser(user);
+                    setShowPmBox(true);
+                    setMobileSidebar('none');
+                  }}
+                />
+              </Suspense>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modals and Popups */}
       {showProfile && (
