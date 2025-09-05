@@ -218,8 +218,8 @@ export const getUserEffectStyles = (user: any): Record<string, string> => {
 export const getUserListItemStyles = (user: any): Record<string, string> => {
   // فقط المشرفين والإدمن والمالك يحصلون على تأثيرات خاصة
   // الزوار والأعضاء العاديين بدون لون خلفية
-  if (user?.userType === 'guest' || user?.userType === 'member' || user?.userType === 'bot') {
-    // إرجاع كائن فارغ للزوار والأعضاء (بدون ألوان خلفية)
+  // السماح بتطبيق الخلفيات للأعضاء والبوت أيضاً؛ إبقاء الضيوف فقط بدون خلفيات
+  if (user?.userType === 'guest') {
     return {};
   }
   
@@ -232,8 +232,8 @@ export const getUserListItemClasses = (user: any): string => {
   const classes = [] as string[];
 
   // فقط المشرفين والإدمن والمالك يحصلون على كلاسات التأثيرات
-  if (user?.userType === 'guest' || user?.userType === 'member' || user?.userType === 'bot') {
-    // إرجاع كلاس فارغ للزوار والأعضاء
+  // السماح بتطبيق الكلاسات للأعضاء والبوت أيضاً؛ إبقاء الضيوف فقط بدون تأثيرات
+  if (user?.userType === 'guest') {
     return '';
   }
 
