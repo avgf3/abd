@@ -18,6 +18,7 @@ import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser } from '@/types/chat';
 import { getImageSrc } from '@/utils/imageUtils';
 import { getCountryFlag } from '@/utils';
+import CountryFlag from '@/components/ui/CountryFlag';
 import {
   getFinalUsernameColor,
   getUserListItemStyles,
@@ -196,32 +197,10 @@ export default function FriendsTabPanel({
 
   const getCountryEmoji = useCallback((country?: string): string | null => getCountryFlag(country), []);
 
-  const renderCountryFlag = useCallback(
-    (user: ChatUser) => {
-      const emoji = getCountryEmoji(user.country);
-      const boxStyle: React.CSSProperties = {
-        width: 20,
-        height: 20,
-        borderRadius: 0,
-        display: 'inline-flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: 'transparent',
-        border: 'none',
-      };
-
-      if (emoji) {
-        return (
-          <span style={boxStyle} title={user.country}>
-            <span style={{ fontSize: 14, lineHeight: 1 }}>{emoji}</span>
-          </span>
-        );
-      }
-
-      return null;
-    },
-    [getCountryEmoji]
-  );
+  const renderCountryFlag = useCallback((user: ChatUser) => {
+    if (!user?.country) return null;
+    return <CountryFlag country={user.country} size={20} title={user.country} />;
+  }, []);
 
   // التحقق من صلاحيات الإشراف
   const isModerator = currentUser && ['moderator', 'admin', 'owner'].includes(currentUser.userType);
