@@ -2308,7 +2308,7 @@ export default function ProfileModal({
                     cursor: 'pointer',
                     direction: 'auto',
                     unicodeBidi: 'plaintext',
-                    textAlign: 'right',
+                    textAlign: 'center',
                     whiteSpace: 'normal',
                     overflowWrap: 'anywhere',
                     wordBreak: 'break-word'
@@ -2361,7 +2361,7 @@ export default function ProfileModal({
                     cursor: 'pointer',
                     direction: 'auto',
                     unicodeBidi: 'plaintext',
-                    textAlign: 'right',
+                    textAlign: 'center',
                     whiteSpace: 'normal',
                     overflowWrap: 'anywhere',
                     wordBreak: 'break-word'
@@ -2412,7 +2412,7 @@ export default function ProfileModal({
                     textShadow: '0 2px 4px rgba(0,0,0,0.5)',
                     direction: 'auto',
                     unicodeBidi: 'plaintext',
-                    textAlign: 'right',
+                    textAlign: 'center',
                     whiteSpace: 'normal',
                     overflowWrap: 'anywhere',
                     wordBreak: 'break-word'
