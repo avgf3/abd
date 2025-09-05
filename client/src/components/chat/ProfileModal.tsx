@@ -1453,7 +1453,7 @@ export default function ProfileModal({
 
         .profile-cover {
           position: relative;
-          height: 250px;
+          height: 220px;
           background-size: cover;
           background-position: center;
           background-repeat: no-repeat;
@@ -1572,7 +1572,7 @@ export default function ProfileModal({
         }
 
         .profile-body {
-          padding: 20px 20px 16px;
+          padding: 20px 20px 10px;
         }
 
         .profile-info {
@@ -2198,7 +2198,7 @@ export default function ProfileModal({
       <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm" onClick={onClose} />
 
       {/* Main Modal */}
-      <div className="fixed inset-0 z-50 flex items-start justify-center pt-8 pb-4 px-4 overflow-y-auto">
+      <div className="fixed inset-0 z-50 flex items-start justify-center pt-6 pb-2 px-4 overflow-y-auto">
         <div
           className={`profile-card ${selectedEffect}`}
           style={{
