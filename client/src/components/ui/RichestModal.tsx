@@ -4,7 +4,7 @@ import { apiRequest } from '@/lib/queryClient';
 import { getSocket } from '@/lib/socket';
 import type { ChatUser } from '@/types/chat';
 import { getImageSrc } from '@/utils/imageUtils';
-import { getCountryFlag } from '@/utils';
+import CountryFlag from '@/components/ui/CountryFlag';
 import { getFinalUsernameColor, getUserListItemClasses, getUserListItemStyles } from '@/utils/themeUtils';
 import ProfileImage from '@/components/chat/ProfileImage';
 import UserRoleBadge from '@/components/chat/UserRoleBadge';
@@ -43,34 +43,7 @@ export default function RichestModal({ isOpen, onClose, currentUser, onUserClick
     return <UserRoleBadge user={user} size={20} />;
   }, []);
 
-  const getCountryEmoji = useCallback((country?: string): string | null => getCountryFlag(country), []);
-
-  const renderCountryFlag = useCallback(
-    (user: ChatUser) => {
-      const emoji = getCountryEmoji(user.country);
-      const boxStyle: React.CSSProperties = {
-        width: 20,
-        height: 20,
-        borderRadius: 0,
-        display: 'inline-flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: 'transparent',
-        border: 'none',
-      };
-
-      if (emoji) {
-        return (
-          <span style={boxStyle} title={user.country}>
-            <span style={{ fontSize: 14, lineHeight: 1 }}>{emoji}</span>
-          </span>
-        );
-      }
-
-      return null;
-    },
-    [getCountryEmoji]
-  );
+  const renderCountryFlag = useCallback((user: ChatUser) => <CountryFlag country={user.country} size={14} />, []);
 
   // تطبيع بيانات المستخدم: إزالة قيم نصية غير صالحة لحقول الألوان/التأثير
   const normalizeUser = useCallback((u: any): ChatUser => {
