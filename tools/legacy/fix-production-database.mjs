@@ -39,7 +39,7 @@ async function fixProductionDatabase() {
 
     // Check and add other missing columns
     const missingColumns = [
-      { name: 'profile_background_color', type: "TEXT DEFAULT '#3c0d0d'" },
+      { name: 'profile_background_color', type: "TEXT DEFAULT '#2a2a2a'" },
       { name: 'username_color', type: "TEXT DEFAULT '#FFFFFF'" },
       { name: 'user_theme', type: "TEXT DEFAULT 'default'" },
       { name: 'bio', type: 'TEXT' },

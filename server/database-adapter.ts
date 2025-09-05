@@ -325,7 +325,7 @@ export async function ensureBotsTable(): Promise<void> {
           role TEXT NOT NULL DEFAULT 'bot',
           profile_image TEXT,
           profile_banner TEXT,
-          profile_background_color TEXT DEFAULT '#4a4a4a',
+          profile_background_color TEXT DEFAULT '#2a2a2a',
           status TEXT DEFAULT 'بوت نشط',
           gender TEXT DEFAULT 'غير محدد',
           country TEXT DEFAULT 'غير محدد',

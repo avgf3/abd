@@ -45,7 +45,7 @@ CREATE TABLE IF NOT EXISTS "users" (
 	"role" text DEFAULT 'guest' NOT NULL,
 	"profile_image" text,
 	"profile_banner" text,
-	"profile_background_color" text DEFAULT '#3c0d0d',
+	"profile_background_color" text DEFAULT '#2a2a2a',
 	"status" text,
 	"gender" text,
 	"age" integer,

@@ -32,6 +32,7 @@ import { apiRequest } from '@/lib/queryClient';
 import { getSocket, saveSession } from '@/lib/socket';
 import type { ChatUser, WallPost, CreateWallPostData, ChatRoom } from '@/types/chat';
 import { getImageSrc } from '@/utils/imageUtils';
+import { getCountryFlag } from '@/utils';
 import {
   getUserEffectStyles,
   getUserEffectClasses,
@@ -166,24 +167,7 @@ export default function UnifiedSidebar({
     return <UserRoleBadge user={user} size={20} />;
   }, []);
 
-  const getCountryEmoji = useCallback((country?: string): string | null => {
-    if (!country) return null;
-    const text = country.trim();
-    if (!text) return null;
-
-    // التحقق إن كان بداية النص تحمل زوج مؤشرات إقليمية (إيموجي علم)
-    const chars = Array.from(text);
-    if (chars.length >= 2) {
-      const cp0 = chars[0].codePointAt(0) || 0;
-      const cp1 = chars[1].codePointAt(0) || 0;
-      const isRI = (cp: number) => cp >= 0x1f1e6 && cp <= 0x1f1ff;
-      if (isRI(cp0) && isRI(cp1)) {
-        return chars[0] + chars[1];
-      }
-    }
-    // ليس علماً صالحاً → لا نعرض شيئاً
-    return null;
-  }, []);
+  const getCountryEmoji = useCallback((country?: string): string | null => getCountryFlag(country), []);
 
   const renderCountryFlag = useCallback(
     (user: ChatUser) => {

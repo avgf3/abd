@@ -17,7 +17,7 @@ export class UserService {
       const userToInsert: InsertUser = {
         ...userData,
         role: userData.role || userData.userType || 'guest',
-        profileBackgroundColor: userData.profileBackgroundColor || '#4a4a4a',
+        profileBackgroundColor: userData.profileBackgroundColor || '#2a2a2a',
         usernameColor: userData.usernameColor || '#000000',
       };
 

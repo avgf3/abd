@@ -33,7 +33,7 @@ const availableColors = [
   { hex: '#dc143c', name: 'الأحمر القرمزي' },
   { hex: '#1e90ff', name: 'الأزرق الدودجر' },
   { hex: '#b22222', name: 'الطوبي الناري' },
-  { hex: '#4a4a4a', name: 'الرمادي الداكن (افتراضي جديد)' },
+  { hex: '#2a2a2a', name: 'الرمادي الداكن (افتراضي)' },
 ];
 
 // قائمة التأثيرات المتاحة
@@ -53,7 +53,7 @@ const availableEffects = [
 ];
 
 export default function TestColorSync() {
-  const [selectedColor, setSelectedColor] = React.useState('#4a4a4a');
+  const [selectedColor, setSelectedColor] = React.useState('#2a2a2a');
   const [selectedEffect, setSelectedEffect] = React.useState('none');
 
   // محاكاة كائن المستخدم
