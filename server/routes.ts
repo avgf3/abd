@@ -4382,7 +4382,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         relation: updatedBot.relation,
         bio: updatedBot.bio,
         age: (updatedBot as any)?.settings?.age,
-        isOnline: updatedBot.isActive,
+        isOnline: Boolean((updatedBot as any)?.isOnline),
         currentRoom: updatedBot.currentRoom,
       };
 
@@ -4469,85 +4469,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // تفعيل/تعطيل بوت
-  app.patch('/api/bots/:id/toggle', protect.admin, async (req, res) => {
-    try {
-      if (!db) {
-        return res.status(500).json({ error: 'قاعدة البيانات غير متصلة' });
-      }
-
-      const botId = parseInt(req.params.id);
-      const { bots } = await import('../shared/schema');
-      
-      // جلب البوت الحالي
-      const [currentBot] = await db.select().from(bots).where(eq(bots.id, botId)).limit(1);
-      
-      if (!currentBot) {
-        return res.status(404).json({ error: 'البوت غير موجود' });
-      }
-
-      // تبديل حالة النشاط
-      const newActiveState = !currentBot.isActive;
-      
-      const [updatedBot] = await db.update(bots)
-        .set({ 
-          isActive: newActiveState,
-          isOnline: newActiveState,
-          lastActivity: new Date()
-        })
-        .where(eq(bots.id, botId))
-        .returning();
-
-      // تحديث cache المستخدمين المتصلين
-      if (newActiveState) {
-        const botUser = {
-          id: updatedBot.id,
-          username: updatedBot.username,
-          userType: 'bot',
-          role: 'bot',
-          profileImage: updatedBot.profileImage,
-          status: updatedBot.status,
-          usernameColor: updatedBot.usernameColor,
-          profileEffect: updatedBot.profileEffect,
-          points: updatedBot.points,
-          level: updatedBot.level,
-          gender: updatedBot.gender,
-          country: updatedBot.country,
-          relation: updatedBot.relation,
-          bio: updatedBot.bio,
-          age: (updatedBot as any)?.settings?.age,
-          isOnline: true,
-          currentRoom: updatedBot.currentRoom,
-        };
-
-        updateConnectedUserCache(updatedBot.id, botUser);
-
-        // إشعار بدخول البوت (متوافق مع الواجهة)
-        getIO().to(`room_${updatedBot.currentRoom}`).emit('message', {
-          type: 'userJoinedRoom',
-          userId: updatedBot.id,
-          username: updatedBot.username,
-          roomId: updatedBot.currentRoom,
-        });
-      } else {
-        // إزالة البوت من قائمة المتصلين
-        updateConnectedUserCache(updatedBot.id, null);
-
-        // إشعار بخروج البوت (متوافق مع الواجهة)
-        getIO().to(`room_${updatedBot.currentRoom}`).emit('message', {
-          type: 'userLeftRoom',
-          userId: botId,
-          username: updatedBot.username,
-          roomId: updatedBot.currentRoom,
-        });
-      }
-
-      res.json({ message: newActiveState ? 'تم تفعيل البوت' : 'تم تعطيل البوت', bot: updatedBot });
-    } catch (error) {
-      console.error('خطأ في تبديل حالة البوت:', error);
-      res.status(500).json({ error: 'فشل في تبديل حالة البوت' });
-    }
-  });
+  
 
   // حذف بوت
   app.delete('/api/bots/:id', protect.admin, async (req, res) => {
@@ -4683,7 +4605,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             relation: updatedBot.relation,
             bio: updatedBot.bio,
             age: (updatedBot as any)?.settings?.age,
-            isOnline: updatedBot.isActive,
+            isOnline: Boolean((updatedBot as any)?.isOnline),
             currentRoom: updatedBot.currentRoom,
           };
           updateConnectedUserCache(updatedBot.id, botUser);
@@ -4707,103 +4629,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   );
 
-  // إنشاء 10 بوتات افتراضية
-  app.post('/api/bots/create-defaults', protect.admin, async (req, res) => {
-    try {
-      if (!db) {
-        return res.status(500).json({ error: 'قاعدة البيانات غير متصلة' });
-      }
-
-      const { bots } = await import('../shared/schema');
-      const createdBots = [];
-
-      // قائمة بأسماء البوتات الافتراضية
-      const defaultBots = [
-        { name: 'بوت الترحيب', bio: 'أرحب بالأعضاء الجدد', status: 'متصل دائماً', color: '#FF6B6B' },
-        { name: 'بوت المساعدة', bio: 'أساعد في الإجابة على الأسئلة', status: 'جاهز للمساعدة', color: '#4ECDC4' },
-        { name: 'بوت الألعاب', bio: 'أنظم الألعاب والمسابقات', status: 'وقت اللعب!', color: '#FFE66D' },
-        { name: 'بوت الأخبار', bio: 'أنشر آخر الأخبار والتحديثات', status: 'متابع للأحداث', color: '#A8E6CF' },
-        { name: 'بوت النكت', bio: 'أشارك النكت المضحكة', status: 'مبتسم دائماً', color: '#FFD93D' },
-        { name: 'بوت الموسيقى', bio: 'أشارك الموسيقى والأغاني', status: '♪ ♫ ♬', color: '#C7CEEA' },
-        { name: 'بوت الطقس', bio: 'أخبركم بحالة الطقس', status: 'مشمس اليوم', color: '#87CEEB' },
-        { name: 'بوت الرياضة', bio: 'متابع للأحداث الرياضية', status: 'جاهز للتحدي', color: '#98D8C8' },
-        { name: 'بوت الثقافة', bio: 'أشارك المعلومات الثقافية', status: 'معلومة جديدة', color: '#F7DC6F' },
-        { name: 'بوت الأمان', bio: 'أحافظ على أمان الدردشة', status: 'حماية نشطة', color: '#85C1E2' },
-      ];
-
-      for (let i = 0; i < defaultBots.length; i++) {
-        const botData = defaultBots[i];
-        const hashedPassword = await bcrypt.hash(`bot${i + 1}password`, 12);
-        
-        try {
-          const [newBot] = await db.insert(bots).values({
-            username: botData.name,
-            password: hashedPassword,
-            userType: 'bot',
-            role: 'bot',
-            status: botData.status,
-            bio: botData.bio,
-            usernameColor: botData.color,
-            profileBackgroundColor: '#2a2a2a',
-            profileEffect: 'none',
-            points: Math.floor(Math.random() * 1000),
-            level: Math.floor(Math.random() * 5) + 1,
-            totalPoints: Math.floor(Math.random() * 5000),
-            levelProgress: Math.floor(Math.random() * 100),
-            currentRoom: 'general',
-            isActive: true,
-            isOnline: true,
-            botType: i === 0 ? 'system' : i < 5 ? 'chat' : 'moderator',
-            settings: {},
-            createdBy: req.user?.id,
-          }).returning();
-
-          createdBots.push(newBot);
-
-          // إضافة البوت لقائمة المتصلين - تضمين الحقول التعريفية للبوت
-          const botUser = {
-            id: newBot.id,
-            username: newBot.username,
-            userType: 'bot',
-            role: 'bot',
-            profileImage: newBot.profileImage,
-            status: newBot.status,
-            usernameColor: newBot.usernameColor,
-            profileEffect: newBot.profileEffect,
-            points: newBot.points,
-            level: newBot.level,
-            gender: newBot.gender,
-            country: newBot.country,
-            relation: newBot.relation,
-            bio: newBot.bio,
-            age: (newBot as any)?.settings?.age,
-            isOnline: true,
-            currentRoom: newBot.currentRoom,
-          };
-
-          updateConnectedUserCache(newBot.id, botUser);
-
-          // إرسال إشعار بدخول البوت (متوافق مع الواجهة)
-          getIO().to(`room_${newBot.currentRoom}`).emit('message', {
-            type: 'userJoinedRoom',
-            userId: newBot.id,
-            username: newBot.username,
-            roomId: newBot.currentRoom,
-          });
-        } catch (error) {
-          console.error(`خطأ في إنشاء البوت ${botData.name}:`, error);
-        }
-      }
-
-      res.status(201).json({ 
-        message: `تم إنشاء ${createdBots.length} بوت بنجاح`, 
-        bots: createdBots 
-      });
-    } catch (error) {
-      console.error('خطأ في إنشاء البوتات الافتراضية:', error);
-      res.status(500).json({ error: 'فشل في إنشاء البوتات الافتراضية' });
-    }
-  });
+  // تم حذف مسار إنشاء البوتات الافتراضية بناءً على المتطلبات الجديدة
 
 
   return httpServer;
