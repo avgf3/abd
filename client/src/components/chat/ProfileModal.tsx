@@ -2283,7 +2283,10 @@ export default function ProfileModal({
                   alignItems: 'center',
                   gap: '1px', /* تقليل الفراغ بين اللقب والاسم */
                   zIndex: 3,
-                  textAlign: 'center'
+                  textAlign: 'center',
+                  maxWidth: 'calc(100% - 180px)',
+                  padding: '0 12px',
+                  boxSizing: 'border-box'
                 }}>
                   {/* الرتبة فوق الاسم */}
                   {(localUser?.userType === 'owner' || localUser?.userType === 'admin' || localUser?.userType === 'moderator') && (
@@ -2310,8 +2313,9 @@ export default function ProfileModal({
                     unicodeBidi: 'plaintext',
                     textAlign: 'center',
                     whiteSpace: 'normal',
-                    overflowWrap: 'anywhere',
-                    wordBreak: 'break-word'
+                    overflowWrap: 'break-word',
+                    wordBreak: 'keep-all',
+                    hyphens: 'none'
                   }}
                   onClick={() => openEditModal('name')}
                   >
@@ -2338,7 +2342,10 @@ export default function ProfileModal({
                   alignItems: 'center',
                   gap: '1px',
                   zIndex: 12,
-                  textAlign: 'center'
+                  textAlign: 'center',
+                  maxWidth: 'calc(100% - 180px)',
+                  padding: '0 12px',
+                  boxSizing: 'border-box'
                 }}>
                   {(localUser?.userType === 'owner' || localUser?.userType === 'admin' || localUser?.userType === 'moderator') && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -2363,8 +2370,9 @@ export default function ProfileModal({
                     unicodeBidi: 'plaintext',
                     textAlign: 'center',
                     whiteSpace: 'normal',
-                    overflowWrap: 'anywhere',
-                    wordBreak: 'break-word'
+                    overflowWrap: 'break-word',
+                    wordBreak: 'keep-all',
+                    hyphens: 'none'
                   }}
                   onClick={() => openEditModal('name')}
                   >
@@ -2388,7 +2396,10 @@ export default function ProfileModal({
                   gap: '1px', /* تقليل الفراغ بين اللقب والاسم */
                   zIndex: 12,
                   pointerEvents: 'none',
-                  textAlign: 'center'
+                  textAlign: 'center',
+                  maxWidth: 'calc(100% - 180px)',
+                  padding: '0 12px',
+                  boxSizing: 'border-box'
                 }}>
                   {/* الرتبة فوق الاسم */}
                   {(localUser?.userType === 'owner' || localUser?.userType === 'admin' || localUser?.userType === 'moderator') && (
@@ -2414,8 +2425,9 @@ export default function ProfileModal({
                     unicodeBidi: 'plaintext',
                     textAlign: 'center',
                     whiteSpace: 'normal',
-                    overflowWrap: 'anywhere',
-                    wordBreak: 'break-word'
+                    overflowWrap: 'break-word',
+                    wordBreak: 'keep-all',
+                    hyphens: 'none'
                   }}>
                     <bdi>{localUser?.username || 'اسم المستخدم'}</bdi>
                   </h3>
