@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 
 import { getUserLevelIcon } from '@/components/chat/UserRoleBadge';
-import { getCountryFlag } from '@/utils';
+import FlagImage from '@/components/ui/FlagImage';
 import type { ChatUser } from '@/types/chat';
 
 interface PremiumUserThemeProps {
@@ -48,11 +48,7 @@ export default function PremiumUserTheme({
         <div className="flex items-center gap-1">
           {children}
 
-          {showFlag && user.country && (
-            <span className="text-sm" title={user.country}>
-              {getCountryFlag(user.country)}
-            </span>
-          )}
+          {showFlag && user.country && <FlagImage country={user.country} size={16} />}
         </div>
       </div>
     </div>
