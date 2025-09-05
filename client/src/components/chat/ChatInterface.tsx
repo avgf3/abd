@@ -1157,7 +1157,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             size="sm"
             className={`${'glass-effect px-2 py-1.5 rounded-lg transition-all duration-200 flex items-center gap-1.5 text-sm'}${
               activeView === 'walls' ? ' bg-primary text-primary-foreground' : ' hover:bg-accent'
-            }`}
+            }${isMobile ? ' flex-1 justify-center' : ''}`}
             onClick={() => {
               if (isMobile) {
                 setMobileSidebar((prev) => (prev === 'walls' ? 'none' : 'walls'));
@@ -1191,7 +1191,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             size="sm"
             className={`${'glass-effect px-2 py-1.5 rounded-lg transition-all duration-200 flex items-center gap-1.5 text-sm'}${
               activeView === 'users' ? ' bg-primary text-primary-foreground' : ' hover:bg-accent'
-            }`}
+            }${isMobile ? ' flex-1 justify-center' : ''}`}
             onClick={() => {
               if (isMobile) {
                 setMobileSidebar((prev) => (prev === 'users' ? 'none' : 'users'));
@@ -1226,7 +1226,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             size="sm"
             className={`${'glass-effect px-2 py-1.5 rounded-lg transition-all duration-200 flex items-center gap-1.5 text-sm'}${
               activeView === 'rooms' ? ' bg-primary text-primary-foreground' : ' hover:bg-accent'
-            }`}
+            }${isMobile ? ' flex-1 justify-center' : ''}`}
             onClick={() => {
               if (isMobile) {
                 setMobileSidebar((prev) => (prev === 'rooms' ? 'none' : 'rooms'));
@@ -1260,7 +1260,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             size="sm"
             className={`${'glass-effect px-2 py-1.5 rounded-lg transition-all duration-200 flex items-center gap-1.5 text-sm'}${
               activeView === 'friends' ? ' bg-primary text-primary-foreground' : ' hover:bg-accent'
-            }`}
+            }${isMobile ? ' flex-1 justify-center' : ''}`}
             onClick={() => {
               if (isMobile) {
                 setMobileSidebar((prev) => (prev === 'friends' ? 'none' : 'friends'));
