@@ -457,6 +457,7 @@ export default function MessageArea({
       {/* Messages Container - Virtualized */}
       <div
         className={`relative flex-1 p-4 bg-gradient-to-b from-gray-50 to-white`}
+        style={{ maxHeight: 'var(--app-content-height, auto)' }}
       >
         {validMessages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-gray-500">
@@ -749,6 +750,7 @@ export default function MessageArea({
       {/* Message Input - تحسين التثبيت لمنع التداخل */}
       <div
         className={`p-3 bg-white border-t border-gray-200 w-full z-20 shadow-lg chat-input soft-entrance`}
+        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
         {/* Typing Indicator */}
         {typingUsers.size > 0 && (

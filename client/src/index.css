@@ -2054,3 +2054,16 @@ li::before {
 .safe-area-bottom {
   padding-bottom: env(safe-area-inset-bottom);
 }
+
+/* Runtime-calculated layout vars for mobile viewport stability */
+:root {
+  --app-header-height: 52px;
+  --app-footer-height: 56px;
+  --app-content-height: auto;
+}
+
+@supports (height: 100dvh) {
+  .chat-container {
+    min-height: 100dvh;
+  }
+}
