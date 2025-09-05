@@ -1,4 +1,4 @@
-import { Send, Smile, ChevronDown, Sparkles } from 'lucide-react';
+import { Send, Smile, ChevronDown, Sparkles, MoreVertical } from 'lucide-react';
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { Virtuoso, type VirtuosoHandle } from 'react-virtuoso';
 
@@ -66,6 +66,7 @@ export default function MessageArea({
   const [showLottieEmoji, setShowLottieEmoji] = useState(false);
   const [showEnhancedEmoji, setShowEnhancedEmoji] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
+  const [showReactionMenu, setShowReactionMenu] = useState<{[key: number]: boolean}>({});
   const isMobile = useIsMobile();
   const { textColor: composerTextColor, bold: composerBold } = useComposerStyle();
 
@@ -442,6 +443,18 @@ export default function MessageArea({
     return `${typingArray.length} أشخاص يكتبون...`;
   }, [typingUsers]);
 
+  // Close reaction menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => {
+      setShowReactionMenu({});
+    };
+    
+    document.addEventListener('click', handleClickOutside);
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, []);
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -452,11 +465,16 @@ export default function MessageArea({
   }, []);
 
   return (
-    <section className={`flex-1 flex flex-col bg-white min-h-0 ${isMobile ? 'mobile-message-area' : ''}`}>
+    <section className={`flex-1 flex flex-col bg-white min-h-0 ${isMobile ? 'mobile-message-area fixed-chat-area' : ''}`}>
 
       {/* Messages Container - Virtualized */}
       <div
-        className={`relative flex-1 ${isMobile ? 'p-2' : 'p-4'} bg-gradient-to-b from-gray-50 to-white`}
+        className={`relative flex-1 ${isMobile ? 'p-2 mobile-messages-container' : 'p-4'} bg-gradient-to-b from-gray-50 to-white`}
+        style={isMobile ? { 
+          overflowY: 'hidden', 
+          position: 'relative',
+          touchAction: 'none'
+        } : {}}
       >
         {validMessages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-gray-500">
@@ -469,7 +487,11 @@ export default function MessageArea({
             ref={virtuosoRef}
             data={validMessages}
             className="!h-full"
-            style={{ paddingBottom: '24px' }}
+            style={isMobile ? { 
+              paddingBottom: '24px',
+              touchAction: 'pan-y',
+              overflowX: 'hidden'
+            } : { paddingBottom: '24px' }}
             followOutput={'smooth'}
             atBottomThreshold={64}
             atBottomStateChange={handleAtBottomChange}
@@ -636,48 +658,119 @@ export default function MessageArea({
                             </button>
                           );
                         })()}
-                      {/* Reactions (like/dislike/heart) */}
+                      {/* Reactions (like/dislike/heart) - Three dots menu for mobile, inline for desktop */}
                       {currentUser && !message.isPrivate && (
                         <div className="flex items-center gap-1 ml-2">
-                          {(['like', 'dislike', 'heart'] as const).map((r) => {
-                            const isMine = message.myReaction === r;
-                            const count = message.reactions?.[r] ?? 0;
-                            const label = r === 'like' ? '👍' : r === 'dislike' ? '👎' : '❤️';
-                            const toggle = async () => {
-                              try {
-                                if (isMine) {
-                                  const res = await apiRequest(
-                                    `/api/messages/${message.id}/reactions`,
-                                    {
-                                      method: 'DELETE',
-                                    }
-                                  );
-                                  // تفويض التحديث للبث عبر السوكت؛ لا نعدل محلياً لتجنب السباقات
-                                } else {
-                                  const res = await apiRequest(
-                                    `/api/messages/${message.id}/reactions`,
-                                    {
-                                      method: 'POST',
-                                      body: { type: r },
-                                    }
-                                  );
-                                }
-                              } catch (e) {
-                                console.error('reaction error', e);
-                              }
-                            };
-                            return (
+                          {isMobile ? (
+                            <div className="relative">
                               <button
-                                key={r}
-                                onClick={toggle}
-                                className={`text-xs px-1 py-0.5 rounded ${isMine ? 'bg-primary/10 text-primary' : 'text-gray-600 hover:text-gray-800'}`}
-                                title={r}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setShowReactionMenu(prev => ({
+                                    ...prev,
+                                    [message.id]: !prev[message.id]
+                                  }));
+                                }}
+                                className="text-xs px-2 py-1 rounded text-gray-600 hover:text-gray-800 hover:bg-gray-100"
+                                title="التفاعلات"
                               >
-                                <span className="mr-0.5">{label}</span>
-                                <span>{count}</span>
+                                <MoreVertical className="w-4 h-4" />
                               </button>
-                            );
-                          })}
+                              {showReactionMenu[message.id] && (
+                                <div 
+                                  className="absolute bottom-full right-0 mb-2 bg-white border border-gray-200 rounded-lg shadow-lg p-2 flex gap-1 z-50 reaction-dropdown"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  {(['like', 'dislike', 'heart'] as const).map((r) => {
+                                    const isMine = message.myReaction === r;
+                                    const count = message.reactions?.[r] ?? 0;
+                                    const label = r === 'like' ? '👍' : r === 'dislike' ? '👎' : '❤️';
+                                    const toggle = async () => {
+                                      try {
+                                        if (isMine) {
+                                          const res = await apiRequest(
+                                            `/api/messages/${message.id}/reactions`,
+                                            {
+                                              method: 'DELETE',
+                                            }
+                                          );
+                                        } else {
+                                          const res = await apiRequest(
+                                            `/api/messages/${message.id}/reactions`,
+                                            {
+                                              method: 'POST',
+                                              body: { type: r },
+                                            }
+                                          );
+                                        }
+                                        setShowReactionMenu(prev => ({
+                                          ...prev,
+                                          [message.id]: false
+                                        }));
+                                      } catch (e) {
+                                        console.error('reaction error', e);
+                                      }
+                                    };
+                                    return (
+                                      <button
+                                        key={r}
+                                        onClick={toggle}
+                                        className={`text-xs px-2 py-1 rounded min-w-[40px] ${isMine ? 'bg-primary/10 text-primary' : 'text-gray-600 hover:text-gray-800 hover:bg-gray-100'}`}
+                                        title={r}
+                                      >
+                                        <div className="flex flex-col items-center">
+                                          <span>{label}</span>
+                                          <span className="text-[10px]">{count}</span>
+                                        </div>
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            // Desktop version - inline buttons
+                            <>
+                              {(['like', 'dislike', 'heart'] as const).map((r) => {
+                                const isMine = message.myReaction === r;
+                                const count = message.reactions?.[r] ?? 0;
+                                const label = r === 'like' ? '👍' : r === 'dislike' ? '👎' : '❤️';
+                                const toggle = async () => {
+                                  try {
+                                    if (isMine) {
+                                      const res = await apiRequest(
+                                        `/api/messages/${message.id}/reactions`,
+                                        {
+                                          method: 'DELETE',
+                                        }
+                                      );
+                                    } else {
+                                      const res = await apiRequest(
+                                        `/api/messages/${message.id}/reactions`,
+                                        {
+                                          method: 'POST',
+                                          body: { type: r },
+                                        }
+                                      );
+                                    }
+                                  } catch (e) {
+                                    console.error('reaction error', e);
+                                  }
+                                };
+                                return (
+                                  <button
+                                    key={r}
+                                    onClick={toggle}
+                                    className={`text-xs px-1 py-0.5 rounded ${isMine ? 'bg-primary/10 text-primary' : 'text-gray-600 hover:text-gray-800'}`}
+                                    title={r}
+                                  >
+                                    <span className="mr-0.5">{label}</span>
+                                    <span>{count}</span>
+                                  </button>
+                                );
+                              })}
+                            </>
+                          )}
                         </div>
                       )}
                     </div>
@@ -748,7 +841,12 @@ export default function MessageArea({
 
       {/* Message Input - تحسين التثبيت لمنع التداخل */}
       <div
-        className={`p-3 bg-white border-t border-gray-200 w-full z-20 shadow-lg chat-input soft-entrance`}
+        className={`p-3 bg-white border-t border-gray-200 w-full z-20 shadow-lg ${isMobile ? 'chat-input mobile-chat-input' : 'chat-input'} soft-entrance`}
+        style={isMobile ? {
+          position: 'sticky',
+          bottom: 0,
+          touchAction: 'manipulation'
+        } : {}}
       >
         {/* Typing Indicator */}
         {typingUsers.size > 0 && (
@@ -863,22 +961,49 @@ export default function MessageArea({
           </React.Suspense>
 
           {/* Message Input */}
-          <Input
-            ref={inputRef}
-            value={messageText}
-            onChange={handleMessageChange}
-            onKeyPress={handleKeyPress}
-            placeholder="اكتب رسالتك هنا..."
-            className={`flex-1 resize-none bg-white placeholder:text-gray-500 ring-offset-white ${isMobile ? 'mobile-text' : ''}`}
-            disabled={!currentUser}
-            maxLength={1000}
-            autoComplete="off"
-            style={{
-              ...(isMobile ? { fontSize: '16px' } : {}),
-              color: composerTextColor,
-              fontWeight: composerBold ? 600 : undefined,
-            }}
-          />
+          {isMobile ? (
+            <textarea
+              ref={inputRef as any}
+              value={messageText}
+              onChange={(e) => {
+                const lines = e.target.value.split('\n');
+                if (lines.length <= 2) {
+                  setMessageText(e.target.value);
+                }
+              }}
+              onKeyPress={handleKeyPress}
+              placeholder="اكتب رسالتك هنا... (حد أقصى سطرين)"
+              className="flex-1 resize-none bg-white placeholder:text-gray-500 ring-offset-white mobile-text border rounded-md px-3 py-2"
+              disabled={!currentUser}
+              maxLength={200}
+              autoComplete="off"
+              rows={2}
+              style={{
+                fontSize: '16px',
+                lineHeight: '1.4',
+                color: composerTextColor,
+                fontWeight: composerBold ? 600 : undefined,
+                maxHeight: '60px',
+                minHeight: '44px'
+              }}
+            />
+          ) : (
+            <Input
+              ref={inputRef}
+              value={messageText}
+              onChange={handleMessageChange}
+              onKeyPress={handleKeyPress}
+              placeholder="اكتب رسالتك هنا..."
+              className="flex-1 resize-none bg-white placeholder:text-gray-500 ring-offset-white"
+              disabled={!currentUser}
+              maxLength={1000}
+              autoComplete="off"
+              style={{
+                color: composerTextColor,
+                fontWeight: composerBold ? 600 : undefined,
+              }}
+            />
+          )}
 
           {/* Send Button */}
           <Button
