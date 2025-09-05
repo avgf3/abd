@@ -2924,24 +2924,30 @@ export default function ProfileModal({
                       <option value="أنثى">👩 أنثى</option>
                     </select>
                   ) : currentEditType === 'country' ? (
-                    <select value={editValue} onChange={(e) => setEditValue(e.target.value)} aria-label="اختيار البلد">
+                    <select value={editValue} onChange={(e) => setEditValue(e.target.value)} aria-label="اختيار البلد" style={{ background: 'rgba(255,255,255,0.06)', color: '#fff', border: '1px solid rgba(255,255,255,0.15)' }}>
                       <option value="">اختر...</option>
-                      <option value="🇸🇦 السعودية">🇸🇦 السعودية</option>
-                      <option value="🇦🇪 الإمارات">🇦🇪 الإمارات</option>
-                      <option value="🇪🇬 مصر">🇪🇬 مصر</option>
-                      <option value="🇯🇴 الأردن">🇯🇴 الأردن</option>
-                      <option value="🇱🇧 لبنان">🇱🇧 لبنان</option>
-                      <option value="🇸🇾 سوريا">🇸🇾 سوريا</option>
-                      <option value="🇮🇶 العراق">🇮🇶 العراق</option>
-                      <option value="🇰🇼 الكويت">🇰🇼 الكويت</option>
-                      <option value="🇶🇦 قطر">🇶🇦 قطر</option>
-                      <option value="🇧🇭 البحرين">🇧🇭 البحرين</option>
-                      <option value="🇴🇲 عمان">🇴🇲 عمان</option>
-                      <option value="🇾🇪 اليمن">🇾🇪 اليمن</option>
-                      <option value="🇱🇾 ليبيا">🇱🇾 ليبيا</option>
-                      <option value="🇹🇳 تونس">🇹🇳 تونس</option>
-                      <option value="🇩🇿 الجزائر">🇩🇿 الجزائر</option>
-                      <option value="🇲🇦 المغرب">🇲🇦 المغرب</option>
+                      <option value="السعودية">السعودية</option>
+                      <option value="الإمارات">الإمارات</option>
+                      <option value="الكويت">الكويت</option>
+                      <option value="قطر">قطر</option>
+                      <option value="البحرين">البحرين</option>
+                      <option value="عمان">عمان</option>
+                      <option value="اليمن">اليمن</option>
+                      <option value="مصر">مصر</option>
+                      <option value="السودان">السودان</option>
+                      <option value="العراق">العراق</option>
+                      <option value="سوريا">سوريا</option>
+                      <option value="لبنان">لبنان</option>
+                      <option value="الأردن">الأردن</option>
+                      <option value="فلسطين">فلسطين</option>
+                      <option value="المغرب">المغرب</option>
+                      <option value="الجزائر">الجزائر</option>
+                      <option value="تونس">تونس</option>
+                      <option value="ليبيا">ليبيا</option>
+                      <option value="موريتانيا">موريتانيا</option>
+                      <option value="الصومال">الصومال</option>
+                      <option value="جيبوتي">جيبوتي</option>
+                      <option value="جزر القمر">جزر القمر</option>
                     </select>
                   ) : currentEditType === 'socialStatus' ? (
                     <select value={editValue} onChange={(e) => setEditValue(e.target.value)} aria-label="اختيار الحالة الاجتماعية">

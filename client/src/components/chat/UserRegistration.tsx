@@ -37,26 +37,11 @@ export default function UserRegistration({ isOpen, onClose, onRegister }: UserRe
   });
 
   const countries = [
-    'السعودية',
-    'الإمارات',
-    'الكويت',
-    'مصر',
-    'الأردن',
-    'المغرب',
-    'العراق',
-    'سوريا',
-    'لبنان',
-    'تونس',
-    'الجزائر',
-    'ليبيا',
-    'قطر',
-    'البحرين',
-    'عمان',
-    'فلسطين',
-    'اليمن',
-    'السودان',
-    'موريتانيا',
-    'الصومال',
+    'السعودية', 'الإمارات', 'الكويت', 'قطر', 'البحرين', 'عمان', 'اليمن',
+    'مصر', 'السودان',
+    'العراق', 'سوريا', 'لبنان', 'الأردن', 'فلسطين',
+    'المغرب', 'الجزائر', 'تونس', 'ليبيا',
+    'موريتانيا', 'الصومال', 'جيبوتي', 'جزر القمر',
   ];
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -236,7 +221,7 @@ export default function UserRegistration({ isOpen, onClose, onRegister }: UserRe
               <SelectTrigger className="bg-slate-800/50 border-slate-600 text-white">
                 <SelectValue placeholder="اختر بلدك" />
               </SelectTrigger>
-              <SelectContent className="bg-slate-800 border-slate-600 max-h-48 overflow-y-auto">
+              <SelectContent className="bg-slate-900 border-slate-700 text-slate-100 max-h-48 overflow-y-auto">
                 {countries.map((country) => (
                   <SelectItem key={country} value={country}>
                     {country}
