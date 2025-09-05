@@ -2276,8 +2276,8 @@ export default function ProfileModal({
                 <div style={{
                   position: 'absolute',
                   bottom: '38px', /* إنزال المجموعة (اللقب والاسم) أقرب للأسفل */
-                  left: '50%',
-                  transform: 'translateX(-50%)',
+                  left: '20px',
+                  right: '170px', /* ترك مساحة للصورة الشخصية */
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
@@ -2331,8 +2331,8 @@ export default function ProfileModal({
                 <div style={{
                   position: 'absolute',
                   bottom: '38px',
-                  left: '50%',
-                  transform: 'translateX(-50%)',
+                  left: '20px',
+                  right: '170px', /* ترك مساحة للصورة الشخصية */
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
@@ -2380,8 +2380,8 @@ export default function ProfileModal({
                 <div style={{
                   position: 'absolute',
                   bottom: '60px', /* رفع الاسم فوق شريط الأزرار */
-                  left: '50%',
-                  transform: 'translateX(-50%)',
+                  left: '20px',
+                  right: '170px', /* ترك مساحة للصورة الشخصية */
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
