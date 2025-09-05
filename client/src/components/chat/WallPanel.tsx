@@ -515,7 +515,7 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
                 <div
                   ref={panelScrollRef}
                   onScroll={handleWallScroll}
-                  className="h-full overflow-y-auto space-y-4 pr-2 pb-24 cursor-grab"
+                  className="h-full overflow-y-auto touch-scroll space-y-4 pr-2 pb-24 cursor-grab"
                 >
                   <WallPostList
                     posts={posts}
