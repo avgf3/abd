@@ -452,11 +452,11 @@ export default function MessageArea({
   }, []);
 
   return (
-    <section className="flex-1 flex flex-col bg-white min-h-0">
+    <section className={`flex-1 flex flex-col bg-white min-h-0 ${isMobile ? 'mobile-message-area' : ''}`}>
 
       {/* Messages Container - Virtualized */}
       <div
-        className={`relative flex-1 p-4 bg-gradient-to-b from-gray-50 to-white`}
+        className={`relative flex-1 ${isMobile ? 'p-2' : 'p-4'} bg-gradient-to-b from-gray-50 to-white`}
       >
         {validMessages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-gray-500">
@@ -756,8 +756,8 @@ export default function MessageArea({
         )}
 
         <div
-          className={`flex ${isMobile ? 'gap-2' : 'gap-3'} items-end max-w-full mx-auto`}
-          style={{ paddingBottom: isMobile ? 'env(safe-area-inset-bottom)' : '0' }}
+          className={`flex ${isMobile ? 'gap-2 p-3' : 'gap-3 p-4'} items-end max-w-full mx-auto bg-white/80 backdrop-blur-sm border-t border-gray-200`}
+          style={{ paddingBottom: isMobile ? 'calc(env(safe-area-inset-bottom) + 0.75rem)' : '1rem' }}
         >
           {/* Emoji Picker */}
           <div className="relative">

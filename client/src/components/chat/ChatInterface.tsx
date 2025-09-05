@@ -718,28 +718,32 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
     >
       {/* Modern Header */}
       <header
-        className={`fixed top-0 left-0 right-0 z-50 modern-nav app-header safe-area-top min-h-[2.5rem] py-1.5 px-4 sm:py-1.5 sm:px-8 flex ${isMobile ? 'flex-col gap-2' : 'flex-row flex-nowrap'} justify-between items-center`}
+        className={`fixed top-0 left-0 right-0 z-50 modern-nav app-header safe-area-top min-h-[3.25rem] py-2 px-4 sm:py-2 sm:px-8 flex ${isMobile ? 'flex-row' : 'flex-row flex-nowrap'} justify-between items-center`}
       >
         <div
-          className={`flex gap-2 ${isMobile ? 'flex-wrap justify-center w-full' : 'flex-1 overflow-x-auto pr-2'} ${chat.currentUser?.userType === 'owner' ? '' : 'max-w-[calc(100%-180px)]'}`}
+          className={`flex gap-2 ${isMobile ? 'flex-wrap justify-start overflow-x-auto w-full' : 'flex-1 overflow-x-auto pr-2'} ${chat.currentUser?.userType === 'owner' ? '' : 'max-w-[calc(100%-180px)]'}`}
         >
           <Button
-            className="glass-effect px-3 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2"
+            className={`glass-effect rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2 ${
+              isMobile ? 'px-2 py-2' : 'px-3 py-2'
+            }`}
             onClick={() => setShowSettings(!showSettings)}
           >
             <Settings className="w-4 h-4" />
-            <span className="font-medium">إعدادات</span>
+            <span className={`font-medium ${isMobile ? 'text-xs' : ''}`}>إعدادات</span>
           </Button>
 
           <Button
-            className="glass-effect px-3 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2 border border-yellow-400"
+            className={`glass-effect rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2 border border-yellow-400 ${
+              isMobile ? 'px-2 py-2' : 'px-3 py-2'
+            }`}
             onMouseEnter={prefetchVip}
             onFocus={prefetchVip}
             onClick={() => setShowRichest(true)}
             title="الأثرياء"
           >
             <Crown className="w-4 h-4 text-yellow-400" />
-            <span className="font-medium">الأثرياء</span>
+            <span className={`font-medium ${isMobile ? 'text-xs' : ''}`}>الأثرياء</span>
           </Button>
 
           {/* زر إضافة غرفة جديدة للمالك */}
@@ -856,12 +860,14 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             )}
 
           <Button
-            className="glass-effect px-4 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2"
+            className={`glass-effect rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2 ${
+              isMobile ? 'px-2 py-2' : 'px-4 py-2'
+            }`}
             onClick={() => setShowMessages(true)}
             title="الرسائل"
           >
             <MessageSquare className="w-4 h-4" />
-            الرسائل
+            <span className={isMobile ? 'text-xs' : ''}>الرسائل</span>
             {totalUnreadPrivateMessages > 0 && (
               <span className="ml-2 inline-flex items-center justify-center text-[10px] min-w-[18px] h-[18px] px-1 rounded-full bg-red-600 text-white">
                 {totalUnreadPrivateMessages}
@@ -870,11 +876,13 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           </Button>
 
           <Button
-            className="glass-effect px-4 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2 relative"
+            className={`glass-effect rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2 relative ${
+              isMobile ? 'px-2 py-2' : 'px-4 py-2'
+            }`}
             onClick={() => setShowNotifications(true)}
           >
             <Bell className="w-4 h-4" />
-            إشعارات
+            <span className={isMobile ? 'text-xs' : ''}>إشعارات</span>
             {unreadNotificationsCount > 0 && (
               <span className="ml-2 inline-flex items-center justify-center text-[10px] min-w-[18px] h-[18px] px-1 rounded-full bg-red-600 text-white">
                 {unreadNotificationsCount}
@@ -891,25 +899,59 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
               if (isMobile) setActiveView('hidden');
             }}
           >
-            <MessageCircle className="w-5 h-5" style={{ color: '#667eea' }} />
-            <div className="text-lg sm:text-xl font-bold whitespace-nowrap" style={{ color: '#ffffff' }}>
+            <MessageCircle className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'}`} style={{ color: '#667eea' }} />
+            <div className={`${isMobile ? 'text-sm' : 'text-lg sm:text-xl'} font-bold whitespace-nowrap`} style={{ color: '#ffffff' }}>
               Arabic<span style={{ color: '#667eea' }}>Chat</span>
             </div>
           </div>
         </div>
       </header>
 
-      {/* Main Content - تحسين التخطيط لمنع التداخل */}
+      {/* Main Content - تحسين التخطيط للجوال */}
       <main
         className={`flex flex-1 overflow-hidden min-h-0 ${isMobile ? 'flex-col' : 'flex-col sm:flex-row'}`}
-        style={{ paddingTop: 'var(--app-header-height)', paddingBottom: isMobile ? 'calc(var(--app-footer-height) + env(safe-area-inset-bottom))' : 'var(--app-footer-height)', height: isMobile ? 'var(--app-body-height)' : undefined }}
+        style={{ 
+          paddingTop: 'var(--app-header-height)', 
+          paddingBottom: isMobile ? 'calc(var(--app-footer-height) + env(safe-area-inset-bottom))' : 'var(--app-footer-height)', 
+          height: isMobile ? 'var(--app-body-height)' : undefined 
+        }}
       >
         {/* الشريط الجانبي - على الجوال يعرض بملء الشاشة عند اختيار التبويب */}
         {activeView !== 'hidden' && (
           <div
-            className={`${isMobile ? 'w-full flex-1 min-h-0' : activeView === 'walls' ? 'w-full sm:w-96' : activeView === 'friends' ? 'w-full sm:w-80' : 'w-full sm:w-64'} max-w-full sm:shrink-0 transition-all duration-300 min-h-0 flex flex-col`}
-            style={{ maxHeight: isMobile ? 'var(--app-body-height)' : 'calc(100dvh - var(--app-header-height) - var(--app-footer-height))' }}
+            className={`${
+              isMobile 
+                ? 'fixed top-0 left-0 right-0 bottom-0 z-40 bg-background/95 backdrop-blur-md' 
+                : activeView === 'walls' ? 'w-full sm:w-96' : activeView === 'friends' ? 'w-full sm:w-80' : 'w-full sm:w-64'
+            } max-w-full sm:shrink-0 transition-all duration-300 min-h-0 flex flex-col`}
+            style={{ 
+              maxHeight: isMobile ? '100dvh' : 'calc(100dvh - var(--app-header-height) - var(--app-footer-height))',
+              paddingTop: isMobile ? 'var(--app-header-height)' : '0',
+              paddingBottom: isMobile ? 'var(--app-footer-height)' : '0'
+            }}
           >
+            {/* زر إغلاق للجوال */}
+            {isMobile && (
+              <div className="flex justify-between items-center p-4 border-b border-border">
+                <h2 className="text-lg font-semibold">
+                  {activeView === 'walls' && 'الحائط'}
+                  {activeView === 'users' && 'المستخدمون المتصلون'}
+                  {activeView === 'rooms' && 'الغرف'}
+                  {activeView === 'friends' && 'الأصدقاء'}
+                </h2>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setActiveView('hidden')}
+                  className="p-2"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+                </Button>
+              </div>
+            )}
             <Suspense
               fallback={
                 <div className="p-4 space-y-2">
@@ -1001,8 +1043,11 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
               // وإلا استخدم MessageArea العادية مع حماية من التداخل
               return (
                 <div
-                  className="flex-1 flex min-h-0"
-                  style={{ maxHeight: isMobile ? 'var(--app-body-height)' : 'calc(100dvh - var(--app-header-height) - var(--app-footer-height))' }}
+                  className={`flex-1 flex min-h-0 ${isMobile ? 'w-full' : ''}`}
+                  style={{ 
+                    maxHeight: isMobile ? 'var(--app-body-height)' : 'calc(100dvh - var(--app-header-height) - var(--app-footer-height))',
+                    minHeight: isMobile ? 'var(--app-body-height)' : 'auto'
+                  }}
                 >
                   <Suspense fallback={<div className="p-4 space-y-3"><SkeletonBlock className="h-6 w-1/3" /><SkeletonBlock className="h-40 w-full" /></div>}>
                     <MessageArea
@@ -1029,13 +1074,13 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
       <footer
         className={`fixed bottom-0 left-0 right-0 z-[60] modern-nav app-footer safe-area-bottom h-14 px-2 sm:px-4 flex justify-start items-center ${isMobile ? 'mobile-footer' : ''}`}
       >
-        <div className="flex gap-1 sm:gap-2 overflow-x-auto max-w-full">
+        <div className={`flex gap-1 sm:gap-2 overflow-x-auto max-w-full ${isMobile ? 'justify-evenly w-full' : ''}`}>
           {/* الحوائط */}
           <Button
             size="sm"
-            className={`${'glass-effect px-2 py-1.5 rounded-lg transition-all duration-200 flex items-center gap-1.5 text-sm'}${
-              activeView === 'walls' ? ' bg-primary text-primary-foreground' : ' hover:bg-accent'
-            }`}
+            className={`glass-effect transition-all duration-200 flex items-center gap-1.5 ${
+              isMobile ? 'flex-1 px-2 py-2 text-xs' : 'px-2 py-1.5 text-sm'
+            }${activeView === 'walls' ? ' bg-primary text-primary-foreground' : ' hover:bg-accent'} rounded-lg`}
             onClick={() => setActiveView((prev) => (prev === 'walls' ? 'hidden' : 'walls'))}
             title="الحائط"
           >
@@ -1055,15 +1100,15 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
               <line x1="3" y1="12" x2="21" y2="12"></line>
               <line x1="3" y1="18" x2="21" y2="18"></line>
             </svg>
-            الحائط
+            <span className={isMobile ? 'tab-text-hide' : ''}>الحائط</span>
           </Button>
 
           {/* المستخدمون */}
           <Button
             size="sm"
-            className={`${'glass-effect px-2 py-1.5 rounded-lg transition-all duration-200 flex items-center gap-1.5 text-sm'}${
-              activeView === 'users' ? ' bg-primary text-primary-foreground' : ' hover:bg-accent'
-            }`}
+            className={`glass-effect transition-all duration-200 flex items-center gap-1.5 ${
+              isMobile ? 'flex-1 px-2 py-2 text-xs' : 'px-2 py-1.5 text-sm'
+            }${activeView === 'users' ? ' bg-primary text-primary-foreground' : ' hover:bg-accent'} rounded-lg`}
             onClick={() => setActiveView((prev) => (prev === 'users' ? 'hidden' : 'users'))}
             title="المستخدمون المتصلون"
           >
@@ -1084,15 +1129,15 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
               <circle cx="17" cy="7" r="3"></circle>
               <path d="M14 21c0-1.657 1.343-3 3-3h1c1.657 0 3 1.343 3 3"></path>
             </svg>
-            المستخدمون ({chat.onlineUsers?.length ?? 0})
+            <span className={isMobile ? 'tab-text-hide' : ''}>المستخدمون ({chat.onlineUsers?.length ?? 0})</span>
           </Button>
 
           {/* الغرف */}
           <Button
             size="sm"
-            className={`${'glass-effect px-2 py-1.5 rounded-lg transition-all duration-200 flex items-center gap-1.5 text-sm'}${
-              activeView === 'rooms' ? ' bg-primary text-primary-foreground' : ' hover:bg-accent'
-            }`}
+            className={`glass-effect transition-all duration-200 flex items-center gap-1.5 ${
+              isMobile ? 'flex-1 px-2 py-2 text-xs' : 'px-2 py-1.5 text-sm'
+            }${activeView === 'rooms' ? ' bg-primary text-primary-foreground' : ' hover:bg-accent'} rounded-lg`}
             onClick={() => setActiveView((prev) => (prev === 'rooms' ? 'hidden' : 'rooms'))}
             title="الغرف"
           >
@@ -1112,15 +1157,15 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
               <path d="M5 10v9a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-9"></path>
               <path d="M9 21v-6h6v6"></path>
             </svg>
-            الغرف
+            <span className={isMobile ? 'tab-text-hide' : ''}>الغرف</span>
           </Button>
 
           {/* الأصدقاء */}
           <Button
             size="sm"
-            className={`${'glass-effect px-2 py-1.5 rounded-lg transition-all duration-200 flex items-center gap-1.5 text-sm'}${
-              activeView === 'friends' ? ' bg-primary text-primary-foreground' : ' hover:bg-accent'
-            }`}
+            className={`glass-effect transition-all duration-200 flex items-center gap-1.5 ${
+              isMobile ? 'flex-1 px-2 py-2 text-xs' : 'px-2 py-1.5 text-sm'
+            }${activeView === 'friends' ? ' bg-primary text-primary-foreground' : ' hover:bg-accent'} rounded-lg`}
             onClick={() => setActiveView((prev) => (prev === 'friends' ? 'hidden' : 'friends'))}
             title="الأصدقاء"
           >
@@ -1141,7 +1186,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
               <path d="M19 8v6"></path>
               <path d="M16 11h6"></path>
             </svg>
-            الأصدقاء
+            <span className={isMobile ? 'tab-text-hide' : ''}>الأصدقاء</span>
           </Button>
         </div>
       </footer>
