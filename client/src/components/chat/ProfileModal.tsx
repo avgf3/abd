@@ -2275,12 +2275,14 @@ export default function ProfileModal({
                 <div style={{
                   position: 'absolute',
                   bottom: '38px', /* إنزال المجموعة (اللقب والاسم) أقرب للأسفل */
-                  left: '160px',
+                  left: '50%',
+                  transform: 'translateX(-50%)',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
                   gap: '1px', /* تقليل الفراغ بين اللقب والاسم */
-                  zIndex: 3
+                  zIndex: 3,
+                  textAlign: 'center'
                 }}>
                   {/* الرتبة فوق الاسم */}
                   {(localUser?.userType === 'owner' || localUser?.userType === 'admin' || localUser?.userType === 'moderator') && (
@@ -2302,7 +2304,10 @@ export default function ProfileModal({
                     fontWeight: 'bold',
                     color: getFinalUsernameColor(localUser || {}),
                     textShadow: '0 2px 4px rgba(0,0,0,0.5)',
-                    cursor: 'pointer'
+                    cursor: 'pointer',
+                    direction: 'auto',
+                    unicodeBidi: 'plaintext',
+                    textAlign: 'center'
                   }}
                   onClick={() => openEditModal('name')}
                   >
@@ -2322,12 +2327,14 @@ export default function ProfileModal({
                 <div style={{
                   position: 'absolute',
                   bottom: '38px',
-                  left: '160px',
+                  left: '50%',
+                  transform: 'translateX(-50%)',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
                   gap: '1px',
-                  zIndex: 12
+                  zIndex: 12,
+                  textAlign: 'center'
                 }}>
                   {(localUser?.userType === 'owner' || localUser?.userType === 'admin' || localUser?.userType === 'moderator') && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -2347,7 +2354,10 @@ export default function ProfileModal({
                     fontWeight: 'bold',
                     color: getFinalUsernameColor(localUser || {}),
                     textShadow: '0 2px 4px rgba(0,0,0,0.5)',
-                    cursor: 'pointer'
+                    cursor: 'pointer',
+                    direction: 'auto',
+                    unicodeBidi: 'plaintext',
+                    textAlign: 'center'
                   }}
                   onClick={() => openEditModal('name')}
                   >
@@ -2363,13 +2373,15 @@ export default function ProfileModal({
                 <div style={{
                   position: 'absolute',
                   bottom: '60px', /* رفع الاسم فوق شريط الأزرار */
-                  left: '160px',
+                  left: '50%',
+                  transform: 'translateX(-50%)',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
                   gap: '1px', /* تقليل الفراغ بين اللقب والاسم */
                   zIndex: 12,
-                  pointerEvents: 'none'
+                  pointerEvents: 'none',
+                  textAlign: 'center'
                 }}>
                   {/* الرتبة فوق الاسم */}
                   {(localUser?.userType === 'owner' || localUser?.userType === 'admin' || localUser?.userType === 'moderator') && (
@@ -2390,7 +2402,10 @@ export default function ProfileModal({
                     fontSize: '18px',
                     fontWeight: 'bold',
                     color: getFinalUsernameColor(localUser || {}),
-                    textShadow: '0 2px 4px rgba(0,0,0,0.5)'
+                    textShadow: '0 2px 4px rgba(0,0,0,0.5)',
+                    direction: 'auto',
+                    unicodeBidi: 'plaintext',
+                    textAlign: 'center'
                   }}>
                     {localUser?.username || 'اسم المستخدم'}
                   </h3>
