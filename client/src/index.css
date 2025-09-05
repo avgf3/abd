@@ -109,7 +109,7 @@
     font-family: 'Cairo', sans-serif;
     direction: rtl;
     background: var(--background);
-    min-height: 100vh;
+    min-height: 100dvh;
     position: relative;
     overflow-x: hidden;
     font-size: 1rem;
@@ -2053,4 +2053,17 @@ li::before {
 
 .safe-area-bottom {
   padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Stable app viewport sizing and bars (mobile-safe) */
+:root {
+  --app-header-height: 3.25rem; /* ~52px, matches header padding + min-height */
+  --app-footer-height: 3.5rem;  /* 56px, matches h-14 */
+  --app-body-height: calc(100dvh - var(--app-header-height) - var(--app-footer-height));
+}
+
+@supports not (height: 100dvh) {
+  :root {
+    --app-body-height: calc(100vh - var(--app-header-height) - var(--app-footer-height));
+  }
 }

@@ -569,7 +569,7 @@ export default function RoomComponent({
                 </div>
               ) : (
                 <Virtuoso
-                  style={{ height: 'calc(100vh - 260px)' }}
+                  style={{ height: 'calc(var(--app-body-height) - 204px)' }}
                   totalCount={filteredRooms.length}
                   itemContent={(index) => {
                     const room = filteredRooms[index];

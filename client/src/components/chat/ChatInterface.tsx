@@ -902,13 +902,13 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
       {/* Main Content - تحسين التخطيط لمنع التداخل */}
       <main
         className={`flex flex-1 overflow-hidden min-h-0 ${isMobile ? 'flex-col' : 'flex-col sm:flex-row'}`}
-        style={{ paddingTop: '3.25rem', paddingBottom: isMobile ? 'calc(3.5rem + env(safe-area-inset-bottom))' : '3.5rem' }}
+        style={{ paddingTop: 'var(--app-header-height)', paddingBottom: isMobile ? 'calc(var(--app-footer-height) + env(safe-area-inset-bottom))' : 'var(--app-footer-height)', height: isMobile ? 'var(--app-body-height)' : undefined }}
       >
         {/* الشريط الجانبي - على الجوال يعرض بملء الشاشة عند اختيار التبويب */}
         {activeView !== 'hidden' && (
           <div
             className={`${isMobile ? 'w-full flex-1 min-h-0' : activeView === 'walls' ? 'w-full sm:w-96' : activeView === 'friends' ? 'w-full sm:w-80' : 'w-full sm:w-64'} max-w-full sm:shrink-0 transition-all duration-300 min-h-0 flex flex-col`}
-            style={{ maxHeight: 'calc(100vh - 96px)' }}
+            style={{ maxHeight: isMobile ? 'var(--app-body-height)' : 'calc(100dvh - var(--app-header-height) - var(--app-footer-height))' }}
           >
             <Suspense
               fallback={
@@ -1002,7 +1002,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
               return (
                 <div
                   className="flex-1 flex min-h-0"
-                  style={{ maxHeight: 'calc(100vh - 96px)' }}
+                  style={{ maxHeight: isMobile ? 'var(--app-body-height)' : 'calc(100dvh - var(--app-header-height) - var(--app-footer-height))' }}
                 >
                   <Suspense fallback={<div className="p-4 space-y-3"><SkeletonBlock className="h-6 w-1/3" /><SkeletonBlock className="h-40 w-full" /></div>}>
                     <MessageArea

@@ -99,7 +99,7 @@ export default function CountryChat() {
   }
 
   return (
-    <div className="min-h-[100dvh] bg-background text-foreground font-['Cairo'] overflow-hidden" dir="rtl">
+    <div className="min-h-[100dvh] bg-background text-foreground font-['Cairo'] overflow-hidden" dir="rtl" style={{ minHeight: '100dvh' }}>
       <Suspense fallback={<div className="p-6 text-center">...جاري التحميل</div>}>
         {isRestoring ? (
           <div className="p-6 text-center">...جاري استعادة الجلسة</div>
