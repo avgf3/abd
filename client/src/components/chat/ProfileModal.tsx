@@ -1435,7 +1435,7 @@ export default function ProfileModal({
 
         .profile-card {
           width: 100%;
-          max-width: 440px;
+          max-width: 420px;
           border-radius: 16px;
           overflow: hidden;
           background: var(--card-bg);
@@ -1452,7 +1452,7 @@ export default function ProfileModal({
 
         .profile-cover {
           position: relative;
-          height: 230px;
+          height: 250px;
           background-size: cover;
           background-position: center;
           background-repeat: no-repeat;
