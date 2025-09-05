@@ -581,7 +581,7 @@ export default function UnifiedSidebar({
           <Tabs
             value={activeTab}
             onValueChange={(value) => setActiveTab(value as 'public' | 'friends')}
-            className="flex-1 flex flex-col"
+            className="flex-1 flex flex-col min-h-0 overflow-hidden"
           >
             <TabsList className="grid w-full grid-cols-2 m-2 flex-shrink-0">
               <TabsTrigger value="public" className="flex items-center gap-2">
