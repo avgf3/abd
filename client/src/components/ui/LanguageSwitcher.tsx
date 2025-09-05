@@ -1,4 +1,5 @@
 import { Globe, ChevronDown } from 'lucide-react';
+import CountryFlag from '@/components/ui/CountryFlag';
 import { useState, useEffect } from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -13,7 +14,7 @@ interface Language {
   code: string;
   name: string;
   nativeName: string;
-  flag: string;
+  flag: string; // سيبقى للعرض الاحتياطي إذا فشل SVG
   direction: 'ltr' | 'rtl';
 }
 
@@ -113,7 +114,17 @@ export default function LanguageSwitcher({
                 isTransitioning ? 'opacity-70' : 'opacity-100'
               }`}
             >
-              <span className="text-lg">{currentLanguage.flag}</span>
+              <CountryFlag iso2={currentLanguage.code === 'ar' ? 'SA' :
+                                   currentLanguage.code === 'en' ? 'US' :
+                                   currentLanguage.code === 'fr' ? 'FR' :
+                                   currentLanguage.code === 'es' ? 'ES' :
+                                   currentLanguage.code === 'de' ? 'DE' :
+                                   currentLanguage.code === 'it' ? 'IT' :
+                                   currentLanguage.code === 'pt' ? 'PT' :
+                                   currentLanguage.code === 'ru' ? 'RU' :
+                                   currentLanguage.code === 'zh' ? 'CN' :
+                                   currentLanguage.code === 'ja' ? 'JP' :
+                                   currentLanguage.code === 'ko' ? 'KR' : null} size={18} title={currentLanguage.nativeName} />
               <ChevronDown className="h-3 w-3" />
             </Button>
           </DropdownMenuTrigger>
@@ -128,7 +139,17 @@ export default function LanguageSwitcher({
                     : 'hover:bg-gray-50'
                 }`}
               >
-                <span className="text-lg">{language.flag}</span>
+                <CountryFlag iso2={language.code === 'ar' ? 'SA' :
+                                     language.code === 'en' ? 'US' :
+                                     language.code === 'fr' ? 'FR' :
+                                     language.code === 'es' ? 'ES' :
+                                     language.code === 'de' ? 'DE' :
+                                     language.code === 'it' ? 'IT' :
+                                     language.code === 'pt' ? 'PT' :
+                                     language.code === 'ru' ? 'RU' :
+                                     language.code === 'zh' ? 'CN' :
+                                     language.code === 'ja' ? 'JP' :
+                                     language.code === 'ko' ? 'KR' : null} size={18} title={language.nativeName} />
                 <div className="flex flex-col">
                   <span className="font-medium">{language.nativeName}</span>
                   <span className="text-xs text-gray-500">{language.name}</span>
@@ -155,7 +176,17 @@ export default function LanguageSwitcher({
             }`}
           >
             <Globe className="h-4 w-4" />
-            <span className="text-lg">{currentLanguage.flag}</span>
+            <CountryFlag iso2={currentLanguage.code === 'ar' ? 'SA' :
+                                 currentLanguage.code === 'en' ? 'US' :
+                                 currentLanguage.code === 'fr' ? 'FR' :
+                                 currentLanguage.code === 'es' ? 'ES' :
+                                 currentLanguage.code === 'de' ? 'DE' :
+                                 currentLanguage.code === 'it' ? 'IT' :
+                                 currentLanguage.code === 'pt' ? 'PT' :
+                                 currentLanguage.code === 'ru' ? 'RU' :
+                                 currentLanguage.code === 'zh' ? 'CN' :
+                                 currentLanguage.code === 'ja' ? 'JP' :
+                                 currentLanguage.code === 'ko' ? 'KR' : null} size={20} title={currentLanguage.nativeName} />
             <span className="font-medium">{currentLanguage.nativeName}</span>
             <ChevronDown className="h-4 w-4" />
           </Button>
@@ -175,7 +206,17 @@ export default function LanguageSwitcher({
                     : 'hover:bg-gray-50'
                 }`}
               >
-                <span className="text-xl">{language.flag}</span>
+                <CountryFlag iso2={language.code === 'ar' ? 'SA' :
+                                     language.code === 'en' ? 'US' :
+                                     language.code === 'fr' ? 'FR' :
+                                     language.code === 'es' ? 'ES' :
+                                     language.code === 'de' ? 'DE' :
+                                     language.code === 'it' ? 'IT' :
+                                     language.code === 'pt' ? 'PT' :
+                                     language.code === 'ru' ? 'RU' :
+                                     language.code === 'zh' ? 'CN' :
+                                     language.code === 'ja' ? 'JP' :
+                                     language.code === 'ko' ? 'KR' : null} size={22} title={language.nativeName} />
                 <div className="flex flex-col flex-1">
                   <span className="font-medium">{language.nativeName}</span>
                   <span className="text-sm text-gray-500">{language.name}</span>
