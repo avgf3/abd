@@ -490,7 +490,7 @@ export default function UnifiedSidebar({
       React.memo(({ user }: { user: ChatUser }) => {
         if (!user?.username || !user?.userType) return null;
         return (
-          <li key={user.id} className="relative list-none">
+          <div key={user.id} className="relative" role="listitem">
             <SimpleUserMenu
               targetUser={user}
               currentUser={currentUser}
@@ -524,7 +524,7 @@ export default function UnifiedSidebar({
                 </div>
               </div>
             </SimpleUserMenu>
-          </li>
+          </div>
         );
       }),
     [currentUser, isModerator, renderCountryFlag, renderUserBadge]
@@ -583,7 +583,7 @@ export default function UnifiedSidebar({
                 )}
               </div>
             ) : (
-              <div className="px-0">
+              <div className="px-0" role="list">
                 <Virtuoso
                   style={{ height: isMobile ? 'calc(100vh - 180px)' : 'calc(100vh - 260px)' }}
                   totalCount={filteredUsers.length}
