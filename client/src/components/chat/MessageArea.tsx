@@ -1,4 +1,4 @@
-import { Send, Smile, ChevronDown, Sparkles } from 'lucide-react';
+import { Send, Smile, ChevronDown, Sparkles, MoreVertical } from 'lucide-react';
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { Virtuoso, type VirtuosoHandle } from 'react-virtuoso';
 
@@ -30,6 +30,12 @@ import { formatTime } from '@/utils/timeUtils';
 // Removed ComposerPlusMenu (ready/quick options)
 import { useComposerStyle } from '@/contexts/ComposerStyleContext';
 import { renderMessageWithAnimatedEmojis, convertTextToAnimatedEmojis } from '@/utils/animatedEmojiUtils';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from '@/components/ui/dropdown-menu';
 
 interface MessageAreaProps {
   messages: ChatMessage[];
@@ -93,6 +99,21 @@ export default function MessageArea({
     open: false,
     src: null,
   });
+
+  // Track expanded messages on mobile (for toggling clamp)
+  const [expandedMessageIds, setExpandedMessageIds] = useState<Set<number>>(new Set());
+  const isMessageExpanded = useCallback(
+    (id: number) => expandedMessageIds.has(id),
+    [expandedMessageIds]
+  );
+  const toggleMessageExpanded = useCallback((id: number) => {
+    setExpandedMessageIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
 
   const isAllowedYouTubeHost = useCallback((host: string) => {
     const h = host.toLowerCase();
@@ -477,7 +498,7 @@ export default function MessageArea({
             itemContent={(index, message) => (
               <div
                 key={message.id}
-                className={`flex items-center gap-2 p-2 rounded-lg border-r-4 bg-white shadow-sm hover:shadow-md transition-all duration-300 room-message-pulse soft-entrance`}
+                className={`flex ${isMobile ? 'items-start' : 'items-center'} gap-2 p-2 rounded-lg border-r-4 bg-white shadow-sm hover:shadow-md transition-all duration-300 room-message-pulse soft-entrance`}
                 style={{ borderRightColor: getDynamicBorderColor(message.sender) }}
               >
                 {/* System message: one-line red without avatar/badge */}
@@ -506,7 +527,7 @@ export default function MessageArea({
                     )}
 
                     {/* Inline row: badge, name, content */}
-                    <div className="flex-1 min-w-0 flex items-center gap-2">
+                    <div className={`flex-1 min-w-0 flex ${isMobile ? 'flex-wrap items-start' : 'items-center'} gap-2`}>
                       {message.sender && (
                         <UserRoleBadge user={message.sender} showOnlyIcon={true} hideGuestAndGender={true} size={16} />
                       )}
@@ -518,7 +539,7 @@ export default function MessageArea({
                         {message.sender?.username}
                       </button>
 
-                      <div className="text-gray-800 break-words truncate flex-1 message-content-fix">
+                      <div className={`text-gray-800 break-words flex-1 min-w-0 message-content-fix ${isMobile && !isMessageExpanded(message.id) ? 'line-clamp-2' : !isMobile ? 'truncate' : ''}`}>
                         {message.messageType === 'image' ? (
                           <img
                             src={message.content}
@@ -538,10 +559,10 @@ export default function MessageArea({
                             if (ids.length > 0) {
                               const firstId = ids[0];
                               return (
-                                <span className="truncate text-breathe flex items-center gap-2">
+                                <span dir="auto" className={`${isMobile && !isMessageExpanded(message.id) ? 'line-clamp-2' : !isMobile ? 'truncate' : ''} text-breathe flex items-center gap-2`} onClick={() => isMobile && toggleMessageExpanded(message.id)}>
                                   {cleaned ? (
                                     <span
-                                      className="truncate"
+                                      className={`${isMobile && !isMessageExpanded(message.id) ? 'line-clamp-2' : !isMobile ? 'truncate' : ''}`}
                                       style={
                                         currentUser && message.senderId === currentUser.id
                                           ? { color: composerTextColor, fontWeight: composerBold ? 600 : undefined }
@@ -568,7 +589,9 @@ export default function MessageArea({
                             }
                             return (
                               <span
-                                className="truncate text-breathe"
+                                dir="auto"
+                                className={`${isMobile && !isMessageExpanded(message.id) ? 'line-clamp-2' : !isMobile ? 'truncate' : ''} text-breathe`}
+                                onClick={() => isMobile && toggleMessageExpanded(message.id)}
                                 style={
                                   currentUser && message.senderId === currentUser.id
                                     ? { color: composerTextColor, fontWeight: composerBold ? 600 : undefined }
@@ -637,7 +660,7 @@ export default function MessageArea({
                           );
                         })()}
                       {/* Reactions (like/dislike/heart) */}
-                      {currentUser && !message.isPrivate && (
+                      {currentUser && !message.isPrivate && !isMobile && (
                         <div className="flex items-center gap-1 ml-2">
                           {(['like', 'dislike', 'heart'] as const).map((r) => {
                             const isMine = message.myReaction === r;
@@ -646,15 +669,14 @@ export default function MessageArea({
                             const toggle = async () => {
                               try {
                                 if (isMine) {
-                                  const res = await apiRequest(
+                                  await apiRequest(
                                     `/api/messages/${message.id}/reactions`,
                                     {
                                       method: 'DELETE',
                                     }
                                   );
-                                  // تفويض التحديث للبث عبر السوكت؛ لا نعدل محلياً لتجنب السباقات
                                 } else {
-                                  const res = await apiRequest(
+                                  await apiRequest(
                                     `/api/messages/${message.id}/reactions`,
                                     {
                                       method: 'POST',
@@ -679,6 +701,45 @@ export default function MessageArea({
                             );
                           })}
                         </div>
+                      )}
+
+                      {/* Mobile: reactions in a three-dots menu */}
+                      {currentUser && !message.isPrivate && isMobile && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button
+                              className="h-6 w-6 p-0 text-gray-600 hover:text-gray-900"
+                              title="المزيد"
+                              aria-label="المزيد"
+                            >
+                              <MoreVertical className="w-4 h-4" />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="start" sideOffset={6} className="min-w-[160px]">
+                            {(['like', 'dislike', 'heart'] as const).map((r) => {
+                              const isMine = message.myReaction === r;
+                              const count = message.reactions?.[r] ?? 0;
+                              const label = r === 'like' ? '👍 إعجاب' : r === 'dislike' ? '👎 عدم إعجاب' : '❤️ قلب';
+                              const toggle = async () => {
+                                try {
+                                  if (isMine) {
+                                    await apiRequest(`/api/messages/${message.id}/reactions`, { method: 'DELETE' });
+                                  } else {
+                                    await apiRequest(`/api/messages/${message.id}/reactions`, { method: 'POST', body: { type: r } });
+                                  }
+                                } catch (e) {
+                                  console.error('reaction error', e);
+                                }
+                              };
+                              return (
+                                <DropdownMenuItem key={r} onClick={toggle} className={`flex items-center justify-between gap-2 ${isMine ? 'text-primary' : ''}`}>
+                                  <span>{label}</span>
+                                  <span className="text-xs text-gray-500">{count}</span>
+                                </DropdownMenuItem>
+                              );
+                            })}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       )}
                     </div>
                   </>
