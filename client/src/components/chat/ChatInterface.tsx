@@ -60,7 +60,6 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { useIsMobile } from '@/hooks/use-mobile';
 import type { UseChatReturn } from '@/hooks/useChat';
 import { useNotificationManager } from '@/hooks/useNotificationManager';
@@ -1292,17 +1291,26 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
         </div>
       </footer>
 
-      {/* Mobile sidebar sheet */}
-      {isMobile && (
-        <Sheet open={mobileSidebar !== 'none'} onOpenChange={(open) => setMobileSidebar(open ? (mobileSidebar || 'users') : 'none')}>
-          <SheetContent side="bottom" className="p-0 h-[70vh] sm:h-[60vh]">
-            <div className="h-full flex flex-col">
+      {/* Mobile sidebar overlay covering chat area fully between header and footer */}
+      {isMobile && mobileSidebar !== 'none' && (
+        <div
+          className="fixed left-0 right-0 z-[65] bg-background"
+          style={{
+            top: 'var(--app-header-height, 52px)',
+            bottom: 'var(--app-footer-height, 56px)'
+          }}
+        >
+          <div className="h-full flex flex-col">
+            <div className="p-2 flex justify-center">
+              <Button variant="outline" size="sm" onClick={() => setMobileSidebar('none')}>إغلاق</Button>
+            </div>
+            <div className="flex-1 min-h-0">
               <Suspense fallback={<div className="p-4 space-y-2"><SkeletonBlock className="h-6 w-1/2" /><SkeletonBlock className="h-10 w-full" /><SkeletonBlock className="h-10 w-full" /><SkeletonBlock className="h-10 w-3/4" /></div>}>
                 <UnifiedSidebar
                   users={chat.onlineUsers}
                   onUserClick={handleUserClick}
                   currentUser={chat.currentUser}
-                  activeView={mobileSidebar === 'none' ? 'users' : (mobileSidebar as any)}
+                  activeView={mobileSidebar as any}
                   rooms={rooms}
                   currentRoomId={chat.currentRoomId}
                   onRoomChange={(roomId) => {
@@ -1324,8 +1332,8 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                 />
               </Suspense>
             </div>
-          </SheetContent>
-        </Sheet>
+          </div>
+        </div>
       )}
 
       {/* Modals and Popups */}
