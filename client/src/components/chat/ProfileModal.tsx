@@ -2308,11 +2308,10 @@ export default function ProfileModal({
                     cursor: 'pointer',
                     direction: 'auto',
                     unicodeBidi: 'plaintext',
-                    textAlign: 'center',
-                    maxWidth: '80vw',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap'
+                    textAlign: 'right',
+                    whiteSpace: 'normal',
+                    overflowWrap: 'anywhere',
+                    wordBreak: 'break-word'
                   }}
                   onClick={() => openEditModal('name')}
                   >
@@ -2362,11 +2361,10 @@ export default function ProfileModal({
                     cursor: 'pointer',
                     direction: 'auto',
                     unicodeBidi: 'plaintext',
-                    textAlign: 'center',
-                    maxWidth: '80vw',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap'
+                    textAlign: 'right',
+                    whiteSpace: 'normal',
+                    overflowWrap: 'anywhere',
+                    wordBreak: 'break-word'
                   }}
                   onClick={() => openEditModal('name')}
                   >
@@ -2414,11 +2412,10 @@ export default function ProfileModal({
                     textShadow: '0 2px 4px rgba(0,0,0,0.5)',
                     direction: 'auto',
                     unicodeBidi: 'plaintext',
-                    textAlign: 'center',
-                    maxWidth: '80vw',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap'
+                    textAlign: 'right',
+                    whiteSpace: 'normal',
+                    overflowWrap: 'anywhere',
+                    wordBreak: 'break-word'
                   }}>
                     <bdi>{localUser?.username || 'اسم المستخدم'}</bdi>
                   </h3>
