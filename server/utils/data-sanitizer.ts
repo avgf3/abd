@@ -10,7 +10,7 @@ export function isValidHexColor(color: string): boolean {
 // دالة لتنظيف وتصحيح لون HEX
 export function sanitizeHexColor(
   color: string | null | undefined,
-  defaultColor: string = '#3c0d0d'
+  defaultColor: string = '#4a4a4a'
 ): string {
   if (!color || color === 'null' || color === 'undefined' || color === '') {
     return defaultColor;
@@ -148,7 +148,7 @@ export function sanitizeUsersArray(users: any[]): any[] {
 
 export function sanitizeProfileBackgroundColor(
   color: string | null | undefined,
-  defaultColor: string = '#3c0d0d'
+  defaultColor: string = '#4a4a4a'
 ): string {
   if (!color || color === 'null' || color === 'undefined' || color === '') {
     return defaultColor;

@@ -4271,8 +4271,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const hashedPassword = await bcrypt.hash(parsed.data.password, 12);
       
       // إضافة البوت إلى قاعدة البيانات
+      const body: any = parsed.data;
+      // دعم تمرير العمر ضمن settings للحفاظ على المخطط الحالي
+      const ageVal = (req.body as any)?.age;
+      const relation = (req.body as any)?.relation;
+      const country = (req.body as any)?.country;
+      const settings: any = {
+        ...(body.settings || {}),
+        ...(typeof ageVal !== 'undefined' && ageVal !== '' ? { age: Number(ageVal) } : {}),
+      };
       const [newBot] = await db.insert(bots).values({
-        ...parsed.data,
+        ...body,
+        // حقول بسيطة تُخزن مباشرة
+        relation: typeof relation === 'string' ? relation : body.relation,
+        country: typeof country === 'string' ? country : body.country,
+        settings,
         password: hashedPassword,
         createdBy: req.user?.id,
       }).returning();
@@ -4322,9 +4335,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { bots } = await import('../shared/schema');
       
       // إذا كان هناك كلمة مرور جديدة، قم بتشفيرها
-      let updateData = { ...req.body };
+      let updateData = { ...req.body } as any;
       if (updateData.password) {
         updateData.password = await bcrypt.hash(updateData.password, 12);
+      }
+      // تطبيع العمر داخل settings
+      if (typeof (req.body as any)?.age !== 'undefined') {
+        const currentSettings = (updateData.settings && typeof updateData.settings === 'object') ? updateData.settings : {};
+        updateData.settings = {
+          ...currentSettings,
+          age: (req.body as any).age === '' ? undefined : Number((req.body as any).age),
+        };
+        // إزالة age العلوي إن وُجد
+        delete (updateData as any).age;
       }
 
       const [updatedBot] = await db.update(bots)

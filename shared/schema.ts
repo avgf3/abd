@@ -21,7 +21,7 @@ export const users = pgTable('users', {
   role: text('role').notNull().default('guest'), // إضافة role للتوافق مع ChatUser
   profileImage: text('profile_image'),
   profileBanner: text('profile_banner'),
-  profileBackgroundColor: text('profile_background_color').default('#3c0d0d'), // لون خلفية البروفايل
+  profileBackgroundColor: text('profile_background_color').default('#4a4a4a'), // لون خلفية البروفايل (موحّد مع البوت)
   avatarHash: text('avatar_hash'),
   avatarVersion: integer('avatar_version').default(1),
   status: text('status'),

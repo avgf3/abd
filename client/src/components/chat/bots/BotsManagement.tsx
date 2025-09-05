@@ -83,6 +83,9 @@ export default function BotsManagement({ currentUser }: BotsManagementProps) {
     botType: 'system' as 'system' | 'chat' | 'moderator',
     usernameColor: '#00FF00',
     gender: 'male' as 'male' | 'female',
+    country: '',
+    relation: '',
+    age: '' as any,
   });
 
   // جلب قائمة البوتات
@@ -172,6 +175,9 @@ export default function BotsManagement({ currentUser }: BotsManagementProps) {
         botType: 'system',
         usernameColor: '#00FF00',
         gender: 'male',
+        country: '',
+        relation: '',
+        age: '' as any,
       });
 
       toast({
@@ -215,6 +221,9 @@ export default function BotsManagement({ currentUser }: BotsManagementProps) {
           bio: selectedBot.bio,
           usernameColor: selectedBot.usernameColor,
           botType: selectedBot.botType,
+          country: (selectedBot as any).country,
+          relation: (selectedBot as any).relation,
+          age: (selectedBot as any).age,
         },
       });
 
@@ -638,6 +647,36 @@ export default function BotsManagement({ currentUser }: BotsManagementProps) {
               </Select>
             </div>
             <div className="grid gap-2">
+              <Label htmlFor="country">الدولة</Label>
+              <Input
+                id="country"
+                value={(newBot as any).country || ''}
+                onChange={(e) => setNewBot({ ...newBot, country: e.target.value })}
+                placeholder="مثال: 🇸🇦 السعودية"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="age">العمر</Label>
+              <Input
+                id="age"
+                type="number"
+                min={10}
+                max={100}
+                value={(newBot as any).age || ''}
+                onChange={(e) => setNewBot({ ...newBot, age: e.target.value ? Number(e.target.value) : '' as any })}
+                placeholder="مثال: 25"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="relation">الحالة الاجتماعية</Label>
+              <Input
+                id="relation"
+                value={(newBot as any).relation || ''}
+                onChange={(e) => setNewBot({ ...newBot, relation: e.target.value })}
+                placeholder="أعزب / متزوج ..."
+              />
+            </div>
+            <div className="grid gap-2">
               <Label htmlFor="color">لون الاسم</Label>
               <div className="flex gap-2">
                 <Input
@@ -732,6 +771,33 @@ export default function BotsManagement({ currentUser }: BotsManagementProps) {
                     <SelectItem value="moderator">مشرف</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="edit-country">الدولة</Label>
+                <Input
+                  id="edit-country"
+                  value={(selectedBot as any).country || ''}
+                  onChange={(e) => setSelectedBot({ ...selectedBot!, country: e.target.value } as any)}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="edit-age">العمر</Label>
+                <Input
+                  id="edit-age"
+                  type="number"
+                  min={10}
+                  max={100}
+                  value={(selectedBot as any).age || ''}
+                  onChange={(e) => setSelectedBot({ ...selectedBot!, age: e.target.value ? Number(e.target.value) : ('' as any) } as any)}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="edit-relation">الحالة الاجتماعية</Label>
+                <Input
+                  id="edit-relation"
+                  value={(selectedBot as any).relation || ''}
+                  onChange={(e) => setSelectedBot({ ...selectedBot!, relation: e.target.value } as any)}
+                />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="edit-color">لون الاسم</Label>

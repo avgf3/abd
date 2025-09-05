@@ -168,8 +168,21 @@ export default function UnifiedSidebar({
 
   const getCountryEmoji = useCallback((country?: string): string | null => {
     if (!country) return null;
-    const token = country.trim().split(' ')[0];
-    return token || null;
+    const text = country.trim();
+    if (!text) return null;
+
+    // التحقق إن كان بداية النص تحمل زوج مؤشرات إقليمية (إيموجي علم)
+    const chars = Array.from(text);
+    if (chars.length >= 2) {
+      const cp0 = chars[0].codePointAt(0) || 0;
+      const cp1 = chars[1].codePointAt(0) || 0;
+      const isRI = (cp: number) => cp >= 0x1f1e6 && cp <= 0x1f1ff;
+      if (isRI(cp0) && isRI(cp1)) {
+        return chars[0] + chars[1];
+      }
+    }
+    // ليس علماً صالحاً → لا نعرض شيئاً
+    return null;
   }, []);
 
   const renderCountryFlag = useCallback(
