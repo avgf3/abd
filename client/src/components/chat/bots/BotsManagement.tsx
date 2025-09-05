@@ -88,6 +88,30 @@ export default function BotsManagement({ currentUser }: BotsManagementProps) {
     age: '' as any,
   });
 
+  // قائمة الدول مطابقـة لقائمة الأعضاء
+  const countries = [
+    'السعودية',
+    'الإمارات',
+    'الكويت',
+    'مصر',
+    'الأردن',
+    'المغرب',
+    'العراق',
+    'سوريا',
+    'لبنان',
+    'تونس',
+    'الجزائر',
+    'ليبيا',
+    'قطر',
+    'البحرين',
+    'عمان',
+    'فلسطين',
+    'اليمن',
+    'السودان',
+    'موريتانيا',
+    'الصومال',
+  ];
+
   // جلب قائمة البوتات
   const fetchBots = async () => {
     try {
@@ -648,19 +672,28 @@ export default function BotsManagement({ currentUser }: BotsManagementProps) {
             </div>
             <div className="grid gap-2">
               <Label htmlFor="country">الدولة</Label>
-              <Input
-                id="country"
+              <Select
                 value={(newBot as any).country || ''}
-                onChange={(e) => setNewBot({ ...newBot, country: e.target.value })}
-                placeholder="مثال: 🇸🇦 السعودية"
-              />
+                onValueChange={(value) => setNewBot({ ...newBot, country: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="اختر بلدك" />
+                </SelectTrigger>
+                <SelectContent>
+                  {countries.map((c) => (
+                    <SelectItem key={c} value={c}>
+                      {c}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="grid gap-2">
               <Label htmlFor="age">العمر</Label>
               <Input
                 id="age"
                 type="number"
-                min={10}
+                min={18}
                 max={100}
                 value={(newBot as any).age || ''}
                 onChange={(e) => setNewBot({ ...newBot, age: e.target.value ? Number(e.target.value) : '' as any })}
@@ -669,12 +702,21 @@ export default function BotsManagement({ currentUser }: BotsManagementProps) {
             </div>
             <div className="grid gap-2">
               <Label htmlFor="relation">الحالة الاجتماعية</Label>
-              <Input
-                id="relation"
+              <Select
                 value={(newBot as any).relation || ''}
-                onChange={(e) => setNewBot({ ...newBot, relation: e.target.value })}
-                placeholder="أعزب / متزوج ..."
-              />
+                onValueChange={(value) => setNewBot({ ...newBot, relation: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="اختر" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="أعزب">أعزب</SelectItem>
+                  <SelectItem value="مرتبط">مرتبط</SelectItem>
+                  <SelectItem value="متزوج">متزوج</SelectItem>
+                  <SelectItem value="مطلق">مطلق</SelectItem>
+                  <SelectItem value="أرمل">أرمل</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="grid gap-2">
               <Label htmlFor="color">لون الاسم</Label>
@@ -774,18 +816,28 @@ export default function BotsManagement({ currentUser }: BotsManagementProps) {
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="edit-country">الدولة</Label>
-                <Input
-                  id="edit-country"
+                <Select
                   value={(selectedBot as any).country || ''}
-                  onChange={(e) => setSelectedBot({ ...selectedBot!, country: e.target.value } as any)}
-                />
+                  onValueChange={(value) => setSelectedBot({ ...selectedBot!, country: value } as any)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="اختر بلدك" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {countries.map((c) => (
+                      <SelectItem key={c} value={c}>
+                        {c}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="edit-age">العمر</Label>
                 <Input
                   id="edit-age"
                   type="number"
-                  min={10}
+                  min={18}
                   max={100}
                   value={(selectedBot as any).age || ''}
                   onChange={(e) => setSelectedBot({ ...selectedBot!, age: e.target.value ? Number(e.target.value) : ('' as any) } as any)}
@@ -793,11 +845,21 @@ export default function BotsManagement({ currentUser }: BotsManagementProps) {
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="edit-relation">الحالة الاجتماعية</Label>
-                <Input
-                  id="edit-relation"
+                <Select
                   value={(selectedBot as any).relation || ''}
-                  onChange={(e) => setSelectedBot({ ...selectedBot!, relation: e.target.value } as any)}
-                />
+                  onValueChange={(value) => setSelectedBot({ ...selectedBot!, relation: value } as any)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="اختر" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="أعزب">أعزب</SelectItem>
+                    <SelectItem value="مرتبط">مرتبط</SelectItem>
+                    <SelectItem value="متزوج">متزوج</SelectItem>
+                    <SelectItem value="مطلق">مطلق</SelectItem>
+                    <SelectItem value="أرمل">أرمل</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="edit-color">لون الاسم</Label>
