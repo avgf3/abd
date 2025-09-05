@@ -1995,38 +1995,38 @@ a:hover::after {
   width: 100%;
 }
 
-/* Modern List Styles */
+/* Modern List Styles - keep neutral globally (avoid forcing bullets/padding) */
 ul, ol {
   list-style: none;
   padding-right: 0;
+  margin: 0;
 }
 
+/* Remove default li decorations globally to prevent side strips in virtual lists */
 li {
-  position: relative;
-  padding-right: 24px;
-  margin-bottom: 8px;
+  position: static;
+  padding: 0;
+  margin: 0;
 }
 
 li::before {
-  content: '◈';
-  position: absolute;
-  right: 0;
-  color: var(--primary-solid);
-  font-weight: bold;
+  content: none;
 }
 
-/* Reset default list markers and spacing inside the users list only */
+/* Users list container: ensure edge-to-edge rows and no pseudo-markers */
+.users-list-reset, .users-list-reset * {
+  list-style: none !important;
+}
+
+.users-list-reset [role="listitem"],
 .users-list-reset li {
-  padding-right: 0;
-  margin-bottom: 0;
+  margin: 0 !important;
+  padding: 0 !important;
 }
 
-.users-list-reset li::before {
-  content: '';
-}
-
-/* Fix for user list items in sidebar - remove pseudo element */
+.users-list-reset [role="listitem"]::before,
 .users-list-reset li::before,
+#root [role="listitem"]::before,
 #root li[class*="relative"]::before {
   content: none !important;
   display: none !important;
