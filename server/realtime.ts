@@ -946,6 +946,8 @@ async function loadActiveBots() {
         gender: bot.gender,
         country: bot.country,
         relation: bot.relation,
+        // العمر يُحفظ داخل settings إن وُجد
+        age: (bot as any)?.settings?.age,
         bio: bot.bio,
         usernameColor: bot.usernameColor,
         profileEffect: bot.profileEffect,
