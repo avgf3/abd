@@ -718,11 +718,9 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
     >
       {/* Modern Header */}
       <header
-        className={`fixed top-0 left-0 right-0 z-50 modern-nav app-header safe-area-top min-h-[3.25rem] py-2 px-4 sm:py-2 sm:px-8 flex ${isMobile ? 'flex-row' : 'flex-row flex-nowrap'} justify-between items-center`}
+        className={`fixed top-0 left-0 right-0 z-50 modern-nav app-header safe-area-top h-14 px-2 sm:px-4 flex justify-start items-center ${isMobile ? 'mobile-header' : ''}`}
       >
-        <div
-          className={`flex gap-2 ${isMobile ? 'flex-wrap justify-start overflow-x-auto w-full' : 'flex-1 overflow-x-auto pr-2'} ${chat.currentUser?.userType === 'owner' ? '' : 'max-w-[calc(100%-180px)]'}`}
-        >
+        <div className={`flex gap-1 sm:gap-2 overflow-x-auto max-w-full ${isMobile ? 'justify-evenly w-full' : ''}`}>
           <Button
             className={`glass-effect rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2 ${
               isMobile ? 'px-2 py-2' : 'px-3 py-2'
@@ -889,21 +887,6 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
               </span>
             )}
           </Button>
-        </div>
-
-        {/* الشعار مثبت يساراً */}
-        <div className="flex items-center gap-4 flex-shrink-0">
-          <div
-            className={`flex items-center gap-2 cursor-pointer select-none ${isMobile ? 'self-start' : ''}`}
-            onClick={() => {
-              if (isMobile) setActiveView('hidden');
-            }}
-          >
-            <MessageCircle className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'}`} style={{ color: '#667eea' }} />
-            <div className={`${isMobile ? 'text-sm' : 'text-lg sm:text-xl'} font-bold whitespace-nowrap`} style={{ color: '#ffffff' }}>
-              Arabic<span style={{ color: '#667eea' }}>Chat</span>
-            </div>
-          </div>
         </div>
       </header>
 
