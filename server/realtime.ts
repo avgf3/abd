@@ -676,9 +676,7 @@ export function setupRealtime(httpServer: HttpServer): IOServer {
           });
           return;
         }
-        // اسمح بالتبديل الفوري إلى غرفة مختلفة حتى لو كان الفرق أقل من 500ms
-        const isSwitchingRoom = !!(socket.currentRoom && socket.currentRoom !== roomId);
-        if (!isSwitchingRoom && now - lastJoinAt < 500) {
+        if (now - lastJoinAt < 500) {
           return;
         }
         lastJoinAt = now;
