@@ -2902,10 +2902,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         } else if (/#\s*[0-9A-Fa-f]{6}/.test(str)) {
           // extract first HEX if mixed content
           const firstHex = str.match(/#[0-9A-Fa-f]{6}/)?.[0];
-          normalizedUpdates.profileBackgroundColor = firstHex || '#4A90E2';
+          normalizedUpdates.profileBackgroundColor = firstHex || '#2a2a2a';
         } else {
           // fallback to a safe default color if invalid
-          normalizedUpdates.profileBackgroundColor = '#4A90E2';
+          normalizedUpdates.profileBackgroundColor = '#2a2a2a';
         }
       }
 

@@ -4,6 +4,7 @@ import { apiRequest } from '@/lib/queryClient';
 import { getSocket } from '@/lib/socket';
 import type { ChatUser } from '@/types/chat';
 import { getImageSrc } from '@/utils/imageUtils';
+import { getCountryFlag } from '@/utils';
 import { getFinalUsernameColor, getUserListItemClasses, getUserListItemStyles } from '@/utils/themeUtils';
 import ProfileImage from '@/components/chat/ProfileImage';
 import UserRoleBadge from '@/components/chat/UserRoleBadge';
@@ -42,11 +43,7 @@ export default function RichestModal({ isOpen, onClose, currentUser, onUserClick
     return <UserRoleBadge user={user} size={20} />;
   }, []);
 
-  const getCountryEmoji = useCallback((country?: string): string | null => {
-    if (!country) return null;
-    const token = country.trim().split(' ')[0];
-    return token || null;
-  }, []);
+  const getCountryEmoji = useCallback((country?: string): string | null => getCountryFlag(country), []);
 
   const renderCountryFlag = useCallback(
     (user: ChatUser) => {

@@ -58,7 +58,7 @@ export async function createDefaultUsers(): Promise<void> {
         gender: 'غير محدد',
         country: 'غير محدد',
         relation: 'غير محدد',
-        profileBackgroundColor: '#1a1a1a',
+        profileBackgroundColor: '#2a2a2a',
         usernameColor: '#CCCCCC',
         profileEffect: 'none',
         points: 0,

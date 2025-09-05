@@ -17,6 +17,7 @@ import { useNotificationManager } from '@/hooks/useNotificationManager';
 import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser } from '@/types/chat';
 import { getImageSrc } from '@/utils/imageUtils';
+import { getCountryFlag } from '@/utils';
 import {
   getFinalUsernameColor,
   getUserListItemStyles,
@@ -193,11 +194,7 @@ export default function FriendsTabPanel({
     return <UserRoleBadge user={user} size={20} />;
   }, []);
 
-  const getCountryEmoji = useCallback((country?: string): string | null => {
-    if (!country) return null;
-    const token = country.trim().split(' ')[0];
-    return token || null;
-  }, []);
+  const getCountryEmoji = useCallback((country?: string): string | null => getCountryFlag(country), []);
 
   const renderCountryFlag = useCallback(
     (user: ChatUser) => {
