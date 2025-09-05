@@ -72,3 +72,46 @@ export const getCountryFlag = (country?: string): string | null => {
   return null;
 };
 
+// تُعيد كود ISO-2 إن توفّر (بغض النظر عن شكل الإدخال)
+export const getCountryISO2 = (country?: string): string | null => {
+  if (!country) return null;
+  const text = country.trim();
+  if (!text) return null;
+
+  // إذا كان الإدخال ISO-2 أصلاً
+  const isoCandidate = text.replace(/[^A-Za-z]/g, '').toUpperCase();
+  if (isoCandidate.length === 2) return isoCandidate;
+
+  // أسماء إلى ISO-2 (نفس الخريطة أعلاه)
+  const nameToIso2: Record<string, string> = {
+    'السعودية': 'SA', 'الإمارات': 'AE', 'مصر': 'EG', 'الأردن': 'JO', 'لبنان': 'LB', 'سوريا': 'SY', 'العراق': 'IQ',
+    'الكويت': 'KW', 'قطر': 'QA', 'البحرين': 'BH', 'عمان': 'OM', 'فلسطين': 'PS', 'اليمن': 'YE', 'المغرب': 'MA',
+    'الجزائر': 'DZ', 'تونس': 'TN', 'ليبيا': 'LY', 'السودان': 'SD', 'موريتانيا': 'MR', 'جيبوتي': 'DJ', 'الصومال': 'SO',
+    'جزر القمر': 'KM', 'تركيا': 'TR', 'إيران': 'IR', 'باكستان': 'PK', 'أفغانستان': 'AF', 'الهند': 'IN', 'الصين': 'CN',
+    'اليابان': 'JP', 'كوريا': 'KR', 'بريطانيا': 'GB', 'أمريكا': 'US', 'الولايات المتحدة': 'US', 'كندا': 'CA', 'أستراليا': 'AU',
+    'ألمانيا': 'DE', 'فرنسا': 'FR', 'إيطاليا': 'IT', 'إسبانيا': 'ES', 'البرتغال': 'PT', 'هولندا': 'NL', 'بلجيكا': 'BE',
+    'سويسرا': 'CH', 'النمسا': 'AT', 'الدانمارك': 'DK', 'الدنمارك': 'DK', 'السويد': 'SE', 'النرويج': 'NO', 'فنلندا': 'FI',
+    'روسيا': 'RU', 'بولندا': 'PL', 'التشيك': 'CZ', 'المجر': 'HU', 'اليونان': 'GR', 'بلغاريا': 'BG', 'رومانيا': 'RO',
+    'كرواتيا': 'HR', 'صربيا': 'RS', 'البوسنة': 'BA', 'البرازيل': 'BR', 'الأرجنتين': 'AR', 'المكسيك': 'MX',
+    'saudi arabia': 'SA', 'uae': 'AE', 'united arab emirates': 'AE', 'egypt': 'EG', 'jordan': 'JO', 'lebanon': 'LB',
+    'syria': 'SY', 'iraq': 'IQ', 'kuwait': 'KW', 'qatar': 'QA', 'bahrain': 'BH', 'oman': 'OM', 'palestine': 'PS',
+    'yemen': 'YE', 'morocco': 'MA', 'algeria': 'DZ', 'tunisia': 'TN', 'libya': 'LY', 'sudan': 'SD', 'mauritania': 'MR',
+    'djibouti': 'DJ', 'somalia': 'SO', 'comoros': 'KM', 'turkey': 'TR', 'iran': 'IR', 'pakistan': 'PK', 'afghanistan': 'AF',
+    'india': 'IN', 'china': 'CN', 'japan': 'JP', 'korea': 'KR', 'south korea': 'KR', 'united kingdom': 'GB', 'uk': 'GB',
+    'britain': 'GB', 'usa': 'US', 'united states': 'US', 'canada': 'CA', 'australia': 'AU', 'germany': 'DE', 'france': 'FR',
+    'italy': 'IT', 'spain': 'ES', 'portugal': 'PT', 'netherlands': 'NL', 'belgium': 'BE', 'switzerland': 'CH', 'austria': 'AT',
+    'denmark': 'DK', 'sweden': 'SE', 'norway': 'NO', 'finland': 'FI', 'russia': 'RU', 'poland': 'PL', 'czech': 'CZ', 'hungary': 'HU',
+    'greece': 'GR', 'bulgaria': 'BG', 'romania': 'RO', 'croatia': 'HR', 'serbia': 'RS', 'bosnia': 'BA', 'brazil': 'BR',
+    'argentina': 'AR', 'mexico': 'MX'
+  };
+
+  const normalized = text.toLowerCase().trim();
+  return (
+    nameToIso2[normalized] ||
+    nameToIso2[text] ||
+    nameToIso2[normalized.replace(/^.+?\s+/, '')] ||
+    nameToIso2[text.replace(/^.+?\s+/, '')] ||
+    null
+  );
+};
+

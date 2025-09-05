@@ -17,7 +17,7 @@ import { useNotificationManager } from '@/hooks/useNotificationManager';
 import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser } from '@/types/chat';
 import { getImageSrc } from '@/utils/imageUtils';
-import { getCountryFlag } from '@/utils';
+import { getCountryISO2 } from '@/utils';
 import {
   getFinalUsernameColor,
   getUserListItemStyles,
@@ -194,11 +194,14 @@ export default function FriendsTabPanel({
     return <UserRoleBadge user={user} size={20} />;
   }, []);
 
-  const getCountryEmoji = useCallback((country?: string): string | null => getCountryFlag(country), []);
+  const getFlagUrl = useCallback((country?: string): string | null => {
+    const iso = getCountryISO2(country);
+    return iso ? `https://flagcdn.com/24x18/${iso.toLowerCase()}.png` : null;
+  }, []);
 
   const renderCountryFlag = useCallback(
     (user: ChatUser) => {
-      const emoji = getCountryEmoji(user.country);
+      const img = getFlagUrl(user.country);
       const boxStyle: React.CSSProperties = {
         width: 20,
         height: 20,
@@ -210,17 +213,17 @@ export default function FriendsTabPanel({
         border: 'none',
       };
 
-      if (emoji) {
+      if (img) {
         return (
           <span style={boxStyle} title={user.country}>
-            <span style={{ fontSize: 14, lineHeight: 1 }}>{emoji}</span>
+            <img src={img} alt={user.country || 'country'} width={20} height={15} loading="lazy" />
           </span>
         );
       }
 
       return null;
     },
-    [getCountryEmoji]
+    [getFlagUrl]
   );
 
   // التحقق من صلاحيات الإشراف
