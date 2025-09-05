@@ -512,8 +512,9 @@ export default function MessageArea({
                       )}
                       <button
                         onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
-                        className="font-semibold hover:underline transition-colors duration-200 truncate"
+                        className="font-semibold hover:underline transition-colors duration-200 truncate max-w-[120px] flex-shrink-0"
                         style={{ color: getFinalUsernameColor(message.sender) }}
+                        title={message.sender?.username}
                       >
                         {message.sender?.username}
                       </button>

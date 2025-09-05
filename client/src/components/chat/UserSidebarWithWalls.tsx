@@ -482,7 +482,7 @@ export default function UnifiedSidebar({
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
                       <span
-                        className="text-base font-medium transition-colors duration-300"
+                        className="text-base font-medium transition-colors duration-300 truncate max-w-[120px]"
                         style={{
                           color: getFinalUsernameColor(user),
                         }}
@@ -699,7 +699,7 @@ export default function UnifiedSidebar({
                           <div className="flex-1">
                             <div className="flex items-center gap-2">
                               <span
-                                className="font-medium text-sm cursor-pointer hover:underline"
+                                className="font-medium text-sm cursor-pointer hover:underline truncate max-w-[100px]"
                                 style={{ color: post.usernameColor || 'inherit' }}
                                 onClick={(e) => {
                                   const targetUser: ChatUser = {
@@ -713,7 +713,7 @@ export default function UnifiedSidebar({
                                   } as ChatUser;
                                   handleUserClick(e as any, targetUser);
                                 }}
-                                title="عرض خيارات المستخدم"
+                                title={post.username}
                               >
                                 {post.username}
                               </span>
