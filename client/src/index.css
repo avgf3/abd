@@ -2018,6 +2018,17 @@ li::before {
   list-style: none !important;
 }
 
+/* Make the users list section fill available height to avoid bottom gap */
+.users-list-reset {
+  display: flex;
+  flex-direction: column;
+  min-height: 0; /* allow child to size itself */
+}
+.users-list-reset > [role="list"]{
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
 .users-list-reset [role="listitem"],
 .users-list-reset li {
   margin: 0 !important;
