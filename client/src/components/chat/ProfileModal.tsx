@@ -1448,7 +1448,7 @@ export default function ProfileModal({
         }
 
         .profile-card:hover {
-          transform: translateY(-5px);
+          transform: scale(0.9) translateY(-5px); /* الحفاظ على الزوم مع التحريك */
           box-shadow: 0 12px 40px rgba(0,0,0,0.9);
         }
 
