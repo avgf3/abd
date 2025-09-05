@@ -2308,11 +2308,14 @@ export default function ProfileModal({
                     cursor: 'pointer',
                     direction: 'auto',
                     unicodeBidi: 'plaintext',
-                    textAlign: 'center'
+                    textAlign: 'right',
+                    whiteSpace: 'normal',
+                    overflowWrap: 'anywhere',
+                    wordBreak: 'break-word'
                   }}
                   onClick={() => openEditModal('name')}
                   >
-                    {localUser?.username || 'اسم المستخدم'}
+                    <bdi>{localUser?.username || 'اسم المستخدم'}</bdi>
                   </h3>
                 </div>
               </>
@@ -2358,11 +2361,14 @@ export default function ProfileModal({
                     cursor: 'pointer',
                     direction: 'auto',
                     unicodeBidi: 'plaintext',
-                    textAlign: 'center'
+                    textAlign: 'right',
+                    whiteSpace: 'normal',
+                    overflowWrap: 'anywhere',
+                    wordBreak: 'break-word'
                   }}
                   onClick={() => openEditModal('name')}
                   >
-                    {localUser?.username || 'اسم المستخدم'}
+                    <bdi>{localUser?.username || 'اسم المستخدم'}</bdi>
                   </h3>
                 </div>
               </>
@@ -2406,9 +2412,12 @@ export default function ProfileModal({
                     textShadow: '0 2px 4px rgba(0,0,0,0.5)',
                     direction: 'auto',
                     unicodeBidi: 'plaintext',
-                    textAlign: 'center'
+                    textAlign: 'right',
+                    whiteSpace: 'normal',
+                    overflowWrap: 'anywhere',
+                    wordBreak: 'break-word'
                   }}>
-                    {localUser?.username || 'اسم المستخدم'}
+                    <bdi>{localUser?.username || 'اسم المستخدم'}</bdi>
                   </h3>
                 </div>
               </>
