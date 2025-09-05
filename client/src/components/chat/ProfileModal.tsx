@@ -16,6 +16,7 @@ import {
 } from '@/utils/themeUtils';
 import { getCountryFlag } from '@/utils';
 import { getUserLevelIcon } from '@/components/chat/UserRoleBadge';
+import CountryFlag from '@/components/ui/CountryFlag';
 import ProfileImage from './ProfileImage';
 import { useStories } from '@/hooks/useStories';
 
@@ -2485,7 +2486,10 @@ export default function ProfileModal({
                 onClick={() => localUser?.id === currentUser?.id && openEditModal('country')}
                 style={{ cursor: localUser?.id === currentUser?.id ? 'pointer' : 'default' }}
               >
-                🌍 البلد: <span>{localUser?.country || 'غير محدد'}</span>
+                🌍 البلد: <span className="inline-flex items-center gap-1">
+                  {localUser?.country || 'غير محدد'}
+                  {localUser?.country && <CountryFlag country={localUser?.country} size={14} />}
+                </span>
               </p>
               <p
                 onClick={() => localUser?.id === currentUser?.id && openEditModal('age')}
