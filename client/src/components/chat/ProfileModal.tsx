@@ -2198,15 +2198,21 @@ export default function ProfileModal({
 
       {/* Main Modal */}
       <div className="fixed inset-0 z-50 flex items-start justify-center pt-8 pb-4 px-4 overflow-y-auto">
-        <div
-          className={`profile-card ${selectedEffect}`}
+        <div className="scale-container"
+          style={{
+            transform: 'scale(0.8)',
+            transformOrigin: 'top center'
+          }}
+        >
+          <div
+            className={`profile-card ${selectedEffect}`}
           style={{
             background: localUser?.profileBackgroundColor
               ? buildProfileBackgroundGradient(localUser.profileBackgroundColor)
               : 'linear-gradient(135deg, #1a1a1a, #2d2d2d)',
             backgroundBlendMode: 'normal',
           }}
-        >
+          >
           {/* Close Button */}
           <button
             onClick={onClose}
@@ -2765,6 +2771,7 @@ export default function ProfileModal({
               />
             </>
           )}
+        </div>
         </div>
       </div>
 
