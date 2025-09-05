@@ -1452,7 +1452,7 @@ export default function ProfileModal({
 
         .profile-cover {
           position: relative;
-          height: 250px;
+          height: 230px;
           background-size: cover;
           background-position: center;
           background-repeat: no-repeat;
