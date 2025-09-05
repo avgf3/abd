@@ -330,6 +330,8 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
     sender: null,
   });
 
+  const [mobileSidebar, setMobileSidebar] = useState<'none' | 'users' | 'walls' | 'rooms' | 'friends'>('none');
+
   // === Unread badges logic ===
   const currentUserId = chat.currentUser?.id;
 
@@ -948,10 +950,10 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           minHeight: 'var(--app-content-height, auto)'
         }}
       >
-        {/* الشريط الجانبي - على الجوال يعرض بملء الشاشة عند اختيار التبويب */}
-        {activeView !== 'hidden' && (
+        {/* الشريط الجانبي على سطح المكتب فقط */}
+        {!isMobile && activeView !== 'hidden' && (
           <div
-            className={`${isMobile ? 'w-full flex-1 min-h-0' : activeView === 'walls' ? 'w-full sm:w-96' : activeView === 'friends' ? 'w-full sm:w-80' : 'w-full sm:w-64'} max-w-full sm:shrink-0 transition-all duration-300 min-h-0 flex flex-col`}
+            className={`${activeView === 'walls' ? 'w-full sm:w-96' : activeView === 'friends' ? 'w-full sm:w-80' : 'w-full sm:w-64'} max-w-full sm:shrink-0 transition-all duration-300 min-h-0 flex flex-col`}
             style={{ maxHeight: 'calc(100dvh - var(--app-header-height, 52px) - var(--app-footer-height, 56px))' }}
           >
             <Suspense
@@ -983,7 +985,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             </Suspense>
           </div>
         )}
-        {!isMobile || activeView === 'hidden'
+        {!isMobile
           ? (() => {
               const currentRoom = rooms.find((room) => room.id === chat.currentRoomId);
 
@@ -1066,22 +1068,102 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                 </div>
               );
             })()
-          : null}
+          : (() => {
+              const currentRoom = rooms.find((room) => room.id === chat.currentRoomId);
+              return (
+                <div
+                  className="flex-1 flex min-h-0"
+                  style={{ maxHeight: 'calc(100dvh - var(--app-header-height, 52px) - var(--app-footer-height, 56px))' }}
+                >
+                  <Suspense fallback={<div className="p-4 space-y-3"><SkeletonBlock className="h-6 w-1/3" /><SkeletonBlock className="h-40 w-full" /></div>}>
+                    {currentRoom?.isBroadcast ? (
+                      <BroadcastRoomInterface
+                        currentUser={chat.currentUser}
+                        room={currentRoom}
+                        onlineUsers={chat.onlineUsers}
+                        onSendMessage={(content) => chat.sendRoomMessage(content, chat.currentRoomId)}
+                        onTyping={(_isTyping) => chat.sendTyping()}
+                        typingUsers={Array.from(chat.typingUsers)}
+                        onReportMessage={handleReportUser}
+                        onUserClick={handleUserClick}
+                        messages={chat.publicMessages}
+                        chat={{
+                          sendPublicMessage: (content: string) =>
+                            chat.sendRoomMessage(content, chat.currentRoomId),
+                          handleTyping: () => chat.sendTyping(),
+                          addBroadcastMessageHandler: (handler: (data: any) => void) =>
+                            chat.addBroadcastMessageHandler?.(handler),
+                          removeBroadcastMessageHandler: (handler: (data: any) => void) =>
+                            chat.removeBroadcastMessageHandler?.(handler),
+                          sendWebRTCIceCandidate: (
+                            toUserId: number,
+                            roomId: string,
+                            candidate: RTCIceCandidateInit
+                          ) => chat.sendWebRTCIceCandidate?.(toUserId, roomId, candidate),
+                          sendWebRTCOffer: (
+                            toUserId: number,
+                            roomId: string,
+                            offer: RTCSessionDescriptionInit
+                          ) => chat.sendWebRTCOffer?.(toUserId, roomId, offer),
+                          sendWebRTCAnswer: (
+                            toUserId: number,
+                            roomId: string,
+                            answer: RTCSessionDescriptionInit
+                          ) => chat.sendWebRTCAnswer?.(toUserId, roomId, answer),
+                          onWebRTCOffer: (handler: (payload: any) => void) =>
+                            chat.onWebRTCOffer?.(handler),
+                          offWebRTCOffer: (handler: (payload: any) => void) =>
+                            chat.offWebRTCOffer?.(handler),
+                          onWebRTCIceCandidate: (handler: (payload: any) => void) =>
+                            chat.onWebRTCIceCandidate?.(handler),
+                          offWebRTCIceCandidate: (handler: (payload: any) => void) =>
+                            chat.offWebRTCIceCandidate?.(handler),
+                          onWebRTCAnswer: (handler: (payload: any) => void) =>
+                            chat.onWebRTCAnswer?.(handler),
+                          offWebRTCAnswer: (handler: (payload: any) => void) =>
+                            chat.offWebRTCAnswer?.(handler),
+                        }}
+                      />
+                    ) : (
+                      <MessageArea
+                        messages={chat.publicMessages}
+                        currentUser={chat.currentUser}
+                        onSendMessage={(content) => chat.sendRoomMessage(content, chat.currentRoomId)}
+                        onTyping={() => chat.sendTyping()}
+                        typingUsers={chat.typingUsers}
+                        onReportMessage={handleReportUser}
+                        onUserClick={handleUserClick}
+                        onlineUsers={chat.onlineUsers}
+                        currentRoomName={currentRoom?.name || 'الدردشة العامة'}
+                        currentRoomId={chat.currentRoomId}
+                        ignoredUserIds={chat.ignoredUsers}
+                      />
+                    )}
+                  </Suspense>
+                </div>
+              );
+            })()}
       </main>
 
       {/* Modern Footer Navigation */}
       <footer
         ref={footerRef}
-        className={`fixed bottom-0 left-0 right-0 z-[60] modern-nav app-footer safe-area-bottom h-14 px-2 sm:px-4 flex justify-start items-center ${isMobile ? 'mobile-footer' : ''}`}
+        className={`fixed bottom-0 left-0 right-0 z-[60] modern-nav app-footer safe-area-bottom h-14 px-2 sm:px-4 flex ${isMobile ? 'justify-between' : 'justify-start'} items-center ${isMobile ? 'mobile-footer' : ''}`}
       >
-        <div className="flex gap-1 sm:gap-2 overflow-x-auto max-w-full">
+        <div className={`flex gap-1 sm:gap-2 overflow-x-auto max-w-full ${isMobile ? 'w-full' : ''}`}>
           {/* الحوائط */}
           <Button
             size="sm"
             className={`${'glass-effect px-2 py-1.5 rounded-lg transition-all duration-200 flex items-center gap-1.5 text-sm'}${
               activeView === 'walls' ? ' bg-primary text-primary-foreground' : ' hover:bg-accent'
-            }`}
-            onClick={() => setActiveView((prev) => (prev === 'walls' ? 'hidden' : 'walls'))}
+            }${isMobile ? ' flex-1 justify-center' : ''}`}
+            onClick={() => {
+              if (isMobile) {
+                setMobileSidebar((prev) => (prev === 'walls' ? 'none' : 'walls'));
+              } else {
+                setActiveView((prev) => (prev === 'walls' ? 'hidden' : 'walls'));
+              }
+            }}
             title="الحائط"
           >
             <svg
@@ -1108,8 +1190,14 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             size="sm"
             className={`${'glass-effect px-2 py-1.5 rounded-lg transition-all duration-200 flex items-center gap-1.5 text-sm'}${
               activeView === 'users' ? ' bg-primary text-primary-foreground' : ' hover:bg-accent'
-            }`}
-            onClick={() => setActiveView((prev) => (prev === 'users' ? 'hidden' : 'users'))}
+            }${isMobile ? ' flex-1 justify-center' : ''}`}
+            onClick={() => {
+              if (isMobile) {
+                setMobileSidebar((prev) => (prev === 'users' ? 'none' : 'users'));
+              } else {
+                setActiveView((prev) => (prev === 'users' ? 'hidden' : 'users'));
+              }
+            }}
             title="المستخدمون المتصلون"
           >
             <svg
@@ -1137,8 +1225,14 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             size="sm"
             className={`${'glass-effect px-2 py-1.5 rounded-lg transition-all duration-200 flex items-center gap-1.5 text-sm'}${
               activeView === 'rooms' ? ' bg-primary text-primary-foreground' : ' hover:bg-accent'
-            }`}
-            onClick={() => setActiveView((prev) => (prev === 'rooms' ? 'hidden' : 'rooms'))}
+            }${isMobile ? ' flex-1 justify-center' : ''}`}
+            onClick={() => {
+              if (isMobile) {
+                setMobileSidebar((prev) => (prev === 'rooms' ? 'none' : 'rooms'));
+              } else {
+                setActiveView((prev) => (prev === 'rooms' ? 'hidden' : 'rooms'));
+              }
+            }}
             title="الغرف"
           >
             <svg
@@ -1165,8 +1259,14 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             size="sm"
             className={`${'glass-effect px-2 py-1.5 rounded-lg transition-all duration-200 flex items-center gap-1.5 text-sm'}${
               activeView === 'friends' ? ' bg-primary text-primary-foreground' : ' hover:bg-accent'
-            }`}
-            onClick={() => setActiveView((prev) => (prev === 'friends' ? 'hidden' : 'friends'))}
+            }${isMobile ? ' flex-1 justify-center' : ''}`}
+            onClick={() => {
+              if (isMobile) {
+                setMobileSidebar((prev) => (prev === 'friends' ? 'none' : 'friends'));
+              } else {
+                setActiveView((prev) => (prev === 'friends' ? 'hidden' : 'friends'));
+              }
+            }}
             title="الأصدقاء"
           >
             <svg
@@ -1190,6 +1290,51 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           </Button>
         </div>
       </footer>
+
+      {/* Mobile sidebar overlay covering chat area fully between header and footer */}
+      {isMobile && mobileSidebar !== 'none' && (
+        <div
+          className="fixed left-0 right-0 z-[65] bg-background"
+          style={{
+            top: 'var(--app-header-height, 52px)',
+            bottom: 'var(--app-footer-height, 56px)'
+          }}
+        >
+          <div className="h-full flex flex-col">
+            <div className="p-2 flex justify-center">
+              <Button variant="outline" size="sm" onClick={() => setMobileSidebar('none')}>إغلاق</Button>
+            </div>
+            <div className="flex-1 min-h-0">
+              <Suspense fallback={<div className="p-4 space-y-2"><SkeletonBlock className="h-6 w-1/2" /><SkeletonBlock className="h-10 w-full" /><SkeletonBlock className="h-10 w-full" /><SkeletonBlock className="h-10 w-3/4" /></div>}>
+                <UnifiedSidebar
+                  users={chat.onlineUsers}
+                  onUserClick={handleUserClick}
+                  currentUser={chat.currentUser}
+                  activeView={mobileSidebar as any}
+                  rooms={rooms}
+                  currentRoomId={chat.currentRoomId}
+                  onRoomChange={(roomId) => {
+                    handleRoomChange(roomId);
+                    setMobileSidebar('none');
+                  }}
+                  onAddRoom={async (roomData) => {
+                    await handleAddRoom(roomData);
+                  }}
+                  onDeleteRoom={async (roomId) => {
+                    await handleDeleteRoom(roomId);
+                  }}
+                  onRefreshRooms={handleRefreshRooms}
+                  onStartPrivateChat={(user) => {
+                    setSelectedPrivateUser(user);
+                    setShowPmBox(true);
+                    setMobileSidebar('none');
+                  }}
+                />
+              </Suspense>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modals and Popups */}
       {showProfile && (

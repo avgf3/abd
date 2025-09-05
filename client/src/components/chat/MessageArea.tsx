@@ -1,4 +1,4 @@
-import { Send, Smile, ChevronDown, Sparkles } from 'lucide-react';
+import { Send, Smile, ChevronDown, Sparkles, MoreHorizontal } from 'lucide-react';
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { Virtuoso, type VirtuosoHandle } from 'react-virtuoso';
 
@@ -12,6 +12,7 @@ import ProfileImage from './ProfileImage';
 import UserRoleBadge from './UserRoleBadge';
 
 import { Button } from '@/components/ui/button';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import ImageLightbox from '@/components/ui/ImageLightbox';
@@ -506,20 +507,106 @@ export default function MessageArea({
                       </div>
                     )}
 
-                    {/* Inline row: badge, name, content */}
-                    <div className="flex-1 min-w-0 flex items-center gap-2">
-                      {message.sender && (
-                        <UserRoleBadge user={message.sender} showOnlyIcon={true} hideGuestAndGender={true} size={16} />
-                      )}
-                      <button
-                        onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
-                        className="font-semibold hover:underline transition-colors duration-200 truncate"
-                        style={{ color: getFinalUsernameColor(message.sender) }}
-                      >
-                        {message.sender?.username}
-                      </button>
+                    {/* رسالة: رأس علوي ثم النص بأسطر متعددة */}
+                    <div className="flex-1 min-w-0 flex flex-col items-start gap-1">
+                      <div className="w-full flex items-center gap-2">
+                        {message.sender && (
+                          <UserRoleBadge user={message.sender} showOnlyIcon={true} hideGuestAndGender={true} size={16} />
+                        )}
+                        <button
+                          onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
+                          className="font-semibold hover:underline transition-colors duration-200 max-w-full whitespace-normal break-words"
+                          style={{ color: getFinalUsernameColor(message.sender) }}
+                        >
+                          {message.sender?.username}
+                        </button>
+                        <span className="text-xs text-gray-500 whitespace-nowrap ml-auto">
+                          {formatTime(message.timestamp)}
+                        </span>
 
-                      <div className="text-gray-800 break-words truncate flex-1 message-content-fix">
+                        {onReportMessage &&
+                          message.sender &&
+                          currentUser &&
+                          message.sender.id !== currentUser.id && (
+                            <button
+                              onClick={() =>
+                                onReportMessage(message.sender!, message.content, message.id)
+                              }
+                              className="text-sm hover:opacity-80"
+                              title="تبليغ"
+                            >
+                              🚩
+                            </button>
+                          )}
+
+                        {currentUser && !message.isPrivate && (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <button className="ml-1 p-1 rounded hover:bg-gray-100" title="خيارات">
+                                <MoreHorizontal className="w-4 h-4" />
+                              </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="start">
+                              {(['like', 'dislike', 'heart'] as const).map((r) => {
+                                const isMine = message.myReaction === r;
+                                const count = message.reactions?.[r] ?? 0;
+                                const label = r === 'like' ? '👍 إعجاب' : r === 'dislike' ? '👎 عدم إعجاب' : '❤️ قلب';
+                                const toggle = async () => {
+                                  try {
+                                    if (isMine) {
+                                      await apiRequest(`/api/messages/${message.id}/reactions`, { method: 'DELETE' });
+                                    } else {
+                                      await apiRequest(`/api/messages/${message.id}/reactions`, { method: 'POST', body: { type: r } });
+                                    }
+                                  } catch (e) {
+                                    console.error('reaction error', e);
+                                  }
+                                };
+                                return (
+                                  <DropdownMenuItem key={r} onClick={toggle} className={isMine ? 'text-primary' : ''}>
+                                    <span className="mr-2">{label}</span>
+                                    <span className="ml-auto text-xs opacity-70">{count}</span>
+                                  </DropdownMenuItem>
+                                );
+                              })}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        )}
+
+                        {currentUser &&
+                          message.sender &&
+                          (() => {
+                            const isOwner = currentUser.userType === 'owner';
+                            const isAdmin = currentUser.userType === 'admin';
+                            const isSender = currentUser.id === message.sender.id;
+                            const canDelete = isSender || isOwner || isAdmin;
+                            if (!canDelete) return null;
+                            const handleDelete = async () => {
+                              try {
+                                await apiRequest(`/api/messages/${message.id}`, {
+                                  method: 'DELETE',
+                                  body: {
+                                    userId: currentUser.id,
+                                    roomId: message.roomId || 'general',
+                                  },
+                                });
+                              } catch (e) {
+                                console.error('خطأ في حذف الرسالة', e);
+                              }
+                            };
+                            return (
+                              <button
+                                onClick={handleDelete}
+                                className="text-xs text-gray-500 hover:text-gray-700 transition-colors duration-200"
+                                title="حذف الرسالة"
+                              >
+                                🗑️
+                              </button>
+                            );
+                          })()}
+                      </div>
+
+                      <div className="w-full text-gray-800 break-words whitespace-pre-wrap message-content-fix">
                         {message.messageType === 'image' ? (
                           <img
                             src={message.content}
@@ -539,10 +626,10 @@ export default function MessageArea({
                             if (ids.length > 0) {
                               const firstId = ids[0];
                               return (
-                                <span className="truncate text-breathe flex items-center gap-2">
+                                <div className="text-breathe flex flex-wrap items-center gap-2 break-words">
                                   {cleaned ? (
                                     <span
-                                      className="truncate"
+                                      className="whitespace-pre-wrap break-words"
                                       style={
                                         currentUser && message.senderId === currentUser.id
                                           ? { color: composerTextColor, fontWeight: composerBold ? 600 : undefined }
@@ -564,12 +651,12 @@ export default function MessageArea({
                                       <path fill="#fff" d="M10 15l5.19-3L10 9v6z"></path>
                                     </svg>
                                   </button>
-                                </span>
+                                </div>
                               );
                             }
                             return (
                               <span
-                                className="truncate text-breathe"
+                                className="whitespace-pre-wrap break-words text-breathe"
                                 style={
                                   currentUser && message.senderId === currentUser.id
                                     ? { color: composerTextColor, fontWeight: composerBold ? 600 : undefined }
@@ -577,7 +664,7 @@ export default function MessageArea({
                                 }
                               >
                                 {renderMessageWithAnimatedEmojis(
-                                  message.content, 
+                                  message.content,
                                   (text) => renderMessageWithMentions(text, currentUser, onlineUsers)
                                 )}
                               </span>
@@ -585,102 +672,6 @@ export default function MessageArea({
                           })()
                         )}
                       </div>
-
-                      {/* Right side: time and report flag */}
-                      <span className="text-xs text-gray-500 whitespace-nowrap ml-2">
-                        {formatTime(message.timestamp)}
-                      </span>
-
-                      {onReportMessage &&
-                        message.sender &&
-                        currentUser &&
-                        message.sender.id !== currentUser.id && (
-                          <button
-                            onClick={() =>
-                              onReportMessage(message.sender!, message.content, message.id)
-                            }
-                            className="text-sm hover:opacity-80"
-                            title="تبليغ"
-                          >
-                            🚩
-                          </button>
-                        )}
-
-                      {currentUser &&
-                        message.sender &&
-                        (() => {
-                          const isOwner = currentUser.userType === 'owner';
-                          const isAdmin = currentUser.userType === 'admin';
-                          const isSender = currentUser.id === message.sender.id;
-                          const canDelete = isSender || isOwner || isAdmin;
-                          if (!canDelete) return null;
-                          const handleDelete = async () => {
-                            try {
-                              await apiRequest(`/api/messages/${message.id}`, {
-                                method: 'DELETE',
-                                body: {
-                                  userId: currentUser.id,
-                                  roomId: message.roomId || 'general',
-                                },
-                              });
-                            } catch (e) {
-                              console.error('خطأ في حذف الرسالة', e);
-                            }
-                          };
-                          return (
-                            <button
-                              onClick={handleDelete}
-                              className="text-xs text-gray-500 hover:text-gray-700 transition-colors duration-200"
-                              title="حذف الرسالة"
-                            >
-                              🗑️
-                            </button>
-                          );
-                        })()}
-                      {/* Reactions (like/dislike/heart) */}
-                      {currentUser && !message.isPrivate && (
-                        <div className="flex items-center gap-1 ml-2">
-                          {(['like', 'dislike', 'heart'] as const).map((r) => {
-                            const isMine = message.myReaction === r;
-                            const count = message.reactions?.[r] ?? 0;
-                            const label = r === 'like' ? '👍' : r === 'dislike' ? '👎' : '❤️';
-                            const toggle = async () => {
-                              try {
-                                if (isMine) {
-                                  const res = await apiRequest(
-                                    `/api/messages/${message.id}/reactions`,
-                                    {
-                                      method: 'DELETE',
-                                    }
-                                  );
-                                  // تفويض التحديث للبث عبر السوكت؛ لا نعدل محلياً لتجنب السباقات
-                                } else {
-                                  const res = await apiRequest(
-                                    `/api/messages/${message.id}/reactions`,
-                                    {
-                                      method: 'POST',
-                                      body: { type: r },
-                                    }
-                                  );
-                                }
-                              } catch (e) {
-                                console.error('reaction error', e);
-                              }
-                            };
-                            return (
-                              <button
-                                key={r}
-                                onClick={toggle}
-                                className={`text-xs px-1 py-0.5 rounded ${isMine ? 'bg-primary/10 text-primary' : 'text-gray-600 hover:text-gray-800'}`}
-                                title={r}
-                              >
-                                <span className="mr-0.5">{label}</span>
-                                <span>{count}</span>
-                              </button>
-                            );
-                          })}
-                        </div>
-                      )}
                     </div>
                   </>
                 )}
