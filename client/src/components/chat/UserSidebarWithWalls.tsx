@@ -95,6 +95,8 @@ export default function UnifiedSidebar({
         return 3;
       case 'member':
         return 4;
+      case 'bot':
+        return 4; // نفس ترتيب الأعضاء العاديين
       case 'guest':
         return 5;
       default:

@@ -1,8 +1,8 @@
 export interface ChatUser {
   id: number;
   username: string;
-  userType: 'guest' | 'member' | 'owner' | 'admin' | 'moderator';
-  role: 'guest' | 'member' | 'owner' | 'admin' | 'moderator';
+  userType: 'guest' | 'member' | 'owner' | 'admin' | 'moderator' | 'bot';
+  role: 'guest' | 'member' | 'owner' | 'admin' | 'moderator' | 'bot';
   profileImage?: string;
   profileBanner?: string;
   profileBackgroundColor: string;
