@@ -83,29 +83,15 @@ export function updateConnectedUserCache(userOrId: any, maybeUser?: any) {
     if (typeof userOrId === 'object' && userOrId) {
       const userObj = userOrId as any;
       if (!userObj.id) return;
+      // تجاهل البوتات: لا نضيفها لقائمة المتصلين ولا sockets اصطناعية
+      if (userObj.userType === 'bot') return;
       const existing = connectedUsers.get(userObj.id);
       if (existing) {
         existing.user = { ...existing.user, ...userObj };
         existing.lastSeen = new Date();
-        // إذا كان بوتاً ولديه socket اصطناعي، حدّث الغرفة
-        if (userObj.userType === 'bot') {
-          for (const [socketId, socketMeta] of existing.sockets.entries()) {
-            if (socketId.startsWith('bot:')) {
-              socketMeta.room = userObj.currentRoom || socketMeta.room || GENERAL_ROOM;
-              socketMeta.lastSeen = new Date();
-              existing.sockets.set(socketId, socketMeta);
-            }
-          }
-        }
         connectedUsers.set(userObj.id, existing);
       } else {
         const sockets = new Map<string, { room: string; lastSeen: Date }>();
-        if (userObj.userType === 'bot') {
-          sockets.set(`bot:${userObj.id}`, {
-            room: userObj.currentRoom || GENERAL_ROOM,
-            lastSeen: new Date(),
-          });
-        }
         connectedUsers.set(userObj.id, {
           user: userObj,
           sockets,
@@ -128,39 +114,16 @@ export function updateConnectedUserCache(userOrId: any, maybeUser?: any) {
     }
 
     const userData = maybeUser as any;
+    // تجاهل البوتات: لا نضيفها لقائمة المتصلين ولا sockets اصطناعية
+    if (userData?.userType === 'bot') return;
     const existing = connectedUsers.get(userId);
     if (existing) {
       existing.user = { ...existing.user, ...userData };
       existing.lastSeen = new Date();
-      if (userData.userType === 'bot') {
-        // تأكد من وجود socket اصطناعي للبوت وتحديث غرفته
-        let hasBotSocket = false;
-        for (const socketId of existing.sockets.keys()) {
-          if (socketId.startsWith('bot:')) {
-            hasBotSocket = true;
-            break;
-          }
-        }
-        const room = userData.currentRoom || GENERAL_ROOM;
-        if (!hasBotSocket) {
-          existing.sockets.set(`bot:${userId}`, { room, lastSeen: new Date() });
-        } else {
-          for (const [socketId, meta] of existing.sockets.entries()) {
-            if (socketId.startsWith('bot:')) {
-              meta.room = room;
-              meta.lastSeen = new Date();
-              existing.sockets.set(socketId, meta);
-            }
-          }
-        }
-      }
       connectedUsers.set(userId, existing);
     } else {
       const sockets = new Map<string, { room: string; lastSeen: Date }>();
       const room = userData.currentRoom || GENERAL_ROOM;
-      if (userData.userType === 'bot') {
-        sockets.set(`bot:${userId}`, { room, lastSeen: new Date() });
-      }
       connectedUsers.set(userId, {
         user: { id: userId, ...userData },
         sockets,
@@ -915,60 +878,7 @@ export function setupRealtime(httpServer: HttpServer): IOServer {
     });
   });
 
-  // تحميل البوتات النشطة عند بدء التشغيل
-  loadActiveBots();
-
   return io;
 }
 
-// دالة لتحميل البوتات النشطة
-async function loadActiveBots() {
-  try {
-    const { db } = await import('./database-adapter');
-    const { bots } = await import('../shared/schema');
-    const { eq } = await import('drizzle-orm');
-    
-    if (!db) return;
-    
-    // جلب البوتات النشطة
-    const activeBots = await db.select().from(bots).where(eq(bots.isActive, true));
-    
-    for (const bot of activeBots) {
-      const botUser = {
-        id: bot.id,
-        username: bot.username,
-        userType: 'bot',
-        role: 'bot',
-        profileImage: bot.profileImage,
-        profileBanner: bot.profileBanner,
-        profileBackgroundColor: bot.profileBackgroundColor,
-        status: bot.status,
-        gender: bot.gender,
-        country: bot.country,
-        relation: bot.relation,
-        // العمر يُحفظ داخل settings إن وُجد
-        age: (bot as any)?.settings?.age,
-        bio: bot.bio,
-        usernameColor: bot.usernameColor,
-        profileEffect: bot.profileEffect,
-        points: bot.points,
-        level: bot.level,
-        totalPoints: bot.totalPoints,
-        levelProgress: bot.levelProgress,
-        isOnline: true,
-        currentRoom: bot.currentRoom || GENERAL_ROOM,
-        joinDate: bot.createdAt,
-        lastSeen: bot.lastActivity,
-      };
-      
-      // إضافة البوت لقائمة المستخدمين المتصلين
-      updateConnectedUserCache(bot.id, botUser);
-      
-      console.log(`✓ تم تحميل البوت: ${bot.username} في الغرفة ${bot.currentRoom}`);
-    }
-    
-    console.log(`✓ تم تحميل ${activeBots.length} بوت نشط`);
-  } catch (error) {
-    console.error('خطأ في تحميل البوتات:', error);
-  }
-}
+// تمت إزالة تحميل البوتات النشطة تلقائياً لمنع إنشاء/محاكاة اتصالات للبوتات
