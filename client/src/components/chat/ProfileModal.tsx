@@ -2308,11 +2308,15 @@ export default function ProfileModal({
                     cursor: 'pointer',
                     direction: 'auto',
                     unicodeBidi: 'plaintext',
-                    textAlign: 'center'
+                    textAlign: 'center',
+                    maxWidth: '80vw',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap'
                   }}
                   onClick={() => openEditModal('name')}
                   >
-                    {localUser?.username || 'اسم المستخدم'}
+                    <bdi>{localUser?.username || 'اسم المستخدم'}</bdi>
                   </h3>
                 </div>
               </>
@@ -2358,11 +2362,15 @@ export default function ProfileModal({
                     cursor: 'pointer',
                     direction: 'auto',
                     unicodeBidi: 'plaintext',
-                    textAlign: 'center'
+                    textAlign: 'center',
+                    maxWidth: '80vw',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap'
                   }}
                   onClick={() => openEditModal('name')}
                   >
-                    {localUser?.username || 'اسم المستخدم'}
+                    <bdi>{localUser?.username || 'اسم المستخدم'}</bdi>
                   </h3>
                 </div>
               </>
@@ -2406,9 +2414,13 @@ export default function ProfileModal({
                     textShadow: '0 2px 4px rgba(0,0,0,0.5)',
                     direction: 'auto',
                     unicodeBidi: 'plaintext',
-                    textAlign: 'center'
+                    textAlign: 'center',
+                    maxWidth: '80vw',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap'
                   }}>
-                    {localUser?.username || 'اسم المستخدم'}
+                    <bdi>{localUser?.username || 'اسم المستخدم'}</bdi>
                   </h3>
                 </div>
               </>
