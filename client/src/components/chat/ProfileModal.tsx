@@ -1435,7 +1435,7 @@ export default function ProfileModal({
 
         .profile-card {
           width: 100%;
-          max-width: 440px;
+          max-width: 396px; /* تصغير من 440px إلى 396px (90%) */
           border-radius: 16px;
           overflow: hidden;
           background: var(--card-bg);
@@ -1443,6 +1443,8 @@ export default function ProfileModal({
           position: relative;
           transition: transform 0.3s ease, box-shadow 0.3s ease;
           height: fit-content;
+          transform: scale(0.9); /* تطبيق زوم 90% على البروفيل فقط */
+          transform-origin: center;
         }
 
         .profile-card:hover {
