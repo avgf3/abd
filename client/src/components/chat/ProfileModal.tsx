@@ -733,7 +733,9 @@ export default function ProfileModal({
   // Profile banner fallback - محسّن للتعامل مع base64 و مشاكل الcache
   // إرجاع مصدر صورة البانر إن وُجد مع دعم المسارات والـ base64
   const getProfileBannerSrcLocal = () => {
-    return getBannerImageSrc(localUser?.profileBanner);
+    const banner = localUser?.profileBanner;
+    if (!banner || banner === '') return '';
+    return getBannerImageSrc(banner);
   };
 
   // Edit modal handlers
@@ -2220,7 +2222,10 @@ export default function ProfileModal({
           <div
             className="profile-cover"
             style={{
-              backgroundImage: `url(${getProfileBannerSrcLocal()})`,
+              backgroundImage: (() => {
+                const src = getProfileBannerSrcLocal();
+                return src ? `url(${src})` : 'none';
+              })(),
               backgroundSize: 'cover',
               backgroundPosition: 'center',
               backgroundRepeat: 'no-repeat',
