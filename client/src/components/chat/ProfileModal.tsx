@@ -57,6 +57,17 @@ export default function ProfileModal({
   const [selectedTheme, setSelectedTheme] = useState(user?.profileBackgroundColor || '');
   const [selectedEffect, setSelectedEffect] = useState(user?.profileEffect || 'none');
 
+  // توحيد لون خلفية الملف الشخصي للأعضاء والزوار ليطابق لون البوت فقط داخل نافذة البروفايل
+  const isMemberOrGuest =
+    (localUser?.userType === 'member' || localUser?.userType === 'guest');
+  const forcedBotColor = '#2a2a2a';
+  const resolvedProfileColorForCard = isMemberOrGuest
+    ? forcedBotColor
+    : (localUser?.profileBackgroundColor || '');
+  const computedCardGradient =
+    buildProfileBackgroundGradient(resolvedProfileColorForCard) ||
+    'linear-gradient(135deg, #1a1a1a, #2d2d2d)';
+
   // متغيرات نظام إرسال النقاط
   const [sendingPoints, setSendingPoints] = useState(false);
   const [pointsToSend, setPointsToSend] = useState('');
@@ -2204,10 +2215,9 @@ export default function ProfileModal({
         <div
           className={`profile-card ${selectedEffect}`}
           style={{
-            background: localUser?.profileBackgroundColor
-              ? buildProfileBackgroundGradient(localUser.profileBackgroundColor)
-              : 'linear-gradient(135deg, #1a1a1a, #2d2d2d)',
+            background: computedCardGradient,
             backgroundBlendMode: 'normal',
+            ['--card-bg' as any]: computedCardGradient,
           }}
         >
           {/* Close Button */}
