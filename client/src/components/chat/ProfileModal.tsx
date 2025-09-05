@@ -1443,16 +1443,18 @@ export default function ProfileModal({
           position: relative;
           transition: transform 0.3s ease, box-shadow 0.3s ease;
           height: fit-content;
+          transform: scaleY(0.8);
+          transform-origin: top center;
         }
 
         .profile-card:hover {
-          transform: translateY(-5px);
+          transform: translateY(-5px) scaleY(0.8);
           box-shadow: 0 12px 40px rgba(0,0,0,0.9);
         }
 
         .profile-cover {
           position: relative;
-          height: 200px;
+          height: 250px;
           background-size: cover;
           background-position: center;
           background-repeat: no-repeat;
