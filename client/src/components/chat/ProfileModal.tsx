@@ -2471,14 +2471,6 @@ export default function ProfileModal({
                 style={{ cursor: localUser?.id === currentUser?.id ? 'pointer' : 'default' }}
               >
                 🌍 البلد: <span>{localUser?.country || 'غير محدد'}</span>
-                {(() => {
-                  const flag = getCountryFlag(localUser?.country);
-                  return flag ? (
-                    <span title={localUser?.country || ''} style={{ marginInlineStart: 6, fontSize: 14 }}>
-                      {flag}
-                    </span>
-                  ) : null;
-                })()}
               </p>
               <p
                 onClick={() => localUser?.id === currentUser?.id && openEditModal('age')}

@@ -191,11 +191,7 @@ export default function UnifiedSidebar({
         );
       }
 
-      return (
-        <span style={boxStyle} title="لم يتم تحديد الدولة">
-          <span style={{ fontSize: 12, color: '#9ca3af', lineHeight: 1 }}>?</span>
-        </span>
-      );
+      return null;
     },
     [getCountryEmoji]
   );
