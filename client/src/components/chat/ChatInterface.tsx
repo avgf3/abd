@@ -1201,9 +1201,6 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                   setProfileUser(null);
                   try { profileAudioRef.current?.pause(); } catch {}
                 }}
-                onIgnoreUser={(userId) => {
-                  chat.ignoreUser(userId);
-                }}
                 onUpdate={(updatedUser) => {
                   // تحديث بيانات المستخدم في قائمة المتصلون
                   if (updatedUser && updatedUser.id) {
@@ -1214,9 +1211,6 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                     });
                   }
                 }}
-                onPrivateMessage={handlePrivateMessage}
-                onAddFriend={handleAddFriend}
-                onReportUser={(u) => handleReportUser(u)}
               />
             ) : (
               <ProfileModal
@@ -1228,9 +1222,6 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                   setProfileUser(null);
                   try { profileAudioRef.current?.pause(); } catch {}
                 }}
-                onIgnoreUser={(userId) => {
-                  chat.ignoreUser(userId);
-                }}
                 onUpdate={(updatedUser) => {
                   // تحديث بيانات المستخدم الحالي في قائمة المتصلون
                   if (updatedUser && updatedUser.id) {
@@ -1241,7 +1232,6 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                     });
                   }
                 }}
-                onReportUser={(u) => handleReportUser(u)}
               />
             )}
           </>
