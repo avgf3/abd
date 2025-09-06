@@ -2505,7 +2505,7 @@ export default function ProfileModal({
                 onClick={() => localUser?.id === currentUser?.id && openEditModal('status')}
                 style={{ cursor: localUser?.id === currentUser?.id ? 'pointer' : 'default' }}
               >
-                {localUser?.status || 'اضغط لإضافة حالة'}
+                {localUser?.status || (localUser?.id === currentUser?.id ? 'اضغط لإضافة حالة' : '')}
               </small>
             </div>
 
