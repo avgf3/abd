@@ -1590,8 +1590,9 @@ export default function ProfileModal({
 
         .profile-info {
           margin-bottom: 12px;
-          text-align: center;
+          text-align: left;
           margin-top: 0;
+          margin-left: 75px;
         }
 
         .profile-info h3 {
@@ -2292,7 +2293,7 @@ export default function ProfileModal({
                   position: 'absolute',
                   bottom: '38px', /* إنزال المجموعة (اللقب والاسم) أقرب للأسفل */
                   left: '50%',
-                  transform: 'translateX(calc(-50% - 12px))',
+                  transform: 'translateX(calc(-50% - 87px))',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
@@ -2351,7 +2352,7 @@ export default function ProfileModal({
                   position: 'absolute',
                   bottom: '38px',
                   left: '50%',
-                  transform: 'translateX(calc(-50% - 12px))',
+                  transform: 'translateX(calc(-50% - 87px))',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
@@ -2404,7 +2405,7 @@ export default function ProfileModal({
                   position: 'absolute',
                   bottom: '60px', /* رفع الاسم فوق شريط الأزرار */
                   left: '50%',
-                  transform: 'translateX(calc(-50% - 12px))',
+                  transform: 'translateX(calc(-50% - 87px))',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
