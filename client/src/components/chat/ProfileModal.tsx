@@ -2192,17 +2192,62 @@ export default function ProfileModal({
             font-size: 18px;
           }
           
-          /* أنماط الأزرار للأجهزة المحمولة - مطابقة لسطح المكتب */
+          /* أنماط الأزرار للأجهزة المحمولة - تصميم مختلف عن سطح المكتب */
           .profile-actions {
-            bottom: 10px;
-            left: 20px;
-            right: 150px;
-            gap: 6px;
+            position: absolute;
+            bottom: 15px;
+            left: 15px;
+            right: 15px;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            z-index: 10;
           }
           
           .profile-actions button {
-            padding: 3px 6px;
-            font-size: 10px;
+            flex: 1;
+            min-width: 0;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-weight: 500;
+            font-size: 11px;
+            cursor: pointer;
+            color: #fff;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+          }
+          
+          .profile-actions button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            filter: brightness(1.1);
+          }
+          
+          .profile-actions button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+          }
+          
+          /* ألوان مختلفة للموبايل */
+          .btn-chat { 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          }
+          .btn-add { 
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+          }
+          .btn-ignore { 
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+          }
+          .btn-report { 
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
           }
         }
       `}</style>
