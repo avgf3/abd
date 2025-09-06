@@ -301,6 +301,8 @@ function chatReducer(state: ChatState, action: ChatAction): ChatState {
 export const useChat = () => {
   const [state, dispatch] = useReducer(chatReducer, initialState);
   const socket = useRef<Socket | null>(null);
+  const isAuthenticatedRef = useRef<boolean>(false);
+  const pendingRoomJoinRef = useRef<string | null>(null);
 
   // 🔥 SIMPLIFIED loading management - مصدر واحد
   const loadingRooms = useRef<Set<string>>(new Set());
@@ -907,6 +909,40 @@ export const useChat = () => {
       }
     });
 
+    // معالج رسالة المصادقة الناجحة
+    socketInstance.on('authenticated', (payload: any) => {
+      try {
+        console.log('✅ تمت المصادقة بنجاح:', payload);
+        isAuthenticatedRef.current = true;
+        
+        // إذا كان هناك طلب انضمام معلق، قم بتنفيذه الآن
+        if (pendingRoomJoinRef.current) {
+          const roomId = pendingRoomJoinRef.current;
+          pendingRoomJoinRef.current = null;
+          
+          // تأخير قصير للتأكد من اكتمال إعداد Socket
+          setTimeout(() => {
+            if (socketInstance.connected && state.currentUser?.id) {
+              console.log('🔄 تنفيذ طلب الانضمام المعلق للغرفة:', roomId);
+              socketInstance.emit('joinRoom', {
+                roomId,
+                userId: state.currentUser.id,
+                username: state.currentUser.username,
+              });
+            }
+          }, 100);
+        }
+      } catch (error) {
+        console.error('❌ خطأ في معالجة رسالة المصادقة:', error);
+      }
+    });
+
+    // إعادة تعيين حالة المصادقة عند قطع الاتصال
+    socketInstance.on('disconnect', () => {
+      isAuthenticatedRef.current = false;
+      pendingRoomJoinRef.current = null;
+    });
+
     // أحداث مباشرة محتملة لتحديث قائمة المتصلين فوراً إن وُجدت على الخادم
     socketInstance.on('userDisconnected', (payload: any) => {
       const uid = payload?.userId || payload?.id;
@@ -1233,6 +1269,10 @@ export const useChat = () => {
           }
         }
         
+        // إعادة تعيين حالة المصادقة
+        isAuthenticatedRef.current = false;
+        pendingRoomJoinRef.current = null;
+        
         // استخدام عميل Socket الموحد
         const s = connectSocket();
         socket.current = s;
@@ -1325,7 +1365,7 @@ export const useChat = () => {
     [setupSocketListeners, state.currentRoomId]
   );
 
-  // 🔥 SIMPLIFIED Join room function
+  // 🔥 SIMPLIFIED Join room function with authentication check
   const joinRoom = useCallback(
     (roomId: string) => {
       if (!roomId || roomId === 'public' || roomId === 'friends') {
@@ -1336,14 +1376,26 @@ export const useChat = () => {
         return;
       }
 
-      // Do NOT change local room yet; wait for server ack (roomJoined)
-      if (socket.current?.connected && state.currentUser?.id) {
-        socket.current.emit('joinRoom', {
-          roomId,
-          userId: state.currentUser.id,
-          username: state.currentUser.username,
-        });
+      // تحقق من الاتصال ووجود المستخدم
+      if (!socket.current?.connected || !state.currentUser?.id) {
+        console.warn('⚠️ Socket not connected or user not available');
+        return;
       }
+
+      // تحقق من حالة المصادقة
+      if (!isAuthenticatedRef.current) {
+        console.log('🔄 المصادقة لم تكتمل بعد، سيتم حفظ طلب الانضمام');
+        pendingRoomJoinRef.current = roomId;
+        return;
+      }
+
+      // إرسال طلب الانضمام مباشرة إذا كانت المصادقة مكتملة
+      console.log('✅ إرسال طلب الانضمام للغرفة:', roomId);
+      socket.current.emit('joinRoom', {
+        roomId,
+        userId: state.currentUser.id,
+        username: state.currentUser.username,
+      });
     },
     [state.currentRoomId, state.currentUser]
   );
