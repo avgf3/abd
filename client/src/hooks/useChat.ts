@@ -1325,7 +1325,7 @@ export const useChat = () => {
     [setupSocketListeners, state.currentRoomId]
   );
 
-  // 🔥 SIMPLIFIED Join room function
+  // 🔥 IMPROVED Join room function with connection stability check
   const joinRoom = useCallback(
     (roomId: string) => {
       if (!roomId || roomId === 'public' || roomId === 'friends') {
@@ -1336,13 +1336,32 @@ export const useChat = () => {
         return;
       }
 
-      // Do NOT change local room yet; wait for server ack (roomJoined)
+      const attemptJoin = () => {
+        if (socket.current?.connected && state.currentUser?.id) {
+          socket.current.emit('joinRoom', {
+            roomId,
+            userId: state.currentUser.id,
+            username: state.currentUser.username,
+          });
+        }
+      };
+
+      // إذا كان الاتصال مستقراً، انضم فوراً
       if (socket.current?.connected && state.currentUser?.id) {
-        socket.current.emit('joinRoom', {
-          roomId,
-          userId: state.currentUser.id,
-          username: state.currentUser.username,
-        });
+        attemptJoin();
+      } else {
+        // انتظار استقرار الاتصال قبل الانضمام
+        const checkConnection = () => {
+          if (socket.current?.connected && state.currentUser?.id) {
+            attemptJoin();
+          } else {
+            // إعادة المحاولة بعد ثانية واحدة
+            setTimeout(checkConnection, 1000);
+          }
+        };
+        
+        // بدء فحص الاتصال بعد تأخير قصير
+        setTimeout(checkConnection, 500);
       }
     },
     [state.currentRoomId, state.currentUser]

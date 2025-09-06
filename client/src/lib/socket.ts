@@ -142,10 +142,10 @@ export function getSocket(): Socket {
     autoConnect: false,
     reconnection: true,
     reconnectionAttempts: Infinity, // محاولات غير محدودة
-    reconnectionDelay: 3000,
-    reconnectionDelayMax: 30000, // زيادة الحد الأقصى
-    randomizationFactor: 0.5,
-    timeout: 30000, // زيادة timeout
+    reconnectionDelay: 2000, // تقليل التأخير الأولي
+    reconnectionDelayMax: 15000, // تقليل الحد الأقصى للاستجابة السريعة
+    randomizationFactor: 0.3, // تقليل العشوائية
+    timeout: 60000, // زيادة timeout لمطابقة الخادم (دقيقة كاملة)
     forceNew: true,
     withCredentials: true,
     auth: { deviceId },
