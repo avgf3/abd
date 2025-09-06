@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS bots (
     profile_image TEXT,
     profile_banner TEXT,
     profile_background_color TEXT DEFAULT '#2a2a2a',
-    status TEXT DEFAULT 'بوت نشط',
+    status TEXT,
     gender TEXT DEFAULT 'غير محدد',
     country TEXT DEFAULT 'غير محدد',
     relation TEXT DEFAULT 'غير محدد',

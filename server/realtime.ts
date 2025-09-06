@@ -967,7 +967,7 @@ async function loadActiveBots() {
       console.log(`✓ تم تحميل البوت: ${bot.username} في الغرفة ${bot.currentRoom}`);
     }
     
-    console.log(`✓ تم تحميل ${activeBots.length} بوت نشط`);
+    console.log(`✓ تم تحميل عدد البوتات: ${activeBots.length}`);
   } catch (error) {
     console.error('خطأ في تحميل البوتات:', error);
   }
