@@ -655,8 +655,7 @@ export function setupRealtime(httpServer: HttpServer): IOServer {
 
     // أزيلت آلية الطلب اليدوي لقائمة المتصلين للاعتماد على البث التلقائي
 
-    // انضمام للغرفة مع منع السبام والتكرار السريع
-    let lastJoinAt = 0;
+    // انضمام للغرفة
     socket.on('joinRoom', async (data) => {
       if (!socket.userId) {
         socket.emit('message', { type: 'error', message: 'يجب تسجيل الدخول أولاً' });
@@ -665,8 +664,7 @@ export function setupRealtime(httpServer: HttpServer): IOServer {
       const roomId = data && data.roomId ? String(data.roomId) : 'general';
       const username = socket.username || `User#${socket.userId}`;
       try {
-        // منع الانضمام المتكرر لنفس الغرفة أو الطلبات المتقاربة جداً
-        const now = Date.now();
+        // منع الانضمام المتكرر لنفس الغرفة فقط
         if (socket.currentRoom === roomId) {
           socket.emit('message', {
             type: 'roomJoined',
@@ -675,10 +673,6 @@ export function setupRealtime(httpServer: HttpServer): IOServer {
           });
           return;
         }
-        if (now - lastJoinAt < 500) {
-          return;
-        }
-        lastJoinAt = now;
         // If switching, also refresh previous room list
         const previousRoom = socket.currentRoom;
         await joinRoom(io, socket, socket.userId, username, roomId);
