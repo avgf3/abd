@@ -1,0 +1,56 @@
+# استخدام Node.js الرسمي كصورة أساسية
+FROM node:18-alpine
+
+# تعيين معلومات المطور
+LABEL maintainer="Smart Developer <developer@example.com>"
+LABEL description="Telegram Smart Message Bot - Arabic"
+LABEL version="1.0.0"
+
+# تثبيت الأدوات المطلوبة
+RUN apk add --no-cache \
+    curl \
+    bash \
+    tzdata
+
+# تعيين المنطقة الزمنية
+ENV TZ=Asia/Riyadh
+
+# إنشاء مستخدم غير جذر
+RUN addgroup -g 1001 -S botuser && \
+    adduser -S botuser -u 1001 -G botuser
+
+# تعيين مجلد العمل
+WORKDIR /app
+
+# نسخ ملفات package
+COPY telegram-package.json package.json
+COPY package-lock.json* ./
+
+# تثبيت المتطلبات
+RUN npm ci --only=production && \
+    npm cache clean --force
+
+# نسخ الكود المصدري
+COPY smart-telegram-bot.js ./
+COPY .env.telegram.example .env.telegram
+
+# إنشاء المجلدات المطلوبة
+RUN mkdir -p data logs && \
+    chown -R botuser:botuser /app
+
+# التبديل للمستخدم غير الجذر
+USER botuser
+
+# تعريف المتغيرات البيئية
+ENV NODE_ENV=production
+ENV TZ=Asia/Riyadh
+
+# فحص صحة الحاوية
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD node -e "console.log('Bot is running')" || exit 1
+
+# البورت المكشوف (اختياري - للمراقبة)
+EXPOSE 3000
+
+# الأمر الافتراضي
+CMD ["node", "smart-telegram-bot.js"]
