@@ -2292,7 +2292,7 @@ export default function ProfileModal({
                   position: 'absolute',
                   bottom: '38px', /* إنزال المجموعة (اللقب والاسم) أقرب للأسفل */
                   left: '50%',
-                  transform: 'translateX(calc(-50% - 12px))',
+                  transform: 'translateX(calc(-50% - 12px - 3cm))',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
@@ -2351,7 +2351,7 @@ export default function ProfileModal({
                   position: 'absolute',
                   bottom: '38px',
                   left: '50%',
-                  transform: 'translateX(calc(-50% - 12px))',
+                  transform: 'translateX(calc(-50% - 12px - 3cm))',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
@@ -2404,7 +2404,7 @@ export default function ProfileModal({
                   position: 'absolute',
                   bottom: '60px', /* رفع الاسم فوق شريط الأزرار */
                   left: '50%',
-                  transform: 'translateX(calc(-50% - 12px))',
+                  transform: 'translateX(calc(-50% - 12px - 3cm))',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
@@ -2500,7 +2500,7 @@ export default function ProfileModal({
 
           {/* Profile Body - exact match to original */}
           <div className="profile-body">
-            <div className="profile-info">
+            <div className="profile-info" style={{ transform: 'translateX(-3cm)' }}>
               <small
                 onClick={() => localUser?.id === currentUser?.id && openEditModal('status')}
                 style={{ cursor: localUser?.id === currentUser?.id ? 'pointer' : 'default' }}
