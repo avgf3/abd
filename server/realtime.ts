@@ -629,23 +629,22 @@ export function setupRealtime(httpServer: HttpServer): IOServer {
             await storage.setUserOnlineStatus(user.id, true);
           } catch {}
 
-          // Track connection
+          // Track connection - لا نضع المستخدم في أي غرفة تلقائياً
           const existing = connectedUsers.get(user.id);
           if (!existing) {
             connectedUsers.set(user.id, {
               user,
-              sockets: new Map([[socket.id, { room: GENERAL_ROOM, lastSeen: new Date() }]]),
+              sockets: new Map([[socket.id, { room: null, lastSeen: new Date() }]]),
               lastSeen: new Date(),
             });
           } else {
             existing.user = user;
-            existing.sockets.set(socket.id, { room: GENERAL_ROOM, lastSeen: new Date() });
+            existing.sockets.set(socket.id, { room: null, lastSeen: new Date() });
             existing.lastSeen = new Date();
             connectedUsers.set(user.id, existing);
           }
 
-          // Auto join general room
-          await joinRoom(io, socket, user.id, user.username, GENERAL_ROOM);
+          // لا ننضم تلقائياً لأي غرفة - المستخدم يختار بنفسه
 
           socket.emit('authenticated', { message: 'تم الاتصال بنجاح', user });
         } catch (err) {
@@ -663,7 +662,7 @@ export function setupRealtime(httpServer: HttpServer): IOServer {
         socket.emit('message', { type: 'error', message: 'يجب تسجيل الدخول أولاً' });
         return;
       }
-      const roomId = data && data.roomId ? String(data.roomId) : GENERAL_ROOM;
+      const roomId = data && data.roomId ? String(data.roomId) : 'general';
       const username = socket.username || `User#${socket.userId}`;
       try {
         // منع الانضمام المتكرر لنفس الغرفة أو الطلبات المتقاربة جداً
@@ -702,7 +701,7 @@ export function setupRealtime(httpServer: HttpServer): IOServer {
 
     socket.on('leaveRoom', async (data) => {
       if (!socket.userId) return;
-      const roomId = data && data.roomId ? String(data.roomId) : socket.currentRoom || GENERAL_ROOM;
+      const roomId = data && data.roomId ? String(data.roomId) : socket.currentRoom;
       const username = socket.username || `User#${socket.userId}`;
       try {
         await leaveRoom(io, socket, socket.userId, username, roomId);
@@ -714,7 +713,13 @@ export function setupRealtime(httpServer: HttpServer): IOServer {
     socket.on('publicMessage', async (data) => {
       try {
         if (!socket.userId) return;
-        const roomId = data?.roomId || socket.currentRoom || GENERAL_ROOM;
+        const roomId = data?.roomId || socket.currentRoom;
+        
+        // المستخدم يجب أن يكون في غرفة لإرسال رسالة
+        if (!roomId) {
+          socket.emit('message', { type: 'error', message: 'يجب الانضمام لغرفة أولاً' });
+          return;
+        }
 
         // Ensure the socket is actually in the target room to prevent bypassing join checks
         try {
@@ -785,7 +790,10 @@ export function setupRealtime(httpServer: HttpServer): IOServer {
 
     socket.on('typing', (data) => {
       const isTyping = !!data?.isTyping;
-      const roomId = socket.currentRoom || GENERAL_ROOM;
+      const roomId = socket.currentRoom;
+      
+      // المستخدم يجب أن يكون في غرفة لإرسال إشارة الكتابة
+      if (!roomId) return;
       io.to(`room_${roomId}`).emit('message', {
         type: 'typing',
         userId: socket.userId,
@@ -801,8 +809,8 @@ export function setupRealtime(httpServer: HttpServer): IOServer {
         if (!socket.userId) return;
         const { roomId, targetUserId, sdp, senderId } = payload || {};
         if (!roomId || !targetUserId || !sdp || !senderId) return;
-        const currentRoom = socket.currentRoom || GENERAL_ROOM;
-        if (currentRoom !== roomId) return;
+        const currentRoom = socket.currentRoom;
+        if (!currentRoom || currentRoom !== roomId) return;
         io.to(targetUserId.toString()).emit('webrtc-offer', { roomId, sdp, senderId });
       } catch {}
     });
@@ -812,8 +820,8 @@ export function setupRealtime(httpServer: HttpServer): IOServer {
         if (!socket.userId) return;
         const { roomId, targetUserId, sdp, senderId } = payload || {};
         if (!roomId || !targetUserId || !sdp || !senderId) return;
-        const currentRoom = socket.currentRoom || GENERAL_ROOM;
-        if (currentRoom !== roomId) return;
+        const currentRoom = socket.currentRoom;
+        if (!currentRoom || currentRoom !== roomId) return;
         io.to(targetUserId.toString()).emit('webrtc-answer', { roomId, sdp, senderId });
       } catch {}
     });
@@ -823,8 +831,8 @@ export function setupRealtime(httpServer: HttpServer): IOServer {
         if (!socket.userId) return;
         const { roomId, targetUserId, candidate, senderId } = payload || {};
         if (!roomId || !targetUserId || !candidate || !senderId) return;
-        const currentRoom = socket.currentRoom || GENERAL_ROOM;
-        if (currentRoom !== roomId) return;
+        const currentRoom = socket.currentRoom;
+        if (!currentRoom || currentRoom !== roomId) return;
         io.to(targetUserId.toString()).emit('webrtc-ice-candidate', {
           roomId,
           candidate,
@@ -899,14 +907,16 @@ export function setupRealtime(httpServer: HttpServer): IOServer {
               await storage.setUserOnlineStatus(userId, false);
             } catch {}
             // Update any room the user was in last (best effort)
-            const lastRoom = socket.currentRoom || GENERAL_ROOM;
-            const users = await buildOnlineUsersForRoom(lastRoom);
-            io.to(`room_${lastRoom}`).emit('message', {
-              type: 'onlineUsers',
-              users,
-              roomId: lastRoom,
-              source: 'disconnect',
-            });
+            const lastRoom = socket.currentRoom;
+            if (lastRoom) {
+              const users = await buildOnlineUsersForRoom(lastRoom);
+              io.to(`room_${lastRoom}`).emit('message', {
+                type: 'onlineUsers',
+                users,
+                roomId: lastRoom,
+                source: 'disconnect',
+              });
+            }
           } else {
             connectedUsers.set(userId, entry);
           }

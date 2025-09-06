@@ -87,7 +87,7 @@ type ReactionCounts = { like: number; dislike: number; heart: number };
 const initialState: ChatState = {
   currentUser: null,
   onlineUsers: [],
-  currentRoomId: 'general',
+  currentRoomId: '',
   roomMessages: {},
   privateConversations: {},
   ignoredUsers: new Set(),
@@ -1250,11 +1250,7 @@ export const useChat = () => {
             username: user.username,
             userType: user.userType,
           });
-          s.emit('joinRoom', {
-            roomId: state.currentRoomId || 'general',
-            userId: user.id,
-            username: user.username,
-          });
+          // لا ننضم تلقائياً لأي غرفة - المستخدم يختار بنفسه
         }
 
         // إرسال المصادقة عند الاتصال/إعادة الاتصال يتم من خلال الوحدة المشتركة
@@ -1270,11 +1266,7 @@ export const useChat = () => {
               username: user.username,
               userType: user.userType,
             });
-            s.emit('joinRoom', {
-              roomId: state.currentRoomId || 'general',
-              userId: user.id,
-              username: user.username,
-            });
+            // المستخدم سيختار الغرفة بنفسه من واجهة الغرف
           } catch {}
 
           // Prefetch expected data shortly after connection success
@@ -1337,7 +1329,8 @@ export const useChat = () => {
   const joinRoom = useCallback(
     (roomId: string) => {
       if (!roomId || roomId === 'public' || roomId === 'friends') {
-        roomId = 'general';
+        console.warn('Invalid room ID provided to joinRoom:', roomId);
+        return;
       }
       if (state.currentRoomId === roomId) {
         return;
