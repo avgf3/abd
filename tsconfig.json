@@ -15,7 +15,7 @@
     "jsx": "react-jsx",
     "module": "ESNext",
     "downlevelIteration": true,
-    "types": ["node"],
+    "types": ["node", "react", "react-dom"],
     "declaration": true,
     "outDir": "./dist",
     "baseUrl": "./client",
