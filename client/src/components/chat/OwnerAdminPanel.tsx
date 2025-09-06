@@ -652,7 +652,7 @@ export default function OwnerAdminPanel({
                           <div className="flex items-center gap-3">
                             <div className={`w-4 h-4 rounded-full ${chatLockAll ? 'bg-red-500' : 'bg-gray-300'}`} />
                             <span className={`font-medium ${chatLockAll ? 'text-red-700' : 'text-gray-500'}`}>
-                              {chatLockAll ? 'مفعل - الدردشة مقفلة بالكامل' : 'غير مفعل'}
+                              {chatLockAll ? 'مفعل - الدردشة مقفلة' : 'غير مفعل'}
                             </span>
                           </div>
                           <Button
@@ -667,7 +667,7 @@ export default function OwnerAdminPanel({
                         {chatLockAll && (
                           <div className="mt-4 p-3 bg-red-100 rounded-lg border border-red-200">
                             <p className="text-red-800 text-sm font-medium">
-                              ⚠️ تحذير: الدردشة مقفلة بالكامل - المالك فقط يستطيع إرسال الرسائل
+                              ⚠️ تحذير: الدردشة مقفلة
                             </p>
                           </div>
                         )}
