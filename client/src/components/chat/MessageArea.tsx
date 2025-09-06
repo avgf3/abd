@@ -525,7 +525,7 @@ export default function MessageArea({
           {chatLockAll && (
             <div className="flex items-center justify-center gap-2">
               <Lock className="w-4 h-4" />
-              <span>الدردشة مقفلة بالكامل - المالك فقط يستطيع إرسال الرسائل</span>
+              <span>الدردشة مقفلة</span>
             </div>
           )}
           {chatLockVisitors && !chatLockAll && (
