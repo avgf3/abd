@@ -24,11 +24,7 @@ interface ProfileModalProps {
   user: ChatUser | null;
   currentUser: ChatUser | null;
   onClose: () => void;
-  onIgnoreUser?: (userId: number) => void;
   onUpdate?: (user: ChatUser) => void;
-  onPrivateMessage?: (user: ChatUser) => void;
-  onAddFriend?: (user: ChatUser) => void;
-  onReportUser?: (user: ChatUser) => void;
   // عند التفعيل: يتم إدارة الصوت خارجياً من ChatInterface
   externalAudioManaged?: boolean;
 }
@@ -37,11 +33,7 @@ export default function ProfileModal({
   user,
   currentUser,
   onClose,
-  onIgnoreUser,
   onUpdate,
-  onPrivateMessage,
-  onAddFriend,
-  onReportUser,
   externalAudioManaged,
 }: ProfileModalProps) {
   const { toast } = useToast();
@@ -1492,43 +1484,9 @@ export default function ProfileModal({
           background: rgba(0,0,0,0.9);
         }
 
-        /* شريط الأزرار على حافة صورة الغلاف السفلية */
-        .profile-actions {
-          position: absolute;
-          bottom: 10px;
-          left: 20px;
-          right: 150px; /* إتاحة مساحة أكبر قليلاً قبل الصورة الشخصية */
-          display: flex;
-          gap: 6px;
-          align-items: center;
-          justify-content: flex-start; /* تلاصق الأزرار بجانب بعضها */
-          flex-wrap: nowrap; /* كل الأزرار في سطر واحد */
-          z-index: 10;
-        }
+        /* تم حذف أنماط الأزرار المحذوفة */
 
-        .profile-actions button {
-          border: none;
-          padding: 3px 6px; /* تصغير المساحة الداخلية للأزرار أكثر ليظهر زر البلاغ */
-          border-radius: 6px;
-          font-weight: 600;
-          font-size: 10px; /* تصغير النص ليبقى كل الأزرار ضمن نفس المنطقة */
-          cursor: pointer;
-          color: #fff;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-          transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
-          white-space: nowrap;
-        }
-
-        .profile-actions button:hover {
-          transform: translateY(-1px);
-          box-shadow: 0 6px 18px rgba(0,0,0,0.35);
-          filter: brightness(1.05);
-        }
-
-        .btn-chat { background: linear-gradient(135deg, #3490dc, #2779bd); }
-        .btn-add { background: linear-gradient(135deg, #38a169, #2f855a); }
-        .btn-ignore { background: linear-gradient(135deg, #ef4444, #dc2626); }
-        .btn-report { background: linear-gradient(135deg, #dc2626, #b91c1c); }
+        /* تم حذف أنماط الأزرار المحذوفة */
 
         .profile-avatar {
           width: 130px;
@@ -2192,18 +2150,7 @@ export default function ProfileModal({
             font-size: 18px;
           }
           
-          /* أنماط الأزرار للأجهزة المحمولة - مطابقة لسطح المكتب */
-          .profile-actions {
-            bottom: 10px;
-            left: 20px;
-            right: 150px;
-            gap: 6px;
-          }
-          
-          .profile-actions button {
-            padding: 3px 6px;
-            font-size: 10px;
-          }
+          /* تم حذف أنماط الأزرار المحذوفة */
         }
       `}</style>
 
@@ -2483,22 +2430,7 @@ export default function ProfileModal({
             )}
 
             {/* الأزرار - على حافة صورة الغلاف السفلية */}
-            {localUser?.id !== currentUser?.id && (
-              <div className="profile-actions">
-                <button className="btn-chat" onClick={() => onPrivateMessage?.(localUser)}>
-                  💬 محادثة خاصة
-                </button>
-                <button className="btn-add" onClick={() => onAddFriend?.(localUser)}>
-                  👥 إضافة صديق
-                </button>
-                <button className="btn-ignore" onClick={() => onIgnoreUser?.(localUser?.id || 0)}>
-                  🚫 تجاهل
-                </button>
-                <button className="btn-report" onClick={() => onReportUser?.(localUser)}>
-                  🚩 إبلاغ
-                </button>
-              </div>
-            )}
+            {/* تم حذف الأزرار: إضافة صديق، تجاهل، إبلاغ، محادثة خاصة */}
           </div>
 
           {/* Profile Body - exact match to original */}
