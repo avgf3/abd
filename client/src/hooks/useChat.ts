@@ -1157,10 +1157,6 @@ export const useChat = () => {
         clearInterval(pingIntervalRef.current);
         pingIntervalRef.current = null;
       }
-      if (onlineUsersIntervalRef.current) {
-        clearInterval(onlineUsersIntervalRef.current);
-        onlineUsersIntervalRef.current = null;
-      }
       // clear typing timers
       typingTimersRef.current.forEach((id) => {
         try {
@@ -1349,12 +1345,16 @@ export const useChat = () => {
         // تحديث حالة الاتصال عند الانفصال
         s.on('disconnect', () => {
           dispatch({ type: 'SET_CONNECTION_STATUS', payload: false });
+          isAuthenticatedRef.current = false;
+          pendingRoomJoinRef.current = null;
         });
 
         // معالجة أخطاء الاتصال
         s.on('connect_error', (error) => {
           console.error('❌ خطأ في الاتصال:', error);
           dispatch({ type: 'SET_CONNECTION_ERROR', payload: 'فشل الاتصال بالسيرفر' });
+          isAuthenticatedRef.current = false;
+          pendingRoomJoinRef.current = null;
         });
       } catch (error) {
         console.error('خطأ في الاتصال:', error);
@@ -1457,6 +1457,11 @@ export const useChat = () => {
   // 🔥 SIMPLIFIED Disconnect function
   const disconnect = useCallback(() => {
     clearSession(); // مسح بيانات الجلسة
+    
+    // إعادة تعيين حالة المصادقة
+    isAuthenticatedRef.current = false;
+    pendingRoomJoinRef.current = null;
+    
     if (socket.current) {
       socket.current.removeAllListeners();
       socket.current.disconnect();
