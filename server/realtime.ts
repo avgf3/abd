@@ -662,6 +662,17 @@ export function setupRealtime(httpServer: HttpServer): IOServer {
         socket.emit('message', { type: 'error', message: 'يجب تسجيل الدخول أولاً' });
         return;
       }
+      
+      // 🔧 إصلاح: التأكد من اكتمال المصادقة
+      if (!isAuthenticated) {
+        // انتظار قصير للمصادقة
+        setTimeout(() => {
+          if (isAuthenticated && socket.userId) {
+            socket.emit('joinRoom', data); // إعادة المحاولة
+          }
+        }, 500);
+        return;
+      }
       const roomId = data && data.roomId ? String(data.roomId) : 'general';
       const username = socket.username || `User#${socket.userId}`;
       try {
@@ -675,7 +686,7 @@ export function setupRealtime(httpServer: HttpServer): IOServer {
           });
           return;
         }
-        if (now - lastJoinAt < 500) {
+        if (now - lastJoinAt < 200) { // 🔧 تقليل من 500ms إلى 200ms
           return;
         }
         lastJoinAt = now;

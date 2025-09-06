@@ -79,13 +79,19 @@ function attachCoreListeners(socket: Socket) {
         reconnect: isReconnect,
       });
 
+      // 🔧 إصلاح: انتظار المصادقة قبل الانضمام للغرفة
       const joinRoomId = session.roomId;
       if (joinRoomId && joinRoomId !== 'public' && joinRoomId !== 'friends') {
-        socket.emit('joinRoom', {
-          roomId: joinRoomId,
-          userId: session.userId,
-          username: session.username,
-        });
+        // انتظار قصير للتأكد من اكتمال المصادقة
+        setTimeout(() => {
+          if (socket.connected && socket.id) {
+            socket.emit('joinRoom', {
+              roomId: joinRoomId,
+              userId: session.userId,
+              username: session.username,
+            });
+          }
+        }, 1000); // انتظار ثانية واحدة
       }
     } catch {}
   };
@@ -142,10 +148,10 @@ export function getSocket(): Socket {
     autoConnect: false,
     reconnection: true,
     reconnectionAttempts: Infinity, // محاولات غير محدودة
-    reconnectionDelay: 3000,
-    reconnectionDelayMax: 30000, // زيادة الحد الأقصى
-    randomizationFactor: 0.5,
-    timeout: 30000, // زيادة timeout
+    reconnectionDelay: 1000, // 🔧 تقليل تأخير إعادة الاتصال
+    reconnectionDelayMax: 10000, // 🔧 تقليل الحد الأقصى
+    randomizationFactor: 0.2, // 🔧 تقليل العشوائية
+    timeout: 10000, // 🔧 تقليل timeout للاستجابة الأسرع
     forceNew: true,
     withCredentials: true,
     auth: { deviceId },
