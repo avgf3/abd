@@ -2234,16 +2234,16 @@ export default function ProfileModal({
                   🖼️ تغيير الغلاف
                 </button>
                 
-                {/* اسم المستخدم مع الرتبة */}
+                {/* اسم المستخدم مع الشعار فوقه مباشرة وبفراغ بسيط */}
                 <div style={{
                   position: 'absolute',
-                  bottom: '38px', /* إنزال المجموعة (اللقب والاسم) أقرب للأسفل */
+                  bottom: '8px',
                   left: '50%',
-                  transform: 'translateX(calc(-50% - 12px - 2cm))',
+                  transform: 'translateX(-50%)',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
-                  gap: '1px', /* تقليل الفراغ بين اللقب والاسم */
+                  gap: '4px',
                   zIndex: 3,
                   textAlign: 'center',
                   maxWidth: 'calc(100% - 180px)',
@@ -2252,7 +2252,7 @@ export default function ProfileModal({
                 }}>
                   {/* الرتبة فوق الاسم */}
                   {(localUser?.userType === 'owner' || localUser?.userType === 'admin' || localUser?.userType === 'moderator') && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', transform: 'translateX(2cm)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                       <span style={{ fontSize: '13px' }}>
                         {localUser?.userType === 'owner' && 'Owner'}
                         {localUser?.userType === 'admin' && 'Admin'}
@@ -2277,8 +2277,7 @@ export default function ProfileModal({
                     whiteSpace: 'normal',
                     overflowWrap: 'break-word',
                     wordBreak: 'keep-all',
-                    hyphens: 'none',
-                    transform: 'translateX(2cm)'
+                    hyphens: 'none'
                   }}
                   onClick={() => openEditModal('name')}
                   >
@@ -2297,13 +2296,13 @@ export default function ProfileModal({
               <>
                 <div style={{
                   position: 'absolute',
-                  bottom: '38px',
+                  bottom: '8px',
                   left: '50%',
-                  transform: 'translateX(calc(-50% - 12px - 2cm))',
+                  transform: 'translateX(calc(-50% - 12px))',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
-                  gap: '1px',
+                  gap: '4px',
                   zIndex: 12,
                   textAlign: 'center',
                   maxWidth: 'calc(100% - 180px)',
@@ -2311,7 +2310,7 @@ export default function ProfileModal({
                   boxSizing: 'border-box'
                 }}>
                   {(localUser?.userType === 'owner' || localUser?.userType === 'admin' || localUser?.userType === 'moderator') && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', transform: 'translateX(2cm)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                       <span style={{ fontSize: '13px' }}>
                         {localUser?.userType === 'owner' && 'Owner'}
                         {localUser?.userType === 'admin' && 'Admin'}
@@ -2335,8 +2334,7 @@ export default function ProfileModal({
                     whiteSpace: 'normal',
                     overflowWrap: 'break-word',
                     wordBreak: 'keep-all',
-                    hyphens: 'none',
-                    transform: 'translateX(2cm)'
+                    hyphens: 'none'
                   }}
                   onClick={() => openEditModal('name')}
                   >
