@@ -4282,6 +4282,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
       const [newBot] = await db.insert(bots).values({
         ...body,
+        // إذا لم تُرسل حالة، اجعلها فارغة
+        status: typeof body.status === 'string' ? body.status : null,
         // حقول بسيطة تُخزن مباشرة
         relation: typeof relation === 'string' ? relation : body.relation,
         country: typeof country === 'string' ? country : body.country,

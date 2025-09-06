@@ -575,7 +575,7 @@ export const bots = pgTable('bots', {
   profileImage: text('profile_image'),
   profileBanner: text('profile_banner'),
   profileBackgroundColor: text('profile_background_color').default('#2a2a2a'),
-  status: text('status').default('بوت نشط'),
+  status: text('status'),
   gender: text('gender').default('غير محدد'),
   country: text('country').default('غير محدد'),
   relation: text('relation').default('غير محدد'),

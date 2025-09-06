@@ -78,7 +78,7 @@ export default function BotsManagement({ currentUser }: BotsManagementProps) {
   const [newBot, setNewBot] = useState({
     username: '',
     password: '',
-    status: 'بوت نشط',
+    status: '',
     bio: 'أنا بوت آلي',
     botType: 'system' as 'system' | 'chat' | 'moderator',
     usernameColor: '#00FF00',
@@ -194,7 +194,7 @@ export default function BotsManagement({ currentUser }: BotsManagementProps) {
       setNewBot({
         username: '',
         password: '',
-        status: 'بوت نشط',
+        status: '',
         bio: 'أنا بوت آلي',
         botType: 'system',
         usernameColor: '#00FF00',
@@ -484,7 +484,9 @@ export default function BotsManagement({ currentUser }: BotsManagementProps) {
                               <Badge className="bg-gray-100 text-gray-800">معطل</Badge>
                             )}
                           </div>
-                          <span className="text-xs text-gray-500">{bot.status}</span>
+                          {bot.status ? (
+                            <span className="text-xs text-gray-500">{bot.status}</span>
+                          ) : null}
                         </div>
                       </div>
                     </TableCell>
