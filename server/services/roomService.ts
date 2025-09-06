@@ -19,6 +19,9 @@ export interface Room {
   micQueue?: number[];
   userCount?: number;
   createdAt: Date;
+  // Chat lock settings
+  chatLockAll?: boolean;
+  chatLockVisitors?: boolean;
 }
 
 export interface CreateRoomData {

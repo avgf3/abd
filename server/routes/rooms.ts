@@ -411,6 +411,87 @@ router.put('/:roomId/lock', protect.moderator, async (req, res) => {
 });
 
 /**
+ * PUT /api/rooms/:roomId/chat-lock
+ * قفل الدردشة في الغرفة (للمالك فقط)
+ */
+router.put('/:roomId/chat-lock', protect.auth, async (req, res) => {
+  try {
+    const { roomId } = req.params;
+    const requesterId = (req as any).user?.id as number;
+    
+    // التحقق من صحة البيانات
+    const schema = z.object({ 
+      chatLockAll: z.boolean().optional(),
+      chatLockVisitors: z.boolean().optional()
+    });
+    const parsed = schema.safeParse(req.body || {});
+    if (!parsed.success) {
+      return res.status(400).json({ error: 'بيانات غير صالحة' });
+    }
+
+    const { chatLockAll, chatLockVisitors } = parsed.data;
+
+    // التحقق من وجود الغرفة
+    const room = await roomService.getRoom(roomId);
+    if (!room) {
+      return res.status(404).json({ error: 'الغرفة غير موجودة' });
+    }
+
+    // التحقق من الصلاحيات - المالك فقط يستطيع تغيير إعدادات قفل الدردشة
+    const requester = await storage.getUser(requesterId);
+    if (!requester) {
+      return res.status(401).json({ error: 'المستخدم غير موجود' });
+    }
+
+    const isOwner = requester.userType === 'owner';
+    if (!isOwner) {
+      return res.status(403).json({ error: 'هذه الخاصية متاحة للمالك فقط' });
+    }
+
+    // تحديث إعدادات قفل الدردشة
+    const updateData: any = {};
+    if (chatLockAll !== undefined) {
+      updateData.chatLockAll = chatLockAll;
+    }
+    if (chatLockVisitors !== undefined) {
+      updateData.chatLockVisitors = chatLockVisitors;
+    }
+
+    const saved = await (await import('../storage')).storage.updateRoom(String(roomId), updateData);
+    try { roomService.invalidateRoomsCache(); } catch {}
+
+    // بث تحديث إعدادات قفل الدردشة لجميع المستخدمين في الغرفة
+    try {
+      const io = req.app.get('io');
+      io?.to(`room_${roomId}`).emit('chatLockUpdated', { 
+        type: 'chatLockUpdated',
+        roomId,
+        chatLockAll: saved?.chatLockAll || false,
+        chatLockVisitors: saved?.chatLockVisitors || false,
+        updatedBy: requesterId,
+        timestamp: new Date().toISOString()
+      });
+      
+      // بث تحديث عام للغرفة
+      io?.emit('roomUpdate', { type: 'updated', room: saved });
+    } catch (error) {
+      console.warn('تعذر بث تحديث قفل الدردشة:', error);
+    }
+
+    res.json({ 
+      success: true, 
+      message: 'تم تحديث إعدادات قفل الدردشة بنجاح',
+      room: saved,
+      chatLockAll: saved?.chatLockAll || false,
+      chatLockVisitors: saved?.chatLockVisitors || false
+    });
+  } catch (error: any) {
+    console.error('خطأ في تحديث قفل الدردشة:', error);
+    res.status(400).json({ error: error.message || 'خطأ في تحديث قفل الدردشة' });
+  }
+});
+
+/**
  * GET /api/rooms/:roomId/users
  * جلب مستخدمي الغرفة
  */

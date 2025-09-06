@@ -1,4 +1,4 @@
-import { Send, Smile, ChevronDown, Sparkles, MoreVertical } from 'lucide-react';
+import { Send, Smile, ChevronDown, Sparkles, MoreVertical, Lock, UserX } from 'lucide-react';
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { Virtuoso, type VirtuosoHandle } from 'react-virtuoso';
 
@@ -49,6 +49,9 @@ interface MessageAreaProps {
   currentRoomName?: string; // اسم الغرفة الحالية
   currentRoomId?: string; // معرف الغرفة الحالية
   ignoredUserIds?: Set<number>; // قائمة المتجاهلين لحجب الرسائل ظاهرياً
+  // Chat lock settings
+  chatLockAll?: boolean; // قفل الدردشة بالكامل
+  chatLockVisitors?: boolean; // قفل الدردشة للزوار فقط
   // compactHeader removed: we no longer render a room header bar
 }
 
@@ -64,6 +67,8 @@ export default function MessageArea({
   currentRoomName = 'الدردشة العامة',
   currentRoomId = 'general',
   ignoredUserIds,
+  chatLockAll = false,
+  chatLockVisitors = false,
 }: MessageAreaProps) {
   const [messageText, setMessageText] = useState('');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -114,6 +119,42 @@ export default function MessageArea({
       return next;
     });
   }, []);
+
+  // Check if user is restricted from chatting
+  const isChatRestricted = useMemo(() => {
+    if (!currentUser) return true;
+    
+    const isOwner = currentUser.userType === 'owner';
+    const isGuest = currentUser.userType === 'guest';
+    
+    // Owner can always chat
+    if (isOwner) return false;
+    
+    // If chat is locked for all users, only owner can chat
+    if (chatLockAll) return true;
+    
+    // If chat is locked for visitors only, restrict guests
+    if (chatLockVisitors && isGuest) return true;
+    
+    return false;
+  }, [currentUser, chatLockAll, chatLockVisitors]);
+
+  // Get restriction message
+  const getRestrictionMessage = useMemo(() => {
+    if (!currentUser || !isChatRestricted) return '';
+    
+    const isGuest = currentUser.userType === 'guest';
+    
+    if (chatLockAll) {
+      return 'هذه الخاصية غير متوفرة الآن';
+    }
+    
+    if (chatLockVisitors && isGuest) {
+      return 'هذه الخاصية غير متوفرة الآن';
+    }
+    
+    return '';
+  }, [currentUser, isChatRestricted, chatLockAll, chatLockVisitors]);
 
   const isAllowedYouTubeHost = useCallback((host: string) => {
     const h = host.toLowerCase();
@@ -474,6 +515,27 @@ export default function MessageArea({
 
   return (
     <section className={`flex-1 flex flex-col bg-white min-h-0 ${isMobile ? 'mobile-message-area' : ''}`}>
+      {/* Chat Lock Status Indicator */}
+      {(chatLockAll || chatLockVisitors) && (
+        <div className={`px-4 py-2 text-center text-sm font-medium border-b ${
+          chatLockAll 
+            ? 'bg-red-100 text-red-800 border-red-200' 
+            : 'bg-yellow-100 text-yellow-800 border-yellow-200'
+        }`}>
+          {chatLockAll && (
+            <div className="flex items-center justify-center gap-2">
+              <Lock className="w-4 h-4" />
+              <span>الدردشة مقفلة بالكامل - المالك فقط يستطيع إرسال الرسائل</span>
+            </div>
+          )}
+          {chatLockVisitors && !chatLockAll && (
+            <div className="flex items-center justify-center gap-2">
+              <UserX className="w-4 h-4" />
+              <span>الدردشة مقفلة للزوار - يجب التسجيل للمشاركة</span>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Messages Container - Virtualized */}
       <div
@@ -827,7 +889,8 @@ export default function MessageArea({
               variant="outline"
               size="sm"
               onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-              className={`aspect-square mobile-touch-button ${isMobile ? 'min-w-[44px] min-h-[44px]' : ''}`}
+              disabled={isChatRestricted}
+              className={`aspect-square mobile-touch-button ${isMobile ? 'min-w-[44px] min-h-[44px]' : ''} ${isChatRestricted ? 'opacity-60 cursor-not-allowed' : ''}`}
             >
               <Smile className="w-4 h-4" />
             </Button>
@@ -858,7 +921,8 @@ export default function MessageArea({
                 // فتح المنتقي المحسن
                 setShowEnhancedEmoji(!showEnhancedEmoji);
               }}
-              className={`aspect-square mobile-touch-button ${isMobile ? 'min-w-[44px] min-h-[44px]' : ''}`}
+              disabled={isChatRestricted}
+              className={`aspect-square mobile-touch-button ${isMobile ? 'min-w-[44px] min-h-[44px]' : ''} ${isChatRestricted ? 'opacity-60 cursor-not-allowed' : ''}`}
               title="سمايلات متحركة متقدمة"
             >
               <Sparkles className="w-4 h-4" />
@@ -917,7 +981,7 @@ export default function MessageArea({
           <React.Suspense fallback={null}>
             <ComposerPlusMenu
               onOpenImagePicker={() => fileInputRef.current?.click()}
-              disabled={!currentUser}
+              disabled={!currentUser || isChatRestricted}
               isMobile={isMobile}
               currentUser={currentUser}
             />
@@ -929,9 +993,9 @@ export default function MessageArea({
             value={messageText}
             onChange={handleMessageChange}
             onKeyPress={handleKeyPress}
-            placeholder="اكتب رسالتك هنا..."
-            className={`flex-1 resize-none bg-white placeholder:text-gray-500 ring-offset-white ${isMobile ? 'mobile-text' : ''}`}
-            disabled={!currentUser}
+            placeholder={isChatRestricted ? getRestrictionMessage : "اكتب رسالتك هنا..."}
+            className={`flex-1 resize-none bg-white placeholder:text-gray-500 ring-offset-white ${isMobile ? 'mobile-text' : ''} ${isChatRestricted ? 'cursor-not-allowed opacity-60' : ''}`}
+            disabled={!currentUser || isChatRestricted}
             maxLength={1000}
             autoComplete="off"
             style={{
@@ -944,8 +1008,8 @@ export default function MessageArea({
           {/* Send Button */}
           <Button
             onClick={handleSendMessage}
-            disabled={!messageText.trim() || !currentUser}
-            className={`aspect-square bg-primary hover:bg-primary/90 mobile-touch-button ${isMobile ? 'min-w-[44px] min-h-[44px]' : ''}`}
+            disabled={!messageText.trim() || !currentUser || isChatRestricted}
+            className={`aspect-square bg-primary hover:bg-primary/90 mobile-touch-button ${isMobile ? 'min-w-[44px] min-h-[44px]' : ''} ${isChatRestricted ? 'opacity-60 cursor-not-allowed' : ''}`}
           >
             <Send className="w-4 h-4" />
           </Button>

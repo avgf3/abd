@@ -254,6 +254,31 @@ router.post('/room/:roomId', protect.auth, limiters.sendMessage, async (req, res
       return res.status(404).json({ error: 'الغرفة غير موجودة' });
     }
 
+    // التحقق من إعدادات قفل الدردشة
+    const sender = (req as any).user;
+    if (sender && room) {
+      const isOwner = sender.userType === 'owner';
+      const isGuest = sender.userType === 'guest';
+      
+      // إذا كان قفل الدردشة الكامل مفعل - السماح للمالك فقط
+      if (room.chatLockAll && !isOwner) {
+        return res.status(403).json({ 
+          error: 'الدردشة مقفلة من قبل المالك',
+          reason: 'chat_locked_all',
+          message: 'هذه الخاصية غير متوفرة الآن'
+        });
+      }
+      
+      // إذا كان قفل الدردشة للزوار مفعل - منع الضيوف فقط
+      if (room.chatLockVisitors && isGuest && !isOwner) {
+        return res.status(403).json({ 
+          error: 'الدردشة مقفلة للزوار',
+          reason: 'chat_locked_visitors',
+          message: 'هذه الخاصية غير متوفرة الآن'
+        });
+      }
+    }
+
     // إرسال الرسالة
     const message = await roomMessageService.sendMessage({
       senderId: parseInt(String(senderId)),

@@ -64,6 +64,23 @@ class RoomMessageService {
         throw new Error('المرسل غير موجود');
       }
 
+      // التحقق من إعدادات قفل الدردشة في الغرفة
+      const room = await storage.getRoom(messageData.roomId);
+      if (room) {
+        const isOwner = sender.userType === 'owner';
+        const isGuest = sender.userType === 'guest';
+        
+        // إذا كان قفل الدردشة الكامل مفعل - السماح للمالك فقط
+        if (room.chatLockAll && !isOwner) {
+          throw new Error('الدردشة مقفلة من قبل المالك - غير مسموح بإرسال الرسائل');
+        }
+        
+        // إذا كان قفل الدردشة للزوار مفعل - منع الضيوف فقط
+        if (room.chatLockVisitors && isGuest && !isOwner) {
+          throw new Error('الدردشة مقفلة للزوار - يجب التسجيل لإرسال الرسائل');
+        }
+      }
+
       // التحقق من حالة المنع قبل الإرسال (يشمل كتم/طرد/حجب)
       if (!messageData.isPrivate) {
         try {

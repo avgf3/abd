@@ -140,6 +140,9 @@ export interface ChatRoom {
   hostId?: number;
   speakers?: number[];
   micQueue?: number[];
+  // Chat lock settings
+  chatLockAll?: boolean;
+  chatLockVisitors?: boolean;
 }
 
 export interface RoomUser extends ChatUser {
