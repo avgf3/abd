@@ -2292,7 +2292,7 @@ export default function ProfileModal({
                   position: 'absolute',
                   bottom: '38px', /* إنزال المجموعة (اللقب والاسم) أقرب للأسفل */
                   left: '50%',
-                  transform: 'translateX(calc(-50% - 12px))',
+                  transform: 'translateX(calc(-50% - 12px - 2cm))',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
@@ -2351,7 +2351,7 @@ export default function ProfileModal({
                   position: 'absolute',
                   bottom: '38px',
                   left: '50%',
-                  transform: 'translateX(calc(-50% - 12px))',
+                  transform: 'translateX(calc(-50% - 12px - 2cm))',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
@@ -2404,7 +2404,7 @@ export default function ProfileModal({
                   position: 'absolute',
                   bottom: '60px', /* رفع الاسم فوق شريط الأزرار */
                   left: '50%',
-                  transform: 'translateX(calc(-50% - 12px))',
+                  transform: 'translateX(calc(-50% - 12px - 2cm))',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
@@ -2503,7 +2503,7 @@ export default function ProfileModal({
             <div className="profile-info">
               <small
                 onClick={() => localUser?.id === currentUser?.id && openEditModal('status')}
-                style={{ cursor: localUser?.id === currentUser?.id ? 'pointer' : 'default' }}
+                style={{ cursor: localUser?.id === currentUser?.id ? 'pointer' : 'default', display: 'inline-block', transform: 'translateX(-2cm)' }}
               >
                 {localUser?.status || (localUser?.id === currentUser?.id ? 'اضغط لإضافة حالة' : '')}
               </small>
