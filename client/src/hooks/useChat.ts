@@ -936,6 +936,11 @@ export const useChat = () => {
       emitToBroadcastHandlers(message);
     });
 
+    // Handle chat lock updates
+    socketInstance.on('chatLockUpdated', (message: any) => {
+      emitToBroadcastHandlers({ type: 'chatLockUpdated', ...message });
+    });
+
     // توافق مع REST endpoints التي تبث أحداث المايك كأحداث مستقلة
     socketInstance.on('micRequested', (message: any) => {
       emitToBroadcastHandlers({ type: 'micRequest', ...message });

@@ -1,4 +1,4 @@
-import { Shield, Users, Ban, UserX, Clock, Crown, Settings, Bot } from 'lucide-react';
+import { Shield, Users, Ban, UserX, Clock, Crown, Settings, Bot, Lock, MessageSquareOff } from 'lucide-react';
 import { useState, useEffect, useMemo, useRef } from 'react';
 import BotsManagement from './bots/BotsManagement';
 
@@ -64,6 +64,7 @@ interface OwnerAdminPanelProps {
   onClose: () => void;
   currentUser: ChatUser | null;
   onlineUsers: ChatUser[];
+  currentRoomId?: string;
 }
 
 export default function OwnerAdminPanel({
@@ -71,6 +72,7 @@ export default function OwnerAdminPanel({
   onClose,
   currentUser,
   onlineUsers,
+  currentRoomId,
 }: OwnerAdminPanelProps) {
   const [moderationLog, setModerationLog] = useState<ModerationAction[]>([]);
   const [staffMembers, setStaffMembers] = useState<StaffMember[]>([]);
@@ -79,6 +81,9 @@ export default function OwnerAdminPanel({
   const [selectedTab, setSelectedTab] = useState('staff');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [demotingId, setDemotingId] = useState<number | null>(null);
+  const [chatLockAll, setChatLockAll] = useState(false);
+  const [chatLockVisitors, setChatLockVisitors] = useState(false);
+  const [chatLockLoading, setChatLockLoading] = useState(false);
   const { toast } = useToast();
   // مرجع للحفاظ على موضع التمرير لقائمة المشرفين
   const staffScrollRef = useRef<HTMLDivElement | null>(null);
@@ -93,7 +98,7 @@ export default function OwnerAdminPanel({
         const match = hash.match(/ownerTab=([^&]+)/);
         if (match && match[1]) {
           const tab = decodeURIComponent(match[1]);
-          if (tab === 'staff' || tab === 'log' || tab === 'ban_tab' || tab === 'bots') {
+          if (tab === 'staff' || tab === 'log' || tab === 'ban_tab' || tab === 'bots' || tab === 'chat_lock') {
             setSelectedTab(tab);
           }
         }
@@ -119,8 +124,9 @@ export default function OwnerAdminPanel({
       setIsModalOpen(isOpen);
       fetchModerationData();
       fetchStaffMembers();
+      fetchChatLockSettings();
     }
-  }, [isOpen, currentUser]);
+  }, [isOpen, currentUser, currentRoomId]);
 
   const fetchModerationData = async () => {
     if (!currentUser) return;
@@ -245,6 +251,65 @@ export default function OwnerAdminPanel({
           staffScrollRef.current.scrollTop = staffScrollTopRef.current;
         }
       } catch {}
+    }
+  };
+
+  const fetchChatLockSettings = async () => {
+    if (!currentRoomId) return;
+    
+    try {
+      const response = await apiRequest(`/api/rooms/${currentRoomId}`, {
+        method: 'GET',
+      });
+      
+      if (response?.room) {
+        setChatLockAll(response.room.chatLockAll || false);
+        setChatLockVisitors(response.room.chatLockVisitors || false);
+      }
+    } catch (error) {
+      console.error('Error fetching chat lock settings:', error);
+    }
+  };
+
+  const updateChatLockSettings = async (chatLockAll?: boolean, chatLockVisitors?: boolean) => {
+    if (!currentRoomId) {
+      toast({
+        title: 'خطأ',
+        description: 'لا يمكن تحديد الغرفة الحالية',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setChatLockLoading(true);
+    try {
+      const updateData: any = {};
+      if (chatLockAll !== undefined) updateData.chatLockAll = chatLockAll;
+      if (chatLockVisitors !== undefined) updateData.chatLockVisitors = chatLockVisitors;
+
+      const response = await apiRequest(`/api/rooms/${currentRoomId}/chat-lock`, {
+        method: 'PUT',
+        body: updateData,
+      });
+
+      if (response?.success) {
+        if (chatLockAll !== undefined) setChatLockAll(chatLockAll);
+        if (chatLockVisitors !== undefined) setChatLockVisitors(chatLockVisitors);
+        
+        toast({
+          title: 'تم التحديث',
+          description: response.message || 'تم تحديث إعدادات قفل الدردشة بنجاح',
+          variant: 'default',
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: 'خطأ',
+        description: error?.message || 'فشل في تحديث إعدادات قفل الدردشة',
+        variant: 'destructive',
+      });
+    } finally {
+      setChatLockLoading(false);
     }
   };
 
@@ -391,13 +456,20 @@ export default function OwnerAdminPanel({
           </DialogHeader>
 
           <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-4 bg-gradient-to-r from-purple-100 to-blue-100 rounded-xl p-1">
+            <TabsList className="grid w-full grid-cols-5 bg-gradient-to-r from-purple-100 to-blue-100 rounded-xl p-1">
               <TabsTrigger
                 value="staff"
                 className="flex items-center gap-2 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-lg transition-all"
               >
                 <Users className="w-4 h-4" />
                 قائمة المشرفين
+              </TabsTrigger>
+              <TabsTrigger
+                value="chat_lock"
+                className="flex items-center gap-2 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-lg transition-all"
+              >
+                <MessageSquareOff className="w-4 h-4" />
+                قفل الدردشة
               </TabsTrigger>
               <TabsTrigger
                 value="log"
@@ -528,6 +600,152 @@ export default function OwnerAdminPanel({
                         )}
                       </div>
                     ))}
+                  </div>
+                )}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="chat_lock" className="space-y-6">
+              <div className="bg-gradient-to-br from-orange-50 to-red-50 rounded-2xl p-6 border border-orange-200">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="bg-gradient-to-r from-orange-500 to-red-500 p-3 rounded-xl">
+                    <MessageSquareOff className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-gray-800">قفل الدردشة في الغرف</h3>
+                    <p className="text-gray-600">تحكم في إعدادات الدردشة للمستخدمين</p>
+                  </div>
+                  <div className="ml-auto">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={fetchChatLockSettings}
+                      disabled={chatLockLoading}
+                    >
+                      تحديث
+                    </Button>
+                  </div>
+                </div>
+
+                {!currentRoomId ? (
+                  <div className="text-center py-12">
+                    <div className="bg-gray-100 rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                      <MessageSquareOff className="w-8 h-8 text-gray-400" />
+                    </div>
+                    <p className="text-gray-500 text-lg">يجب دخول غرفة أولاً لإدارة إعدادات الدردشة</p>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    {/* قفل الدردشة بالكامل */}
+                    <Card className="border-2 border-red-200 bg-red-50/50">
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-3 text-red-800">
+                          <Lock className="w-5 h-5" />
+                          قفل الدردشة بالكامل
+                        </CardTitle>
+                        <CardDescription className="text-red-600">
+                          عند التفعيل: المالك فقط يستطيع إرسال الرسائل، جميع المستخدمين الآخرين محظورون
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className={`w-4 h-4 rounded-full ${chatLockAll ? 'bg-red-500' : 'bg-gray-300'}`} />
+                            <span className={`font-medium ${chatLockAll ? 'text-red-700' : 'text-gray-500'}`}>
+                              {chatLockAll ? 'مفعل - الدردشة مقفلة بالكامل' : 'غير مفعل'}
+                            </span>
+                          </div>
+                          <Button
+                            onClick={() => updateChatLockSettings(!chatLockAll, undefined)}
+                            disabled={chatLockLoading}
+                            variant={chatLockAll ? "destructive" : "default"}
+                            className={chatLockAll ? "bg-red-600 hover:bg-red-700" : "bg-green-600 hover:bg-green-700"}
+                          >
+                            {chatLockLoading ? 'جاري التحديث...' : (chatLockAll ? 'إلغاء القفل' : 'تفعيل القفل')}
+                          </Button>
+                        </div>
+                        {chatLockAll && (
+                          <div className="mt-4 p-3 bg-red-100 rounded-lg border border-red-200">
+                            <p className="text-red-800 text-sm font-medium">
+                              ⚠️ تحذير: الدردشة مقفلة بالكامل - المالك فقط يستطيع إرسال الرسائل
+                            </p>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+
+                    {/* قفل الدردشة للزوار */}
+                    <Card className="border-2 border-yellow-200 bg-yellow-50/50">
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-3 text-yellow-800">
+                          <UserX className="w-5 h-5" />
+                          قفل الدردشة للزوار فقط
+                        </CardTitle>
+                        <CardDescription className="text-yellow-600">
+                          عند التفعيل: الأعضاء المسجلون يستطيعون الدردشة، الزوار محظورون فقط
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className={`w-4 h-4 rounded-full ${chatLockVisitors ? 'bg-yellow-500' : 'bg-gray-300'}`} />
+                            <span className={`font-medium ${chatLockVisitors ? 'text-yellow-700' : 'text-gray-500'}`}>
+                              {chatLockVisitors ? 'مفعل - الزوار محظورون من الدردشة' : 'غير مفعل'}
+                            </span>
+                          </div>
+                          <Button
+                            onClick={() => updateChatLockSettings(undefined, !chatLockVisitors)}
+                            disabled={chatLockLoading || chatLockAll}
+                            variant={chatLockVisitors ? "destructive" : "default"}
+                            className={chatLockVisitors ? "bg-yellow-600 hover:bg-yellow-700" : "bg-blue-600 hover:bg-blue-700"}
+                          >
+                            {chatLockLoading ? 'جاري التحديث...' : (chatLockVisitors ? 'إلغاء القفل' : 'تفعيل القفل')}
+                          </Button>
+                        </div>
+                        {chatLockVisitors && (
+                          <div className="mt-4 p-3 bg-yellow-100 rounded-lg border border-yellow-200">
+                            <p className="text-yellow-800 text-sm font-medium">
+                              ℹ️ ملاحظة: الزوار فقط محظورون من الدردشة - الأعضاء المسجلون يستطيعون المشاركة
+                            </p>
+                          </div>
+                        )}
+                        {chatLockAll && (
+                          <div className="mt-4 p-3 bg-gray-100 rounded-lg border border-gray-200">
+                            <p className="text-gray-600 text-sm">
+                              هذا الخيار معطل لأن القفل الكامل مفعل
+                            </p>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+
+                    {/* معلومات إضافية */}
+                    <Card className="border-2 border-blue-200 bg-blue-50/50">
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-3 text-blue-800">
+                          <Settings className="w-5 h-5" />
+                          معلومات مهمة
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-3 text-sm text-blue-700">
+                        <div className="flex items-start gap-2">
+                          <div className="w-2 h-2 rounded-full bg-blue-500 mt-2 flex-shrink-0" />
+                          <p>هذه الإعدادات تطبق على الغرفة الحالية فقط</p>
+                        </div>
+                        <div className="flex items-start gap-2">
+                          <div className="w-2 h-2 rounded-full bg-blue-500 mt-2 flex-shrink-0" />
+                          <p>المالك يستطيع دائماً إرسال الرسائل بغض النظر عن الإعدادات</p>
+                        </div>
+                        <div className="flex items-start gap-2">
+                          <div className="w-2 h-2 rounded-full bg-blue-500 mt-2 flex-shrink-0" />
+                          <p>عند تفعيل القفل الكامل، سيظهر للمستخدمين رسالة "هذه الخاصية غير متوفرة الآن"</p>
+                        </div>
+                        <div className="flex items-start gap-2">
+                          <div className="w-2 h-2 rounded-full bg-blue-500 mt-2 flex-shrink-0" />
+                          <p>التغييرات تطبق فوراً على جميع المستخدمين في الغرفة</p>
+                        </div>
+                      </CardContent>
+                    </Card>
                   </div>
                 )}
               </div>

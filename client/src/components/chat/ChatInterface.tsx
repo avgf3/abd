@@ -206,14 +206,27 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
         // جلب مُجبر لتحديث القائمة فوراً
         fetchRooms(true).catch(() => {});
       };
+      
+      const onChatLockUpdate = (payload: any) => {
+        // تحديث إعدادات قفل الدردشة فوراً
+        if (payload.roomId && payload.roomId === chat.currentRoomId) {
+          fetchRooms(true).catch(() => {});
+        }
+      };
+      
       s.on('roomUpdate', onRoomUpdate);
+      s.on('chatLockUpdated', onChatLockUpdate);
+      
       return () => {
-        try { s.off('roomUpdate', onRoomUpdate); } catch {}
+        try { 
+          s.off('roomUpdate', onRoomUpdate);
+          s.off('chatLockUpdated', onChatLockUpdate);
+        } catch {}
       };
     } catch {
       // ignore if socket not available
     }
-  }, [fetchRooms]);
+  }, [fetchRooms, chat.currentRoomId]);
 
   // تحديث عدادات الغرف في الوقت الحقيقي بناءً على أحداث سوكت
   useEffect(() => {
@@ -1045,6 +1058,8 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                       currentRoomName={currentRoom?.name || 'الدردشة العامة'}
                       currentRoomId={chat.currentRoomId}
                       ignoredUserIds={chat.ignoredUsers}
+                      chatLockAll={currentRoom?.chatLockAll}
+                      chatLockVisitors={currentRoom?.chatLockVisitors}
                     />
                   </Suspense>
                 </div>
@@ -1469,6 +1484,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             onClose={() => setShowOwnerPanel(false)}
             currentUser={chat.currentUser}
             onlineUsers={chat.onlineUsers}
+            currentRoomId={chat.currentRoomId}
           />
         </Suspense>
       )}

@@ -25,6 +25,9 @@ export function mapApiRoom(room: any): ChatRoom {
       : typeof room.micQueue === 'string'
         ? safeParseArray(room.micQueue)
         : [],
+    // Chat lock settings
+    chatLockAll: Boolean(room.chatLockAll ?? room.chat_lock_all ?? false),
+    chatLockVisitors: Boolean(room.chatLockVisitors ?? room.chat_lock_visitors ?? false),
   };
 }
 
@@ -60,6 +63,9 @@ export function dedupeRooms(rooms: ChatRoom[]): ChatRoom[] {
       userCount: Math.max(existing.userCount || 0, raw.userCount || 0),
       speakers: Array.from(new Set([...(existing.speakers || []), ...(raw.speakers || [])])),
       micQueue: Array.from(new Set([...(existing.micQueue || []), ...(raw.micQueue || [])])),
+      // Chat lock settings - use the most recent values
+      chatLockAll: raw.chatLockAll !== undefined ? raw.chatLockAll : existing.chatLockAll,
+      chatLockVisitors: raw.chatLockVisitors !== undefined ? raw.chatLockVisitors : existing.chatLockVisitors,
     };
 
     idToRoom.set(id, merged);
