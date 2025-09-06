@@ -21,6 +21,7 @@ import { ensureStoriesTables } from './database-adapter';
 import { ensureUserProfileMusicColumns } from './database-adapter';
 import { ensureRoomsColumns } from './database-adapter';
 import { ensureBotsTable } from './database-adapter';
+import { ensureChatLockColumns } from './database-adapter';
 
 // إعادة تصدير دالة التهيئة من المحول
 export { initializeDatabase } from './database-adapter';
@@ -255,6 +256,13 @@ export async function initializeSystem(): Promise<boolean> {
       await ensureStoriesTables();
     } catch (e) {
       console.warn('⚠️ تعذر ضمان جداول القصص:', (e as any)?.message || e);
+    }
+
+    // ضمان وجود أعمدة chat_lock في جدول الغرف
+    try {
+      await ensureChatLockColumns();
+    } catch (e) {
+      console.warn('⚠️ تعذر ضمان أعمدة chat_lock:', (e as any)?.message || e);
     }
 
     // ضمان إنشاء جدول البوتات

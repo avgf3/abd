@@ -155,6 +155,50 @@ export async function runMigrationsIfAvailable(): Promise<void> {
   } catch {}
 }
 
+// Ensure chat lock columns exist on rooms table
+export async function ensureChatLockColumns(): Promise<void> {
+  try {
+    if (!dbAdapter.client) return;
+
+    console.log('🔍 التحقق من أعمدة chat_lock في جدول rooms...');
+    
+    // Check if chat_lock columns exist
+    const result = await dbAdapter.client`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = 'rooms' 
+      AND column_name IN ('chat_lock_all', 'chat_lock_visitors')
+    ` as any;
+    
+    const existingColumns = result.map((r: any) => r.column_name);
+    console.log('📊 الأعمدة الموجودة:', existingColumns);
+    
+    // Add missing columns
+    if (!existingColumns.includes('chat_lock_all')) {
+      console.log('➕ إضافة عمود chat_lock_all...');
+      await dbAdapter.client.unsafe(`ALTER TABLE "rooms" ADD COLUMN IF NOT EXISTS "chat_lock_all" boolean DEFAULT false`);
+    }
+    
+    if (!existingColumns.includes('chat_lock_visitors')) {
+      console.log('➕ إضافة عمود chat_lock_visitors...');
+      await dbAdapter.client.unsafe(`ALTER TABLE "rooms" ADD COLUMN IF NOT EXISTS "chat_lock_visitors" boolean DEFAULT false`);
+    }
+    
+    // Update any NULL values to false
+    await dbAdapter.client.unsafe(`UPDATE "rooms" SET "chat_lock_all" = false WHERE "chat_lock_all" IS NULL`);
+    await dbAdapter.client.unsafe(`UPDATE "rooms" SET "chat_lock_visitors" = false WHERE "chat_lock_visitors" IS NULL`);
+    
+    // Add indexes if they don't exist
+    await dbAdapter.client.unsafe(`CREATE INDEX IF NOT EXISTS "idx_rooms_chat_lock_all" ON "rooms" ("chat_lock_all")`);
+    await dbAdapter.client.unsafe(`CREATE INDEX IF NOT EXISTS "idx_rooms_chat_lock_visitors" ON "rooms" ("chat_lock_visitors")`);
+    
+    console.log('✅ تم التأكد من وجود أعمدة chat_lock');
+    
+  } catch (error) {
+    console.error('❌ خطأ في ضمان أعمدة chat_lock:', error);
+  }
+}
+
 // Ensure required tables exist even if migrations didn't run
 export async function ensureStoriesTables(): Promise<void> {
   try {
