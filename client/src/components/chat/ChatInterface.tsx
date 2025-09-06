@@ -156,7 +156,6 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           showSuccessToast(`تم إنشاء غرفة "${roomData.name}" بنجاح`, 'تم إنشاء الغرفة');
         }
       } catch (error) {
-        console.error('خطأ في إنشاء الغرفة:', error);
         showErrorToast('فشل في إنشاء الغرفة', 'خطأ');
       }
     },
@@ -178,7 +177,6 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           showSuccessToast('تم حذف الغرفة بنجاح', 'تم حذف الغرفة');
         }
       } catch (error) {
-        console.error('خطأ في حذف الغرفة:', error);
         showErrorToast('فشل في حذف الغرفة', 'خطأ');
       }
     },
@@ -465,7 +463,6 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
 
       showSuccessToast(`تم إرسال طلب صداقة إلى ${user.username}`, 'تمت الإضافة');
     } catch (error) {
-      console.error('Friend request error:', error);
       showErrorToast(
         error instanceof Error ? error.message : 'لم نتمكن من إرسال طلب الصداقة',
         'خطأ'
@@ -844,7 +841,6 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                       // تحديث محلي بسيط لحالة المستخدم الحالي
                       (chat.currentUser as any).isHidden = nowHidden;
                     } catch (e) {
-                      console.error(e);
                     }
                   }}
                   title="إخفائي من قائمة المتصلين للجميع"
