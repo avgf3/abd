@@ -2305,7 +2305,7 @@ export default function ProfileModal({
                 }}>
                   {/* الرتبة فوق الاسم */}
                   {(localUser?.userType === 'owner' || localUser?.userType === 'admin' || localUser?.userType === 'moderator') && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', transform: 'translateX(2cm)' }}>
                       <span style={{ fontSize: '13px' }}>
                         {localUser?.userType === 'owner' && 'Owner'}
                         {localUser?.userType === 'admin' && 'Admin'}
@@ -2330,7 +2330,8 @@ export default function ProfileModal({
                     whiteSpace: 'normal',
                     overflowWrap: 'break-word',
                     wordBreak: 'keep-all',
-                    hyphens: 'none'
+                    hyphens: 'none',
+                    transform: 'translateX(2cm)'
                   }}
                   onClick={() => openEditModal('name')}
                   >
@@ -2363,7 +2364,7 @@ export default function ProfileModal({
                   boxSizing: 'border-box'
                 }}>
                   {(localUser?.userType === 'owner' || localUser?.userType === 'admin' || localUser?.userType === 'moderator') && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', transform: 'translateX(2cm)' }}>
                       <span style={{ fontSize: '13px' }}>
                         {localUser?.userType === 'owner' && 'Owner'}
                         {localUser?.userType === 'admin' && 'Admin'}
@@ -2387,7 +2388,8 @@ export default function ProfileModal({
                     whiteSpace: 'normal',
                     overflowWrap: 'break-word',
                     wordBreak: 'keep-all',
-                    hyphens: 'none'
+                    hyphens: 'none',
+                    transform: 'translateX(2cm)'
                   }}
                   onClick={() => openEditModal('name')}
                   >
@@ -2418,7 +2420,7 @@ export default function ProfileModal({
                 }}>
                   {/* الرتبة فوق الاسم */}
                   {(localUser?.userType === 'owner' || localUser?.userType === 'admin' || localUser?.userType === 'moderator') && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', transform: 'translateX(2cm)' }}>
                       <span style={{ fontSize: '13px' }}>
                         {localUser?.userType === 'owner' && 'Owner'}
                         {localUser?.userType === 'admin' && 'Admin'}
@@ -2442,7 +2444,8 @@ export default function ProfileModal({
                     whiteSpace: 'normal',
                     overflowWrap: 'break-word',
                     wordBreak: 'keep-all',
-                    hyphens: 'none'
+                    hyphens: 'none',
+                    transform: 'translateX(2cm)'
                   }}>
                     <bdi>{localUser?.username || 'اسم المستخدم'}</bdi>
                   </h3>
@@ -2503,7 +2506,7 @@ export default function ProfileModal({
             <div className="profile-info">
               <small
                 onClick={() => localUser?.id === currentUser?.id && openEditModal('status')}
-                style={{ cursor: localUser?.id === currentUser?.id ? 'pointer' : 'default', display: 'inline-block', transform: 'translateX(-2cm)' }}
+                style={{ cursor: localUser?.id === currentUser?.id ? 'pointer' : 'default', display: 'inline-block', transform: 'translateX(2cm)' }}
               >
                 {localUser?.status || (localUser?.id === currentUser?.id ? 'اضغط لإضافة حالة' : '')}
               </small>
