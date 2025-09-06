@@ -98,6 +98,9 @@ export interface Room {
   speakers?: string | any[];
   micQueue?: string | any[];
   icon?: string | null;
+  // Chat lock settings (PG only)
+  chatLockAll?: boolean;
+  chatLockVisitors?: boolean;
 }
 
 export interface Story {
@@ -1657,6 +1660,11 @@ export class DatabaseService {
           (allowed as any).isLocked = (updates as any).isLocked;
         if (typeof (updates as any).hostId !== 'undefined')
           allowed.hostId = (updates as any).hostId;
+        // Chat lock settings
+        if (typeof (updates as any).chatLockAll === 'boolean')
+          (allowed as any).chatLockAll = (updates as any).chatLockAll;
+        if (typeof (updates as any).chatLockVisitors === 'boolean')
+          (allowed as any).chatLockVisitors = (updates as any).chatLockVisitors;
         if (Object.keys(allowed).length === 0) {
           // Nothing to update
           const row = await this.getRoomById(roomId);

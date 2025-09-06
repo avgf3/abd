@@ -187,6 +187,9 @@ export const rooms = pgTable('rooms', {
   isLocked: boolean('is_locked').default(false),
   isBroadcast: boolean('is_broadcast').default(false),
   hostId: integer('host_id').references(() => users.id),
+  // Chat lock settings
+  chatLockAll: boolean('chat_lock_all').default(false),
+  chatLockVisitors: boolean('chat_lock_visitors').default(false),
   speakers: text('speakers').default('[]'), // JSON string
   micQueue: text('mic_queue').default('[]'), // JSON string
   slug: text('slug'),

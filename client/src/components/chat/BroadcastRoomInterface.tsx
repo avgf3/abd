@@ -1025,6 +1025,8 @@ export default function BroadcastRoomInterface({
             onlineUsers={onlineUsers}
             currentRoomName={room?.name || 'غرفة البث'}
             currentRoomId={room?.id}
+            chatLockAll={room?.chatLockAll}
+            chatLockVisitors={room?.chatLockVisitors}
           />
         </div>
       </div>
