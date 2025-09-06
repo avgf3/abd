@@ -2346,12 +2346,12 @@ export default function ProfileModal({
 
             {localUser?.id !== currentUser?.id && (
               <>
-                {/* اسم المستخدم مع الرتبة */}
+                {/* اسم المستخدم مع الرتبة - لجميع المستخدمين */}
                 <div style={{
                   position: 'absolute',
                   bottom: '60px', /* رفع الاسم فوق شريط الأزرار */
                   left: '50%',
-                  transform: 'translateX(calc(-50% - 12px - 2cm))',
+                  transform: 'translateX(-50%)',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
@@ -2363,27 +2363,26 @@ export default function ProfileModal({
                   padding: '0 12px',
                   boxSizing: 'border-box'
                 }}>
-                  {/* الرتبة فوق الاسم */}
-                  {(localUser?.userType === 'owner' || localUser?.userType === 'admin' || localUser?.userType === 'moderator') && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  {/* الرتبة فوق الاسم - لجميع المستخدمين */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    {(localUser?.userType === 'owner' || localUser?.userType === 'admin' || localUser?.userType === 'moderator') && (
                       <span style={{ fontSize: '13px' }}>
                         {localUser?.userType === 'owner' && 'Owner'}
                         {localUser?.userType === 'admin' && 'Admin'}
                         {localUser?.userType === 'moderator' && 'Moderator'}
                       </span>
-                      <span style={{ fontSize: '16px' }}>
-                        {getUserLevelIcon(localUser, 16)}
-                      </span>
-                    </div>
-                  )}
-                  {/* الاسم */}
+                    )}
+                    <span style={{ fontSize: '16px' }}>
+                      {getUserLevelIcon(localUser, 16)}
+                    </span>
+                  </div>
+                  {/* الاسم - لجميع المستخدمين */}
                   <h3 style={{
                     margin: 0,
                     fontSize: '18px',
                     fontWeight: 'bold',
                     color: getFinalUsernameColor(localUser || {}),
                     textShadow: '0 2px 4px rgba(0,0,0,0.5)',
-                    cursor: 'pointer',
                     direction: 'auto',
                     unicodeBidi: 'plaintext',
                     textAlign: 'center',
@@ -2391,9 +2390,7 @@ export default function ProfileModal({
                     overflowWrap: 'break-word',
                     wordBreak: 'keep-all',
                     hyphens: 'none'
-                  }}
-                  onClick={() => openEditModal('name')}
-                  >
+                  }}>
                     <bdi>{localUser?.username || 'اسم المستخدم'}</bdi>
                   </h3>
                 </div>
