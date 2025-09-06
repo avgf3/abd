@@ -2192,16 +2192,16 @@ export default function ProfileModal({
             font-size: 18px;
           }
           
-          /* أنماط الأزرار للأجهزة المحمولة */
+          /* أنماط الأزرار للأجهزة المحمولة - مطابقة لسطح المكتب */
           .profile-actions {
-            bottom: 8px;
-            left: 120px;
-            right: 10px;
+            bottom: 10px;
+            left: 20px;
+            right: 150px;
             gap: 6px;
           }
           
           .profile-actions button {
-            padding: 4px 6px;
+            padding: 3px 6px;
             font-size: 10px;
           }
         }
