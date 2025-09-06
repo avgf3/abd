@@ -11,37 +11,11 @@ interface RoomSelectorScreenProps {
 
 export default function RoomSelectorScreen({ currentUser, onSelectRoom }: RoomSelectorScreenProps) {
 	const { rooms, loading, error, fetchRooms } = useRoomManager({ autoRefresh: false, cacheTimeout: 5 * 60 * 1000 });
-	const [joiningRoom, setJoiningRoom] = React.useState<string | null>(null);
-	const [joinError, setJoinError] = React.useState<string | null>(null);
 
 	const handleSelect = (roomId: string) => {
-		if (joiningRoom) return; // منع الضغط المتعدد
-		
-		setJoiningRoom(roomId);
-		setJoinError(null);
-		
 		try {
 			onSelectRoom(roomId);
-			
-			// إضافة timeout للتحقق من نجاح الانضمام
-			const timeoutId = setTimeout(() => {
-				setJoiningRoom(null);
-				setJoinError('انتهت مهلة الانضمام للغرفة. يرجى المحاولة مرة أخرى.');
-			}, 10000); // 10 ثوان
-			
-			// إلغاء timeout عند نجاح الانضمام (سيتم التعامل معه في مكان آخر)
-			const cleanup = () => {
-				clearTimeout(timeoutId);
-				setJoiningRoom(null);
-			};
-			
-			// حفظ cleanup function للاستخدام لاحقاً
-			(window as any).__roomJoinCleanup = cleanup;
-			
-		} catch (err) {
-			setJoiningRoom(null);
-			setJoinError('خطأ في الانضمام للغرفة');
-		}
+		} catch {}
 	};
 
 	// Socket listener for live updates
@@ -117,30 +91,6 @@ export default function RoomSelectorScreen({ currentUser, onSelectRoom }: RoomSe
 					{error && (
 						<div className="modern-notification bg-red-500/10 border-red-500/20 text-red-400 mt-4 text-center">
 							فشل في جلب الغرف
-						</div>
-					)}
-					{joinError && (
-						<div className="modern-notification bg-red-500/10 border-red-500/20 text-red-400 mt-4 text-center">
-							{joinError}
-							<button 
-								onClick={() => setJoinError(null)}
-								className="ml-2 text-red-300 hover:text-red-100 underline"
-							>
-								إغلاق
-							</button>
-						</div>
-					)}
-					{joiningRoom && (
-						<div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-							<div className="bg-card rounded-lg p-6 shadow-xl border">
-								<div className="flex items-center gap-3">
-									<div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
-									<span className="text-foreground">جاري الانضمام للغرفة...</span>
-								</div>
-								<div className="mt-4 text-sm text-muted-foreground text-center">
-									إذا استغرق الأمر وقتاً طويلاً، تحقق من اتصال الإنترنت
-								</div>
-							</div>
 						</div>
 					)}
 				</div>
