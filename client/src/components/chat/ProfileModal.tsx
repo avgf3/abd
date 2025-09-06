@@ -2365,7 +2365,7 @@ export default function ProfileModal({
                 }}>
                   {/* الرتبة فوق الاسم */}
                   {(localUser?.userType === 'owner' || localUser?.userType === 'admin' || localUser?.userType === 'moderator') && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', transform: 'translateX(2cm)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                       <span style={{ fontSize: '13px' }}>
                         {localUser?.userType === 'owner' && 'Owner'}
                         {localUser?.userType === 'admin' && 'Admin'}
@@ -2383,15 +2383,17 @@ export default function ProfileModal({
                     fontWeight: 'bold',
                     color: getFinalUsernameColor(localUser || {}),
                     textShadow: '0 2px 4px rgba(0,0,0,0.5)',
+                    cursor: 'pointer',
                     direction: 'auto',
                     unicodeBidi: 'plaintext',
                     textAlign: 'center',
                     whiteSpace: 'normal',
                     overflowWrap: 'break-word',
                     wordBreak: 'keep-all',
-                    hyphens: 'none',
-                    transform: 'translateX(2cm)'
-                  }}>
+                    hyphens: 'none'
+                  }}
+                  onClick={() => openEditModal('name')}
+                  >
                     <bdi>{localUser?.username || 'اسم المستخدم'}</bdi>
                   </h3>
                 </div>
