@@ -291,9 +291,48 @@ export async function ensureRoomsColumns(): Promise<void> {
   try {
     if (!dbAdapter.client) return;
 
+    // Ensure citext extension for slug (idempotent)
+    await dbAdapter.client.unsafe(`CREATE EXTENSION IF NOT EXISTS citext;`);
+
+    // Ensure core columns used by queries exist (idempotent)
+    await dbAdapter.client.unsafe(`
+      ALTER TABLE IF EXISTS rooms
+        ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ;
+    `);
+
+    await dbAdapter.client.unsafe(`
+      ALTER TABLE IF EXISTS rooms
+        ADD COLUMN IF NOT EXISTS last_message_at TIMESTAMPTZ;
+    `);
+
+    await dbAdapter.client.unsafe(`
+      ALTER TABLE IF EXISTS rooms
+        ADD COLUMN IF NOT EXISTS slug CITEXT;
+    `);
+
     await dbAdapter.client.unsafe(`
       ALTER TABLE IF EXISTS rooms
         ADD COLUMN IF NOT EXISTS is_locked BOOLEAN DEFAULT FALSE;
+    `);
+
+    await dbAdapter.client.unsafe(`
+      ALTER TABLE IF NOT EXISTS rooms
+        ADD COLUMN IF NOT EXISTS chat_lock_all BOOLEAN DEFAULT FALSE;
+    `);
+
+    await dbAdapter.client.unsafe(`
+      ALTER TABLE IF NOT EXISTS rooms
+        ADD COLUMN IF NOT EXISTS chat_lock_visitors BOOLEAN DEFAULT FALSE;
+    `);
+
+    // Helpful indexes (idempotent)
+    await dbAdapter.client.unsafe(`
+      CREATE UNIQUE INDEX IF NOT EXISTS uniq_rooms_slug_active
+        ON rooms (slug)
+        WHERE deleted_at IS NULL AND slug IS NOT NULL;
+    `);
+    await dbAdapter.client.unsafe(`
+      CREATE INDEX IF NOT EXISTS idx_rooms_active ON rooms (deleted_at) WHERE deleted_at IS NULL;
     `);
   } catch (e) {
     console.warn('⚠️ تعذر ضمان أعمدة جدول الغرف:', (e as any)?.message || e);
