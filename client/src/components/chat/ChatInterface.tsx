@@ -484,16 +484,12 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   };
 
   const handleViewProfile = (user: ChatUser) => {
-    const startTime = performance.now();
-    console.log('🔍 [PROFILE DEBUG] handleViewProfile started for user:', user.username);
-    
     setProfileUser(user);
     setShowProfile(true);
     closeUserPopup();
     try {
       // تشغيل الموسيقى عند كل فتح للبروفايل إن كانت مفعلة ولها رابط صالح
       if (user?.profileMusicUrl && (user as any).profileMusicEnabled !== false) {
-        console.log('🎵 [PROFILE DEBUG] Processing profile music - COMPLEX PATH');
         if (!profileAudioRef.current) {
           profileAudioRef.current = new Audio();
         }
@@ -506,66 +502,38 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
         audio.pause();
         audio.currentTime = 0;
         const tryPlay = async (mutedFirst = true) => {
-          const tryPlayStart = performance.now();
-          console.log('🔄 [PROFILE DEBUG] tryPlay function started');
-          
           try {
-            console.log('🎯 [PROFILE DEBUG] Attempting direct play (unmuted)');
             audio.muted = false;
             await audio.play();
-            console.log('✅ [PROFILE DEBUG] Direct play successful');
           } catch (e) {
-            console.log('⚠️ [PROFILE DEBUG] Direct play failed, trying fallback methods');
             if (mutedFirst) {
               try {
-                console.log('🔇 [PROFILE DEBUG] Trying muted play first');
                 audio.muted = true;
                 await audio.play();
-                console.log('🔊 [PROFILE DEBUG] Setting timeout to unmute');
                 setTimeout(() => {
                   try { 
                     audio.muted = false; 
-                    console.log('🔊 [PROFILE DEBUG] Audio unmuted after timeout');
                   } catch {}
                 }, 120);
               } catch {
-                console.log('🎭 [PROFILE DEBUG] Adding gesture listeners - THIS CAUSES DELAY!');
                 // ينتظر أول تفاعل للمستخدم
-                const gestureStart = performance.now();
                 const onFirstGesture = async () => {
-                  const gestureEnd = performance.now();
-                  console.log('👆 [PROFILE DEBUG] User gesture detected after:', (gestureEnd - gestureStart).toFixed(2), 'ms');
                   try { await audio.play(); } catch {}
                   window.removeEventListener('click', onFirstGesture);
                   window.removeEventListener('touchstart', onFirstGesture);
-                  console.log('🧹 [PROFILE DEBUG] Event listeners removed');
                 };
                 window.addEventListener('click', onFirstGesture, { once: true });
                 window.addEventListener('touchstart', onFirstGesture, { once: true });
-                console.log('👂 [PROFILE DEBUG] Event listeners added to window');
               }
             }
           }
-          
-          const tryPlayEnd = performance.now();
-          console.log('🏁 [PROFILE DEBUG] tryPlay function completed in:', (tryPlayEnd - tryPlayStart).toFixed(2), 'ms');
         };
-        const musicStartTime = performance.now();
-        console.log('⏱️ [PROFILE DEBUG] Starting tryPlay execution');
         tryPlay(true);
-        const musicEndTime = performance.now();
-        console.log('⏱️ [PROFILE DEBUG] tryPlay completed in:', (musicEndTime - musicStartTime).toFixed(2), 'ms');
       } else {
         // لا يوجد موسيقى: تأكد من إيقاف أي تشغيل سابق
-        console.log('🚫 [PROFILE DEBUG] No profile music to process');
         try { profileAudioRef.current?.pause(); } catch {}
       }
-    } catch (error) {
-      console.error('❌ [PROFILE DEBUG] Error in handleViewProfile:', error);
-    }
-    
-    const endTime = performance.now();
-    console.log('✅ [PROFILE DEBUG] handleViewProfile completed in:', (endTime - startTime).toFixed(2), 'ms');
+    } catch {}
   };
 
   const handleViewStories = (user?: ChatUser) => {
@@ -578,16 +546,12 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
 
   // معالج للروابط الشخصية
   const handleProfileLink = (userId: number) => {
-    const startTime = performance.now();
-    console.log('🔗 [PROFILE DEBUG] handleProfileLink started for userId:', userId);
-    
     const user = chat.onlineUsers.find((u) => u.id === userId);
     if (user) {
       setProfileUser(user);
       setShowProfile(true);
       try {
         if (user?.profileMusicUrl && (user as any).profileMusicEnabled !== false) {
-          console.log('🎵 [PROFILE DEBUG] Processing profile music - SIMPLE PATH');
           if (!profileAudioRef.current) profileAudioRef.current = new Audio();
           const audio = profileAudioRef.current;
           audio.src = user.profileMusicUrl;
@@ -596,8 +560,6 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           audio.loop = true;
           audio.pause();
           audio.currentTime = 0;
-          const musicStartTime = performance.now();
-          console.log('⏱️ [PROFILE DEBUG] Starting simple audio play');
           audio.play().catch(async () => {
             try {
               audio.muted = true;
@@ -605,22 +567,13 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
               setTimeout(() => { try { audio.muted = false; } catch {} }, 120);
             } catch {}
           });
-          const musicEndTime = performance.now();
-          console.log('⏱️ [PROFILE DEBUG] Simple audio play completed in:', (musicEndTime - musicStartTime).toFixed(2), 'ms');
         } else {
-          console.log('🚫 [PROFILE DEBUG] No profile music to process');
           try { profileAudioRef.current?.pause(); } catch {}
         }
-      } catch (error) {
-        console.error('❌ [PROFILE DEBUG] Error in handleProfileLink:', error);
-      }
+      } catch {}
     } else {
-      console.log('❌ [PROFILE DEBUG] User not found in onlineUsers');
       showErrorToast('لم نتمكن من العثور على هذا المستخدم', 'مستخدم غير موجود');
     }
-    
-    const endTime = performance.now();
-    console.log('✅ [PROFILE DEBUG] handleProfileLink completed in:', (endTime - startTime).toFixed(2), 'ms');
   };
 
   // تفعيل نظام الروابط الشخصية
