@@ -728,10 +728,7 @@ export default function ProfileModal({
     },
   ];
 
-  // Profile image fallback - محسّن للتعامل مع base64 و مشاكل الcache
-  const getProfileImageSrcLocal = () => {
-    return getProfileImageSrc(localUser?.profileImage);
-  };
+  // تم حذف getProfileImageSrcLocal - نستخدم الآن ProfileImage المحسن مباشرة
 
   // Profile banner fallback - محسّن للتعامل مع base64 و مشاكل الcache
   // إرجاع مصدر صورة البانر إن وُجد مع دعم المسارات والـ base64
@@ -2401,20 +2398,17 @@ export default function ProfileModal({
             )}
 
             <div className="profile-avatar">
-              {/* عرض الصورة مباشرة بدون استخدام ProfileImage للحصول على شكل مربع */}
-              <img
-                src={getProfileImageSrcLocal()}
-                alt="الصورة الشخصية"
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover',
-                  display: 'block',
-                  transition: 'none',
-                  backfaceVisibility: 'hidden',
-                  transform: 'translateZ(0)',
-                }}
-              />
+              {/* استخدام ProfileImage المحسن بدلاً من img عادية لتحسين الأداء */}
+              {localUser && (
+                <div className="w-full h-full overflow-hidden">
+                  <ProfileImage 
+                    user={localUser} 
+                    size="large" 
+                    className="w-full h-full !rounded-none"
+                    hideRoleBadgeOverlay={true}
+                  />
+                </div>
+              )}
             </div>
 
             {localUser?.id === currentUser?.id && 
