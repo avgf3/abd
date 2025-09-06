@@ -2192,18 +2192,48 @@ export default function ProfileModal({
             font-size: 18px;
           }
           
-          /* أنماط الأزرار للأجهزة المحمولة - مطابقة لسطح المكتب */
+          /* أنماط الأزرار للأجهزة المحمولة - مطابقة لسطح المكتب تمامًا */
           .profile-actions {
+            position: absolute;
             bottom: 10px;
             left: 20px;
             right: 150px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            flex-wrap: nowrap;
             gap: 6px;
+            z-index: 10;
           }
-          
+
           .profile-actions button {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            border: none;
             padding: 3px 6px;
+            border-radius: 6px;
+            font-weight: 600;
             font-size: 10px;
+            line-height: 1.2;
+            color: #fff;
+            white-space: nowrap;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+            -webkit-tap-highlight-color: transparent;
           }
+
+          .profile-actions button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+            filter: brightness(1.05);
+          }
+
+          /* تكرار ألوان الأزرار لضمان التطابق على الموبايل */
+          .btn-chat { background: linear-gradient(135deg, #3490dc, #2779bd); }
+          .btn-add { background: linear-gradient(135deg, #38a169, #2f855a); }
+          .btn-ignore { background: linear-gradient(135deg, #ef4444, #dc2626); }
+          .btn-report { background: linear-gradient(135deg, #dc2626, #b91c1c); }
         }
       `}</style>
 
