@@ -2234,17 +2234,17 @@ export default function ProfileModal({
                   🖼️ تغيير الغلاف
                 </button>
                 
-                {/* اسم المستخدم مع الرتبة */}
+                {/* اسم المستخدم مع الرتبة - في أسفل صورة الغلاف */}
                 <div style={{
                   position: 'absolute',
-                  bottom: '38px', /* إنزال المجموعة (اللقب والاسم) أقرب للأسفل */
+                  bottom: '10px', /* في أسفل صورة الغلاف قبل الحافة مباشرة */
                   left: '50%',
                   transform: 'translateX(calc(-50% - 12px - 2cm))',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
-                  gap: '1px', /* تقليل الفراغ بين اللقب والاسم */
-                  zIndex: 3,
+                  gap: '2px', /* فراغ صغير بين الشعار والاسم */
+                  zIndex: 10,
                   textAlign: 'center',
                   maxWidth: 'calc(100% - 180px)',
                   padding: '0 12px',
@@ -2297,13 +2297,13 @@ export default function ProfileModal({
               <>
                 <div style={{
                   position: 'absolute',
-                  bottom: '38px',
+                  bottom: '10px', /* في أسفل صورة الغلاف قبل الحافة مباشرة */
                   left: '50%',
                   transform: 'translateX(calc(-50% - 12px - 2cm))',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
-                  gap: '1px',
+                  gap: '2px', /* فراغ صغير بين الشعار والاسم */
                   zIndex: 12,
                   textAlign: 'center',
                   maxWidth: 'calc(100% - 180px)',
@@ -2348,16 +2348,16 @@ export default function ProfileModal({
 
             {localUser?.id !== currentUser?.id && (
               <>
-                {/* اسم المستخدم مع الرتبة */}
+                {/* اسم المستخدم مع الرتبة - في أسفل صورة الغلاف */}
                 <div style={{
                   position: 'absolute',
-                  bottom: '60px', /* رفع الاسم فوق شريط الأزرار */
+                  bottom: '10px', /* في أسفل صورة الغلاف قبل الحافة مباشرة */
                   left: '50%',
                   transform: 'translateX(calc(-50% - 12px - 2cm))',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
-                  gap: '1px', /* تقليل الفراغ بين اللقب والاسم */
+                  gap: '2px', /* فراغ صغير بين الشعار والاسم */
                   zIndex: 12,
                   pointerEvents: 'none',
                   textAlign: 'center',
