@@ -37,6 +37,7 @@ import { databaseCleanup } from './utils/database-cleanup';
 import { getClientIpFromHeaders, getDeviceIdFromHeaders } from './utils/device';
 import { limiters, SecurityConfig } from './security';
 import { updateConnectedUserCache } from './realtime';
+
 import {
   sanitizeInput,
   validateMessageContent,
@@ -4528,6 +4529,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
           message: { ...joinMsg, sender, roomId, reactions: { like: 0, dislike: 0, heart: 0 }, myReaction: null },
         });
       } catch {}
+
+      // تحديث cache المستخدمين المتصلين بالبيانات الجديدة
+      updateConnectedUserCache(updatedBot.id, botUser);
+
+      // تنظيف cache الرسائل للغرف المتأثرة لضمان عرض البيانات الصحيحة
+      try {
+        const { roomMessageService } = await import('./services/roomMessageService');
+        roomMessageService.clearCache(oldRoom);
+        roomMessageService.clearCache(roomId);
+      } catch (e) {
+        console.error('خطأ في تنظيف cache الرسائل:', e);
+      }
+
+      // إرسال تحديث قائمة المستخدمين للغرف المتأثرة
+      try {
+        // إشعار بتحديث قوائم المستخدمين في الغرف المتأثرة
+        getIO().to(`room_${oldRoom}`).emit('message', {
+          type: 'userLeftRoom',
+          userId: updatedBot.id,
+          username: updatedBot.username,
+          roomId: oldRoom,
+          source: 'bot_moved_out'
+        });
+        
+        getIO().to(`room_${roomId}`).emit('message', {
+          type: 'userJoinedRoom',
+          userId: updatedBot.id,
+          username: updatedBot.username,
+          roomId: roomId,
+          source: 'bot_moved_in'
+        });
+      } catch (e) {
+        console.error('خطأ في تحديث قوائم المستخدمين:', e);
+      }
 
       res.json({ message: 'تم نقل البوت بنجاح', bot: updatedBot });
     } catch (error) {

@@ -554,10 +554,72 @@ export const storage: LegacyStorage = {
   // Batch users fetch to reduce N+1 patterns
   async getUsersByIds(userIds: number[]) {
     try {
-      const users = await databaseService.getUsersByIds(userIds);
-      return Array.isArray(users) ? users : [];
+      const uniqueIds = Array.from(new Set((userIds || []).filter((id) => typeof id === 'number')));
+      if (uniqueIds.length === 0) return [];
+
+      // جلب المستخدمين العاديين والبوتات بشكل متوازي
+      const [regularUsers, bots] = await Promise.all([
+        databaseService.getUsersByIds(uniqueIds),
+        this.getBotsByIds(uniqueIds)
+      ]);
+
+      // دمج النتائج
+      const allUsers = [...(regularUsers || []), ...(bots || [])];
+      return Array.isArray(allUsers) ? allUsers : [];
     } catch (e) {
       console.error('storage.getUsersByIds error:', e);
+      return [];
+    }
+  },
+
+  // دالة مساعدة لجلب البوتات بالـ IDs
+  async getBotsByIds(userIds: number[]) {
+    try {
+      const { db, dbType } = await import('./database-adapter');
+      if (!db || dbType !== 'postgresql') return [];
+      
+      const { bots } = await import('../shared/schema');
+      const { inArray } = await import('drizzle-orm');
+      
+      const botRows = await (db as any)
+        .select()
+        .from(bots as any)
+        .where(inArray((bots as any).id, userIds));
+      
+      // تحويل البوتات لتنسيق المستخدمين
+      return (botRows || []).map((bot: any) => ({
+        id: bot.id,
+        username: bot.username,
+        userType: 'bot',
+        role: 'bot',
+        profileImage: bot.profileImage,
+        profileBanner: bot.profileBanner,
+        profileBackgroundColor: bot.profileBackgroundColor,
+        status: bot.status,
+        gender: bot.gender,
+        country: bot.country,
+        relation: bot.relation,
+        bio: bot.bio,
+        isOnline: !!bot.isOnline,
+        isHidden: false,
+        lastSeen: bot.lastActivity,
+        joinDate: bot.createdAt,
+        createdAt: bot.createdAt,
+        isMuted: false,
+        muteExpiry: null,
+        isBanned: false,
+        banExpiry: null,
+        isBlocked: false,
+        usernameColor: bot.usernameColor,
+        profileEffect: bot.profileEffect,
+        points: bot.points,
+        level: bot.level,
+        totalPoints: bot.totalPoints,
+        levelProgress: bot.levelProgress,
+        currentRoom: bot.currentRoom,
+      }));
+    } catch (e) {
+      console.error('Error fetching bots by IDs:', e);
       return [];
     }
   },
