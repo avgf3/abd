@@ -1268,6 +1268,67 @@ li > * > div.effect-crystal {
   background-blend-mode: normal;
 }
 
+/* كلاسات التأثيرات للقائمة - بدون أنيميشن لتجنب الاهتزاز */
+.user-list-effect-electric {
+  box-shadow: 0 0 8px rgba(0, 191, 255, 0.3);
+  border-left: 2px solid rgba(0, 191, 255, 0.5);
+}
+
+.user-list-effect-magnetic {
+  box-shadow: 0 0 8px rgba(255, 20, 147, 0.3);
+  border-left: 2px solid rgba(255, 20, 147, 0.5);
+}
+
+.user-list-effect-pulse {
+  box-shadow: 0 0 8px rgba(138, 43, 226, 0.3);
+  border-left: 2px solid rgba(138, 43, 226, 0.5);
+}
+
+.user-list-effect-glow {
+  box-shadow: 0 0 8px rgba(255, 215, 0, 0.3);
+  border-left: 2px solid rgba(255, 215, 0, 0.5);
+}
+
+.user-list-effect-water {
+  box-shadow: 0 0 8px rgba(0, 150, 255, 0.3);
+  border-left: 2px solid rgba(0, 150, 255, 0.5);
+}
+
+.user-list-effect-aurora {
+  box-shadow: 0 0 8px rgba(0, 255, 127, 0.3);
+  border-left: 2px solid rgba(0, 255, 127, 0.5);
+}
+
+.user-list-effect-neon {
+  box-shadow: 0 0 8px rgba(255, 20, 147, 0.3);
+  border-left: 2px solid rgba(255, 20, 147, 0.5);
+}
+
+.user-list-effect-fire {
+  box-shadow: 0 0 8px rgba(255, 69, 0, 0.3);
+  border-left: 2px solid rgba(255, 69, 0, 0.5);
+}
+
+.user-list-effect-ice {
+  box-shadow: 0 0 8px rgba(135, 206, 235, 0.3);
+  border-left: 2px solid rgba(135, 206, 235, 0.5);
+}
+
+.user-list-effect-rainbow {
+  box-shadow: 0 0 8px rgba(236, 72, 153, 0.3);
+  border-left: 2px solid rgba(236, 72, 153, 0.5);
+}
+
+.user-list-effect-shadow {
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.5);
+  border-left: 2px solid rgba(0, 0, 0, 0.7);
+}
+
+.user-list-effect-crystal {
+  box-shadow: 0 0 8px rgba(230, 230, 250, 0.3);
+  border-left: 2px solid rgba(230, 230, 250, 0.5);
+}
+
 /* تأثير hover محسّن للصناديق بألوان مخصصة */
 .has-custom-bg:hover {
   filter: none;
