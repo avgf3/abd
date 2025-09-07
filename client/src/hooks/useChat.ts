@@ -324,6 +324,8 @@ export const useChat = () => {
   const ignoredUsersRef = useRef<Set<number>>(new Set());
   const roomMessagesRef = useRef<Record<string, ChatMessage[]>>({});
   const typingTimersRef = useRef<Map<number, number>>(new Map());
+  // Prevent duplicate handling for kick/ban events and centralize navigation
+  const kickHandledRef = useRef<boolean>(false);
 
   useEffect(() => {
     currentUserRef.current = state.currentUser;
@@ -808,8 +810,14 @@ export const useChat = () => {
             // إظهار عدّاد الطرد للمستخدم المستهدف فقط
             const targetId = envelope.targetUserId;
             if (targetId && targetId === currentUserRef.current?.id) {
-              dispatch({ type: 'SET_SHOW_KICK_COUNTDOWN', payload: true });
-              // إضافة رسالة واضحة للمستخدم
+              if (!kickHandledRef.current) {
+                kickHandledRef.current = true;
+                // عرض العدّاد وتعطيل الجلسة فوراً بدون إعادة تحميل الآن
+                dispatch({ type: 'SET_SHOW_KICK_COUNTDOWN', payload: true });
+                try { clearSession(); } catch {}
+                try { socket.current?.disconnect(); } catch {}
+              }
+              // إشعار المستخدم مرة واحدة فقط
               const duration = (envelope as any).duration || 15;
               const reason = (envelope as any).reason || 'بدون سبب';
               const moderator = (envelope as any).moderator || 'مشرف';
@@ -1054,26 +1062,20 @@ export const useChat = () => {
 
     socketInstance.on('privateMessage', handlePrivateMessage);
 
-    // معالج حدث الطرد
+    // معالج حدث الطرد (نسخة مبسطة بدون إعادة توجيه فوري)
     socketInstance.on('kicked', (data: any) => {
       if (currentUserRef.current?.id === data.userId) {
-        const kickerName = data.kickerName || 'مشرف';
-        const reason = data.reason || 'بدون سبب';
-
-        // إظهار رسالة الطرد
-        alert(
-          `تم طردك من الدردشة بواسطة ${kickerName}\nالسبب: ${reason}\nيمكنك العودة بعد 15 دقيقة`
-        );
-
-        // إظهار عداد الطرد
-        dispatch({ type: 'SET_SHOW_KICK_COUNTDOWN', payload: true });
-
-        // فصل المستخدم بعد 3 ثواني
-        setTimeout(() => {
-          clearSession(); // مسح بيانات الجلسة
-          socketInstance.disconnect();
-          window.location.href = '/';
-        }, 3000);
+        if (!kickHandledRef.current) {
+          kickHandledRef.current = true;
+          const kickerName = data.kickerName || 'مشرف';
+          const reason = data.reason || 'بدون سبب';
+          alert(
+            `تم طردك من الدردشة بواسطة ${kickerName}\nالسبب: ${reason}\nيمكنك العودة بعد 15 دقيقة`
+          );
+          dispatch({ type: 'SET_SHOW_KICK_COUNTDOWN', payload: true });
+          try { clearSession(); } catch {}
+          try { socketInstance.disconnect(); } catch {}
+        }
       }
     });
 
@@ -1121,10 +1123,7 @@ export const useChat = () => {
         clearInterval(pingIntervalRef.current);
         pingIntervalRef.current = null;
       }
-      if (onlineUsersIntervalRef.current) {
-        clearInterval(onlineUsersIntervalRef.current);
-        onlineUsersIntervalRef.current = null;
-      }
+      // no more secondary intervals to clear
       // clear typing timers
       typingTimersRef.current.forEach((id) => {
         try {

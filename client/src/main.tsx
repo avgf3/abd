@@ -46,13 +46,22 @@ try {
 
 createRoot(document.getElementById('root')!).render(<App />);
 
-// Register Service Worker (production only)
+// Register/cleanup Service Worker (production only, opt-in via VITE_ENABLE_SW)
 try {
 	if ('serviceWorker' in navigator && !((import.meta as any).env?.DEV)) {
-		window.addEventListener('load', () => {
-			navigator.serviceWorker
-				.register('/sw.js')
-				.catch(() => {});
+		const enableSw = !!((import.meta as any).env?.VITE_ENABLE_SW);
+		window.addEventListener('load', async () => {
+			try {
+				if (enableSw) {
+					await navigator.serviceWorker.register('/sw.js');
+				} else {
+					const swAny = (navigator as any).serviceWorker;
+					const regs = (await swAny?.getRegistrations?.()) || [];
+					for (const reg of regs) {
+						try { await reg.unregister(); } catch {}
+					}
+				}
+			} catch {}
 		});
 	}
 } catch {}
