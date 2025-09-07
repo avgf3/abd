@@ -24,6 +24,16 @@ git reset --hard origin/$DEFAULT_BRANCH
 
 # Run build and deploy
 npm ci --no-audit --no-fund
-npm run build
+npm run build-production
+
+# Run database migrations before starting/reloading
+npm run db:migrate-production
+
+# Start or reload PM2 app with updated environment
+if pm2 describe chat-app >/dev/null 2>&1; then
+  pm2 reload chat-app --update-env
+else
+  pm2 start ecosystem.config.js
+fi
 
 echo "Deployment prepared from branch: $DEFAULT_BRANCH"
