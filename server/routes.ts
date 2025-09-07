@@ -29,6 +29,7 @@ import securityApiRoutes from './api-security';
 import { db, dbType } from './database-adapter';
 import { protect } from './middleware/enhancedSecurity';
 import { requireUser, requireBotOperation, validateEntityType, validateEntityIdParam } from './middleware/entityValidation';
+import { parseEntityId, formatEntityId } from './types/entities';
 import { moderationSystem } from './moderation';
 import { getIO } from './realtime';
 import { emitOnlineUsersForRoom } from './realtime';
@@ -4383,8 +4384,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!db) {
         return res.status(500).json({ error: 'قاعدة البيانات غير متصلة' });
       }
-
-      const botId = parseInt(req.params.id);
+      const parsedId = parseEntityId(req.params.id as any);
+      const botId = parsedId.id as number;
       const { bots } = await import('../shared/schema');
       
       // إذا كان هناك كلمة مرور جديدة، قم بتشفيرها
@@ -4435,7 +4436,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       updateConnectedUserCache(updatedBot.id, botUser);
 
-      res.json(updatedBot);
+      res.json({ ...updatedBot, entityId: formatEntityId(updatedBot.id, 'bot') });
     } catch (error) {
       console.error('خطأ في تحديث البوت:', error);
       res.status(500).json({ error: 'فشل في تحديث البوت' });
@@ -4448,8 +4449,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!db) {
         return res.status(500).json({ error: 'قاعدة البيانات غير متصلة' });
       }
-
-      const botId = parseInt(req.params.id);
+      const parsedId = parseEntityId(req.params.id as any);
+      const botId = parsedId.id as number;
       const { roomId } = req.body;
 
       if (!roomId) {
@@ -4555,7 +4556,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error('خطأ في تحديث قوائم المستخدمين:', e);
       }
 
-      res.json({ message: 'تم نقل البوت بنجاح', bot: updatedBot });
+      res.json({ message: 'تم نقل البوت بنجاح', bot: { ...updatedBot, entityId: formatEntityId(updatedBot.id, 'bot') } });
     } catch (error) {
       console.error('خطأ في نقل البوت:', error);
       res.status(500).json({ error: 'فشل في نقل البوت' });
@@ -4568,8 +4569,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!db) {
         return res.status(500).json({ error: 'قاعدة البيانات غير متصلة' });
       }
-
-      const botId = parseInt(req.params.id);
+      const parsedId = parseEntityId(req.params.id as any);
+      const botId = parsedId.id as number;
       const { bots } = await import('../shared/schema');
       
       // جلب البوت الحالي
@@ -4665,7 +4666,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         try { await emitOnlineUsersForRoom(updatedBot.currentRoom); } catch {}
       }
 
-      res.json({ message: newActiveState ? 'تم تفعيل البوت' : 'تم تعطيل البوت', bot: updatedBot });
+      res.json({ message: newActiveState ? 'تم تفعيل البوت' : 'تم تعطيل البوت', bot: { ...updatedBot, entityId: formatEntityId(updatedBot.id, 'bot') } });
     } catch (error) {
       console.error('خطأ في تبديل حالة البوت:', error);
       res.status(500).json({ error: 'فشل في تبديل حالة البوت' });
@@ -4678,8 +4679,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!db) {
         return res.status(500).json({ error: 'قاعدة البيانات غير متصلة' });
       }
-
-      const botId = parseInt(req.params.id);
+      const parsedId = parseEntityId(req.params.id as any);
+      const botId = parsedId.id as number;
       const { bots } = await import('../shared/schema');
       
       // جلب البوت قبل الحذف
@@ -4747,7 +4748,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(500).json({ success: false, error: 'قاعدة البيانات غير متصلة' });
         }
         
-        const botId = parseInt(req.params.id);
+        const parsedId = parseEntityId(req.params.id as any);
+        const botId = parsedId.id as number;
         if (!botId || isNaN(botId)) {
           try { await fsp.unlink(req.file.path).catch(() => {}); } catch {}
           return res.status(400).json({ success: false, error: 'معرف البوت غير صالح' });
