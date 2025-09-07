@@ -250,23 +250,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
               }
               break;
             }
-            case 'userJoinedRoom': {
-              const roomId = envelope.roomId;
-              if (typeof roomId === 'string') {
-                // زيادة تقديرية +1 حتى تصل قائمة كاملة
-                const current = rooms.find((r) => r.id === roomId)?.userCount || 0;
-                updateRoomUserCount(roomId, Math.max(0, current + 1));
-              }
-              break;
-            }
-            case 'userLeftRoom': {
-              const roomId = envelope.roomId;
-              if (typeof roomId === 'string') {
-                const current = rooms.find((r) => r.id === roomId)?.userCount || 0;
-                updateRoomUserCount(roomId, Math.max(0, current - 1));
-              }
-              break;
-            }
+            // تم الاستغناء عن userJoinedRoom/userLeftRoom لصالح بث onlineUsers + رسائل system
             default:
               break;
           }
