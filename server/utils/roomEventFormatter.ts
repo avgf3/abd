@@ -51,14 +51,14 @@ export function formatRoomEventMessage(
   })();
 
   if (action === 'join') {
-    return `${username}: انضم للغرفة (${meta})`;
+    return `انضم للغرفة (${meta})`;
   }
   if (action === 'leave') {
-    return `${username}: غادر الغرفة (${meta})`;
+    return `غادر الغرفة (${meta})`;
   }
   // switch
   const fromName = extra?.fromRoomName || 'غرفة سابقة';
   const toName = extra?.toRoomName || 'غرفة جديدة';
-  return `${username}: انتقل من ${fromName} إلى ${toName} (${meta})`;
+  return `انتقل من ${fromName} إلى ${toName} (${meta})`;
 }
 
