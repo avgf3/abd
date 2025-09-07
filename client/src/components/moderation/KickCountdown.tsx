@@ -23,9 +23,13 @@ export default function KickCountdown({ isVisible, onClose, durationMinutes }: K
         if (prev <= 1) {
           clearInterval(timer);
           onClose();
-          // إعادة تحديث الصفحة عند انتهاء الوقت
+          // إعادة التوجيه للصفحة الرئيسية عند انتهاء الوقت
           setTimeout(() => {
-            window.location.reload();
+            try {
+              window.location.replace('/');
+            } catch {
+              window.location.href = '/';
+            }
           }, 1000);
           return 0;
         }
@@ -62,8 +66,8 @@ export default function KickCountdown({ isVisible, onClose, durationMinutes }: K
           </div>
 
           <p className="text-red-200 text-sm">
-            لا يمكنك الدخول للدردشة حتى انتهاء المدة المحددة. سيتم إعادة تحديث الصفحة تلقائياً عند
-            انتهاء الوقت.
+            لا يمكنك الدخول للدردشة حتى انتهاء المدة المحددة. سيتم إعادتك للصفحة الرئيسية عند انتهاء
+            الوقت.
           </p>
 
           <Badge variant="destructive" className="bg-red-700">
