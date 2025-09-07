@@ -1701,6 +1701,16 @@ export class DatabaseService {
     roomId: string,
     userId: number
   ): Promise<{ allowed: boolean; reason?: string }> {
+    // Bots are server-managed entities. Allow them to send room messages
+    // (e.g., system join/leave when moved) regardless of DB membership.
+    // This avoids blocking legitimate system messages after introducing per-room checks.
+    try {
+      const { isBotId } = await import('../types/entities');
+      if (isBotId(userId)) {
+        return { allowed: true };
+      }
+    } catch {}
+
     if (!this.isConnected()) return { allowed: true };
 
     try {
