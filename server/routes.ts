@@ -1572,6 +1572,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use(checkIPSecurity);
   app.use(advancedSecurityMiddleware);
 
+  // Helper: يبني ترويسة الكوكي auth_token وفق بروتوكول الطلب وSameSite الصحيح
+  function buildAuthCookieHeader(req: any, token: string | null, maxAgeSec: number): string {
+    try {
+      const xfProtoRaw = (req.headers['x-forwarded-proto'] as string | undefined) || '';
+      const xfProto = xfProtoRaw.split(',')[0]?.trim().toLowerCase();
+      const isHttps = !!req.secure || xfProto === 'https';
+
+      const originHeader = typeof req.headers.origin === 'string' ? req.headers.origin : '';
+      const hostHeader = typeof req.headers.host === 'string' ? req.headers.host : '';
+      let sameSite = 'Lax';
+      if (originHeader) {
+        try {
+          const originHost = new URL(originHeader).host.split(':')[0];
+          const hostOnly = (hostHeader || '').split(':')[0];
+          if (originHost && hostOnly && originHost !== hostOnly) {
+            sameSite = 'None';
+          }
+        } catch {}
+      }
+
+      const secureAttr = (sameSite === 'None' || isHttps) ? '; Secure' : '';
+      if (token) {
+        return `auth_token=${encodeURIComponent(token)}; HttpOnly; Path=/; SameSite=${sameSite}; Max-Age=${maxAgeSec}${secureAttr}`;
+      }
+      return `auth_token=; HttpOnly; Path=/; Max-Age=0; SameSite=${sameSite}${secureAttr}`;
+    } catch {
+      // Fallback إلى السلوك السابق إذا حدث خطأ غير متوقع
+      const base = token
+        ? `auth_token=${encodeURIComponent(token)}; HttpOnly; Path=/; SameSite=Lax; Max-Age=${maxAgeSec}`
+        : 'auth_token=; HttpOnly; Path=/; Max-Age=0; SameSite=Lax';
+      return `${base}${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`;
+    }
+  }
+
   // Member registration route - مع أمان محسن
   app.post('/api/auth/register', limiters.auth, async (req, res) => {
     try {
@@ -1639,10 +1673,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
         const token = issueAuthToken(user.id, THIRTY_DAYS_MS);
         const maxAgeSec = Math.floor(THIRTY_DAYS_MS / 1000);
-        res.setHeader(
-          'Set-Cookie',
-          `auth_token=${encodeURIComponent(token)}; HttpOnly; Path=/; SameSite=Lax; Max-Age=${maxAgeSec}${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`
-        );
+        res.setHeader('Set-Cookie', buildAuthCookieHeader(req, token, maxAgeSec));
       } catch {}
       res.json({ user: buildUserBroadcastPayload(user), message: 'تم التسجيل بنجاح' });
     } catch (error) {
@@ -1677,10 +1708,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
         const token = issueAuthToken(user.id, THIRTY_DAYS_MS);
         const maxAgeSec = Math.floor(THIRTY_DAYS_MS / 1000);
-        res.setHeader(
-          'Set-Cookie',
-          `auth_token=${encodeURIComponent(token)}; HttpOnly; Path=/; SameSite=Lax; Max-Age=${maxAgeSec}${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`
-        );
+        res.setHeader('Set-Cookie', buildAuthCookieHeader(req, token, maxAgeSec));
       } catch {}
       res.json({ user: buildUserBroadcastPayload(user) });
     } catch (error) {
@@ -1702,16 +1730,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           } catch {}
         }
       }
-      res.setHeader(
-        'Set-Cookie',
-        `auth_token=; HttpOnly; Path=/; Max-Age=0; SameSite=Lax${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`
-      );
+      res.setHeader('Set-Cookie', buildAuthCookieHeader(req, null, 0));
       res.json({ success: true, message: 'تم تسجيل الخروج بنجاح' });
     } catch (error) {
-      res.setHeader(
-        'Set-Cookie',
-        `auth_token=; HttpOnly; Path=/; Max-Age=0; SameSite=Lax${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`
-      );
+      res.setHeader('Set-Cookie', buildAuthCookieHeader(req, null, 0));
       res.status(200).json({ success: true, message: 'تم مسح الجلسة' });
     }
   });
@@ -1771,10 +1793,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
         const token = issueAuthToken(user.id, THIRTY_DAYS_MS);
         const maxAgeSec = Math.floor(THIRTY_DAYS_MS / 1000);
-        res.setHeader(
-          'Set-Cookie',
-          `auth_token=${encodeURIComponent(token)}; HttpOnly; Path=/; SameSite=Lax; Max-Age=${maxAgeSec}${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`
-        );
+        res.setHeader('Set-Cookie', buildAuthCookieHeader(req, token, maxAgeSec));
       } catch {}
       res.json({ user: buildUserBroadcastPayload(user) });
     } catch (error) {

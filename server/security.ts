@@ -241,8 +241,19 @@ export function setupSecurity(app: Express): void {
     if (originHeader && (isDev || isSameHost || isEnvAllowed || isRenderDomain)) {
       res.setHeader('Access-Control-Allow-Origin', originHeader);
     } else if (!originHeader && process.env.NODE_ENV === 'production') {
-      // في حالة عدم وجود origin (مثل طلبات من نفس الموقع)
-      res.setHeader('Access-Control-Allow-Origin', '*');
+      // عند غياب Origin، لا نستخدم * مع credentials=true
+      // احسب origin الفعلي من البروتوكول والمضيف
+      try {
+        const xfProtoRaw = (req.headers['x-forwarded-proto'] as string | undefined) || '';
+        const xfProto = xfProtoRaw.split(',')[0]?.trim().toLowerCase();
+        const isHttps = !!(req as any).secure || xfProto === 'https';
+        const proto = isHttps ? 'https' : 'http';
+        const host = (req.headers.host as string) || '';
+        if (host) {
+          const computedOrigin = `${proto}://${host}`;
+          res.setHeader('Access-Control-Allow-Origin', computedOrigin);
+        }
+      } catch {}
     }
 
     res.setHeader('Access-Control-Allow-Credentials', 'true');
