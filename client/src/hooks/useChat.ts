@@ -413,6 +413,23 @@ export const useChat = () => {
     pingIntervalRef.current = pingId;
     socketInstance.on('client_pong', () => {});
 
+    // بعد المصادقة الناجحة من الخادم، انضم للغرفة المطلوبة إن وُجدت
+    socketInstance.on('authenticated', () => {
+      try {
+        const desired = pendingJoinRoomRef.current || (() => {
+          try { return getSession()?.roomId as string | undefined; } catch { return undefined; }
+        })();
+        if (desired && desired !== 'public' && desired !== 'friends' && currentUserRef.current) {
+          socketInstance.emit('joinRoom', {
+            roomId: desired,
+            userId: currentUserRef.current.id,
+            username: currentUserRef.current.username,
+          });
+          pendingJoinRoomRef.current = null;
+        }
+      } catch {}
+    });
+
     // لم نعد نستخدم polling لقائمة المتصلين؛ السيرفر يبث التحديثات مباشرة
 
     // ✅ استقبال إشعار جديد مباشر من الخادم وتحديث الواجهة فوراً
@@ -428,6 +445,23 @@ export const useChat = () => {
     socketInstance.on('message', (data: any) => {
       try {
         const envelope = data.envelope || data;
+
+        // تأكيد المصادقة من الخادم: بعده فقط نرسل joinRoom المؤجل أو المحفوظ
+        if (envelope.type === 'authenticated') {
+          try {
+            const desired = pendingJoinRoomRef.current || (() => {
+              try { return getSession()?.roomId as string | undefined; } catch { return undefined; }
+            })();
+            if (desired && desired !== 'public' && desired !== 'friends' && currentUserRef.current) {
+              socket.current?.emit('joinRoom', {
+                roomId: desired,
+                userId: currentUserRef.current.id,
+                username: currentUserRef.current.username,
+              });
+              pendingJoinRoomRef.current = null;
+            }
+          } catch {}
+        }
 
         // تحديث تأثير البروفايل فقط عند وصول بث profileEffectChanged
         if (envelope.type === 'profileEffectChanged') {
@@ -1244,27 +1278,13 @@ export const useChat = () => {
         // إعداد المستمعين
         setupSocketListeners(s);
 
-        // إذا كان متصلاً بالفعل، أرسل المصادقة والانضمام فوراً
+        // إذا كان متصلاً بالفعل، أرسل المصادقة فقط، والانضمام سيتم بعد التأكيد
         if (s.connected) {
           s.emit('auth', {
             userId: user.id,
             username: user.username,
             userType: user.userType,
           });
-          // Attempt to join saved or pending room immediately after auth
-          try {
-            const desired = pendingJoinRoomRef.current || (() => {
-              try { return getSession()?.roomId as string | undefined; } catch { return undefined; }
-            })();
-            if (desired && desired !== 'public' && desired !== 'friends') {
-              s.emit('joinRoom', {
-                roomId: desired,
-                userId: user.id,
-                username: user.username,
-              });
-              pendingJoinRoomRef.current = null;
-            }
-          } catch {}
         }
 
         // إرسال المصادقة عند الاتصال/إعادة الاتصال يتم من خلال الوحدة المشتركة
@@ -1273,27 +1293,13 @@ export const useChat = () => {
           dispatch({ type: 'SET_CONNECTION_ERROR', payload: null });
           dispatch({ type: 'SET_LOADING', payload: false });
 
-          // إعادة إرسال المصادقة والانضمام للغرفة لضمان الاتصال الصحيح
+          // إعادة إرسال المصادقة فقط، والانضمام للغرفة بعد Event roomJoined
           try {
             s.emit('auth', {
               userId: user.id,
               username: user.username,
               userType: user.userType,
             });
-            // Join desired room if there is a pending request or saved session
-            try {
-              const desired = pendingJoinRoomRef.current || (() => {
-                try { return getSession()?.roomId as string | undefined; } catch { return undefined; }
-              })();
-              if (desired && desired !== 'public' && desired !== 'friends') {
-                s.emit('joinRoom', {
-                  roomId: desired,
-                  userId: user.id,
-                  username: user.username,
-                });
-                pendingJoinRoomRef.current = null;
-              }
-            } catch {}
           } catch {}
 
           // Prefetch expected data shortly after connection success

@@ -17,13 +17,13 @@ export function saveSession(partial: Partial<StoredSession>) {
   try {
     const existing = getSession();
     const merged: StoredSession = { ...existing, ...partial };
-    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
   } catch {}
 }
 
 export function getSession(): StoredSession {
   try {
-    const raw = sessionStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return {};
     return JSON.parse(raw) as StoredSession;
   } catch {
@@ -33,7 +33,7 @@ export function getSession(): StoredSession {
 
 export function clearSession() {
   try {
-    sessionStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(STORAGE_KEY);
   } catch {}
   // إعادة تعيين Socket instance عند مسح الجلسة
   if (socketInstance) {
@@ -78,15 +78,6 @@ function attachCoreListeners(socket: Socket) {
         token: session.token,
         reconnect: isReconnect,
       });
-
-      const joinRoomId = session.roomId;
-      if (joinRoomId && joinRoomId !== 'public' && joinRoomId !== 'friends') {
-        socket.emit('joinRoom', {
-          roomId: joinRoomId,
-          userId: session.userId,
-          username: session.username,
-        });
-      }
     } catch {}
   };
 

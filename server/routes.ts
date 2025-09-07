@@ -1631,10 +1631,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       try {
-        const token = issueAuthToken(user.id);
+        const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+        const token = issueAuthToken(user.id, THIRTY_DAYS_MS);
+        const maxAgeSec = Math.floor(THIRTY_DAYS_MS / 1000);
         res.setHeader(
           'Set-Cookie',
-          `auth_token=${encodeURIComponent(token)}; HttpOnly; Path=/; SameSite=Lax${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`
+          `auth_token=${encodeURIComponent(token)}; HttpOnly; Path=/; SameSite=Lax; Max-Age=${maxAgeSec}${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`
         );
       } catch {}
       res.json({ user: buildUserBroadcastPayload(user), message: 'تم التسجيل بنجاح' });
@@ -1667,10 +1669,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       try {
-        const token = issueAuthToken(user.id);
+        const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+        const token = issueAuthToken(user.id, THIRTY_DAYS_MS);
+        const maxAgeSec = Math.floor(THIRTY_DAYS_MS / 1000);
         res.setHeader(
           'Set-Cookie',
-          `auth_token=${encodeURIComponent(token)}; HttpOnly; Path=/; SameSite=Lax${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`
+          `auth_token=${encodeURIComponent(token)}; HttpOnly; Path=/; SameSite=Lax; Max-Age=${maxAgeSec}${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`
         );
       } catch {}
       res.json({ user: buildUserBroadcastPayload(user) });
@@ -1759,15 +1763,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       try {
-        const token = issueAuthToken(user.id);
+        const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+        const token = issueAuthToken(user.id, THIRTY_DAYS_MS);
+        const maxAgeSec = Math.floor(THIRTY_DAYS_MS / 1000);
         res.setHeader(
           'Set-Cookie',
-          `auth_token=${encodeURIComponent(token)}; HttpOnly; Path=/; SameSite=Lax${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`
+          `auth_token=${encodeURIComponent(token)}; HttpOnly; Path=/; SameSite=Lax; Max-Age=${maxAgeSec}${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`
         );
       } catch {}
       res.json({ user: buildUserBroadcastPayload(user) });
     } catch (error) {
       console.error('Member authentication error:', error);
+      res.status(500).json({ error: 'خطأ في الخادم' });
+    }
+  });
+
+  // Session restore route - يسترجع المستخدم من كوكي المصادقة بدون إعادة تسجيل الدخول
+  app.get('/api/auth/session', async (req, res) => {
+    try {
+      const token = getAuthTokenFromRequest(req as any);
+      if (!token) {
+        return res.status(401).json({ error: 'غير مسجل' });
+      }
+      const verified = verifyAuthToken(token);
+      if (!verified?.userId) {
+        return res.status(401).json({ error: 'غير مسجل' });
+      }
+      const user = await storage.getUser(verified.userId);
+      if (!user) {
+        return res.status(401).json({ error: 'غير مسجل' });
+      }
+      res.json({ user: buildUserBroadcastPayload(user) });
+    } catch (error) {
       res.status(500).json({ error: 'خطأ في الخادم' });
     }
   });

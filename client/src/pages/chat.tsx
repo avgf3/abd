@@ -56,30 +56,39 @@ export default function ChatPage() {
     try {
       const session = getSession();
       const savedUserId = session?.userId;
-      if (!savedUserId) {
-        setIsRestoring(false);
-        return;
+      const proceedWithUser = (user: any) => {
+        if (!user || !user.id || !user.username) return;
+        chat.connect(user);
+        setShowWelcome(false);
+        const roomId = session?.roomId && session.roomId !== 'public' && session.roomId !== 'friends'
+          ? session.roomId
+          : null;
+        if (roomId) {
+          setSelectedRoomId(roomId);
+          chat.joinRoom(roomId);
+        } else {
+          setSelectedRoomId(null);
+        }
+      };
+
+      if (savedUserId) {
+        apiRequest(`/api/users/${savedUserId}`)
+          .then(proceedWithUser)
+          .catch(() => {})
+          .finally(() => setIsRestoring(false));
+      } else {
+        // لا توجد جلسة محفوظة، جرّب استرجاعها من الكوكي عبر الخادم
+        apiRequest('/api/auth/session')
+          .then((data: any) => {
+            if (data?.user) {
+              proceedWithUser(data.user);
+            } else {
+              setShowWelcome(true);
+            }
+          })
+          .catch(() => setShowWelcome(true))
+          .finally(() => setIsRestoring(false));
       }
-
-      // جلب بيانات المستخدم من الخادم لضمان توافق الشكل
-      apiRequest(`/api/users/${savedUserId}`)
-        .then((user) => {
-          if (!user || !user.id || !user.username) return;
-          chat.connect(user);
-          setShowWelcome(false);
-
-          const roomId = session?.roomId && session.roomId !== 'public' && session.roomId !== 'friends'
-            ? session.roomId
-            : null;
-          if (roomId) {
-            setSelectedRoomId(roomId);
-            chat.joinRoom(roomId);
-          } else {
-            setSelectedRoomId(null); // المستخدم سيختار الغرفة من واجهة الغرف
-          }
-        })
-        .catch(() => {})
-        .finally(() => setIsRestoring(false));
     } catch {
       setIsRestoring(false);
     }
