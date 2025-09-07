@@ -45,6 +45,13 @@ router.post('/send', protect.auth, limiters.pmSend, async (req, res) => {
     const { receiverId, content, messageType } = parsed.data as any;
     const senderId = (req as any).user?.id as number;
 
+    // حماية ضد إرسال رسائل خاصة للبوتات من غير المالك
+    const { SecureMessageService } = await import('../services/secureMessageService');
+    const blockResult = await SecureMessageService.blockUnauthorizedBotMessage(senderId, receiverId);
+    if (blockResult.blocked) {
+      return res.status(403).json({ error: blockResult.reason || 'غير مصرح بإرسال هذه الرسالة' });
+    }
+
     // التحقق من صحة البيانات
     if (!senderId || !receiverId) {
       return res.status(400).json({ error: 'معرّف المرسل والمستلم مطلوبان' });

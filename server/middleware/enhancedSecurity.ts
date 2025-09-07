@@ -288,6 +288,59 @@ export const requireOwnerAboudOnly = async (req: Request, res: Response, next: N
   }
 };
 
+// Middleware للحماية الفائقة - فقط المالك الحقيقي يمكنه الوصول
+export const requireUltraSecureOwnerAccess = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    await requireAuth(req, res, () => {});
+
+    if (!req.user) {
+      throw createError.unauthorized();
+    }
+
+    // التحقق من أن المستخدم هو المالك الفعلي
+    const isRealOwner = req.user.userType === 'owner';
+    if (!isRealOwner) {
+      log.security('محاولة وصول غير مصرح بها لنظام البوتات', {
+        userId: req.user.id,
+        username: req.user.username,
+        userType: req.user.userType,
+        path: req.path,
+        ip: req.ip,
+        timestamp: new Date().toISOString(),
+      });
+
+      throw createError.forbidden('الوصول مرفوض - هذا النظام محمي بحماية فائقة');
+    }
+
+    // التحقق الإضافي من قاعدة البيانات للتأكد من أن المستخدم هو فعلاً المالك
+    const user = await storage.getUser(req.user.id);
+    if (!user || user.userType !== 'owner') {
+      log.security('محاولة تجاوز أمني - عدم تطابق نوع المستخدم', {
+        userId: req.user.id,
+        tokenUserType: req.user.userType,
+        dbUserType: user?.userType,
+        path: req.path,
+        ip: req.ip,
+      });
+
+      throw createError.forbidden('تم رفض الوصول لأسباب أمنية');
+    }
+
+    // تسجيل الوصول الناجح للمراقبة
+    log.security('وصول مصرح به لنظام البوتات', {
+      userId: req.user.id,
+      username: req.user.username,
+      path: req.path,
+      ip: req.ip,
+      timestamp: new Date().toISOString(),
+    });
+
+    next();
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const protect = {
   public: requirePermission(ProtectionLevel.PUBLIC),
   auth: requirePermission(ProtectionLevel.AUTHENTICATED),
@@ -300,4 +353,5 @@ export const protect = {
   recentAuth: requireRecentAuth,
   log: logActivity,
   ownerOnly: requireOwnerAboudOnly,
+  ultraSecure: requireUltraSecureOwnerAccess,
 };

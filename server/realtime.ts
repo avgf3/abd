@@ -725,6 +725,21 @@ export function setupRealtime(httpServer: HttpServer): IOServer {
           }
         } catch {}
 
+        // حماية إضافية: التأكد من أن المستخدم ليس بوتاً إلا إذا كان المالك
+        if (data?.receiverId) {
+          try {
+            const { SecureMessageService } = await import('./services/secureMessageService');
+            const blockResult = await SecureMessageService.blockUnauthorizedBotMessage(socket.userId, data.receiverId);
+            if (blockResult.blocked) {
+              socket.emit('message', { type: 'error', message: blockResult.reason || 'غير مصرح بإرسال هذه الرسالة' });
+              return;
+            }
+          } catch (error) {
+            socket.emit('message', { type: 'error', message: 'خطأ في التحقق من الصلاحيات' });
+            return;
+          }
+        }
+
         const status = await moderationSystem.checkUserStatus(socket.userId);
         if (!status.canChat) {
           socket.emit('message', {
