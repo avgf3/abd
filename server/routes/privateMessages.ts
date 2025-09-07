@@ -335,7 +335,7 @@ router.get('/:userId/:otherUserId', protect.auth, async (req, res, next) => {
  */
 router.get('/conversations/:userId', protect.auth, async (req, res) => {
   try {
-    const userId = parseInt(req.params.userId);
+    const userId = parseEntityId(req.params.userId as any).id as number;
     const limitParam = req.query.limit as string | undefined;
     const limit = Math.min(100, Math.max(1, parseInt(limitParam || '50')));
 

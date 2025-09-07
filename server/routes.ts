@@ -2358,7 +2358,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // الحصول على طلبات الصداقة الصادرة
   app.get('/api/friend-requests/outgoing/:userId', async (req, res) => {
     try {
-      const userId = parseInt(req.params.userId);
+      const userId = parseEntityId(req.params.userId as any).id as number;
       const requests = await friendService.getOutgoingFriendRequests(userId);
       res.json({ requests });
     } catch (error) {
@@ -2551,7 +2551,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // الحصول على حالة المستخدم
   app.get('/api/users/:userId/spam-status', async (req, res) => {
     try {
-      const userId = parseInt(req.params.userId);
+      const userId = parseEntityId(req.params.userId as any).id as number;
       const status = spamProtection.getUserStatus(userId);
       res.json({ status });
     } catch (error) {
@@ -2635,7 +2635,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Friends routes
   app.get('/api/friends/:userId', async (req, res) => {
     try {
-      const userId = parseInt(req.params.userId);
+      const userId = parseEntityId(req.params.userId as any).id as number;
       const friends = await friendService.getFriends(userId);
 
       res.json({ friends });
@@ -3072,7 +3072,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.json({ count: 0 });
       }
 
-      const userId = parseInt(req.params.userId);
+      const userId = parseEntityId(req.params.userId as any).id as number;
       const count = await storage.getUnreadNotificationCount(userId);
       res.json({ count });
     } catch (error) {
@@ -3088,7 +3088,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.json({ count: 0 });
       }
 
-      const userId = req.query.userId ? parseInt(req.query.userId as string) : null;
+      const userId = req.query.userId ? (parseEntityId(req.query.userId as any).id as number) : null;
       if (!userId || isNaN(userId)) {
         console.error('Invalid userId in notifications/unread-count:', req.query.userId);
         return res.status(400).json({ error: 'معرف المستخدم غير صحيح أو مفقود' });
@@ -3112,7 +3112,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // حذف موسيقى البروفايل
   app.delete('/api/users/:userId/profile-music', protect.ownership, async (req, res) => {
     try {
-      const userId = parseInt(req.params.userId);
+      const userId = parseEntityId(req.params.userId as any).id as number;
       if (!userId || isNaN(userId)) {
         return res.status(400).json({ error: 'معرّف غير صالح' });
       }
