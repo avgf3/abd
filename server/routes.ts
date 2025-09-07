@@ -28,6 +28,7 @@ import securityApiRoutes from './api-security';
 
 import { db, dbType } from './database-adapter';
 import { protect } from './middleware/enhancedSecurity';
+import { requireUser, requireBotOperation, validateEntityType, validateEntityIdParam } from './middleware/entityValidation';
 import { moderationSystem } from './moderation';
 import { getIO } from './realtime';
 import { emitOnlineUsersForRoom } from './realtime';
@@ -4266,8 +4267,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // ============= نظام البوتات =============
   
-  // جلب قائمة البوتات
-  app.get('/api/bots', protect.admin, async (req, res) => {
+  // جلب قائمة البوتات - يتطلب مستخدم حقيقي بصلاحيات إدارية
+  app.get('/api/bots', requireUser, protect.admin, async (req, res) => {
     try {
       if (!db) {
         return res.status(500).json({ error: 'قاعدة البيانات غير متصلة' });
@@ -4283,8 +4284,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // إنشاء بوت جديد
-  app.post('/api/bots', protect.admin, async (req, res) => {
+  // إنشاء بوت جديد - يتطلب مستخدم حقيقي بصلاحيات إدارية
+  app.post('/api/bots', requireUser, protect.admin, async (req, res) => {
     try {
       if (!db) {
         return res.status(500).json({ error: 'قاعدة البيانات غير متصلة' });
@@ -4441,8 +4442,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // نقل بوت إلى غرفة أخرى
-  app.post('/api/bots/:id/move', protect.admin, async (req, res) => {
+  // نقل بوت إلى غرفة أخرى - يتطلب التحقق من أن المعرف للبوت
+  app.post('/api/bots/:id/move', requireBotOperation, protect.admin, async (req, res) => {
     try {
       if (!db) {
         return res.status(500).json({ error: 'قاعدة البيانات غير متصلة' });
