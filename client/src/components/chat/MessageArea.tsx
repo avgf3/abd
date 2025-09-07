@@ -577,7 +577,7 @@ export default function MessageArea({
                       </div>
                     )}
                     <div className={`flex-1 min-w-0 flex ${isMobile ? 'flex-wrap items-start' : 'items-center'} gap-2`}>
-                      {message.sender && (
+                      {message.sender && message.sender.userType !== 'bot' && (
                         <UserRoleBadge user={message.sender} showOnlyIcon={true} hideGuestAndGender={true} size={16} />
                       )}
                       <button
@@ -613,7 +613,7 @@ export default function MessageArea({
 
                     {/* Inline row: badge, name, content */}
                     <div className={`flex-1 min-w-0 flex ${isMobile ? 'flex-wrap items-start' : 'items-center'} gap-2`}>
-                      {message.sender && (
+                      {message.sender && message.sender.userType !== 'bot' && (
                         <UserRoleBadge user={message.sender} showOnlyIcon={true} hideGuestAndGender={true} size={16} />
                       )}
                       <button
