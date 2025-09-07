@@ -111,10 +111,7 @@ export default function ProfileModal({
           // محاولة التشغيل العادي أولاً
           await audioRef.current.play();
           setIsPlaying(true);
-          console.log('✅ تم تشغيل الموسيقى تلقائياً');
-        } catch (err: any) {
-          console.log(`محاولة ${attempts}/${maxAttempts} فشلت:`, err.message);
-          
+          } catch (err: any) {
           // إذا فشلت المحاولة الأولى، نحاول مع الصوت المكتوم
           if (attempts === 1 && audioRef.current) {
             try {
@@ -127,8 +124,7 @@ export default function ProfileModal({
                 }
               }, 100);
               setIsPlaying(true);
-              console.log('✅ تم التشغيل بالوضع المكتوم ثم رفع الكتم');
-            } catch (mutedErr) {
+              } catch (mutedErr) {
               // إعادة المحاولة بعد تأخير
               setTimeout(playAudio, 1000);
             }
@@ -137,16 +133,13 @@ export default function ProfileModal({
             setTimeout(playAudio, 1500);
           } else {
             // بعد فشل كل المحاولات، ننتظر تفاعل المستخدم
-            console.log('⚠️ التشغيل التلقائي محظور، في انتظار تفاعل المستخدم');
-            
             // إضافة مستمع للنقر لمحاولة التشغيل عند أول تفاعل
             const handleUserInteraction = async () => {
               if (audioRef.current && audioRef.current.paused) {
                 try {
                   await audioRef.current.play();
                   setIsPlaying(true);
-                  console.log('✅ تم التشغيل بعد تفاعل المستخدم');
-                } catch {}
+                  } catch {}
               }
               // إزالة المستمع بعد أول تفاعل
               document.removeEventListener('click', handleUserInteraction);
@@ -2697,8 +2690,7 @@ export default function ProfileModal({
                                     try {
                                       await audioRef.current?.play();
                                     } catch (playErr) {
-                                      console.log('يحتاج تفاعل من المستخدم للتشغيل');
-                                    }
+                                      }
                                   }, 500);
                                 }
                                 

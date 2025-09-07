@@ -1053,11 +1053,9 @@ async function loadActiveBots() {
       // إضافة البوت لقائمة المستخدمين المتصلين
       updateConnectedUserCache(bot.id, botUser);
       
-      console.log(`✓ تم تحميل البوت: ${bot.username} في الغرفة ${bot.currentRoom}`);
-    }
+      }
     
-    console.log(`✓ تم تحميل عدد البوتات: ${activeBots.length}`);
-  } catch (error) {
+    } catch (error) {
     console.error('خطأ في تحميل البوتات:', error);
   }
 }

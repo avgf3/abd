@@ -160,8 +160,6 @@ export async function ensureChatLockColumns(): Promise<void> {
   try {
     if (!dbAdapter.client) return;
 
-    console.log('🔍 التحقق من أعمدة chat_lock في جدول rooms...');
-    
     // Check if chat_lock columns exist
     const result = await dbAdapter.client`
       SELECT column_name 
@@ -171,16 +169,12 @@ export async function ensureChatLockColumns(): Promise<void> {
     ` as any;
     
     const existingColumns = result.map((r: any) => r.column_name);
-    console.log('📊 الأعمدة الموجودة:', existingColumns);
-    
     // Add missing columns
     if (!existingColumns.includes('chat_lock_all')) {
-      console.log('➕ إضافة عمود chat_lock_all...');
       await dbAdapter.client.unsafe(`ALTER TABLE "rooms" ADD COLUMN IF NOT EXISTS "chat_lock_all" boolean DEFAULT false`);
     }
     
     if (!existingColumns.includes('chat_lock_visitors')) {
-      console.log('➕ إضافة عمود chat_lock_visitors...');
       await dbAdapter.client.unsafe(`ALTER TABLE "rooms" ADD COLUMN IF NOT EXISTS "chat_lock_visitors" boolean DEFAULT false`);
     }
     
@@ -192,9 +186,7 @@ export async function ensureChatLockColumns(): Promise<void> {
     await dbAdapter.client.unsafe(`CREATE INDEX IF NOT EXISTS "idx_rooms_chat_lock_all" ON "rooms" ("chat_lock_all")`);
     await dbAdapter.client.unsafe(`CREATE INDEX IF NOT EXISTS "idx_rooms_chat_lock_visitors" ON "rooms" ("chat_lock_visitors")`);
     
-    console.log('✅ تم التأكد من وجود أعمدة chat_lock');
-    
-  } catch (error) {
+    } catch (error) {
     console.error('❌ خطأ في ضمان أعمدة chat_lock:', error);
   }
 }
@@ -357,8 +349,7 @@ export async function ensureBotsTable(): Promise<void> {
     try {
       const migrationSQL = await fs.readFile(migrationPath, 'utf-8');
       await dbAdapter.client.unsafe(migrationSQL);
-      console.log('✓ تم إنشاء جدول البوتات بنجاح');
-    } catch (error) {
+      } catch (error) {
       // إذا فشلت قراءة الملف، نقوم بإنشاء الجدول مباشرة
       await dbAdapter.client.unsafe(`
         CREATE TABLE IF NOT EXISTS bots (
@@ -396,8 +387,7 @@ export async function ensureBotsTable(): Promise<void> {
         CREATE INDEX IF NOT EXISTS idx_bots_is_active ON bots(is_active);
         CREATE INDEX IF NOT EXISTS idx_bots_bot_type ON bots(bot_type);
       `);
-      console.log('✓ تم إنشاء جدول البوتات بنجاح (من الكود)');
-    }
+      }
   } catch (e) {
     console.error('❌ خطأ في إنشاء جدول البوتات:', (e as any)?.message || e);
   }
