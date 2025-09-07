@@ -76,6 +76,8 @@ export default defineConfig({
 		},
 		// Source maps for debugging in development
 		sourcemap: process.env.NODE_ENV !== 'production',
+		target: 'es2018',
+		cssTarget: 'chrome61',
 	},
 	server: {
 		port: 5173,

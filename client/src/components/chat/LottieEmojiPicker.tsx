@@ -123,6 +123,19 @@ interface LottieEmojiPickerProps {
 }
 
 export default function LottieEmojiPicker({ onEmojiSelect, onClose }: LottieEmojiPickerProps) {
+  // Avoid rendering on low-motion/Save-Data to improve INP
+  const shouldReduce = (() => {
+    try {
+      const saveData = (navigator as any)?.connection?.saveData === true;
+      const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      return saveData || reduceMotion;
+    } catch {
+      return false;
+    }
+  })();
+  if (shouldReduce) {
+    return null;
+  }
   const [selectedCategory, setSelectedCategory] = useState('faces');
   const [hoveredEmoji, setHoveredEmoji] = useState<string | null>(null);
 

@@ -57,6 +57,8 @@ export default function ProfileImage({
           transform: 'translateZ(0)',
           display: 'block',
         }}
+        width={size === 'small' ? 40 : size === 'large' ? 80 : 64}
+        height={size === 'small' ? 40 : size === 'large' ? 80 : 64}
         loading="lazy"
         decoding="async"
         sizes={size === 'small' ? '40px' : size === 'large' ? '80px' : '64px'}
