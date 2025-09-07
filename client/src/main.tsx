@@ -5,6 +5,12 @@ import App from './App';
 import './index.css';
 // import { getSocket } from '@/lib/socket'; // defer dynamic import instead
 import { applyThemeById } from '@/utils/applyTheme';
+import '@/lib/session'; // تهيئة أدوات التشخيص
+
+// تحميل أدوات الاختبار في بيئة التطوير
+if ((import.meta as any).env?.DEV) {
+  import('@/utils/sessionTestUtils').catch(() => {});
+}
 
 // تطبيق الثيم المحفوظ عند بدء التطبيق
 try {

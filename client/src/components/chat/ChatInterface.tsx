@@ -39,6 +39,7 @@ const ThemeSelector = lazy(() => import('./ThemeSelector'));
 const UserPopup = lazy(() => import('./UserPopup'));
 const UnifiedSidebar = lazy(() => import('./UserSidebarWithWalls'));
 const StoryViewer = lazy(() => import('@/components/ui/StoryViewer'));
+const ConnectionStatus = lazy(() => import('@/components/ui/ConnectionStatus'));
 
 const KickCountdown = lazy(() => import('@/components/moderation/KickCountdown'));
 const UsernameColorPicker = lazy(() => import('@/components/profile/UsernameColorPicker'));
@@ -900,6 +901,11 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           </Button>
         </div>
       </header>
+
+      {/* Connection Status */}
+      <Suspense fallback={null}>
+        <ConnectionStatus />
+      </Suspense>
 
       {/* Main Content - تحسين التخطيط للجوال */}
       <main

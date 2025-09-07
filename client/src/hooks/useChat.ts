@@ -4,7 +4,7 @@ import type { Socket } from 'socket.io-client';
 import type { PrivateConversation } from '../../../shared/types';
 
 import { apiRequest, queryClient } from '@/lib/queryClient';
-import { connectSocket, saveSession, clearSession, getSession } from '@/lib/socket';
+import { connectSocket, saveSession, clearSession, getSession, wasExplicitLogout } from '@/lib/socket';
 import type { ChatUser, ChatMessage } from '@/types/chat';
 import type { Notification } from '@/types/chat';
 import { mapDbMessagesToChatMessages } from '@/utils/messageUtils';
@@ -736,8 +736,14 @@ export const useChat = () => {
             const roomId = (envelope as any).roomId;
             if (roomId && roomId !== currentRoomIdRef.current) {
               // Switch local state to the confirmed room and persist session
+              console.log(`✅ تم الانضمام للغرفة بنجاح: ${roomId}`);
               dispatch({ type: 'SET_CURRENT_ROOM', payload: roomId });
-              try { saveSession({ roomId }); } catch {}
+              try { 
+                saveSession({ roomId });
+                console.log(`💾 تم حفظ الغرفة في الجلسة: ${roomId}`);
+              } catch (error) {
+                console.error('❌ خطأ في حفظ الغرفة:', error);
+              }
             }
             // استبدال القائمة بالكامل بقائمة الغرفة المرسلة (مع فلترة وإزالة التكرارات)
             const users = (envelope as any).users;
@@ -1238,8 +1244,13 @@ export const useChat = () => {
         const s = connectSocket();
         socket.current = s;
         
-        // حفظ الجلسة
-        saveSession({ userId: user.id, username: user.username, userType: user.userType });
+        // حفظ الجلسة مع معلومات إضافية
+        saveSession({ 
+          userId: user.id, 
+          username: user.username, 
+          userType: user.userType,
+          isGuest: user.userType === 'guest'
+        });
 
         // إعداد المستمعين
         setupSocketListeners(s);
@@ -1433,8 +1444,10 @@ export const useChat = () => {
   );
 
   // 🔥 SIMPLIFIED Disconnect function
-  const disconnect = useCallback(() => {
-    clearSession(); // مسح بيانات الجلسة
+  const disconnect = useCallback((isExplicitLogout: boolean = false) => {
+    console.log(`🔌 قطع الاتصال ${isExplicitLogout ? '(تسجيل خروج صريح)' : '(عادي)'}`);
+    clearSession(isExplicitLogout); // مسح بيانات الجلسة مع التمييز
+    
     if (socket.current) {
       socket.current.removeAllListeners();
       socket.current.disconnect();
@@ -1447,6 +1460,10 @@ export const useChat = () => {
 
     // إعادة تعيين الحالة
     dispatch({ type: 'CLEAR_ALL', payload: undefined });
+    
+    // إعادة تعيين المراجع
+    kickHandledRef.current = false;
+    pendingJoinRoomRef.current = null;
   }, []);
 
   // 🔥 SIMPLIFIED helper functions
