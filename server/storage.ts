@@ -482,56 +482,63 @@ interface LegacyStorage {
 // Create a storage object that delegates to the new functions
 export const storage: LegacyStorage = {
   async getUser(id: number) {
-    const user = await databaseService.getUserById(id);
-    if (user) return user as any;
-    // Fallback: fetch from bots table and map to ChatUser-like object
+    // أولاً: تحقق من جدول البوتات
     try {
       const { db, dbType } = await import('./database-adapter');
-      if (!db || dbType !== 'postgresql') return undefined;
-      const { bots } = await import('../shared/schema');
-      const { eq } = await import('drizzle-orm');
-      const rows = await (db as any)
-        .select()
-        .from(bots as any)
-        .where(eq((bots as any).id, id as any))
-        .limit(1);
-      const bot = rows?.[0];
-      if (!bot) return undefined;
-      const mapped = {
-        id: bot.id,
-        username: bot.username,
-        userType: 'bot',
-        role: 'bot',
-        profileImage: bot.profileImage,
-        profileBanner: bot.profileBanner,
-        profileBackgroundColor: bot.profileBackgroundColor,
-        status: bot.status,
-        gender: bot.gender,
-        country: bot.country,
-        relation: bot.relation,
-        bio: bot.bio,
-        isOnline: !!bot.isOnline,
-        isHidden: false,
-        lastSeen: bot.lastActivity,
-        joinDate: bot.createdAt,
-        createdAt: bot.createdAt,
-        isMuted: false,
-        muteExpiry: null,
-        isBanned: false,
-        banExpiry: null,
-        isBlocked: false,
-        usernameColor: bot.usernameColor,
-        profileEffect: bot.profileEffect,
-        points: bot.points,
-        level: bot.level,
-        totalPoints: bot.totalPoints,
-        levelProgress: bot.levelProgress,
-        currentRoom: bot.currentRoom,
-      } as any;
-      return mapped;
+      if (db && dbType === 'postgresql') {
+        const { bots } = await import('../shared/schema');
+        const { eq } = await import('drizzle-orm');
+        const rows = await (db as any)
+          .select()
+          .from(bots as any)
+          .where(eq((bots as any).id, id as any))
+          .limit(1);
+        const bot = rows?.[0];
+        if (bot) {
+          // إذا وُجد البوت، أرجع بياناته
+          const mapped = {
+            id: bot.id,
+            username: bot.username,
+            userType: 'bot',
+            role: 'bot',
+            profileImage: bot.profileImage,
+            profileBanner: bot.profileBanner,
+            profileBackgroundColor: bot.profileBackgroundColor,
+            status: bot.status,
+            gender: bot.gender,
+            country: bot.country,
+            relation: bot.relation,
+            bio: bot.bio,
+            isOnline: !!bot.isOnline,
+            isHidden: false,
+            lastSeen: bot.lastActivity,
+            joinDate: bot.createdAt,
+            createdAt: bot.createdAt,
+            isMuted: false,
+            muteExpiry: null,
+            isBanned: false,
+            banExpiry: null,
+            isBlocked: false,
+            usernameColor: bot.usernameColor,
+            profileEffect: bot.profileEffect,
+            points: bot.points,
+            level: bot.level,
+            totalPoints: bot.totalPoints,
+            levelProgress: bot.levelProgress,
+            currentRoom: bot.currentRoom,
+          } as any;
+          return mapped;
+        }
+      }
     } catch (e) {
-      return undefined;
+      console.error('Error fetching bot:', e);
     }
+
+    // ثانياً: إذا لم يوجد بوت، تحقق من جدول المستخدمين العاديين
+    const user = await databaseService.getUserById(id);
+    if (user) return user as any;
+    
+    return undefined;
   },
 
   async getUserByUsername(username: string) {
