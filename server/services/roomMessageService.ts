@@ -575,7 +575,7 @@ class RoomMessageService {
   /**
    * مسح ذاكرة الغرفة المؤقتة
    */
-  private clearCache(roomId: string): void {
+  clearCache(roomId: string): void {
     this.messageCache.delete(roomId);
   }
 

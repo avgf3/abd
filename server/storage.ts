@@ -482,22 +482,112 @@ interface LegacyStorage {
 // Create a storage object that delegates to the new functions
 export const storage: LegacyStorage = {
   async getUser(id: number) {
-    const user = await databaseService.getUserById(id);
-    if (user) return user as any;
-    // Fallback: fetch from bots table and map to ChatUser-like object
+    // أولاً: تحقق من جدول البوتات
     try {
       const { db, dbType } = await import('./database-adapter');
-      if (!db || dbType !== 'postgresql') return undefined;
+      if (db && dbType === 'postgresql') {
+        const { bots } = await import('../shared/schema');
+        const { eq } = await import('drizzle-orm');
+        const rows = await (db as any)
+          .select()
+          .from(bots as any)
+          .where(eq((bots as any).id, id as any))
+          .limit(1);
+        const bot = rows?.[0];
+        if (bot) {
+          // إذا وُجد البوت، أرجع بياناته
+          const mapped = {
+            id: bot.id,
+            username: bot.username,
+            userType: 'bot',
+            role: 'bot',
+            profileImage: bot.profileImage,
+            profileBanner: bot.profileBanner,
+            profileBackgroundColor: bot.profileBackgroundColor,
+            status: bot.status,
+            gender: bot.gender,
+            country: bot.country,
+            relation: bot.relation,
+            bio: bot.bio,
+            isOnline: !!bot.isOnline,
+            isHidden: false,
+            lastSeen: bot.lastActivity,
+            joinDate: bot.createdAt,
+            createdAt: bot.createdAt,
+            isMuted: false,
+            muteExpiry: null,
+            isBanned: false,
+            banExpiry: null,
+            isBlocked: false,
+            usernameColor: bot.usernameColor,
+            profileEffect: bot.profileEffect,
+            points: bot.points,
+            level: bot.level,
+            totalPoints: bot.totalPoints,
+            levelProgress: bot.levelProgress,
+            currentRoom: bot.currentRoom,
+          } as any;
+          return mapped;
+        }
+      }
+    } catch (e) {
+      console.error('Error fetching bot:', e);
+    }
+
+    // ثانياً: إذا لم يوجد بوت، تحقق من جدول المستخدمين العاديين
+    const user = await databaseService.getUserById(id);
+    if (user) return user as any;
+    
+    return undefined;
+  },
+
+  async getUserByUsername(username: string) {
+    const user = await databaseService.getUserByUsername(username);
+    return user || undefined;
+  },
+
+  async getUserByEmail(email: string) {
+    const user = await databaseService.getUserByEmail(email);
+    return user || undefined;
+  },
+
+  // Batch users fetch to reduce N+1 patterns
+  async getUsersByIds(userIds: number[]) {
+    try {
+      const uniqueIds = Array.from(new Set((userIds || []).filter((id) => typeof id === 'number')));
+      if (uniqueIds.length === 0) return [];
+
+      // جلب المستخدمين العاديين والبوتات بشكل متوازي
+      const [regularUsers, bots] = await Promise.all([
+        databaseService.getUsersByIds(uniqueIds),
+        this.getBotsByIds(uniqueIds)
+      ]);
+
+      // دمج النتائج
+      const allUsers = [...(regularUsers || []), ...(bots || [])];
+      return Array.isArray(allUsers) ? allUsers : [];
+    } catch (e) {
+      console.error('storage.getUsersByIds error:', e);
+      return [];
+    }
+  },
+
+  // دالة مساعدة لجلب البوتات بالـ IDs
+  async getBotsByIds(userIds: number[]) {
+    try {
+      const { db, dbType } = await import('./database-adapter');
+      if (!db || dbType !== 'postgresql') return [];
+      
       const { bots } = await import('../shared/schema');
-      const { eq } = await import('drizzle-orm');
-      const rows = await (db as any)
+      const { inArray } = await import('drizzle-orm');
+      
+      const botRows = await (db as any)
         .select()
         .from(bots as any)
-        .where(eq((bots as any).id, id as any))
-        .limit(1);
-      const bot = rows?.[0];
-      if (!bot) return undefined;
-      const mapped = {
+        .where(inArray((bots as any).id, userIds));
+      
+      // تحويل البوتات لتنسيق المستخدمين
+      return (botRows || []).map((bot: any) => ({
         id: bot.id,
         username: bot.username,
         userType: 'bot',
@@ -527,30 +617,9 @@ export const storage: LegacyStorage = {
         totalPoints: bot.totalPoints,
         levelProgress: bot.levelProgress,
         currentRoom: bot.currentRoom,
-      } as any;
-      return mapped;
+      }));
     } catch (e) {
-      return undefined;
-    }
-  },
-
-  async getUserByUsername(username: string) {
-    const user = await databaseService.getUserByUsername(username);
-    return user || undefined;
-  },
-
-  async getUserByEmail(email: string) {
-    const user = await databaseService.getUserByEmail(email);
-    return user || undefined;
-  },
-
-  // Batch users fetch to reduce N+1 patterns
-  async getUsersByIds(userIds: number[]) {
-    try {
-      const users = await databaseService.getUsersByIds(userIds);
-      return Array.isArray(users) ? users : [];
-    } catch (e) {
-      console.error('storage.getUsersByIds error:', e);
+      console.error('Error fetching bots by IDs:', e);
       return [];
     }
   },
