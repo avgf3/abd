@@ -205,16 +205,16 @@ export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
         className={`min-h-[calc(100dvh-60px)] flex flex-col justify-center items-center welcome-gradient relative overflow-hidden ${isMobile ? 'px-4' : ''}`}
         style={{ minHeight: 'calc(100dvh - 60px)' }}
       >
-        {/* Modern Background Effects */}
+        {/* Modern Background Effects (rendered only when not reduced motion) */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute -top-1/2 -left-1/2 w-[150%] h-[150%] bg-gradient-radial from-blue-500/20 to-transparent rounded-full blur-3xl animate-pulse"></div>
-          <div className="absolute -bottom-1/2 -right-1/2 w-[150%] h-[150%] bg-gradient-radial from-purple-500/20 to-transparent rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }}></div>
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-gradient-radial from-cyan-500/10 to-transparent rounded-full blur-3xl animate-pulse" style={{ animationDelay: '4s' }}></div>
+          <div className="rm-hide absolute -top-1/2 -left-1/2 w-[150%] h-[150%] bg-gradient-radial from-blue-500/20 to-transparent rounded-full blur-3xl animate-pulse"></div>
+          <div className="rm-hide absolute -bottom-1/2 -right-1/2 w-[150%] h-[150%] bg-gradient-radial from-purple-500/20 to-transparent rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }}></div>
+          <div className="rm-hide absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-gradient-radial from-cyan-500/10 to-transparent rounded-full blur-3xl animate-pulse" style={{ animationDelay: '4s' }}></div>
         </div>
         
         <div className="text-center animate-slide-up relative z-10">
           <div className="mb-10">
-            <div className="text-6xl sm:text-7xl mb-6 animate-pulse-slow modern-float">💬</div>
+            <div className="text-6xl sm:text-7xl mb-6 modern-float">💬</div>
             <h1 className="text-2xl sm:text-3xl font-bold mb-6 text-blue-600">
               دردشة عربية | شات عربي | تعارف بدون تسجيل أو اشتراك مجانًا
             </h1>

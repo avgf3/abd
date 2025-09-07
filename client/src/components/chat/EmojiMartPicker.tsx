@@ -10,6 +10,16 @@ interface EmojiMartPickerProps {
 }
 
 export default function EmojiMartPicker({ onEmojiSelect, onClose }: EmojiMartPickerProps) {
+  // Render lightweight fallback on Save-Data / reduced motion to lower CPU
+  const shouldLight = (() => {
+    try {
+      const saveData = (navigator as any)?.connection?.saveData === true;
+      const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      return saveData || reduceMotion;
+    } catch {
+      return false;
+    }
+  })();
   const pickerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
