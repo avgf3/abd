@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction } from 'express';
 import { getAuthTokenFromRequest, verifyAuthToken } from '../utils/auth-token';
-import { validateEntityType, InvalidEntityTypeError, isUserId, isBotId } from '../types/entities';
+import { isUserId, isBotId, parseEntityId, isBotEntityId, isUserEntityId } from '../types/entities';
 
 // إضافة خصائص مخصصة لـ Request
 declare global {
@@ -82,8 +82,10 @@ export function requireBotOperation(req: Request, res: Response, next: NextFunct
     }
 
     // ثانياً: التحقق من أن المعرف المستهدف هو بوت
-    const targetId = parseInt(req.params.id || req.body.botId);
-    if (!targetId || !isBotId(targetId)) {
+    const rawTarget = (req.params.id as any) ?? (req.body as any)?.botId;
+    const parsed = parseEntityId(rawTarget);
+    const targetId = parsed.id;
+    if (!targetId || !isBotEntityId(rawTarget)) {
       return res.status(400).json({ 
         error: 'معرف البوت غير صالح',
         code: 'INVALID_BOT_ID' 
@@ -93,7 +95,7 @@ export function requireBotOperation(req: Request, res: Response, next: NextFunct
     // إضافة المعلومات للطلب
     req.entityId = verified.userId; // المستخدم الذي يقوم بالعملية
     req.entityType = 'user';
-    (req as any).targetBotId = targetId; // البوت المستهدف
+    (req as any).targetBotId = targetId; // البوت المستهدف (رقمي)
 
     next();
   } catch (error) {
@@ -161,8 +163,9 @@ export function validateEntityType(expectedType: 'user' | 'bot') {
 export function validateEntityIdParam(paramName: string = 'id', expectedType?: 'user' | 'bot') {
   return (req: Request, res: Response, next: NextFunction) => {
     try {
-      const entityId = parseInt(req.params[paramName]);
-      
+      const raw = req.params[paramName];
+      const parsed = parseEntityId(raw as any);
+      const entityId = parsed.id;
       if (!entityId || isNaN(entityId)) {
         return res.status(400).json({ 
           error: 'معرف الكيان غير صالح',
@@ -172,7 +175,7 @@ export function validateEntityIdParam(paramName: string = 'id', expectedType?: '
 
       // التحقق من نوع الكيان إذا تم تحديده
       if (expectedType) {
-        const actualType = isBotId(entityId) ? 'bot' : 'user';
+        const actualType = isBotEntityId(raw as any) ? 'bot' : (isUserEntityId(raw as any) ? 'user' : (isBotId(entityId) ? 'bot' : 'user'));
         if (actualType !== expectedType) {
           return res.status(400).json({ 
             error: `معرف ${expectedType === 'user' ? 'المستخدم' : 'البوت'} غير صالح`,
@@ -185,7 +188,7 @@ export function validateEntityIdParam(paramName: string = 'id', expectedType?: '
 
       // إضافة المعلومات للطلب
       (req as any).validatedEntityId = entityId;
-      (req as any).validatedEntityType = isBotId(entityId) ? 'bot' : 'user';
+      (req as any).validatedEntityType = isBotEntityId(raw as any) ? 'bot' : (isUserEntityId(raw as any) ? 'user' : (isBotId(entityId) ? 'bot' : 'user'));
 
       next();
     } catch (error) {

@@ -79,6 +79,64 @@ export function isUserId(id: number): boolean {
   return id < 1000000;
 }
 
+// دعم معرفات الكيانات بحروف بادئة: A للبوت، B للمستخدم
+export type EntityIdLike = number | string;
+
+/**
+ * يحلل معرف الكيان الذي قد يحتوي على بادئة حرفية (A للبوت، B للمستخدم)
+ * ويعيد المعرف العددي مع تلميح لنوع الكيان إن وُجد.
+ */
+export function parseEntityId(input: EntityIdLike): { id: number | null; typeHint?: 'user' | 'bot' } {
+  if (typeof input === 'number') {
+    return { id: Number.isFinite(input) ? input : null };
+  }
+  if (typeof input !== 'string') {
+    return { id: null };
+  }
+  const raw = input.trim();
+  if (/^[Aa]\d+$/.test(raw)) {
+    const num = parseInt(raw.slice(1), 10);
+    return { id: Number.isFinite(num) ? num : null, typeHint: 'bot' };
+  }
+  if (/^[Bb]\d+$/.test(raw)) {
+    const num = parseInt(raw.slice(1), 10);
+    return { id: Number.isFinite(num) ? num : null, typeHint: 'user' };
+  }
+  if (/^\d+$/.test(raw)) {
+    const num = parseInt(raw, 10);
+    return { id: Number.isFinite(num) ? num : null };
+  }
+  return { id: null };
+}
+
+/**
+ * يصيغ معرف الكيان بإضافة بادئة حرفية حسب النوع: A للبوت و B للمستخدم
+ */
+export function formatEntityId(id: number, type: 'user' | 'bot'): string {
+  const prefix = type === 'bot' ? 'A' : 'B';
+  return `${prefix}${id}`;
+}
+
+/**
+ * يتحقق من أن قيمة المعرف تخص بوتاً سواءً عبر العتبة العددية أو البادئة A
+ */
+export function isBotEntityId(input: EntityIdLike): boolean {
+  const parsed = parseEntityId(input);
+  if (parsed.id == null) return false;
+  if (parsed.typeHint === 'bot') return true;
+  return isBotId(parsed.id);
+}
+
+/**
+ * يتحقق من أن قيمة المعرف تخص مستخدماً سواءً عبر العتبة العددية أو البادئة B
+ */
+export function isUserEntityId(input: EntityIdLike): boolean {
+  const parsed = parseEntityId(input);
+  if (parsed.id == null) return false;
+  if (parsed.typeHint === 'user') return true;
+  return isUserId(parsed.id);
+}
+
 // دالة للتحقق من صحة نوع الكيان بناءً على المعرف
 export function validateEntityType(id: number, expectedType: 'user' | 'bot'): boolean {
   if (expectedType === 'bot') {

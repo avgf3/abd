@@ -3,6 +3,7 @@ import type { Request, Response, NextFunction } from 'express';
 import { storage } from '../storage';
 import { getAuthTokenFromRequest, verifyAuthToken } from '../utils/auth-token';
 import { log } from '../utils/productionLogger';
+import { parseEntityId } from '../types/entities';
 
 import { createError, ERROR_MESSAGES } from './errorHandler';
 
@@ -149,7 +150,8 @@ export const requireOwnership = async (req: Request, res: Response, next: NextFu
     }
 
     // التحقق من أن المستخدم يحاول الوصول لبياناته الخاصة فقط
-    const resourceUserId = parseInt(req.params.userId || req.params.id || (req.body && (req.body as any).userId));
+    const raw = (req.params as any)?.userId || (req.params as any)?.id || ((req.body as any)?.userId);
+    const resourceUserId = parseEntityId(raw as any).id as number;
     const currentUserId = req.user.id;
 
     if (resourceUserId !== currentUserId) {

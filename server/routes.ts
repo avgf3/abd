@@ -29,6 +29,7 @@ import securityApiRoutes from './api-security';
 import { db, dbType } from './database-adapter';
 import { protect } from './middleware/enhancedSecurity';
 import { requireUser, requireBotOperation, validateEntityType, validateEntityIdParam } from './middleware/entityValidation';
+import { parseEntityId, formatEntityId } from './types/entities';
 import { moderationSystem } from './moderation';
 import { getIO } from './realtime';
 import { emitOnlineUsersForRoom } from './realtime';
@@ -927,7 +928,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // تحديث بيانات المستخدم - للإصلاح
   app.patch('/api/users/:userId', protect.ownership, async (req, res) => {
     try {
-      const userId = parseInt(req.params.userId);
+      const userId = parseEntityId(req.params.userId as any).id as number;
       if (!userId || isNaN(userId)) {
         return res.status(400).json({ error: 'معرف المستخدم مطلوب ويجب أن يكون رقم صحيح' });
       }
@@ -1477,7 +1478,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // إضافة endpoint لفحص حالة المستخدم
   app.get('/api/user-status/:userId', protect.ownership, async (req, res) => {
     try {
-      const userId = parseInt(req.params.userId);
+      const userId = parseEntityId(req.params.userId as any).id as number;
       const user = await storage.getUser(userId);
       if (!user) {
         return res.status(404).json({ error: 'مستخدم غير موجود' });
@@ -1507,7 +1508,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // إضافة endpoint لإصلاح حالة المراقبة
   app.post('/api/fix-moderation/:userId', protect.admin, async (req, res) => {
     try {
-      const userId = parseInt(req.params.userId);
+      const userId = parseEntityId(req.params.userId as any).id as number;
       const user = await storage.getUser(userId);
       if (!user) {
         return res.status(404).json({ error: 'مستخدم غير موجود' });
@@ -1908,7 +1909,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // إزالة مستخدم من VIP (للأونر/الإدمن)
   app.delete('/api/vip/:userId', protect.admin, async (req, res) => {
     try {
-      const userId = parseInt(req.params.userId);
+      const userId = parseEntityId(req.params.userId as any).id as number;
       if (!userId) return res.status(400).json({ error: 'userId غير صالح' });
       const success = await databaseService.removeVipUser(userId);
       if (!success)
@@ -2072,7 +2073,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Profile picture upload (members only)
   app.post('/api/users/:id/profile-image', protect.ownership, async (req, res) => {
     try {
-      const userId = parseInt(req.params.id);
+      const userId = parseEntityId(req.params.id as any).id as number;
       const { imageData } = req.body;
 
       if (!imageData) {
@@ -2112,7 +2113,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Update username color
   app.post('/api/users/:userId/color', protect.ownership, async (req, res) => {
     try {
-      const userId = parseInt(req.params.userId);
+      const userId = parseEntityId(req.params.userId as any).id as number;
       const { color } = req.body;
 
       if (!userId || !color) {
@@ -2331,7 +2332,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // الحصول على جميع طلبات الصداقة للمستخدم (واردة + صادرة)
   app.get('/api/friend-requests/:userId', async (req, res) => {
     try {
-      const userId = parseInt(req.params.userId);
+      const userId = parseEntityId(req.params.userId as any).id as number;
       const [incoming, outgoing] = await Promise.all([
         friendService.getIncomingFriendRequests(userId),
         friendService.getOutgoingFriendRequests(userId),
@@ -2346,7 +2347,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // الحصول على طلبات الصداقة الواردة
   app.get('/api/friend-requests/incoming/:userId', async (req, res) => {
     try {
-      const userId = parseInt(req.params.userId);
+      const userId = parseEntityId(req.params.userId as any).id as number;
       const requests = await friendService.getIncomingFriendRequests(userId);
       res.json({ requests });
     } catch (error) {
@@ -2357,7 +2358,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // الحصول على طلبات الصداقة الصادرة
   app.get('/api/friend-requests/outgoing/:userId', async (req, res) => {
     try {
-      const userId = parseInt(req.params.userId);
+      const userId = parseEntityId(req.params.userId as any).id as number;
       const requests = await friendService.getOutgoingFriendRequests(userId);
       res.json({ requests });
     } catch (error) {
@@ -2550,7 +2551,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // الحصول على حالة المستخدم
   app.get('/api/users/:userId/spam-status', async (req, res) => {
     try {
-      const userId = parseInt(req.params.userId);
+      const userId = parseEntityId(req.params.userId as any).id as number;
       const status = spamProtection.getUserStatus(userId);
       res.json({ status });
     } catch (error) {
@@ -2634,7 +2635,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Friends routes
   app.get('/api/friends/:userId', async (req, res) => {
     try {
-      const userId = parseInt(req.params.userId);
+      const userId = parseEntityId(req.params.userId as any).id as number;
       const friends = await friendService.getFriends(userId);
 
       res.json({ friends });
@@ -2645,8 +2646,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete('/api/friends/:userId/:friendId', async (req, res) => {
     try {
-      const userId = parseInt(req.params.userId);
-      const friendId = parseInt(req.params.friendId);
+      const userId = parseEntityId(req.params.userId as any).id as number;
+      const friendId = parseEntityId(req.params.friendId as any).id as number;
 
       const success = await friendService.removeFriend(userId, friendId);
 
@@ -2829,7 +2830,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // إخفاء/إظهار من قائمة المتصلين للجميع (للإدمن/المالك فقط)
   app.post('/api/users/:userId/hide-online', async (req, res) => {
     try {
-      const userId = parseInt(req.params.userId);
+      const userId = parseEntityId(req.params.userId as any).id as number;
       const user = await storage.getUser(userId);
       if (!user) return res.status(404).json({ error: 'المستخدم غير موجود' });
       if (user.userType !== 'admin' && user.userType !== 'owner') {
@@ -2844,7 +2845,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/users/:userId/show-online', async (req, res) => {
     try {
-      const userId = parseInt(req.params.userId);
+      const userId = parseEntityId(req.params.userId as any).id as number;
       const user = await storage.getUser(userId);
       if (!user) return res.status(404).json({ error: 'المستخدم غير موجود' });
       if (user.userType !== 'admin' && user.userType !== 'owner') {
@@ -2859,8 +2860,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/users/:userId/ignore/:targetId', async (req, res) => {
     try {
-      const userId = parseInt(req.params.userId);
-      const targetId = parseInt(req.params.targetId);
+      const userId = parseEntityId(req.params.userId as any).id as number;
+      const targetId = parseEntityId(req.params.targetId as any).id as number;
 
       await storage.addIgnoredUser(userId, targetId);
 
@@ -2873,8 +2874,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete('/api/users/:userId/ignore/:targetId', async (req, res) => {
     try {
-      const userId = parseInt(req.params.userId);
-      const targetId = parseInt(req.params.targetId);
+      const userId = parseEntityId(req.params.userId as any).id as number;
+      const targetId = parseEntityId(req.params.targetId as any).id as number;
 
       await storage.removeIgnoredUser(userId, targetId);
 
@@ -2887,7 +2888,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/users/:userId/ignored', async (req, res) => {
     try {
-      const userId = parseInt(req.params.userId);
+      const userId = parseEntityId(req.params.userId as any).id as number;
       const ignoredUsers = await storage.getIgnoredUsers(userId);
 
       res.json({ ignoredUsers });
@@ -2973,7 +2974,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.json({ notifications: [] });
       }
 
-      const userId = parseInt(req.params.userId);
+      const userId = parseEntityId(req.params.userId as any).id as number;
 
       // التحقق من صحة userId
       if (isNaN(userId) || userId <= 0) {
@@ -3071,7 +3072,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.json({ count: 0 });
       }
 
-      const userId = parseInt(req.params.userId);
+      const userId = parseEntityId(req.params.userId as any).id as number;
       const count = await storage.getUnreadNotificationCount(userId);
       res.json({ count });
     } catch (error) {
@@ -3087,7 +3088,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.json({ count: 0 });
       }
 
-      const userId = req.query.userId ? parseInt(req.query.userId as string) : null;
+      const userId = req.query.userId ? (parseEntityId(req.query.userId as any).id as number) : null;
       if (!userId || isNaN(userId)) {
         console.error('Invalid userId in notifications/unread-count:', req.query.userId);
         return res.status(400).json({ error: 'معرف المستخدم غير صحيح أو مفقود' });
@@ -3111,7 +3112,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // حذف موسيقى البروفايل
   app.delete('/api/users/:userId/profile-music', protect.ownership, async (req, res) => {
     try {
-      const userId = parseInt(req.params.userId);
+      const userId = parseEntityId(req.params.userId as any).id as number;
       if (!userId || isNaN(userId)) {
         return res.status(400).json({ error: 'معرّف غير صالح' });
       }
@@ -3287,7 +3288,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get user by ID - للحصول على بيانات المستخدم
   app.get('/api/users/:id', async (req, res) => {
     try {
-      const userId = parseInt(req.params.id);
+      const userId = parseEntityId(req.params.id as any).id as number;
 
       if (!userId || isNaN(userId)) {
         return res.status(400).json({ error: 'معرف المستخدم يجب أن يكون رقم صحيح' });
@@ -3329,7 +3330,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // الحصول على معلومات النقاط والمستوى للمستخدم
   app.get('/api/points/user/:userId', async (req, res) => {
     try {
-      const userId = parseInt(req.params.userId);
+      const userId = parseEntityId(req.params.userId as any).id as number;
       const pointsInfo = await pointsService.getUserPointsInfo(userId);
 
       if (!pointsInfo) {
@@ -3346,7 +3347,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // الحصول على تاريخ النقاط للمستخدم
   app.get('/api/points/history/:userId', async (req, res) => {
     try {
-      const userId = parseInt(req.params.userId);
+      const userId = parseEntityId(req.params.userId as any).id as number;
       const limit = parseInt(req.query.limit as string) || 50;
 
       const history = await pointsService.getUserPointsHistory(userId, limit);
@@ -3532,7 +3533,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/points/recalculate/:userId', async (req, res) => {
     try {
       const { moderatorId } = req.body;
-      const userId = parseInt(req.params.userId);
+      const userId = parseEntityId(req.params.userId as any).id as number;
 
       // التحقق من صلاحيات المشرف
       const moderator = await storage.getUser(moderatorId);
@@ -4383,8 +4384,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!db) {
         return res.status(500).json({ error: 'قاعدة البيانات غير متصلة' });
       }
-
-      const botId = parseInt(req.params.id);
+      const parsedId = parseEntityId(req.params.id as any);
+      const botId = parsedId.id as number;
       const { bots } = await import('../shared/schema');
       
       // إذا كان هناك كلمة مرور جديدة، قم بتشفيرها
@@ -4435,7 +4436,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       updateConnectedUserCache(updatedBot.id, botUser);
 
-      res.json(updatedBot);
+      res.json({ ...updatedBot, entityId: formatEntityId(updatedBot.id, 'bot') });
     } catch (error) {
       console.error('خطأ في تحديث البوت:', error);
       res.status(500).json({ error: 'فشل في تحديث البوت' });
@@ -4448,8 +4449,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!db) {
         return res.status(500).json({ error: 'قاعدة البيانات غير متصلة' });
       }
-
-      const botId = parseInt(req.params.id);
+      const parsedId = parseEntityId(req.params.id as any);
+      const botId = parsedId.id as number;
       const { roomId } = req.body;
 
       if (!roomId) {
@@ -4555,7 +4556,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error('خطأ في تحديث قوائم المستخدمين:', e);
       }
 
-      res.json({ message: 'تم نقل البوت بنجاح', bot: updatedBot });
+      res.json({ message: 'تم نقل البوت بنجاح', bot: { ...updatedBot, entityId: formatEntityId(updatedBot.id, 'bot') } });
     } catch (error) {
       console.error('خطأ في نقل البوت:', error);
       res.status(500).json({ error: 'فشل في نقل البوت' });
@@ -4568,8 +4569,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!db) {
         return res.status(500).json({ error: 'قاعدة البيانات غير متصلة' });
       }
-
-      const botId = parseInt(req.params.id);
+      const parsedId = parseEntityId(req.params.id as any);
+      const botId = parsedId.id as number;
       const { bots } = await import('../shared/schema');
       
       // جلب البوت الحالي
@@ -4665,7 +4666,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         try { await emitOnlineUsersForRoom(updatedBot.currentRoom); } catch {}
       }
 
-      res.json({ message: newActiveState ? 'تم تفعيل البوت' : 'تم تعطيل البوت', bot: updatedBot });
+      res.json({ message: newActiveState ? 'تم تفعيل البوت' : 'تم تعطيل البوت', bot: { ...updatedBot, entityId: formatEntityId(updatedBot.id, 'bot') } });
     } catch (error) {
       console.error('خطأ في تبديل حالة البوت:', error);
       res.status(500).json({ error: 'فشل في تبديل حالة البوت' });
@@ -4678,8 +4679,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!db) {
         return res.status(500).json({ error: 'قاعدة البيانات غير متصلة' });
       }
-
-      const botId = parseInt(req.params.id);
+      const parsedId = parseEntityId(req.params.id as any);
+      const botId = parsedId.id as number;
       const { bots } = await import('../shared/schema');
       
       // جلب البوت قبل الحذف
@@ -4747,7 +4748,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(500).json({ success: false, error: 'قاعدة البيانات غير متصلة' });
         }
         
-        const botId = parseInt(req.params.id);
+        const parsedId = parseEntityId(req.params.id as any);
+        const botId = parsedId.id as number;
         if (!botId || isNaN(botId)) {
           try { await fsp.unlink(req.file.path).catch(() => {}); } catch {}
           return res.status(400).json({ success: false, error: 'معرف البوت غير صالح' });
