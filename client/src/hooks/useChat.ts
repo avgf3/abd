@@ -4,7 +4,7 @@ import type { Socket } from 'socket.io-client';
 import type { PrivateConversation } from '../../../shared/types';
 
 import { apiRequest, queryClient } from '@/lib/queryClient';
-import { connectSocket, saveSession, clearSession } from '@/lib/socket';
+import { connectSocket, saveSession, clearSession, getSession } from '@/lib/socket';
 import type { ChatUser, ChatMessage } from '@/types/chat';
 import type { Notification } from '@/types/chat';
 import { mapDbMessagesToChatMessages } from '@/utils/messageUtils';
@@ -326,6 +326,8 @@ export const useChat = () => {
   const typingTimersRef = useRef<Map<number, number>>(new Map());
   // Prevent duplicate handling for kick/ban events and centralize navigation
   const kickHandledRef = useRef<boolean>(false);
+  // Track pending room join request if requested before socket connects
+  const pendingJoinRoomRef = useRef<string | null>(null);
 
   useEffect(() => {
     currentUserRef.current = state.currentUser;
@@ -1249,7 +1251,20 @@ export const useChat = () => {
             username: user.username,
             userType: user.userType,
           });
-          // لا ننضم تلقائياً لأي غرفة - المستخدم يختار بنفسه
+          // Attempt to join saved or pending room immediately after auth
+          try {
+            const desired = pendingJoinRoomRef.current || (() => {
+              try { return getSession()?.roomId as string | undefined; } catch { return undefined; }
+            })();
+            if (desired && desired !== 'public' && desired !== 'friends') {
+              s.emit('joinRoom', {
+                roomId: desired,
+                userId: user.id,
+                username: user.username,
+              });
+              pendingJoinRoomRef.current = null;
+            }
+          } catch {}
         }
 
         // إرسال المصادقة عند الاتصال/إعادة الاتصال يتم من خلال الوحدة المشتركة
@@ -1265,7 +1280,20 @@ export const useChat = () => {
               username: user.username,
               userType: user.userType,
             });
-            // المستخدم سيختار الغرفة بنفسه من واجهة الغرف
+            // Join desired room if there is a pending request or saved session
+            try {
+              const desired = pendingJoinRoomRef.current || (() => {
+                try { return getSession()?.roomId as string | undefined; } catch { return undefined; }
+              })();
+              if (desired && desired !== 'public' && desired !== 'friends') {
+                s.emit('joinRoom', {
+                  roomId: desired,
+                  userId: user.id,
+                  username: user.username,
+                });
+                pendingJoinRoomRef.current = null;
+              }
+            } catch {}
           } catch {}
 
           // Prefetch expected data shortly after connection success
@@ -1342,6 +1370,9 @@ export const useChat = () => {
           userId: state.currentUser.id,
           username: state.currentUser.username,
         });
+      } else {
+        // Queue join until we reconnect
+        pendingJoinRoomRef.current = roomId;
       }
     },
     [state.currentRoomId, state.currentUser]
