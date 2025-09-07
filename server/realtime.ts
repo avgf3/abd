@@ -7,6 +7,7 @@ import { moderationSystem } from './moderation';
 import { sanitizeInput, validateMessageContent } from './security';
 import { pointsService } from './services/pointsService';
 import { roomMessageService } from './services/roomMessageService';
+import { formatRoomEventMessage } from './utils/roomEventFormatter';
 import { roomService } from './services/roomService';
 import { storage } from './storage';
 import { sanitizeUsersArray } from './utils/data-sanitizer';
@@ -236,12 +237,33 @@ async function joinRoom(
   if (previousRoom && previousRoom !== roomId) {
     try {
       socket.leave(`room_${previousRoom}`);
-      io.to(`room_${previousRoom}`).emit('message', {
-        type: 'userLeftRoom',
-        username,
-        userId,
-        roomId: previousRoom,
-      });
+      // رسالة نظامية: مغادرة الغرفة السابقة
+      try {
+        const user = entry?.user || (await storage.getUser(userId));
+        const content = formatRoomEventMessage('leave', {
+          username,
+          userType: user?.userType,
+          level: user?.level,
+        });
+        const created = await roomMessageService.sendMessage({
+          senderId: userId,
+          roomId: previousRoom,
+          content,
+          messageType: 'system',
+          isPrivate: false,
+        });
+        const sender = await storage.getUser(userId);
+        io.to(`room_${previousRoom}`).emit('message', {
+          type: 'newMessage',
+          message: {
+            ...created,
+            sender,
+            roomId: previousRoom,
+            reactions: { like: 0, dislike: 0, heart: 0 },
+            myReaction: null,
+          },
+        });
+      } catch {}
     } catch {}
   }
 
@@ -266,8 +288,33 @@ async function joinRoom(
   // إبطال cache الغرفة عند انضمام مستخدم جديد
   // لم نعد نستخدم الكاش
 
-  // إخطار الآخرين في الغرفة ثم بث القائمة المحدثة مباشرةً
-  socket.to(`room_${roomId}`).emit('message', { type: 'userJoinedRoom', username, userId, roomId });
+  // رسالة نظامية: انضمام للغرفة الجديدة
+  try {
+    const user = entry?.user || (await storage.getUser(userId));
+    const content = formatRoomEventMessage('join', {
+      username,
+      userType: user?.userType,
+      level: user?.level,
+    });
+    const created = await roomMessageService.sendMessage({
+      senderId: userId,
+      roomId,
+      content,
+      messageType: 'system',
+      isPrivate: false,
+    });
+    const sender = await storage.getUser(userId);
+    io.to(`room_${roomId}`).emit('message', {
+      type: 'newMessage',
+      message: {
+        ...created,
+        sender,
+        roomId,
+        reactions: { like: 0, dislike: 0, heart: 0 },
+        myReaction: null,
+      },
+    });
+  } catch {}
 
   // إرسال التأكيد للمستخدم المنضم وبث القائمة المحدثة للجميع
   const users = await buildOnlineUsersForRoom(roomId);
@@ -298,12 +345,34 @@ async function leaveRoom(
   if (socket.currentRoom === roomId) socket.currentRoom = null;
 
   socket.emit('message', { type: 'roomLeft', roomId });
-  socket.to(`room_${roomId}`).emit('message', {
-    type: 'userLeftRoom',
-    username,
-    userId,
-    roomId,
-  });
+  // رسالة نظامية: مغادرة الغرفة الحالية
+  try {
+    const entry = connectedUsers.get(userId);
+    const user = entry?.user || (await storage.getUser(userId));
+    const content = formatRoomEventMessage('leave', {
+      username,
+      userType: user?.userType,
+      level: user?.level,
+    });
+    const created = await roomMessageService.sendMessage({
+      senderId: userId,
+      roomId,
+      content,
+      messageType: 'system',
+      isPrivate: false,
+    });
+    const sender = await storage.getUser(userId);
+    io.to(`room_${roomId}`).emit('message', {
+      type: 'newMessage',
+      message: {
+        ...created,
+        sender,
+        roomId,
+        reactions: { like: 0, dislike: 0, heart: 0 },
+        myReaction: null,
+      },
+    });
+  } catch {}
 
   // Push updated online users for the room
   const users = await buildOnlineUsersForRoom(roomId);

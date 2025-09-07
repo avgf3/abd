@@ -565,15 +565,38 @@ export default function MessageArea({
               >
                 {/* System message: one-line red without avatar/badge */}
                 {message.messageType === 'system' ? (
-                  <div className="w-full flex items-center justify-between text-red-600">
-                    <div className="flex items-center gap-2 truncate">
-                      <span className="font-semibold">النظام:</span>
-                      <span className="truncate">{message.content}</span>
+                  <>
+                    {message.sender && (
+                      <div className="flex-shrink-0">
+                        <ProfileImage
+                          user={message.sender}
+                          size="small"
+                          className="w-7 h-7 cursor-pointer hover:scale-110 transition-transform duration-200"
+                          onClick={(e) => onUserClick && onUserClick(e, message.sender!)}
+                        />
+                      </div>
+                    )}
+                    <div className={`flex-1 min-w-0 flex ${isMobile ? 'flex-wrap items-start' : 'items-center'} gap-2`}>
+                      {message.sender && (
+                        <UserRoleBadge user={message.sender} showOnlyIcon={true} hideGuestAndGender={true} size={16} />
+                      )}
+                      <button
+                        onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
+                        className="font-semibold hover:underline transition-colors duration-200 truncate"
+                        style={{ color: getFinalUsernameColor(message.sender) }}
+                      >
+                        {message.sender?.username}
+                      </button>
+                      <div className={`text-red-600 break-words flex-1 min-w-0 message-content-fix ${isMobile && !isMessageExpanded(message.id) ? 'line-clamp-2' : !isMobile ? 'truncate' : ''}`}>
+                        <span dir="auto" className={`${isMobile && !isMessageExpanded(message.id) ? 'line-clamp-2' : !isMobile ? 'truncate' : ''}`}>
+                          {message.content}
+                        </span>
+                      </div>
+                      <span className="text-xs text-red-500 whitespace-nowrap ml-2">
+                        {formatTime(message.timestamp)}
+                      </span>
                     </div>
-                    <span className="text-xs text-red-500 ml-2 whitespace-nowrap">
-                      {formatTime(message.timestamp)}
-                    </span>
-                  </div>
+                  </>
                 ) : (
                   <>
                     {/* Profile Image */}

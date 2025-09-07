@@ -789,44 +789,7 @@ export const useChat = () => {
             break;
           }
 
-          case 'userJoinedRoom': {
-            const joinedId = (envelope as any).userId;
-            const username = (envelope as any).username || (joinedId ? `User#${joinedId}` : 'User');
-            if (joinedId) {
-              const placeholder = {
-                id: joinedId,
-                username,
-                role: 'member',
-                userType: 'member',
-                isOnline: true,
-              } as ChatUser;
-              dispatch({ type: 'UPSERT_ONLINE_USER', payload: placeholder });
-              try {
-                apiRequest(`/api/users/${joinedId}?t=${Date.now()}`)
-                  .then((data: any) => {
-                    if (data && data.id) {
-                      // تحديث الكاش مع البيانات الكاملة
-                      setCachedUser(data as ChatUser);
-                      dispatch({
-                        type: 'UPSERT_ONLINE_USER',
-                        payload: { ...(data as any), isOnline: true } as ChatUser,
-                      });
-                    }
-                  })
-                  .catch(() => {});
-              } catch {
-                // ignore
-              }
-            }
-            break;
-          }
-          case 'userLeftRoom': {
-            const leftId = (envelope as any).userId;
-            if (leftId) {
-              dispatch({ type: 'REMOVE_ONLINE_USER', payload: leftId });
-            }
-            break;
-          }
+          // userJoinedRoom/userLeftRoom تم استبدالهما برسائل system محفوظة
           case 'userDisconnected': {
             const uid = (envelope as any).userId;
             if (uid) {

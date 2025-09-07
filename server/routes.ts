@@ -30,6 +30,7 @@ import { db, dbType } from './database-adapter';
 import { protect } from './middleware/enhancedSecurity';
 import { moderationSystem } from './moderation';
 import { getIO } from './realtime';
+import { formatRoomEventMessage } from './utils/roomEventFormatter';
 import { spamProtection } from './spam-protection';
 import { storage } from './storage';
 import { databaseCleanup } from './utils/database-cleanup';
@@ -4342,13 +4343,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // تحديث cache المستخدمين المتصلين
       updateConnectedUserCache(newBot.id, botUser);
 
-      // إرسال إشعار بدخول البوت (متوافق مع الواجهة)
-      getIO().to(`room_${newBot.currentRoom}`).emit('message', {
-        type: 'userJoinedRoom',
-        userId: newBot.id,
-        username: newBot.username,
-        roomId: newBot.currentRoom,
-      });
+      // رسالة نظامية لدخول البوت
+      try {
+        const content = formatRoomEventMessage('join', {
+          username: newBot.username,
+          userType: 'bot',
+          level: newBot.level as any,
+        });
+        const created = await storage.createMessage({
+          senderId: newBot.id,
+          roomId: newBot.currentRoom,
+          content,
+          messageType: 'system',
+          isPrivate: false,
+        });
+        const sender = await storage.getUser(newBot.id);
+        getIO().to(`room_${newBot.currentRoom}`).emit('message', {
+          type: 'newMessage',
+          message: { ...created, sender, roomId: newBot.currentRoom, reactions: { like: 0, dislike: 0, heart: 0 }, myReaction: null },
+        });
+      } catch {}
 
       res.status(201).json(newBot);
     } catch (error) {
@@ -4453,13 +4467,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .where(eq(bots.id, botId))
         .returning();
 
-      // إشعار بمغادرة الغرفة القديمة (متوافق مع الواجهة)
-      getIO().to(`room_${oldRoom}`).emit('message', {
-        type: 'userLeftRoom',
-        userId: botId,
-        username: updatedBot.username,
-        roomId: oldRoom,
-      });
+      // رسالة نظامية لمغادرة الغرفة القديمة
+      try {
+        const leaveContent = formatRoomEventMessage('leave', {
+          username: updatedBot.username,
+          userType: 'bot',
+          level: updatedBot.level as any,
+        });
+        const leaveMsg = await storage.createMessage({
+          senderId: botId,
+          roomId: oldRoom,
+          content: leaveContent,
+          messageType: 'system',
+          isPrivate: false,
+        });
+        const sender = await storage.getUser(botId);
+        getIO().to(`room_${oldRoom}`).emit('message', {
+          type: 'newMessage',
+          message: { ...leaveMsg, sender, roomId: oldRoom, reactions: { like: 0, dislike: 0, heart: 0 }, myReaction: null },
+        });
+      } catch {}
 
       // إشعار بدخول الغرفة الجديدة - تضمين الحقول التعريفية للبوت
       const botUser = {
@@ -4482,12 +4509,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         currentRoom: roomId,
       };
 
-      getIO().to(`room_${roomId}`).emit('message', {
-        type: 'userJoinedRoom',
-        userId: updatedBot.id,
-        username: updatedBot.username,
-        roomId: roomId,
-      });
+      try {
+        const joinContent = formatRoomEventMessage('join', {
+          username: updatedBot.username,
+          userType: 'bot',
+          level: updatedBot.level as any,
+        });
+        const joinMsg = await storage.createMessage({
+          senderId: updatedBot.id,
+          roomId,
+          content: joinContent,
+          messageType: 'system',
+          isPrivate: false,
+        });
+        const sender = await storage.getUser(updatedBot.id);
+        getIO().to(`room_${roomId}`).emit('message', {
+          type: 'newMessage',
+          message: { ...joinMsg, sender, roomId, reactions: { like: 0, dislike: 0, heart: 0 }, myReaction: null },
+        });
+      } catch {}
 
       res.json({ message: 'تم نقل البوت بنجاح', bot: updatedBot });
     } catch (error) {
@@ -4549,24 +4589,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         updateConnectedUserCache(updatedBot.id, botUser);
 
-        // إشعار بدخول البوت (متوافق مع الواجهة)
-        getIO().to(`room_${updatedBot.currentRoom}`).emit('message', {
-          type: 'userJoinedRoom',
-          userId: updatedBot.id,
-          username: updatedBot.username,
-          roomId: updatedBot.currentRoom,
-        });
+        // رسالة نظامية: دخول بوت
+        try {
+          const content = formatRoomEventMessage('join', {
+            username: updatedBot.username,
+            userType: 'bot',
+            level: updatedBot.level as any,
+          });
+          const msg = await storage.createMessage({
+            senderId: updatedBot.id,
+            roomId: updatedBot.currentRoom,
+            content,
+            messageType: 'system',
+            isPrivate: false,
+          });
+          const sender = await storage.getUser(updatedBot.id);
+          getIO().to(`room_${updatedBot.currentRoom}`).emit('message', {
+            type: 'newMessage',
+            message: { ...msg, sender, roomId: updatedBot.currentRoom, reactions: { like: 0, dislike: 0, heart: 0 }, myReaction: null },
+          });
+        } catch {}
       } else {
         // إزالة البوت من قائمة المتصلين
         updateConnectedUserCache(updatedBot.id, null);
 
-        // إشعار بخروج البوت (متوافق مع الواجهة)
-        getIO().to(`room_${updatedBot.currentRoom}`).emit('message', {
-          type: 'userLeftRoom',
-          userId: botId,
-          username: updatedBot.username,
-          roomId: updatedBot.currentRoom,
-        });
+        // رسالة نظامية: خروج بوت
+        try {
+          const content = formatRoomEventMessage('leave', {
+            username: updatedBot.username,
+            userType: 'bot',
+            level: updatedBot.level as any,
+          });
+          const msg = await storage.createMessage({
+            senderId: botId,
+            roomId: updatedBot.currentRoom,
+            content,
+            messageType: 'system',
+            isPrivate: false,
+          });
+          const sender = await storage.getUser(botId);
+          getIO().to(`room_${updatedBot.currentRoom}`).emit('message', {
+            type: 'newMessage',
+            message: { ...msg, sender, roomId: updatedBot.currentRoom, reactions: { like: 0, dislike: 0, heart: 0 }, myReaction: null },
+          });
+        } catch {}
       }
 
       res.json({ message: newActiveState ? 'تم تفعيل البوت' : 'تم تعطيل البوت', bot: updatedBot });
@@ -4598,14 +4664,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // إزالة البوت من قائمة المتصلين
       updateConnectedUserCache(botId, null);
-
-      // إشعار بخروج البوت (متوافق مع الواجهة)
-      getIO().to(`room_${botToDelete.currentRoom}`).emit('message', {
-        type: 'userLeftRoom',
-        userId: botId,
-        username: botToDelete.username,
-        roomId: botToDelete.currentRoom,
-      });
+      // رسالة نظامية: خروج بوت نهائي
+      try {
+        const content = formatRoomEventMessage('leave', {
+          username: botToDelete.username,
+          userType: 'bot',
+          level: botToDelete.level as any,
+        });
+        const msg = await storage.createMessage({
+          senderId: botId,
+          roomId: botToDelete.currentRoom,
+          content,
+          messageType: 'system',
+          isPrivate: false,
+        });
+        const sender = await storage.getUser(botId);
+        getIO().to(`room_${botToDelete.currentRoom}`).emit('message', {
+          type: 'newMessage',
+          message: { ...msg, sender, roomId: botToDelete.currentRoom, reactions: { like: 0, dislike: 0, heart: 0 }, myReaction: null },
+        });
+      } catch {}
 
       res.json({ message: 'تم حذف البوت بنجاح' });
     } catch (error) {
