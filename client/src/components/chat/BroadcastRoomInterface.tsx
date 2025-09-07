@@ -18,11 +18,16 @@ import MessageArea from './MessageArea';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
+import { Slider } from '@/components/ui/slider';
+import {
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+  SelectValue,
+} from '@/components/ui/select';
 import type {
   ChatUser,
   ChatRoom,
@@ -115,6 +120,18 @@ export default function BroadcastRoomInterface({
   const audioRef = React.useRef<HTMLAudioElement | null>(null);
   const [isInfoCollapsed, setIsInfoCollapsed] = useState(true);
   const [playbackBlocked, setPlaybackBlocked] = useState(false);
+  const [volume, setVolume] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem('broadcast_volume');
+      const v = saved ? parseInt(saved, 10) : 80;
+      return Number.isFinite(v) ? Math.min(100, Math.max(0, v)) : 80;
+    } catch {
+      return 80;
+    }
+  });
+  const [availableMics, setAvailableMics] = useState<MediaDeviceInfo[]>([]);
+  const [selectedMicId, setSelectedMicId] = useState<string>('default');
+  const [isMicMuted, setIsMicMuted] = useState<boolean>(false);
 
   // جلب معلومات غرفة البث
   // 🚀 جلب معلومات البث مع منع التكرار
@@ -249,6 +266,7 @@ export default function BroadcastRoomInterface({
       localStream.getTracks().forEach((t) => t.stop());
     }
     setLocalStream(null);
+    setIsMicMuted(false);
   }, [localStream]);
 
   useEffect(() => {
@@ -301,11 +319,26 @@ export default function BroadcastRoomInterface({
           echoCancellation: true,
           noiseSuppression: true,
           autoGainControl: true,
+          ...(selectedMicId && selectedMicId !== 'default'
+            ? { deviceId: { exact: selectedMicId } as any }
+            : {}),
         } as MediaTrackConstraints,
         video: false,
       },
-      { audio: { channelCount: 1, sampleRate: 44100 } as MediaTrackConstraints, video: false },
-      { audio: true, video: false },
+      {
+        audio: {
+          channelCount: 1,
+          sampleRate: 44100,
+          ...(selectedMicId && selectedMicId !== 'default'
+            ? { deviceId: { exact: selectedMicId } as any }
+            : {}),
+        } as MediaTrackConstraints,
+        video: false,
+      },
+      {
+        audio: selectedMicId && selectedMicId !== 'default' ? ({ deviceId: { exact: selectedMicId } } as any) : true,
+        video: false,
+      },
     ];
 
     let lastError: any = null;
@@ -351,6 +384,106 @@ export default function BroadcastRoomInterface({
     throw new Error(message || 'تعذر الحصول على صوت من الميكروفون.');
   };
 
+  // قائمة أجهزة الميكروفون
+  const refreshAudioInputs = useCallback(async () => {
+    try {
+      if (!navigator.mediaDevices?.enumerateDevices) return;
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const inputs = devices.filter((d) => d.kind === 'audioinput');
+      setAvailableMics(inputs);
+      if (inputs.length > 0 && selectedMicId !== 'default') {
+        const exists = inputs.some((d) => d.deviceId === selectedMicId);
+        if (!exists) setSelectedMicId('default');
+      }
+    } catch {}
+  }, [selectedMicId]);
+
+  useEffect(() => {
+    try {
+      navigator.mediaDevices?.addEventListener?.('devicechange', refreshAudioInputs as any);
+    } catch {}
+    return () => {
+      try {
+        navigator.mediaDevices?.removeEventListener?.('devicechange', refreshAudioInputs as any);
+      } catch {}
+    };
+  }, [refreshAudioInputs]);
+
+  const switchMicrophone = useCallback(
+    async (deviceId: string) => {
+      try {
+        if (!canSpeak) return;
+        const newStream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            deviceId: deviceId === 'default' ? undefined : ({ exact: deviceId } as any),
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true,
+          } as any,
+          video: false,
+        });
+        const newTrack = newStream.getAudioTracks()[0];
+        if (!newTrack) throw new Error('لم يتم العثور على مسار صوتي');
+
+        // استبدال المسار في جميع الاتصالات
+        peersRef.current.forEach((pc) => {
+          try {
+            const sender = pc.getSenders().find((s) => s.track && s.track.kind === 'audio');
+            if (sender) sender.replaceTrack(newTrack);
+          } catch {}
+        });
+
+        // إيقاف المسارات القديمة
+        if (localStream) {
+          localStream.getTracks().forEach((t) => {
+            try { t.stop(); } catch {}
+          });
+        }
+        setLocalStream(newStream);
+        setIsMicMuted(false);
+        setSelectedMicId(deviceId || 'default');
+        await refreshAudioInputs();
+      } catch (err: any) {
+        toast({ title: 'خطأ في تبديل الميكروفون', description: err?.message || 'تعذر تبديل الميكروفون', variant: 'destructive' });
+      }
+    },
+    [canSpeak, localStream, toast, refreshAudioInputs]
+  );
+
+  // تحديث مستوى الصوت على عنصر الصوت وحفظه
+  useEffect(() => {
+    try {
+      if (audioRef.current) {
+        audioRef.current.volume = Math.max(0, Math.min(1, volume / 100));
+      }
+      localStorage.setItem('broadcast_volume', String(volume));
+    } catch {}
+  }, [volume]);
+
+  // ضبط خاصية كتم الصوت للمستمع على عنصر الصوت فوراً
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.muted = isMuted;
+    }
+  }, [isMuted]);
+
+  // تحميل قائمة الميكروفونات بعد الحصول على إذن
+  useEffect(() => {
+    refreshAudioInputs();
+  }, [refreshAudioInputs]);
+
+  const toggleMicMute = useCallback(() => {
+    setIsMicMuted((prev) => {
+      const next = !prev;
+      try {
+        if (localStream) {
+          localStream.getAudioTracks().forEach((t) => (t.enabled = !next));
+        }
+      } catch {}
+      return next;
+    });
+  }, [localStream]);
+
   const explainStartBroadcastError = (error: unknown) => {
     const err = error as any;
     const msg = typeof err === 'string' ? err : err?.message;
@@ -385,6 +518,7 @@ export default function BroadcastRoomInterface({
       const stream = await getUserMediaWithFallbacks();
       setLocalStream(stream);
       setIsBroadcasting(true);
+      await refreshAudioInputs();
 
       // Create peer connections per listener (lazy: on offer request)
       // Actively send offers to currently online listeners (non-speakers)
@@ -392,16 +526,19 @@ export default function BroadcastRoomInterface({
         (u) => u.id !== currentUser.id && !speakers.includes(u.id) && u.id !== broadcastInfo?.hostId
       );
       for (const listener of listeners) {
+        if (peersRef.current.has(listener.id)) continue;
         const pc = new RTCPeerConnection({ iceServers: getIceServers() });
 
         // Add connection state monitoring
         pc.onconnectionstatechange = () => {
-          if (pc.connectionState === 'failed') {
+          if (pc.connectionState === 'failed' || pc.connectionState === 'disconnected' || pc.connectionState === 'closed') {
             toast({
               title: 'مشكلة في الاتصال',
               description: `فشل الاتصال مع ${listener.username}`,
               variant: 'destructive',
             });
+            try { pc.close(); } catch {}
+            peersRef.current.delete(listener.id);
           }
         };
 
@@ -450,6 +587,12 @@ export default function BroadcastRoomInterface({
             chat.sendWebRTCIceCandidate?.(listener.id, room.id, event.candidate);
           }
         };
+        pc.onconnectionstatechange = () => {
+          if (pc.connectionState === 'failed' || pc.connectionState === 'disconnected' || pc.connectionState === 'closed') {
+            try { pc.close(); } catch {}
+            peersRef.current.delete(listener.id);
+          }
+        };
         peersRef.current.set(listener.id, pc);
         const offer = await pc.createOffer({ offerToReceiveAudio: false });
         await pc.setLocalDescription(offer);
@@ -467,6 +610,22 @@ export default function BroadcastRoomInterface({
     broadcastInfo?.hostId,
     chat,
   ]);
+
+  // تنظيف الاتصالات غير الصالحة عند تغيّر قائمة المستهدفين (للمضيف)
+  useEffect(() => {
+    if (!isBroadcasting || !currentUser) return;
+    const listeners = new Set(
+      onlineUsers
+        .filter((u) => u.id !== currentUser.id && !speakers.includes(u.id) && u.id !== broadcastInfo?.hostId)
+        .map((u) => u.id)
+    );
+    peersRef.current.forEach((pc, userId) => {
+      if (!listeners.has(userId)) {
+        try { pc.close(); } catch {}
+        peersRef.current.delete(userId);
+      }
+    });
+  }, [isBroadcasting, onlineUsers, speakers, broadcastInfo?.hostId, currentUser?.id]);
 
   // Listener side: handle offers/answers/ice
   useEffect(() => {
@@ -493,20 +652,25 @@ export default function BroadcastRoomInterface({
             const [remoteStream] = event.streams;
             audioRef.current.srcObject = remoteStream;
             audioRef.current.muted = isMuted;
-            audioRef.current
-              .play()
-              .then(() => {
-                setPlaybackBlocked(false);
-              })
-              .catch((err) => {
-                console.error('❌ Audio playback blocked:', err);
-                setPlaybackBlocked(true);
-                toast({
-                  title: 'تشغيل الصوت محظور',
-                  description: 'اضغط على زر "تشغيل الصوت" للسماح بالتشغيل',
-                  variant: 'default',
+            audioRef.current.volume = Math.max(0, Math.min(1, volume / 100));
+            const tryPlay = () =>
+              audioRef.current!
+                .play()
+                .then(() => setPlaybackBlocked(false))
+                .catch((err) => {
+                  console.error('❌ Audio playback blocked:', err);
+                  setPlaybackBlocked(true);
+                  toast({
+                    title: 'تشغيل الصوت محظور',
+                    description: 'اضغط على زر "تشغيل الصوت" للسماح بالتشغيل',
+                    variant: 'default',
+                  });
                 });
-              });
+            // حاول التشغيل مباشرة ثم عند توفر بيانات كافية
+            tryPlay();
+            try {
+              audioRef.current.addEventListener('canplay', tryPlay, { once: true } as any);
+            } catch {}
           };
           pc.onicecandidate = (event) => {
             if (event.candidate) {
@@ -553,7 +717,22 @@ export default function BroadcastRoomInterface({
       chat.offWebRTCIceCandidate?.(handleIce);
       chat.offWebRTCAnswer?.(handleAnswer);
     };
-  }, [isListener, currentUser?.id, room.id, chat, isMuted, toast]);
+  }, [isListener, currentUser?.id, room.id, chat, isMuted, toast, volume]);
+
+  // للمستمع: احتفظ بالاتصالات مع المرسلين المسموحين فقط (المضيف + المتحدثون)
+  useEffect(() => {
+    if (!isListener) return;
+    const allowed = new Set<number>([
+      ...(broadcastInfo?.hostId != null ? [broadcastInfo.hostId] : []),
+      ...speakers,
+    ]);
+    peersRef.current.forEach((pc, userId) => {
+      if (!allowed.has(userId)) {
+        try { pc.close(); } catch {}
+        peersRef.current.delete(userId);
+      }
+    });
+  }, [isListener, broadcastInfo?.hostId, speakers]);
 
   // Host/Speaker side: handle answers/ice from listeners
   useEffect(() => {
@@ -808,6 +987,16 @@ export default function BroadcastRoomInterface({
     });
   };
 
+  // تنظيف جميع الاتصالات عند إلغاء تحميل المكون (لأي دور)
+  useEffect(() => {
+    return () => {
+      try {
+        peersRef.current.forEach((pc) => pc.close());
+        peersRef.current.clear();
+      } catch {}
+    };
+  }, []);
+
   return (
     <div className="flex-1 flex min-h-0" style={{ maxHeight: 'var(--app-body-height)' }}>
       <div className="flex flex-col flex-1 min-h-0">
@@ -949,15 +1138,6 @@ export default function BroadcastRoomInterface({
               </div>
             )}
 
-            <div className="hidden">
-              <audio
-                ref={audioRef}
-                playsInline
-                autoPlay
-                controlsList="nodownload noplaybackrate"
-                className="w-0 h-0 opacity-0 pointer-events-none"
-              />
-            </div>
           </div>
         )}
 
@@ -1004,6 +1184,57 @@ export default function BroadcastRoomInterface({
             </Button>
           )}
 
+          {isListener && (
+            <div className="flex items-center gap-2 min-w-[160px]">
+              <span className="text-xs text-muted-foreground">حجم الصوت</span>
+              <div className="w-36">
+                <Slider
+                  value={[volume]}
+                  min={0}
+                  max={100}
+                  step={1}
+                  onValueChange={(v) => {
+                    const val = Array.isArray(v) ? v[0] : (v as any);
+                    setVolume(Number(val));
+                  }}
+                />
+              </div>
+            </div>
+          )}
+
+          {canSpeak && isBroadcasting && (
+            <>
+              <Button type="button" onClick={toggleMicMute} variant="ghost" className="flex items-center gap-2">
+                {isMicMuted ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                {isMicMuted ? 'تشغيل الميك' : 'كتم الميك'}
+              </Button>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">الميكروفون</span>
+                <div className="min-w-[180px]">
+                  <Select
+                    value={selectedMicId}
+                    onValueChange={(val) => {
+                      setSelectedMicId(val);
+                      switchMicrophone(val);
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="اختيار الميكروفون" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="default">افتراضي</SelectItem>
+                      {availableMics.map((d) => (
+                        <SelectItem key={d.deviceId || d.label} value={d.deviceId}>
+                          {d.label || 'ميكروفون'}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </>
+          )}
+
           {canManageMic && micQueue.length > 0 && (
             <Badge variant="secondary" className="flex items-center gap-1">
               <Clock className="w-3 h-3" />
@@ -1027,6 +1258,17 @@ export default function BroadcastRoomInterface({
             currentRoomId={room?.id}
             chatLockAll={room?.chatLockAll}
             chatLockVisitors={room?.chatLockVisitors}
+          />
+        </div>
+
+        {/* عنصر الصوت مخفي لكن دائم */}
+        <div className="hidden">
+          <audio
+            ref={audioRef}
+            playsInline
+            autoPlay
+            controlsList="nodownload noplaybackrate"
+            className="w-0 h-0 opacity-0 pointer-events-none"
           />
         </div>
       </div>
