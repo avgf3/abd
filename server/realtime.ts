@@ -213,6 +213,21 @@ async function buildOnlineUsersForRoom(roomId: string) {
 
 // أزيلت دالة إبطال الكاش
 
+// بث قائمة المتصلين لغرفة معينة (لاستخدامه من المسارات الخارجية كبوتات)
+export async function emitOnlineUsersForRoom(roomId: string): Promise<void> {
+  try {
+    if (!roomId) return;
+    if (!ioInstance) return;
+    const users = await buildOnlineUsersForRoom(roomId);
+    ioInstance.to(`room_${roomId}`).emit('message', {
+      type: 'onlineUsers',
+      users,
+      roomId,
+      source: 'external_update',
+    });
+  } catch {}
+}
+
 async function joinRoom(
   io: IOServer,
   socket: CustomSocket,
@@ -289,7 +304,18 @@ async function joinRoom(
   // إبطال cache الغرفة عند انضمام مستخدم جديد
   // لم نعد نستخدم الكاش
 
-  // رسالة نظامية: انضمام للغرفة الجديدة
+  // إرسال التأكيد للمستخدم المنضم وبث القائمة المحدثة للجميع
+  const users = await buildOnlineUsersForRoom(roomId);
+  socket.emit('message', { type: 'roomJoined', roomId, users });
+  io.to(`room_${roomId}`).emit('message', { type: 'onlineUsers', users, roomId, source: 'join' });
+
+  // رسائل حديثة (تجنب التكرار عند الانضمام السريع): لا داعي إذا لم تتغير الغرفة فعلياً
+  try {
+    const recentMessages = await roomMessageService.getLatestRoomMessages(roomId, 10);
+    socket.emit('message', { type: 'roomMessages', roomId, messages: recentMessages });
+  } catch {}
+
+  // رسالة نظامية: انضمام للغرفة الجديدة (بعد إرسال قائمة الرسائل لتجنب التكرار)
   try {
     const user = entry?.user || (await storage.getUser(userId));
     const content = formatRoomEventMessage('join', {
@@ -315,17 +341,6 @@ async function joinRoom(
         myReaction: null,
       },
     });
-  } catch {}
-
-  // إرسال التأكيد للمستخدم المنضم وبث القائمة المحدثة للجميع
-  const users = await buildOnlineUsersForRoom(roomId);
-  socket.emit('message', { type: 'roomJoined', roomId, users });
-  io.to(`room_${roomId}`).emit('message', { type: 'onlineUsers', users, roomId, source: 'join' });
-
-  // رسائل حديثة (تجنب التكرار عند الانضمام السريع): لا داعي إذا لم تتغير الغرفة فعلياً
-  try {
-    const recentMessages = await roomMessageService.getLatestRoomMessages(roomId, 10);
-    socket.emit('message', { type: 'roomMessages', roomId, messages: recentMessages });
   } catch {}
 }
 

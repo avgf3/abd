@@ -30,6 +30,7 @@ import { db, dbType } from './database-adapter';
 import { protect } from './middleware/enhancedSecurity';
 import { moderationSystem } from './moderation';
 import { getIO } from './realtime';
+import { emitOnlineUsersForRoom } from './realtime';
 import { formatRoomEventMessage } from './utils/roomEventFormatter';
 import { spamProtection } from './spam-protection';
 import { storage } from './storage';
@@ -4365,6 +4366,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       } catch {}
 
+      // بث قائمة المتصلين المحدّثة للغرفة
+      try { await emitOnlineUsersForRoom(newBot.currentRoom); } catch {}
+
       res.status(201).json(newBot);
     } catch (error) {
       console.error('خطأ في إنشاء البوت:', error);
@@ -4542,24 +4546,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error('خطأ في تنظيف cache الرسائل:', e);
       }
 
-      // إرسال تحديث قائمة المستخدمين للغرف المتأثرة
+      // إرسال تحديث قائمة المستخدمين للغرف المتأثرة (قائمة كاملة لتفادي عدم التزامن)
       try {
-        // إشعار بتحديث قوائم المستخدمين في الغرف المتأثرة
-        getIO().to(`room_${oldRoom}`).emit('message', {
-          type: 'userLeftRoom',
-          userId: updatedBot.id,
-          username: updatedBot.username,
-          roomId: oldRoom,
-          source: 'bot_moved_out'
-        });
-        
-        getIO().to(`room_${roomId}`).emit('message', {
-          type: 'userJoinedRoom',
-          userId: updatedBot.id,
-          username: updatedBot.username,
-          roomId: roomId,
-          source: 'bot_moved_in'
-        });
+        await emitOnlineUsersForRoom(oldRoom);
+        await emitOnlineUsersForRoom(roomId);
       } catch (e) {
         console.error('خطأ في تحديث قوائم المستخدمين:', e);
       }
@@ -4644,6 +4634,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             message: { ...msg, sender, roomId: updatedBot.currentRoom, reactions: { like: 0, dislike: 0, heart: 0 }, myReaction: null },
           });
         } catch {}
+        // بث قائمة المتصلين المحدّثة
+        try { await emitOnlineUsersForRoom(updatedBot.currentRoom); } catch {}
       } else {
         // إزالة البوت من قائمة المتصلين
         updateConnectedUserCache(updatedBot.id, null);
@@ -4668,6 +4660,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             message: { ...msg, sender, roomId: updatedBot.currentRoom, reactions: { like: 0, dislike: 0, heart: 0 }, myReaction: null },
           });
         } catch {}
+        // بث قائمة المتصلين المحدّثة بعد الخروج
+        try { await emitOnlineUsersForRoom(updatedBot.currentRoom); } catch {}
       }
 
       res.json({ message: newActiveState ? 'تم تفعيل البوت' : 'تم تعطيل البوت', bot: updatedBot });
@@ -4719,6 +4713,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           message: { ...msg, sender, roomId: botToDelete.currentRoom, reactions: { like: 0, dislike: 0, heart: 0 }, myReaction: null },
         });
       } catch {}
+
+      // بث قائمة المتصلين المحدّثة بعد الحذف
+      try { await emitOnlineUsersForRoom(botToDelete.currentRoom); } catch {}
 
       res.json({ message: 'تم حذف البوت بنجاح' });
     } catch (error) {
