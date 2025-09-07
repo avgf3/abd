@@ -222,6 +222,15 @@ router.post('/room/:roomId', protect.auth, limiters.sendMessage, async (req, res
     const { content, messageType, isPrivate = false, receiverId } = parsed.data as any;
     const senderId = (req as any).user?.id as number;
 
+    // حماية ضد إرسال رسائل للبوتات من غير المالك
+    if (receiverId) {
+      const { SecureMessageService } = await import('../services/secureMessageService');
+      const blockResult = await SecureMessageService.blockUnauthorizedBotMessage(senderId, receiverId);
+      if (blockResult.blocked) {
+        return res.status(403).json({ error: blockResult.reason || 'غير مصرح بإرسال هذه الرسالة' });
+      }
+    }
+
     if (!roomId?.trim()) {
       return res.status(400).json({ error: 'معرف الغرفة مطلوب' });
     }

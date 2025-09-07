@@ -4237,7 +4237,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ============= نظام البوتات =============
   
   // جلب قائمة البوتات
-  app.get('/api/bots', protect.admin, async (req, res) => {
+  app.get('/api/bots', protect.ultraSecure, async (req, res) => {
     try {
       if (!db) {
         return res.status(500).json({ error: 'قاعدة البيانات غير متصلة' });
@@ -4254,7 +4254,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // إنشاء بوت جديد
-  app.post('/api/bots', protect.admin, async (req, res) => {
+  app.post('/api/bots', protect.ultraSecure, async (req, res) => {
     try {
       if (!db) {
         return res.status(500).json({ error: 'قاعدة البيانات غير متصلة' });
@@ -4331,7 +4331,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // تحديث بوت
-  app.put('/api/bots/:id', protect.admin, async (req, res) => {
+  app.put('/api/bots/:id', protect.ultraSecure, async (req, res) => {
     try {
       if (!db) {
         return res.status(500).json({ error: 'قاعدة البيانات غير متصلة' });
@@ -4396,7 +4396,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // نقل بوت إلى غرفة أخرى
-  app.post('/api/bots/:id/move', protect.admin, async (req, res) => {
+  app.post('/api/bots/:id/move', protect.ultraSecure, async (req, res) => {
     try {
       if (!db) {
         return res.status(500).json({ error: 'قاعدة البيانات غير متصلة' });
@@ -4470,7 +4470,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // تفعيل/تعطيل بوت
-  app.patch('/api/bots/:id/toggle', protect.admin, async (req, res) => {
+  app.patch('/api/bots/:id/toggle', protect.ultraSecure, async (req, res) => {
     try {
       if (!db) {
         return res.status(500).json({ error: 'قاعدة البيانات غير متصلة' });
@@ -4550,7 +4550,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // حذف بوت
-  app.delete('/api/bots/:id', protect.admin, async (req, res) => {
+  app.delete('/api/bots/:id', protect.ultraSecure, async (req, res) => {
     try {
       if (!db) {
         return res.status(500).json({ error: 'قاعدة البيانات غير متصلة' });
@@ -4590,7 +4590,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // رفع صورة البروفايل للبوت - مشابه لرفع صورة المستخدمين
   app.post(
     '/api/bots/:id/upload-profile-image',
-    protect.admin,
+    protect.ultraSecure,
     limiters.upload,
     upload.single('profileImage'),
     async (req, res) => {
@@ -4707,8 +4707,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   );
 
+  // إرسال رسالة آمنة من خلال البوت - فقط المالك الحقيقي
+  app.post('/api/bots/:id/send-message', protect.ultraSecure, async (req, res) => {
+    try {
+      const botId = parseInt(req.params.id);
+      const ownerId = (req as any).user?.id as number;
+      const { content, roomId, messageType = 'text' } = req.body;
+
+      if (!content || !roomId) {
+        return res.status(400).json({ error: 'محتوى الرسالة والغرفة مطلوبان' });
+      }
+
+      if (!botId || !ownerId) {
+        return res.status(400).json({ error: 'معرف البوت والمالك مطلوبان' });
+      }
+
+      const { SecureMessageService } = await import('./services/secureMessageService');
+      const result = await SecureMessageService.sendSecureMessage(
+        ownerId,
+        botId,
+        String(content).trim(),
+        String(roomId).trim(),
+        messageType
+      );
+
+      if (result.success) {
+        res.json({
+          success: true,
+          message: 'تم إرسال الرسالة بنجاح',
+          data: result.message,
+        });
+      } else {
+        res.status(403).json({
+          success: false,
+          error: result.error || 'فشل في إرسال الرسالة',
+        });
+      }
+    } catch (error) {
+      console.error('خطأ في إرسال رسالة البوت:', error);
+      res.status(500).json({ error: 'خطأ في النظام' });
+    }
+  });
+
   // إنشاء 10 بوتات افتراضية
-  app.post('/api/bots/create-defaults', protect.admin, async (req, res) => {
+  app.post('/api/bots/create-defaults', protect.ultraSecure, async (req, res) => {
     try {
       if (!db) {
         return res.status(500).json({ error: 'قاعدة البيانات غير متصلة' });
