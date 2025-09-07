@@ -58,15 +58,18 @@ class RoomMessageService {
         throw new Error('معرف الغرفة مطلوب');
       }
 
+      // السماح المطلق لرسائل النظام بدون أي قيود (قفل الدردشة/الموديريشن/السبام)
+      const isSystemMessage = (messageData.messageType || '').toLowerCase() === 'system';
+
       // التحقق من وجود المرسل
       const sender = await storage.getUser(messageData.senderId);
       if (!sender) {
         throw new Error('المرسل غير موجود');
       }
 
-      // التحقق من إعدادات قفل الدردشة في الغرفة
+      // التحقق من إعدادات قفل الدردشة في الغرفة (تخطَّ للمحتوى النظامي)
       const room = await storage.getRoom(messageData.roomId);
-      if (room) {
+      if (room && !isSystemMessage) {
         const isOwner = sender.userType === 'owner';
         const isGuest = sender.userType === 'guest';
         
@@ -81,8 +84,8 @@ class RoomMessageService {
         }
       }
 
-      // التحقق من حالة المنع قبل الإرسال (يشمل كتم/طرد/حجب)
-      if (!messageData.isPrivate) {
+      // التحقق من حالة المنع قبل الإرسال (يشمل كتم/طرد/حجب) - يُستثنى النظام
+      if (!messageData.isPrivate && !isSystemMessage) {
         try {
           const status = await moderationSystem.checkUserStatus(messageData.senderId);
           if (!status.canChat) {
@@ -91,18 +94,20 @@ class RoomMessageService {
         } catch {}
       }
 
-      // فحص السبام/التكرار قبل الإنشاء
-      const check = spamProtection.checkMessage(messageData.senderId, messageData.content);
-      if (!check.isAllowed) {
-        try {
-          if (check.action === 'tempBan') {
-            await storage.updateUser(messageData.senderId, {
-              isMuted: true as any,
-              muteExpiry: new Date(Date.now() + 60 * 1000) as any,
-            });
-          }
-        } catch {}
-        throw new Error(check.reason || 'تم منع الرسالة بسبب التكرار/السبام');
+      // فحص السبام/التكرار قبل الإنشاء - يُستثنى النظام
+      if (!isSystemMessage) {
+        const check = spamProtection.checkMessage(messageData.senderId, messageData.content);
+        if (!check.isAllowed) {
+          try {
+            if (check.action === 'tempBan') {
+              await storage.updateUser(messageData.senderId, {
+                isMuted: true as any,
+                muteExpiry: new Date(Date.now() + 60 * 1000) as any,
+              });
+            }
+          } catch {}
+          throw new Error(check.reason || 'تم منع الرسالة بسبب التكرار/السبام');
+        }
       }
 
       // إنشاء الرسالة في قاعدة البيانات
