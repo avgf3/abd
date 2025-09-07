@@ -50,30 +50,38 @@ export default function CountryChat() {
     try {
       const session = getSession();
       const savedUserId = session?.userId;
-      if (!savedUserId) {
-        setIsRestoring(false);
-        return;
+      const proceedWithUser = (user: any) => {
+        if (!user || !user.id || !user.username) return;
+        chat.connect(user);
+        setShowWelcome(false);
+        const roomId = session?.roomId && session.roomId !== 'public' && session.roomId !== 'friends'
+          ? session.roomId
+          : null;
+        if (roomId) {
+          setSelectedRoomId(roomId);
+          chat.joinRoom(roomId);
+        } else {
+          setSelectedRoomId(null);
+        }
+      };
+
+      if (savedUserId) {
+        apiRequest(`/api/users/${savedUserId}`)
+          .then(proceedWithUser)
+          .catch(() => {})
+          .finally(() => setIsRestoring(false));
+      } else {
+        apiRequest('/api/auth/session')
+          .then((data: any) => {
+            if (data?.user) {
+              proceedWithUser(data.user);
+            } else {
+              setShowWelcome(true);
+            }
+          })
+          .catch(() => setShowWelcome(true))
+          .finally(() => setIsRestoring(false));
       }
-
-      // Fetch user data from server
-      apiRequest(`/api/users/${savedUserId}`)
-        .then((user) => {
-          if (!user || !user.id || !user.username) return;
-          chat.connect(user);
-          setShowWelcome(false);
-
-          const roomId = session?.roomId && session.roomId !== 'public' && session.roomId !== 'friends'
-            ? session.roomId
-            : null;
-          if (roomId) {
-            setSelectedRoomId(roomId);
-            chat.joinRoom(roomId);
-          } else {
-            setSelectedRoomId(null); // المستخدم سيختار الغرفة من واجهة الغرف
-          }
-        })
-        .catch(() => {})
-        .finally(() => setIsRestoring(false));
     } catch {
       setIsRestoring(false);
     }
