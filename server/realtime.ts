@@ -76,6 +76,21 @@ export function getOnlineUserCountForRoom(roomId: string): number {
   return count;
 }
 
+// جلب الغرف النشطة الحالية لمستخدم من connectedUsers
+export function getUserActiveRooms(userId: number): string[] {
+  try {
+    const entry = connectedUsers.get(userId);
+    if (!entry) return [];
+    const rooms = new Set<string>();
+    for (const socketMeta of entry.sockets.values()) {
+      if (socketMeta.room) rooms.add(socketMeta.room);
+    }
+    return Array.from(rooms.values());
+  } catch {
+    return [];
+  }
+}
+
 // إزالة كاش قائمة المتصلين للغرف للاعتماد الكامل على أحداث Socket.IO
 
 export function updateConnectedUserCache(userOrId: any, maybeUser?: any) {

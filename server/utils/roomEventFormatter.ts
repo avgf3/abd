@@ -1,6 +1,6 @@
 import { getLevelInfo } from '../../shared/points-system';
 
-export type RoomEventAction = 'join' | 'leave' | 'switch';
+export type RoomEventAction = 'join' | 'leave' | 'switch' | 'site_leave';
 
 function getArabicRole(userType?: string): string {
   switch ((userType || '').toLowerCase()) {
@@ -61,6 +61,9 @@ export function formatRoomEventMessage(
   }
   if (action === 'leave') {
     return `غادر الغرفة (${meta})`;
+  }
+  if (action === 'site_leave') {
+    return `المستخدم غادر الموقع (${meta})`;
   }
   // switch
   const fromName = extra?.fromRoomName || 'غرفة سابقة';

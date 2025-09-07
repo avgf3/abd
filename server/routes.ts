@@ -33,6 +33,7 @@ import { parseEntityId, formatEntityId } from './types/entities';
 import { moderationSystem } from './moderation';
 import { getIO } from './realtime';
 import { emitOnlineUsersForRoom } from './realtime';
+import { getUserActiveRooms } from './realtime';
 import { formatRoomEventMessage } from './utils/roomEventFormatter';
 import { spamProtection } from './spam-protection';
 import { storage } from './storage';
@@ -1727,6 +1728,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (verified?.userId) {
           try {
             await storage.setUserOnlineStatus(verified.userId, false);
+          } catch {}
+
+          // إزالة المستخدم من قائمة المتصلين والبث برسالة "المستخدم غادر الموقع"
+          try {
+            const user = await storage.getUser(verified.userId);
+            // اعتمد على الغرف النشطة المتصلة حالياً لتفادي إرسال الرسالة لغرف قديمة محفوظة في DB
+            const roomIds = getUserActiveRooms(verified.userId);
+            // إزالة من كاش المتصلين فوراً
+            try { updateConnectedUserCache(verified.userId, null); } catch {}
+
+            if (Array.isArray(roomIds)) {
+              for (const roomId of roomIds) {
+                try {
+                  const content = formatRoomEventMessage('site_leave', {
+                    username: user?.username,
+                    userType: user?.userType,
+                    level: (user as any)?.level,
+                  });
+                  const msg = await storage.createMessage({
+                    senderId: verified.userId,
+                    roomId,
+                    content,
+                    messageType: 'system',
+                    isPrivate: false,
+                  });
+                  const sender = await storage.getUser(verified.userId);
+                  getIO().to(`room_${roomId}`).emit('message', {
+                    type: 'newMessage',
+                    message: {
+                      ...msg,
+                      sender,
+                      roomId,
+                      reactions: { like: 0, dislike: 0, heart: 0 },
+                      myReaction: null,
+                    },
+                  });
+                  // تحديث قائمة المتصلين في الغرفة
+                  try { await emitOnlineUsersForRoom(roomId); } catch {}
+                } catch {}
+              }
+            }
           } catch {}
         }
       }
@@ -4661,9 +4703,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // إزالة البوت من قائمة المتصلين
         updateConnectedUserCache(updatedBot.id, null);
 
-        // رسالة نظامية: خروج بوت
+        // رسالة نظامية: المستخدم غادر الموقع (تعطيل البوت)
         try {
-          const content = formatRoomEventMessage('leave', {
+          const content = formatRoomEventMessage('site_leave', {
             username: updatedBot.username,
             userType: 'bot',
             level: updatedBot.level as any,
@@ -4714,9 +4756,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // إزالة البوت من قائمة المتصلين
       updateConnectedUserCache(botId, null);
-      // رسالة نظامية: خروج بوت نهائي
+      // رسالة نظامية: المستخدم غادر الموقع (حذف البوت)
       try {
-        const content = formatRoomEventMessage('leave', {
+        const content = formatRoomEventMessage('site_leave', {
           username: botToDelete.username,
           userType: 'bot',
           level: botToDelete.level as any,
