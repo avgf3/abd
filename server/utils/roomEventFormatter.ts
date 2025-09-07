@@ -5,7 +5,8 @@ export type RoomEventAction = 'join' | 'leave' | 'switch';
 function getArabicRole(userType?: string): string {
   switch ((userType || '').toLowerCase()) {
     case 'bot':
-      return 'بوت';
+      // عومل كبقية الأعضاء في رسائل النظام
+      return 'عضو';
     case 'guest':
       return 'زائر';
     case 'member':
@@ -30,7 +31,10 @@ export function formatRoomEventMessage(
   extra?: { fromRoomName?: string | null; toRoomName?: string | null }
 ): string {
   const username = user?.username || 'مستخدم';
-  const roleAr = getArabicRole(user?.userType);
+  // تطبيع نوع المستخدم: اعتبر "bot" كـ "member" لعرضه كعضو عادي
+  const rawType = (user?.userType || '').toLowerCase();
+  const normalizedType = rawType === 'bot' ? 'member' : rawType;
+  const roleAr = getArabicRole(normalizedType);
   const levelNum = typeof user?.level === 'number' && user.level ? user.level : undefined;
   const levelTitle = levelNum ? getLevelInfo(levelNum)?.title : undefined;
 
@@ -39,10 +43,10 @@ export function formatRoomEventMessage(
   // عضو => "# عضو — لقب: {title} — رتبة {level} #"
   // إداري/مالك/مشرف => "# {roleAr}{levelTitle ? ` — لقب: ${levelTitle}` : ''} #"
   const meta = (() => {
-    if ((user?.userType || '').toLowerCase() === 'guest') {
+    if (normalizedType === 'guest') {
       return `# ${roleAr} #`;
     }
-    if ((user?.userType || '').toLowerCase() === 'member') {
+    if (normalizedType === 'member') {
       if (levelNum && levelTitle) {
         return `# ${roleAr} — لقب: ${levelTitle} — رتبة ${levelNum} #`;
       }
