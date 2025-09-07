@@ -2084,6 +2084,19 @@ li::before {
     -webkit-backdrop-filter: blur(20px) saturate(180%);
     box-shadow: 0 -2px 20px rgba(0, 0, 0, 0.1);
   }
+
+  /* Match top bar spacing with bottom bar on mobile without altering design */
+  .mobile-header > div {
+    gap: 0.25rem !important; /* equals gap-1 */
+  }
+
+  .mobile-header .glass-effect {
+    padding-left: 0.5rem !important;  /* px-2 */
+    padding-right: 0.5rem !important; /* px-2 */
+    padding-top: 0.5rem !important;   /* py-2 */
+    padding-bottom: 0.5rem !important;/* py-2 */
+    gap: 0.375rem !important;         /* equals gap-1.5 like footer buttons */
+  }
   
   .mobile-footer {
     border-top: 1px solid rgba(255, 255, 255, 0.1);
