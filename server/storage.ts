@@ -482,63 +482,94 @@ interface LegacyStorage {
 // Create a storage object that delegates to the new functions
 export const storage: LegacyStorage = {
   async getUser(id: number) {
-    // أولاً: تحقق من جدول البوتات
+    // استخدام النظام الجديد للتمييز بين البوتات والمستخدمين
+    const { isBotId, isUserId } = await import('./types/entities');
+    
     try {
-      const { db, dbType } = await import('./database-adapter');
-      if (db && dbType === 'postgresql') {
-        const { bots } = await import('../shared/schema');
-        const { eq } = await import('drizzle-orm');
-        const rows = await (db as any)
-          .select()
-          .from(bots as any)
-          .where(eq((bots as any).id, id as any))
-          .limit(1);
-        const bot = rows?.[0];
-        if (bot) {
-          // إذا وُجد البوت، أرجع بياناته
-          const mapped = {
-            id: bot.id,
-            username: bot.username,
-            userType: 'bot',
-            role: 'bot',
-            profileImage: bot.profileImage,
-            profileBanner: bot.profileBanner,
-            profileBackgroundColor: bot.profileBackgroundColor,
-            status: bot.status,
-            gender: bot.gender,
-            country: bot.country,
-            relation: bot.relation,
-            bio: bot.bio,
-            isOnline: !!bot.isOnline,
-            isHidden: false,
-            lastSeen: bot.lastActivity,
-            joinDate: bot.createdAt,
-            createdAt: bot.createdAt,
-            isMuted: false,
-            muteExpiry: null,
-            isBanned: false,
-            banExpiry: null,
-            isBlocked: false,
-            usernameColor: bot.usernameColor,
-            profileEffect: bot.profileEffect,
-            points: bot.points,
-            level: bot.level,
-            totalPoints: bot.totalPoints,
-            levelProgress: bot.levelProgress,
-            currentRoom: bot.currentRoom,
-          } as any;
-          return mapped;
+      // التحقق من نوع الكيان بناءً على المعرف
+      if (isBotId(id)) {
+        // هذا بوت - البحث في جدول البوتات
+        return await this.getBotAsUser(id);
+      } else if (isUserId(id)) {
+        // هذا مستخدم حقيقي - البحث في جدول المستخدمين
+        const user = await databaseService.getUserById(id);
+        if (user) {
+          // إضافة نوع الكيان للتمييز
+          return { ...user, entityType: 'user' } as any;
         }
+      } else {
+        // معرف غير صالح
+        console.warn(`معرف كيان غير صالح: ${id}`);
+        return undefined;
       }
     } catch (e) {
-      console.error('Error fetching bot:', e);
+      console.error('خطأ في جلب الكيان:', e);
     }
-
-    // ثانياً: إذا لم يوجد بوت، تحقق من جدول المستخدمين العاديين
-    const user = await databaseService.getUserById(id);
-    if (user) return user as any;
     
     return undefined;
+  },
+
+  // دالة مساعدة لجلب البوت وتحويله لتنسيق المستخدم
+  async getBotAsUser(id: number) {
+    try {
+      const { db, dbType } = await import('./database-adapter');
+      if (!db || dbType !== 'postgresql') return undefined;
+      
+      const { bots } = await import('../shared/schema');
+      const { eq } = await import('drizzle-orm');
+      
+      const rows = await (db as any)
+        .select()
+        .from(bots as any)
+        .where(eq((bots as any).id, id as any))
+        .limit(1);
+      
+      const bot = rows?.[0];
+      if (!bot) return undefined;
+      
+      // تحويل البوت لتنسيق المستخدم مع إضافة نوع الكيان
+      const mapped = {
+        id: bot.id,
+        username: bot.username,
+        entityType: 'bot',
+        userType: 'bot',
+        role: 'bot',
+        profileImage: bot.profileImage,
+        profileBanner: bot.profileBanner,
+        profileBackgroundColor: bot.profileBackgroundColor,
+        status: bot.status,
+        gender: bot.gender,
+        country: bot.country,
+        relation: bot.relation,
+        bio: bot.bio,
+        isOnline: !!bot.isOnline,
+        isHidden: false,
+        lastSeen: bot.lastActivity,
+        joinDate: bot.createdAt,
+        createdAt: bot.createdAt,
+        isMuted: false,
+        muteExpiry: null,
+        isBanned: false,
+        banExpiry: null,
+        isBlocked: false,
+        usernameColor: bot.usernameColor,
+        profileEffect: bot.profileEffect,
+        points: bot.points,
+        level: bot.level,
+        totalPoints: bot.totalPoints,
+        levelProgress: bot.levelProgress,
+        currentRoom: bot.currentRoom,
+        // خصائص خاصة بالبوت
+        isActive: bot.isActive,
+        botType: bot.botType,
+        settings: bot.settings,
+      } as any;
+      
+      return mapped;
+    } catch (e) {
+      console.error('خطأ في جلب البوت:', e);
+      return undefined;
+    }
   },
 
   async getUserByUsername(username: string) {
