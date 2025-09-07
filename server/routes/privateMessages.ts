@@ -8,6 +8,7 @@ import { protect } from '../middleware/enhancedSecurity';
 import { sanitizeInput, limiters, SecurityConfig, validateMessageContent } from '../security';
 import { moderationSystem } from '../moderation';
 import { z } from 'zod';
+import { parseEntityId } from '../types/entities';
 
 // Helper type for conversation item (server-side internal)
 type ConversationItem = {
@@ -31,7 +32,11 @@ const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
  * إرسال رسالة خاصة بين مستخدمين مع تحسينات الأداء
  */
 const pmSchema = z.object({
-  receiverId: z.union([z.number().int().positive(), z.string().regex(/^\d+$/)]).transform((v) => (typeof v === 'string' ? parseInt(v, 10) : v)),
+  receiverId: z.union([z.number().int().positive(), z.string()]).transform((v) => {
+    if (typeof v === 'number') return v;
+    const parsed = parseEntityId(v as any).id as number;
+    return parsed;
+  }),
   content: z.string().trim().min(1, 'محتوى الرسالة مطلوب').max(SecurityConfig.MAX_MESSAGE_LENGTH),
   messageType: z.enum(['text', 'image', 'sticker']).default('text'),
 });
@@ -50,7 +55,7 @@ router.post('/send', protect.auth, limiters.pmSend, async (req, res) => {
       return res.status(400).json({ error: 'معرّف المرسل والمستلم مطلوبان' });
     }
 
-    if (senderId === parseInt(receiverId)) {
+    if (senderId === parseInt(String(receiverId))) {
       return res.status(400).json({ error: 'لا يمكن إرسال رسالة لنفسك' });
     }
 
@@ -76,7 +81,7 @@ router.post('/send', protect.auth, limiters.pmSend, async (req, res) => {
     // التحقق من المستخدمين بشكل متوازي لتحسين السرعة
     const [sender, receiver] = await Promise.all([
       storage.getUser(parseInt(String(senderId))),
-      storage.getUser(parseInt(receiverId)),
+      storage.getUser(parseInt(String(receiverId))),
     ]);
 
     if (!sender) {
@@ -199,8 +204,8 @@ router.get('/:userId/:otherUserId', protect.auth, async (req, res, next) => {
       beforeId,
     } = req.query as { limit?: any; beforeTs?: string; beforeId?: string };
 
-    const uid = parseInt(userId);
-    const oid = parseInt(otherUserId);
+    const uid = parseEntityId(userId as any).id as number;
+    const oid = parseEntityId(otherUserId as any).id as number;
     const lim = Math.min(100, Math.max(1, parseInt(limit as string)));
 
     if (!uid || !oid || isNaN(uid) || isNaN(oid)) {

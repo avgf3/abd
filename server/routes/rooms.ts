@@ -9,6 +9,7 @@ import { SecurityConfig } from '../security';
 import { roomService } from '../services/roomService';
 import { protect } from '../middleware/enhancedSecurity';
 import { storage } from '../storage';
+import { parseEntityId } from '../types/entities';
 
 const router = Router();
 
@@ -560,14 +561,14 @@ router.post('/:roomId/approve-mic/:userId', protect.moderator, async (req, res) 
   try {
     const { roomId, userId } = req.params;
     const approvedBy = (req as any).user?.id as number;
-
-    await roomService.approveMic(roomId, parseInt(userId), approvedBy);
+    const targetId = parseEntityId(userId as any).id as number;
+    await roomService.approveMic(roomId, targetId, approvedBy);
 
     // إرسال إشعار بالموافقة
     const io = req.app.get('io');
     io?.to(`room_${roomId}`).emit('micApproved', {
       roomId,
-      userId: parseInt(userId),
+      userId: targetId,
       approvedBy,
       timestamp: new Date().toISOString(),
     });
@@ -587,14 +588,14 @@ router.post('/:roomId/reject-mic/:userId', protect.moderator, async (req, res) =
   try {
     const { roomId, userId } = req.params;
     const rejectedBy = (req as any).user?.id as number;
-
-    await roomService.rejectMic(roomId, parseInt(userId), rejectedBy);
+    const targetId = parseEntityId(userId as any).id as number;
+    await roomService.rejectMic(roomId, targetId, rejectedBy);
 
     // إرسال إشعار بالرفض
     const io = req.app.get('io');
     io?.to(`room_${roomId}`).emit('micRejected', {
       roomId,
-      userId: parseInt(userId),
+      userId: targetId,
       rejectedBy,
       timestamp: new Date().toISOString(),
     });
@@ -614,14 +615,14 @@ router.post('/:roomId/remove-speaker/:userId', protect.moderator, async (req, re
   try {
     const { roomId, userId } = req.params;
     const removedBy = (req as any).user?.id as number;
-
-    await roomService.removeSpeaker(roomId, parseInt(userId), removedBy);
+    const targetId = parseEntityId(userId as any).id as number;
+    await roomService.removeSpeaker(roomId, targetId, removedBy);
 
     // إرسال إشعار بإزالة المتحدث
     const io = req.app.get('io');
     io?.to(`room_${roomId}`).emit('speakerRemoved', {
       roomId,
-      userId: parseInt(userId),
+      userId: targetId,
       removedBy,
       timestamp: new Date().toISOString(),
     });
