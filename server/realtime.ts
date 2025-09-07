@@ -239,7 +239,8 @@ async function joinRoom(
       socket.leave(`room_${previousRoom}`);
       // رسالة نظامية: مغادرة الغرفة السابقة
       try {
-        const user = entry?.user || (await storage.getUser(userId));
+        const localEntry = connectedUsers.get(userId);
+        const user = localEntry?.user || (await storage.getUser(userId));
         const content = formatRoomEventMessage('leave', {
           username,
           userType: user?.userType,

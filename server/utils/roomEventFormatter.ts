@@ -4,6 +4,8 @@ export type RoomEventAction = 'join' | 'leave' | 'switch';
 
 function getArabicRole(userType?: string): string {
   switch ((userType || '').toLowerCase()) {
+    case 'bot':
+      return 'بوت';
     case 'guest':
       return 'زائر';
     case 'member':
