@@ -567,7 +567,16 @@ export default function MessageArea({
                 {message.messageType === 'system' ? (
                   <div className="w-full flex items-center justify-between text-red-600">
                     <div className="flex items-center gap-2 truncate">
-                      <span className="font-semibold">النظام:</span>
+                      {message.sender && (
+                        <div className="flex-shrink-0">
+                          <ProfileImage
+                            user={message.sender}
+                            size="small"
+                            className="w-7 h-7 cursor-pointer hover:scale-110 transition-transform duration-200"
+                            onClick={(e) => onUserClick && onUserClick(e, message.sender!)}
+                          />
+                        </div>
+                      )}
                       <span className="truncate">{message.content}</span>
                     </div>
                     <span className="text-xs text-red-500 ml-2 whitespace-nowrap">
