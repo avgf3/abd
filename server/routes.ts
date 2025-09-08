@@ -1905,6 +1905,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // جلب طاقم الإدارة فقط (المالك/الإدمن/المشرفين)
+  app.get('/api/users/staff', protect.admin, async (req, res) => {
+    try {
+      const users = await databaseService.getStaffUsers();
+
+      const safeUsers = users.map((user) => ({
+        id: user.id,
+        username: user.username,
+        userType: user.userType,
+        role: user.role,
+        isOnline: user.isOnline,
+        profileImage: user.profileImage,
+        level: user.level || 1,
+        gender: user.gender,
+        points: user.points || 0,
+        createdAt: user.createdAt,
+        lastActive: (user as any).lastSeen || user.createdAt,
+        profileBackgroundColor: user.profileBackgroundColor,
+        profileEffect: user.profileEffect,
+        isHidden: user.isHidden,
+      }));
+
+      res.json({ users: safeUsers });
+    } catch (error) {
+      console.error('خطأ في جلب طاقم الإدارة:', error);
+      res.status(500).json({ error: 'خطأ في الخادم' });
+    }
+  });
+
   app.get('/api/users/online', async (req, res) => {
     try {
       const users = await storage.getOnlineUsers();

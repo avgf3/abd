@@ -153,12 +153,11 @@ export default function OwnerAdminPanel({
   const fetchStaffMembers = async () => {
     setLoading(true);
     try {
-      // جلب جميع المستخدمين من الخادم ثم تصفية أعضاء الإدارة فقط
-      const response = await apiRequest('/api/users', { method: 'GET' });
-      const allUsers = (response?.users || []) as Array<any>;
+      // جلب طاقم الإدارة فقط من الخادم (محمي ومخصص)
+      const response = await apiRequest('/api/users/staff', { method: 'GET' });
+      const staffUsers = (response?.users || []) as Array<any>;
 
-      const staff = allUsers
-        .filter((user) => ['moderator', 'admin', 'owner'].includes(user.userType))
+      const staff = staffUsers
         .map((user) => ({
           id: user.id,
           username: user.username,
