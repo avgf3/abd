@@ -13,7 +13,7 @@ import UserRoleBadge from './UserRoleBadge';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, FloatingDialogContent } from '@/components/ui/dialog';
 import ImageLightbox from '@/components/ui/ImageLightbox';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { apiRequest, api } from '@/lib/queryClient';
@@ -857,46 +857,60 @@ export default function MessageArea({
         }}
         modal={false}
       >
-        <DialogContent className="max-w-md w-[25vw] min-w-[400px] p-0 bg-black/90 border-gray-700">
+        <FloatingDialogContent
+          className="max-w-md w-[25vw] min-w-[400px] p-0 bg-black/90 border-gray-700"
+          onInteractOutside={(e) => e.preventDefault()}
+          onPointerDownOutside={(e) => e.preventDefault()}
+        >
           <div 
-            className="drag-handle bg-black/50 p-1 flex justify-end cursor-move border-b border-gray-600"
-            onMouseDown={(e) => {
-              // تفعيل السحب
-              const dialog = e.currentTarget.closest('.fixed');
-              if (dialog) {
-                let isDragging = false;
-                let startX = e.clientX;
-                let startY = e.clientY;
-                let initialX = 0;
-                let initialY = 0;
-
-                const rect = dialog.getBoundingClientRect();
-                initialX = rect.left;
-                initialY = rect.top;
-
-                const onMouseMove = (moveEvent: MouseEvent) => {
-                  if (!isDragging) {
-                    isDragging = true;
-                    dialog.style.position = 'fixed';
-                    dialog.style.zIndex = '9999';
-                  }
-                  
-                  const deltaX = moveEvent.clientX - startX;
-                  const deltaY = moveEvent.clientY - startY;
-                  
-                  dialog.style.left = `${initialX + deltaX}px`;
-                  dialog.style.top = `${initialY + deltaY}px`;
-                  dialog.style.transform = 'none';
-                };
-
-                const onMouseUp = () => {
-                  document.removeEventListener('mousemove', onMouseMove);
-                  document.removeEventListener('mouseup', onMouseUp);
-                };
-
-                document.addEventListener('mousemove', onMouseMove);
-                document.addEventListener('mouseup', onMouseUp);
-              }
+            className="drag-handle bg-black/50 p-1 flex justify-end cursor-move border-b border-gray-600 select-none"
+            style={{ touchAction: 'none', userSelect: 'none' }}
+            onPointerDown={(e) => {
+              e.preventDefault();
+              const dialog = e.currentTarget.closest('.fixed') as HTMLElement | null;
+              if (!dialog) return;
+              let startX = e.clientX;
+              let startY = e.clientY;
+              const rect = dialog.getBoundingClientRect();
+              let initialLeft = rect.left;
+              let initialTop = rect.top;
+              let nextLeft = initialLeft;
+              let nextTop = initialTop;
+              let rafId: number | null = null;
+              let isDragging = false;
+              const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
+              const apply = () => {
+                rafId = null;
+                dialog.style.position = 'fixed';
+                dialog.style.zIndex = '9999';
+                dialog.style.left = `${nextLeft}px`;
+                dialog.style.top = `${nextTop}px`;
+                dialog.style.transform = 'none';
+              };
+              const schedule = () => {
+                if (rafId == null) rafId = requestAnimationFrame(apply);
+              };
+              const onMove = (ev: PointerEvent) => {
+                if (!isDragging) {
+                  isDragging = true;
+                  try { (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId); } catch {}
+                }
+                const dx = ev.clientX - startX;
+                const dy = ev.clientY - startY;
+                const maxLeft = window.innerWidth - rect.width;
+                const maxTop = window.innerHeight - rect.height;
+                nextLeft = clamp(initialLeft + dx, 0, Math.max(0, maxLeft));
+                nextTop = clamp(initialTop + dy, 0, Math.max(0, maxTop));
+                schedule();
+              };
+              const onUp = () => {
+                try { (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId); } catch {}
+                window.removeEventListener('pointermove', onMove);
+                window.removeEventListener('pointerup', onUp);
+                if (rafId != null) cancelAnimationFrame(rafId);
+              };
+              window.addEventListener('pointermove', onMove);
+              window.addEventListener('pointerup', onUp, { once: true } as any);
             }}
           >
             <button
@@ -918,7 +932,7 @@ export default function MessageArea({
               />
             )}
           </div>
-        </DialogContent>
+        </FloatingDialogContent>
       </Dialog>
 
       {/* Image Lightbox */}
