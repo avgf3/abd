@@ -26,6 +26,7 @@ interface RoomStats {
 }
 
 // 🚀 إدارة موحدة للغرف مع منع التكرار والتحسين الشامل
+// ✅ تم تحسين الأداء بإضافة فهرسة سريعة للغرف في الخادم
 export function useRoomManager(options: UseRoomManagerOptions = {}) {
   const {
     autoRefresh = false,

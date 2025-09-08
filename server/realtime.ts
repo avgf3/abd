@@ -35,6 +35,10 @@ const connectedUsers = new Map<
   }
 >();
 
+// 🚀 فهرسة سريعة للغرف - تحسين الأداء
+const roomUserIndex = new Map<string, Set<number>>(); // roomId -> Set of userIds
+const userRoomIndex = new Map<number, string>(); // userId -> current roomId
+
 // Utility: get online user counts per room based on active sockets
 export function getOnlineUserCountsForRooms(roomIds: string[]): Record<string, number> {
   try {
@@ -63,33 +67,36 @@ export function getOnlineUserCountsForRooms(roomIds: string[]): Record<string, n
 
 export function getOnlineUserCountForRoom(roomId: string): number {
   if (!roomId) return 0;
-  let count = 0;
   try {
-    for (const [, entry] of connectedUsers.entries()) {
-      for (const socketMeta of entry.sockets.values()) {
-        if (socketMeta.room === roomId) {
-          count += 1;
-          break; // count each user once per room
-        }
-      }
-    }
-  } catch {}
-  return count;
+    // 🚀 استخدام الفهرسة السريعة
+    const roomUsers = roomUserIndex.get(roomId);
+    return roomUsers ? roomUsers.size : 0;
+  } catch {
+    return 0;
+  }
 }
 
 // جلب الغرف النشطة الحالية لمستخدم من connectedUsers
 export function getUserActiveRooms(userId: number): string[] {
   try {
-    const entry = connectedUsers.get(userId);
-    if (!entry) return [];
-    const rooms = new Set<string>();
-    for (const socketMeta of entry.sockets.values()) {
-      if (socketMeta.room) rooms.add(socketMeta.room);
-    }
-    return Array.from(rooms.values());
+    // 🚀 استخدام الفهرسة السريعة
+    const currentRoom = userRoomIndex.get(userId);
+    return currentRoom ? [currentRoom] : [];
   } catch {
     return [];
   }
+}
+
+// 🚀 دالة لإرجاع إحصائيات الفهرسة (للمراقبة)
+export function getRoomIndexStats() {
+  return {
+    totalRooms: roomUserIndex.size,
+    totalUsersIndexed: userRoomIndex.size,
+    roomsWithUsers: Array.from(roomUserIndex.entries()).map(([roomId, users]) => ({
+      roomId,
+      userCount: users.size
+    }))
+  };
 }
 
 // إزالة كاش قائمة المتصلين للغرف للاعتماد الكامل على أحداث Socket.IO
@@ -106,20 +113,29 @@ export function updateConnectedUserCache(userOrId: any, maybeUser?: any) {
         existing.lastSeen = new Date();
         // إذا كان بوتاً ولديه socket اصطناعي، حدّث الغرفة
         if (userObj.userType === 'bot') {
+          const oldRoom = userRoomIndex.get(userObj.id);
+          const newRoom = userObj.currentRoom || GENERAL_ROOM;
+          
           for (const [socketId, socketMeta] of existing.sockets.entries()) {
             if (socketId.startsWith('bot:')) {
-              socketMeta.room = userObj.currentRoom || socketMeta.room || GENERAL_ROOM;
+              socketMeta.room = newRoom;
               socketMeta.lastSeen = new Date();
               existing.sockets.set(socketId, socketMeta);
             }
+          }
+          
+          // 🚀 تحديث الفهرسة للبوت
+          if (oldRoom !== newRoom) {
+            updateRoomIndex(userObj.id, oldRoom || null, newRoom);
           }
         }
         connectedUsers.set(userObj.id, existing);
       } else {
         const sockets = new Map<string, { room: string; lastSeen: Date }>();
+        const room = userObj.currentRoom || GENERAL_ROOM;
         if (userObj.userType === 'bot') {
           sockets.set(`bot:${userObj.id}`, {
-            room: userObj.currentRoom || GENERAL_ROOM,
+            room,
             lastSeen: new Date(),
           });
         }
@@ -128,6 +144,11 @@ export function updateConnectedUserCache(userOrId: any, maybeUser?: any) {
           sockets,
           lastSeen: new Date(),
         });
+        
+        // 🚀 تحديث الفهرسة للمستخدم الجديد
+        if (userObj.userType === 'bot') {
+          updateRoomIndex(userObj.id, null, room);
+        }
       }
       return;
     }
@@ -140,6 +161,8 @@ export function updateConnectedUserCache(userOrId: any, maybeUser?: any) {
     if (maybeUser == null) {
       if (connectedUsers.has(userId)) {
         connectedUsers.delete(userId);
+        // 🚀 إزالة من الفهرسة
+        removeUserFromIndex(userId);
       }
       return;
     }
@@ -187,22 +210,56 @@ export function updateConnectedUserCache(userOrId: any, maybeUser?: any) {
   } catch {}
 }
 
-// بناء قائمة المتصلين بكفاءة اعتماداً على sockets المسجلة
-async function buildOnlineUsersForRoom(roomId: string) {
+// 🚀 دوال مساعدة لإدارة الفهرسة
+function updateRoomIndex(userId: number, oldRoom: string | null, newRoom: string | null) {
+  // إزالة من الغرفة القديمة
+  if (oldRoom) {
+    const oldRoomUsers = roomUserIndex.get(oldRoom);
+    if (oldRoomUsers) {
+      oldRoomUsers.delete(userId);
+      if (oldRoomUsers.size === 0) {
+        roomUserIndex.delete(oldRoom);
+      }
+    }
+  }
+  
+  // إضافة للغرفة الجديدة
+  if (newRoom) {
+    if (!roomUserIndex.has(newRoom)) {
+      roomUserIndex.set(newRoom, new Set());
+    }
+    roomUserIndex.get(newRoom)!.add(userId);
+    userRoomIndex.set(userId, newRoom);
+  } else {
+    userRoomIndex.delete(userId);
+  }
+}
 
+function removeUserFromIndex(userId: number) {
+  const currentRoom = userRoomIndex.get(userId);
+  if (currentRoom) {
+    const roomUsers = roomUserIndex.get(currentRoom);
+    if (roomUsers) {
+      roomUsers.delete(userId);
+      if (roomUsers.size === 0) {
+        roomUserIndex.delete(currentRoom);
+      }
+    }
+  }
+  userRoomIndex.delete(userId);
+}
+
+// بناء قائمة المتصلين بكفاءة باستخدام الفهرسة
+async function buildOnlineUsersForRoom(roomId: string) {
   const userMap = new Map<number, any>();
-  for (const [_, entry] of connectedUsers.entries()) {
-    // تحقق سريع عبر sockets دون مسح كامل
-    for (const socketMeta of entry.sockets.values()) {
-      if (
-        socketMeta.room === roomId &&
-        entry.user &&
-        entry.user.id &&
-        entry.user.username &&
-        entry.user.userType
-      ) {
-        userMap.set(entry.user.id, entry.user);
-        break;
+  
+  // 🚀 استخدام الفهرسة السريعة بدلاً من البحث الخطي
+  const roomUsers = roomUserIndex.get(roomId);
+  if (roomUsers) {
+    for (const userId of roomUsers) {
+      const entry = connectedUsers.get(userId);
+      if (entry && entry.user && entry.user.id && entry.user.username && entry.user.userType) {
+        userMap.set(userId, entry.user);
       }
     }
   }
@@ -315,6 +372,9 @@ async function joinRoom(
     entry.sockets.set(socket.id, { room: roomId, lastSeen: new Date() });
     entry.lastSeen = new Date();
     connectedUsers.set(userId, entry);
+    
+    // 🚀 تحديث الفهرسة
+    updateRoomIndex(userId, previousRoom, roomId);
   }
 
   // إبطال cache الغرفة عند انضمام مستخدم جديد
@@ -375,6 +435,9 @@ async function leaveRoom(
   } catch {}
 
   if (socket.currentRoom === roomId) socket.currentRoom = null;
+
+  // 🚀 تحديث الفهرسة عند المغادرة
+  updateRoomIndex(userId, roomId, null);
 
   socket.emit('message', { type: 'roomLeft', roomId });
   // رسالة نظامية: مغادرة الغرفة الحالية
@@ -747,6 +810,9 @@ export function setupRealtime(httpServer: HttpServer): IOServer {
             existing.lastSeen = new Date();
             connectedUsers.set(user.id, existing);
           }
+          
+          // 🚀 تحديث الفهرسة - المستخدم ليس في أي غرفة بعد
+          // سيتم تحديثها عند الانضمام لغرفة
 
           // لا ننضم تلقائياً لأي غرفة - المستخدم يختار بنفسه
 
@@ -1001,6 +1067,10 @@ export function setupRealtime(httpServer: HttpServer): IOServer {
           entry.lastSeen = new Date();
           if (entry.sockets.size === 0) {
             connectedUsers.delete(userId);
+            
+            // 🚀 إزالة المستخدم من الفهرسة
+            removeUserFromIndex(userId);
+            
             try {
               await storage.setUserOnlineStatus(userId, false);
             } catch {}
@@ -1071,6 +1141,9 @@ async function loadActiveBots() {
       
       // إضافة البوت لقائمة المستخدمين المتصلين
       updateConnectedUserCache(bot.id, botUser);
+      
+      // 🚀 تحديث الفهرسة للبوت
+      updateRoomIndex(bot.id, null, bot.currentRoom || GENERAL_ROOM);
       
       }
     

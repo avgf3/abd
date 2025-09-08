@@ -35,6 +35,7 @@ import { moderationSystem } from './moderation';
 import { getIO } from './realtime';
 import { emitOnlineUsersForRoom } from './realtime';
 import { getUserActiveRooms } from './realtime';
+import { getRoomIndexStats } from './realtime';
 import { formatRoomEventMessage } from './utils/roomEventFormatter';
 import { spamProtection } from './spam-protection';
 import { storage } from './storage';
@@ -5038,6 +5039,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // 🚀 endpoint لمراقبة أداء الفهرسة
+  app.get('/api/room-index-stats', (req, res) => {
+    try {
+      const stats = getRoomIndexStats();
+      res.json({
+        success: true,
+        indexStats: stats,
+        message: 'إحصائيات الفهرسة تم جلبها بنجاح'
+      });
+    } catch (error) {
+      console.error('خطأ في جلب إحصائيات الفهرسة:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: 'خطأ في الخادم',
+        indexStats: null
+      });
+    }
+  });
 
   return httpServer;
 }
