@@ -961,8 +961,8 @@ export default function BroadcastRoomInterface({
           </div>
         )}
 
-        {/* شريط تحكم خفيف ومتماسك */}
-        <div className="px-3 sm:px-4 py-2 flex flex-wrap items-center gap-2 border-b bg-background/50">
+        {/* شريط تحكم خفيف ومتماسك - يظهر على الجوال فقط */}
+        <div className="px-3 sm:px-4 py-2 flex flex-wrap items-center gap-2 border-b bg-background/50 sm:hidden">
           {canRequestMic && (
             <Button onClick={handleRequestMic} disabled={isLoading} className="flex items-center gap-2">
               <Mic className="w-4 h-4" />
@@ -1012,22 +1012,87 @@ export default function BroadcastRoomInterface({
           )}
         </div>
 
-        {/* منطقة الرسائل الموحدة */}
-        <div className="flex-1 min-h-0">
-          <MessageArea
-            messages={messages}
-            currentUser={currentUser}
-            onSendMessage={(content) => onSendMessage(content)}
-            onTyping={() => onTyping(true)}
-            typingUsers={new Set(typingUsers)}
-            onReportMessage={(u, c, id) => onReportMessage(u, c, id)}
-            onUserClick={onUserClick}
-            onlineUsers={onlineUsers}
-            currentRoomName={room?.name || 'غرفة البث'}
-            currentRoomId={room?.id}
-            chatLockAll={room?.chatLockAll}
-            chatLockVisitors={room?.chatLockVisitors}
-          />
+        {/* تخطيط سطح المكتب: عمود جانبي يسار + منطقة الرسائل */}
+        <div className="flex-1 min-h-0 flex">
+          {/* منطقة الرسائل */}
+          <div className="flex-1 min-h-0">
+            <MessageArea
+              messages={messages}
+              currentUser={currentUser}
+              onSendMessage={(content) => onSendMessage(content)}
+              onTyping={() => onTyping(true)}
+              typingUsers={new Set(typingUsers)}
+              onReportMessage={(u, c, id) => onReportMessage(u, c, id)}
+              onUserClick={onUserClick}
+              onlineUsers={onlineUsers}
+              currentRoomName={room?.name || 'غرفة البث'}
+              currentRoomId={room?.id}
+              chatLockAll={room?.chatLockAll}
+              chatLockVisitors={room?.chatLockVisitors}
+            />
+          </div>
+
+          {/* عمود التحكم الجانبي - يظهر على الشاشات المتوسطة فما فوق, يوضع يساراً في RTL بترتيب العناصر */}
+          <div className="hidden sm:flex flex-col gap-2 w-56 lg:w-64 border-l bg-background/50 p-3">
+            {isListener && playbackBlocked && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  try {
+                    audioRef.current?.play();
+                    setPlaybackBlocked(false);
+                  } catch {}
+                }}
+                className="justify-start"
+              >
+                <PlayCircle className="w-4 h-4" /> تشغيل الصوت
+              </Button>
+            )}
+
+            {canRequestMic && (
+              <Button onClick={handleRequestMic} disabled={isLoading} className="w-full justify-start">
+                <Mic className="w-4 h-4" />
+                {isLoading ? 'جاري الإرسال...' : 'طلب المايك'}
+              </Button>
+            )}
+
+            {canSpeak && !isBroadcasting && (
+              <Button onClick={startBroadcast} className="w-full justify-start">
+                <Mic className="w-4 h-4" /> بدء البث الصوتي
+              </Button>
+            )}
+            {canSpeak && isBroadcasting && (
+              <Button variant="outline" onClick={stopBroadcast} className="w-full justify-start">
+                <MicOff className="w-4 h-4" /> إيقاف البث الصوتي
+              </Button>
+            )}
+
+            {isInQueue && (
+              <Button variant="outline" disabled className="w-full justify-start">
+                <Clock className="w-4 h-4 animate-pulse" /> في قائمة الانتظار
+              </Button>
+            )}
+
+            {canSpeak && (
+              <div className="w-full flex items-center gap-2 justify-start text-xs px-2 py-1 rounded border bg-muted/40">
+                <Mic className="w-3 h-3 text-green-500" /> {isHost ? 'أنت المضيف' : 'يمكنك التحدث'}
+              </div>
+            )}
+
+            {isListener && (
+              <Button type="button" onClick={toggleMute} variant="ghost" className="w-full justify-start">
+                {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+                {isMuted ? 'تشغيل الصوت' : 'كتم الصوت'}
+              </Button>
+            )}
+
+            {canManageMic && micQueue.length > 0 && (
+              <div className="w-full flex items-center gap-2 justify-start text-xs px-2 py-1 rounded border bg-muted/40">
+                <Clock className="w-3 h-3" /> {micQueue.length} في الانتظار
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
