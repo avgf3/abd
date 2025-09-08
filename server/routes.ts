@@ -6,6 +6,7 @@ import path from 'path';
 import roomRoutes from './routes/rooms';
 import messageRoutes from './routes/messages';
 import storiesRoutes from './routes/stories';
+import voiceRoutes from './routes/voice';
 import { pointsService } from './services/pointsService';
 import { roomService } from './services/roomService';
 import { roomMessageService } from './services/roomMessageService';
@@ -264,6 +265,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/messages', messageRoutes);
   // حالات (Stories)
   app.use('/api/stories', storiesRoutes);
+  // الغرف الصوتية
+  app.use('/api/voice', voiceRoutes);
   // مسارات الرسائل الخاصة مفصولة بالكامل
   app.use('/api/private-messages', (await import('./routes/privateMessages')).default);
 

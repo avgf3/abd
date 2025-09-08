@@ -1,4 +1,4 @@
-import { X, Plus, Users, Mic, RefreshCw, MessageCircle, Search, Settings, Lock, Unlock } from 'lucide-react';
+import { X, Plus, Users, Mic, RefreshCw, MessageCircle, Search, Settings, Lock, Unlock, Phone, PhoneOff } from 'lucide-react';
 import React, { useState, useCallback, useMemo, useRef } from 'react';
 import { Virtuoso } from 'react-virtuoso';
 
@@ -13,6 +13,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useGrabScroll } from '@/hooks/useGrabScroll';
 import { useRoomManager } from '@/hooks/useRoomManager';
+import { useVoice } from '@/hooks/useVoice';
 import type { ChatRoom, ChatUser } from '@/types/chat';
 import { dedupeRooms } from '@/utils/roomUtils';
 
@@ -104,6 +105,9 @@ const RoomCard: React.FC<RoomCardProps> = ({
           <span className="flex items-center gap-1 flex-shrink-0">
             {room.isBroadcast && <Mic className="w-3 h-3 text-orange-500" />}
             {room.isLocked && <Lock className="w-3 h-3 text-yellow-600" />}
+            {isVoiceConnected && currentVoiceRoom?.id === room.id && (
+              <Phone className="w-3 h-3 text-green-500" />
+            )}
           </span>
           {/* إزالة شارة "افتراضي" بناءً على طلب العميل */}
         </div>
@@ -282,6 +286,19 @@ export default function RoomComponent({
   const { updateRoomIcon, toggleRoomLock } = useRoomManager();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const { toast } = useToast();
+  
+  // خطاف الصوت
+  const {
+    isConnected: isVoiceConnected,
+    currentRoom: currentVoiceRoom,
+    joinRoom: joinVoiceRoom,
+    leaveRoom: leaveVoiceRoom,
+    isMuted: isVoiceMuted,
+    toggleMute: toggleVoiceMute
+  } = useVoice({
+    autoConnect: false,
+    enableAnalytics: true
+  });
 
   const handleChangeIconClick = useCallback((roomId: string) => {
     setRoomIdToChangeIcon(roomId);
@@ -313,6 +330,51 @@ export default function RoomComponent({
     },
     [toggleRoomLock]
   );
+
+  // معالجات الصوت
+  const handleVoiceJoin = useCallback(async (roomId: string) => {
+    try {
+      await joinVoiceRoom(roomId);
+      toast({
+        title: 'تم الاتصال',
+        description: 'تم الاتصال بالغرفة الصوتية بنجاح'
+      });
+    } catch (error: any) {
+      toast({
+        title: 'خطأ في الاتصال',
+        description: error.message || 'فشل في الاتصال بالغرفة الصوتية',
+        variant: 'destructive'
+      });
+    }
+  }, [joinVoiceRoom, toast]);
+
+  const handleVoiceLeave = useCallback(async () => {
+    try {
+      await leaveVoiceRoom();
+      toast({
+        title: 'تم قطع الاتصال',
+        description: 'تم قطع الاتصال من الغرفة الصوتية'
+      });
+    } catch (error: any) {
+      toast({
+        title: 'خطأ في قطع الاتصال',
+        description: error.message || 'فشل في قطع الاتصال',
+        variant: 'destructive'
+      });
+    }
+  }, [leaveVoiceRoom, toast]);
+
+  const handleVoiceToggleMute = useCallback(async () => {
+    try {
+      await toggleVoiceMute();
+    } catch (error: any) {
+      toast({
+        title: 'خطأ في تغيير حالة الكتم',
+        description: error.message,
+        variant: 'destructive'
+      });
+    }
+  }, [toggleVoiceMute, toast]);
 
   // منع الدخول إلى الغرف المقفلة لغير المشرفين/المدراء/المالكين مع إظهار رسالة عربية
   const handleRoomSelect = useCallback(
@@ -583,6 +645,10 @@ export default function RoomComponent({
                         onDelete={canDeleteRooms ? (id, e) => handleDeleteRoom(id, e) : undefined}
                         onChangeIcon={isAdmin ? (rid) => handleChangeIconClick(rid) : undefined}
                         onToggleLock={isAdmin ? (rid, locked) => handleToggleLock(rid, locked) : undefined}
+                        onVoiceJoin={handleVoiceJoin}
+                        onVoiceLeave={handleVoiceLeave}
+                        isVoiceConnected={isVoiceConnected}
+                        currentVoiceRoom={currentVoiceRoom?.id || null}
                       />
                     );
                   }}
@@ -614,6 +680,36 @@ export default function RoomComponent({
           </div>
         )}
       </div>
+
+      {/* شريط التحكم الصوتي */}
+      {isVoiceConnected && currentVoiceRoom && (
+        <div className="border-t bg-card p-3 flex-shrink-0">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <Phone className="w-4 h-4 text-green-500" />
+                <span className="text-sm font-medium">{currentVoiceRoom.name}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant={isVoiceMuted ? "destructive" : "outline"}
+                  size="sm"
+                  onClick={handleVoiceToggleMute}
+                >
+                  {isVoiceMuted ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                </Button>
+              </div>
+            </div>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={handleVoiceLeave}
+            >
+              <PhoneOff className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* مربع حوار إضافة غرفة */}
       <Dialog open={showAddRoom} onOpenChange={setShowAddRoom}>
