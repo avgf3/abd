@@ -514,13 +514,13 @@ export default function MessageArea({
   }, []);
 
   return (
-    <section className={`flex-1 flex flex-col bg-white min-h-0 ${isMobile ? 'mobile-message-area' : ''}`}>
-      {/* Chat Lock Status Indicator */}
+    <section className={`flex-1 flex flex-col bg-gradient-to-br from-slate-50 via-blue-50/30 to-purple-50/20 min-h-0 ${isMobile ? 'mobile-message-area' : ''}`}>
+      {/* Chat Lock Status Indicator المحسن */}
       {(chatLockAll || chatLockVisitors) && (
-        <div className={`px-4 py-2 text-center text-sm font-medium border-b ${
+        <div className={`px-6 py-3 text-center text-sm font-medium border-b backdrop-blur-md shadow-lg ${
           chatLockAll 
-            ? 'bg-red-100 text-red-800 border-red-200' 
-            : 'bg-yellow-100 text-yellow-800 border-yellow-200'
+            ? 'bg-gradient-to-r from-red-100/80 via-rose-100/80 to-pink-100/80 text-red-800 border-red-200/50' 
+            : 'bg-gradient-to-r from-yellow-100/80 via-amber-100/80 to-orange-100/80 text-yellow-800 border-yellow-200/50'
         }`}>
           {chatLockAll && (
             <div className="flex items-center justify-center gap-2">
@@ -537,9 +537,9 @@ export default function MessageArea({
         </div>
       )}
 
-      {/* Messages Container - Virtualized */}
+      {/* Messages Container - Virtualized المحسن */}
       <div
-        className={`relative flex-1 ${isMobile ? 'p-2' : 'p-4'} bg-gradient-to-b from-gray-50 to-white`}
+        className={`relative flex-1 ${isMobile ? 'p-3' : 'p-6'} bg-gradient-to-b from-transparent via-white/30 to-blue-50/20 backdrop-blur-sm`}
       >
         {validMessages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-gray-500">
