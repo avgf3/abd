@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction } from 'express';
 
 import { storage } from '../storage';
+import { moderationSystem } from '../moderation';
 import { getAuthTokenFromRequest, verifyAuthToken } from '../utils/auth-token';
 import { log } from '../utils/productionLogger';
 import { parseEntityId } from '../types/entities';
@@ -75,15 +76,26 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
       throw createError.unauthorized('المستخدم غير موجود');
     }
 
-    // التحقق من أن المستخدم ليس محظوراً
-    if (user.isBanned) {
-      log.security('محاولة وصول من مستخدم محظور', {
-        userId: user.id,
-        username: user.username,
-        ip: req.ip,
-      });
-      throw createError.forbidden('حسابك محظور مؤقتاً');
-    }
+    // التحقق من الحظر/الكتم باستخدام نظام الإدارة مع احترام انتهاء المدة
+    try {
+      const status = await moderationSystem.checkUserStatus(user.id);
+      if (status.isBlocked) {
+        log.security('محاولة وصول من مستخدم محجوب نهائياً', {
+          userId: user.id,
+          username: user.username,
+          ip: req.ip,
+        });
+        throw createError.forbidden(status.reason || 'تم حجبك من الدردشة نهائياً');
+      }
+      if (status.isBanned && !status.canJoin) {
+        log.security('محاولة وصول من مستخدم مطرود مؤقتاً', {
+          userId: user.id,
+          username: user.username,
+          ip: req.ip,
+        });
+        throw createError.forbidden(status.reason || 'حسابك محظور مؤقتاً');
+      }
+    } catch {}
 
     // إضافة بيانات المستخدم للطلب
     req.user = {

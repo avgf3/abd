@@ -1,4 +1,4 @@
-import { sql, eq, notInArray } from 'drizzle-orm';
+import { sql, eq, notInArray, and, lt, isNotNull } from 'drizzle-orm';
 
 import { messages, users } from '../../shared/schema';
 import { db, getDatabaseStatus } from '../database-adapter';
@@ -62,19 +62,39 @@ export class DatabaseCleanup {
   async performFullCleanup(): Promise<{
     orphanedMessages: number;
     invalidMessages: number;
+    expiredBansCleared: number;
   }> {
     const connected = getDatabaseStatus().connected;
     if (!connected || !db) {
-      return { orphanedMessages: 0, invalidMessages: 0 };
+      return { orphanedMessages: 0, invalidMessages: 0, expiredBansCleared: 0 };
     }
 
     const results = {
       orphanedMessages: await this.cleanupOrphanedMessages(),
       invalidMessages: await this.cleanupInvalidMessages(),
+      expiredBansCleared: await this.clearExpiredBans(),
     };
 
-    const totalCleaned = results.orphanedMessages + results.invalidMessages;
     return results;
+  }
+
+  /**
+   * تنظيف حالات isBanned المنتهية (banExpiry <= now)
+   */
+  async clearExpiredBans(): Promise<number> {
+    try {
+      if (!db || !getDatabaseStatus().connected) return 0;
+      const now = new Date();
+      const updated = await db
+        .update(users)
+        .set({ isBanned: false, banExpiry: null })
+        .where(and(eq(users.isBanned, true), isNotNull(users.banExpiry), lt(users.banExpiry, now as any)))
+        .returning({ id: users.id });
+      return Array.isArray(updated) ? updated.length : 0;
+    } catch (error) {
+      console.error('❌ خطأ في تنظيف حالات الحظر المنتهية:', error);
+      return 0;
+    }
   }
 
   /**
