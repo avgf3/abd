@@ -2146,6 +2146,20 @@ li::before {
     border-radius: 12px;
   }
   
+  /* إصلاح توسيط أزرار تسجيل الدخول للجوال فقط */
+  @media (max-width: 768px) {
+    .welcome-login-buttons {
+      display: flex !important;
+      flex-direction: column !important;
+      width: 100% !important;
+      max-width: 20rem !important; /* max-w-sm */
+      margin: 0 auto !important;
+      justify-content: center !important;
+      align-items: center !important;
+      padding: 0 1rem !important;
+    }
+  }
+  
   /* تحسين قوائم المستخدمين للجوال */
   .mobile-layout .user-list-item {
     padding: 16px 12px;

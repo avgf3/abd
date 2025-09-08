@@ -222,7 +222,7 @@ export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
           </div>
 
         <div
-          className={`flex ${isMobile ? 'flex-col w-full max-w-xs' : 'flex-col sm:flex-row'} gap-3 sm:gap-4 justify-center items-center px-3`}
+          className={`flex ${isMobile ? 'welcome-login-buttons' : 'flex-col sm:flex-row'} gap-3 sm:gap-4 justify-center items-center px-3`}
         >
           <Button
             className={`modern-button btn-success text-white font-semibold py-4 px-10 rounded-2xl shadow-xl flex items-center gap-3 mobile-touch-button hover-glow ${isMobile ? 'w-full justify-center' : ''}`}
