@@ -291,7 +291,7 @@ export default function ProfileModal({
   // دالة موحدة لجلب بيانات المستخدم من السيرفر وتحديث الحالة المحلية - محسّنة
   const fetchAndUpdateUser = async (userId: number) => {
     try {
-      const userData = await apiRequest(`/api/users/${userId}?t=${Date.now()}`); // إضافة timestamp لتجنب cache
+      const userData = await apiRequest(`/api/users/${userId}`);
       setLocalUser(userData);
       if (onUpdate) onUpdate(userData);
 
@@ -723,7 +723,17 @@ export default function ProfileModal({
 
   // Profile image fallback - محسّن للتعامل مع base64 و مشاكل الcache
   const getProfileImageSrcLocal = () => {
-    return getProfileImageSrc(localUser?.profileImage);
+    // محاكاة منطق ProfileImage.tsx لإضافة ?v=avatarHash|avatarVersion عند توفره
+    const base = getProfileImageSrc(localUser?.profileImage);
+    try {
+      const isBase64 = typeof base === 'string' && base.startsWith('data:');
+      const hasVersionAlready = typeof base === 'string' && base.includes('?v=');
+      const versionTag = (localUser as any)?.avatarHash || (localUser as any)?.avatarVersion;
+      if (!isBase64 && versionTag && !hasVersionAlready && typeof base === 'string' && base.startsWith('/')) {
+        return `${base}?v=${versionTag}`;
+      }
+    } catch {}
+    return base;
   };
 
   // Profile banner fallback - محسّن للتعامل مع base64 و مشاكل الcache
