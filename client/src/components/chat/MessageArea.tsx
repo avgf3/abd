@@ -855,15 +855,53 @@ export default function MessageArea({
         onOpenChange={(open) => {
           if (!open) setYoutubeModal({ open: false, videoId: null });
         }}
+        modal={false}
       >
-        <DialogContent className="max-w-3xl w-[92vw] p-2 bg-black/80">
-          <DialogHeader>
-            <DialogTitle>مشغل فيديو يوتيوب</DialogTitle>
-          </DialogHeader>
-          <div className="flex justify-end">
+        <DialogContent className="max-w-md w-[25vw] min-w-[400px] p-0 bg-black/90 border-gray-700">
+          <div 
+            className="drag-handle bg-black/50 p-1 flex justify-end cursor-move border-b border-gray-600"
+            onMouseDown={(e) => {
+              // تفعيل السحب
+              const dialog = e.currentTarget.closest('.fixed');
+              if (dialog) {
+                let isDragging = false;
+                let startX = e.clientX;
+                let startY = e.clientY;
+                let initialX = 0;
+                let initialY = 0;
+
+                const rect = dialog.getBoundingClientRect();
+                initialX = rect.left;
+                initialY = rect.top;
+
+                const onMouseMove = (moveEvent: MouseEvent) => {
+                  if (!isDragging) {
+                    isDragging = true;
+                    dialog.style.position = 'fixed';
+                    dialog.style.zIndex = '9999';
+                  }
+                  
+                  const deltaX = moveEvent.clientX - startX;
+                  const deltaY = moveEvent.clientY - startY;
+                  
+                  dialog.style.left = `${initialX + deltaX}px`;
+                  dialog.style.top = `${initialY + deltaY}px`;
+                  dialog.style.transform = 'none';
+                };
+
+                const onMouseUp = () => {
+                  document.removeEventListener('mousemove', onMouseMove);
+                  document.removeEventListener('mouseup', onMouseUp);
+                };
+
+                document.addEventListener('mousemove', onMouseMove);
+                document.addEventListener('mouseup', onMouseUp);
+              }
+            }}
+          >
             <button
               onClick={() => setYoutubeModal({ open: false, videoId: null })}
-              className="text-white/90 hover:text-white text-xl leading-none"
+              className="text-white/90 hover:text-white text-lg leading-none p-1"
               aria-label="إغلاق"
             >
               ✖️
@@ -873,10 +911,10 @@ export default function MessageArea({
             {youtubeModal.videoId && (
               <iframe
                 src={`https://www.youtube.com/embed/${youtubeModal.videoId}`}
-                className="absolute inset-0 w-full h-full rounded"
+                className="absolute inset-0 w-full h-full"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                 allowFullScreen
-                title="تشغيل فيديو من يوتيوب"
+                title="يوتيوب"
               />
             )}
           </div>
