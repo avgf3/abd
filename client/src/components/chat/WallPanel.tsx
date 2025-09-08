@@ -35,8 +35,14 @@ interface WallPanelProps {
 
 export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelProps) {
   const [activeTab, setActiveTab] = useState<'public' | 'friends'>('public');
-  const [posts, setPosts] = useState<WallPost[]>(() => []);
-  const [loading, setLoading] = useState(false);
+  const [postsByTab, setPostsByTab] = useState<{ public: WallPost[]; friends: WallPost[] }>(() => ({
+    public: [],
+    friends: [],
+  }));
+  const [loadingByTab, setLoadingByTab] = useState<{ public: boolean; friends: boolean }>(() => ({
+    public: false,
+    friends: false,
+  }));
   const [newPostContent, setNewPostContent] = useState('');
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>('');
@@ -89,69 +95,69 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
 
   useEffect(() => {
     const data = wallData as unknown as { posts?: WallPost[] } | undefined;
+    setLoadingByTab((prev) => ({ ...prev, [activeTab]: isFetching }));
     if (data?.posts) {
-      setPosts(data.posts);
+      setPostsByTab((prev) => ({ ...prev, [activeTab]: data.posts! }));
     }
-    setLoading(isFetching);
-  }, [wallData, isFetching]);
+  }, [wallData, isFetching, activeTab]);
 
   // إعداد Socket.IO للتحديثات الفورية
   useEffect(() => {
     if (isOpen && !socket.current) {
-      // استخدام Socket الموحد
       const s = getSocket();
       socket.current = s;
+    }
 
+    if (isOpen) {
       // حفظ نوع الحائط في الجلسة كحقل سياقي (اختياري)
       saveSession({ wallTab: activeTab });
 
-      // معالج المنشورات الجديدة
       const handleWallMessage = (message: any) => {
         if (message.type === 'newWallPost') {
-          const postType = message.wallType || message.post?.type || 'public';
+          const postType: 'public' | 'friends' =
+            (message.wallType || message.post?.type || 'public') === 'friends' ? 'friends' : 'public';
+          setPostsByTab((prev) => ({
+            ...prev,
+            [postType]: [message.post, ...(prev[postType] || [])],
+          }));
+          queryClient.setQueryData(['/api/wall/posts', postType, currentUser.id], (old: any) => {
+            const oldPosts = old?.posts || [];
+            return { ...(old || {}), posts: [message.post, ...oldPosts] };
+          });
           if (postType === activeTab) {
-            setPosts((prevPosts) => [message.post, ...prevPosts]);
-            // تحديث الكاش
-            queryClient.setQueryData(['/api/wall/posts', activeTab, currentUser.id], (old: any) => {
-              const oldPosts = old?.posts || [];
-              return { ...(old || {}), posts: [message.post, ...oldPosts] };
-            });
-            toast({
-              title: 'منشور جديد ✨',
-              description: `منشور جديد من ${message.post.username}`,
-            });
+            toast({ title: 'منشور جديد ✨', description: `منشور جديد من ${message.post.username}` });
           }
         } else if (message.type === 'wallPostReaction') {
-          setPosts((prevPosts) =>
-            prevPosts.map((post) => (post.id === message.post.id ? message.post : post))
-          );
-          queryClient.setQueryData(['/api/wall/posts', activeTab, currentUser.id], (old: any) => {
+          const postType: 'public' | 'friends' =
+            (message.wallType || message.post?.type || 'public') === 'friends' ? 'friends' : 'public';
+          setPostsByTab((prev) => ({
+            ...prev,
+            [postType]: (prev[postType] || []).map((p) => (p.id === message.post.id ? message.post : p)),
+          }));
+          queryClient.setQueryData(['/api/wall/posts', postType, currentUser.id], (old: any) => {
             const oldPosts: WallPost[] = old?.posts || [];
-            return {
-              ...(old || {}),
-              posts: oldPosts.map((p) => (p.id === message.post.id ? message.post : p)),
-            };
+            return { ...(old || {}), posts: oldPosts.map((p) => (p.id === message.post.id ? message.post : p)) };
           });
         } else if (message.type === 'wallPostDeleted') {
-          setPosts((prevPosts) => prevPosts.filter((post) => post.id !== message.postId));
-          queryClient.setQueryData(['/api/wall/posts', activeTab, currentUser.id], (old: any) => {
+          const postType: 'public' | 'friends' = (message.wallType || 'public') === 'friends' ? 'friends' : 'public';
+          setPostsByTab((prev) => ({
+            ...prev,
+            [postType]: (prev[postType] || []).filter((p) => p.id !== message.postId),
+          }));
+          queryClient.setQueryData(['/api/wall/posts', postType, currentUser.id], (old: any) => {
             const oldPosts: WallPost[] = old?.posts || [];
             return { ...(old || {}), posts: oldPosts.filter((p) => p.id !== message.postId) };
           });
         }
       };
-      
-      s.on('message', handleWallMessage);
-    }
 
-    return () => {
-      if (socket.current) {
-        // لا نفصل الاتصال العام، فقط نزيل المستمع المحلي
-        socket.current.off('message', handleWallMessage);
-        socket.current = null;
-      }
-    };
-  }, [isOpen, activeTab, toast]);
+      const s = socket.current!;
+      s.on('message', handleWallMessage);
+      return () => {
+        s.off('message', handleWallMessage);
+      };
+    }
+  }, [isOpen, activeTab, toast, queryClient, currentUser.id]);
 
   // معالجة اختيار الصورة مع تحسينات احترافية
   const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -237,8 +243,7 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
       const data = result as any;
       if (data?.post) {
         const newPost = data.post || data;
-        // إضافة المنشور للقائمة فوراً
-        setPosts((prev) => [newPost, ...prev]);
+        setPostsByTab((prev) => ({ ...prev, [activeTab]: [newPost, ...(prev[activeTab] || [])] }));
         queryClient.setQueryData(['/api/wall/posts', activeTab, currentUser.id], (old: any) => {
           const oldPosts = old?.posts || [];
           return { ...(old || {}), posts: [newPost, ...oldPosts] };
@@ -292,7 +297,10 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
 
       const data = result as any;
       if (data?.post) {
-        setPosts((prev) => prev.map((post) => (post.id === postId ? data.post : post)));
+        setPostsByTab((prev) => ({
+          ...prev,
+          [activeTab]: (prev[activeTab] || []).map((post) => (post.id === postId ? data.post : post)),
+        }));
         queryClient.setQueryData(['/api/wall/posts', activeTab, currentUser.id], (old: any) => {
           const oldPosts: WallPost[] = old?.posts || [];
           return { ...(old || {}), posts: oldPosts.map((p) => (p.id === postId ? data.post : p)) };
@@ -315,7 +323,10 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
         },
       });
 
-      setPosts((prev) => prev.filter((post) => post.id !== postId));
+      setPostsByTab((prev) => ({
+        ...prev,
+        [activeTab]: (prev[activeTab] || []).filter((post) => post.id !== postId),
+      }));
       queryClient.setQueryData(['/api/wall/posts', activeTab, currentUser.id], (old: any) => {
         const oldPosts: WallPost[] = old?.posts || [];
         return { ...(old || {}), posts: oldPosts.filter((p) => p.id !== postId) };
@@ -511,16 +522,46 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
                 </Card>
               )}
 
-              <TabsContent value={activeTab} className="flex-1 min-h-0">
+              <TabsContent value="public" className="flex-1 min-h-0">
                 <div
                   ref={panelScrollRef}
                   onScroll={handleWallScroll}
                   className="h-full overflow-y-auto space-y-4 pr-2 pb-24 cursor-grab"
                 >
                   <WallPostList
-                    posts={posts}
-                    loading={loading}
-                    emptyFor={activeTab}
+                    posts={postsByTab.public}
+                    loading={loadingByTab.public}
+                    emptyFor="public"
+                    currentUser={currentUser}
+                    onDelete={handleDeletePost}
+                    onReact={handleReaction}
+                    canDelete={canDeletePost}
+                    onUserClick={handleUserClick}
+                  />
+                  {!isAtBottomWall && (
+                    <div className="absolute bottom-4 right-4 z-10">
+                      <Button
+                        size="sm"
+                        onClick={() => scrollWallToBottom('smooth')}
+                        className="px-3 py-1.5 rounded-full text-xs bg-primary text-primary-foreground shadow"
+                      >
+                        الانتقال لأسفل
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </TabsContent>
+
+              <TabsContent value="friends" className="flex-1 min-h-0">
+                <div
+                  ref={panelScrollRef}
+                  onScroll={handleWallScroll}
+                  className="h-full overflow-y-auto space-y-4 pr-2 pb-24 cursor-grab"
+                >
+                  <WallPostList
+                    posts={postsByTab.friends}
+                    loading={loadingByTab.friends}
+                    emptyFor="friends"
                     currentUser={currentUser}
                     onDelete={handleDeletePost}
                     onReact={handleReaction}
