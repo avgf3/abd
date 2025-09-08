@@ -718,40 +718,40 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
       >
         <div className={`flex gap-1 sm:gap-2 overflow-x-auto max-w-full ${isMobile ? 'justify-evenly w-full' : ''}`}>
           <Button
-            className={`glass-effect rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2 ${
-              isMobile ? 'px-2 py-2' : 'px-3 py-2'
+            className={`glass-effect rounded-lg hover:bg-accent transition-all duration-200 flex items-center ${
+              isMobile ? 'flex-1 px-2 py-2 text-xs gap-1.5' : 'px-3 py-2 gap-2'
             }`}
             onClick={() => setShowSettings(!showSettings)}
           >
-            <Settings className="w-4 h-4" />
-            <span className={`font-medium ${isMobile ? 'text-xs tab-text-hide' : ''}`}>إعدادات</span>
+            <Settings className={isMobile ? "w-[18px] h-[18px]" : "w-4 h-4"} />
+            <span className={`font-medium ${isMobile ? 'tab-text-hide' : ''}`}>إعدادات</span>
           </Button>
 
           <Button
-            className={`glass-effect rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2 border border-yellow-400 ${
-              isMobile ? 'px-2 py-2' : 'px-3 py-2'
+            className={`glass-effect rounded-lg hover:bg-accent transition-all duration-200 flex items-center border border-yellow-400 ${
+              isMobile ? 'flex-1 px-2 py-2 text-xs gap-1.5' : 'px-3 py-2 gap-2'
             }`}
             onMouseEnter={prefetchVip}
             onFocus={prefetchVip}
             onClick={() => setShowRichest(true)}
             title="الأثرياء"
           >
-            <Crown className="w-4 h-4 text-yellow-400" />
-            <span className={`font-medium ${isMobile ? 'text-xs tab-text-hide' : ''}`}>الأثرياء</span>
+            <Crown className={isMobile ? "w-[18px] h-[18px] text-yellow-400" : "w-4 h-4 text-yellow-400"} />
+            <span className={`font-medium ${isMobile ? 'tab-text-hide' : ''}`}>الأثرياء</span>
           </Button>
 
           {/* زر إضافة غرفة جديدة للمالك */}
           {chat.currentUser && chat.currentUser.userType === 'owner' && (
             <Button
-              className={`glass-effect rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2 ${
-                isMobile ? 'px-2 py-2' : 'px-3 py-2'
+              className={`glass-effect rounded-lg hover:bg-accent transition-all duration-200 flex items-center ${
+                isMobile ? 'flex-1 px-2 py-2 text-xs gap-1.5' : 'px-3 py-2 gap-2'
               }`}
               onClick={() => setShowAddRoomDialog(true)}
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
+                width={isMobile ? "18" : "16"}
+                height={isMobile ? "18" : "16"}
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -763,20 +763,20 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                 <line x1="12" y1="8" x2="12" y2="16"></line>
                 <line x1="8" y1="12" x2="16" y2="12"></line>
               </svg>
-              <span className={`font-medium ${isMobile ? 'text-xs tab-text-hide' : ''}`}>إضافة غرفة</span>
+              <span className={`font-medium ${isMobile ? 'tab-text-hide' : ''}`}>إضافة غرفة</span>
             </Button>
           )}
 
           {/* زر خاص بالمالك فقط */}
           {chat.currentUser && chat.currentUser.userType === 'owner' && (
             <Button
-              className={`glass-effect rounded-lg hover:bg-purple-600 transition-all duration-200 flex items-center gap-2 border border-purple-400 ${
-                isMobile ? 'px-2 py-2' : 'px-4 py-2'
+              className={`glass-effect rounded-lg hover:bg-purple-600 transition-all duration-200 flex items-center border border-purple-400 ${
+                isMobile ? 'flex-1 px-2 py-2 text-xs gap-1.5' : 'px-4 py-2 gap-2'
               }`}
               onClick={() => setShowOwnerPanel(true)}
             >
-              <Crown className="w-4 h-4" />
-              <span className={`font-medium ${isMobile ? 'text-xs tab-text-hide' : ''}`}>إدارة المالك</span>
+              <Crown className={isMobile ? "w-[18px] h-[18px]" : "w-4 h-4"} />
+              <span className={`font-medium ${isMobile ? 'tab-text-hide' : ''}`}>إدارة المالك</span>
             </Button>
           )}
 
@@ -787,34 +787,34 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                 {/* زر ترقية المستخدمين - للمالك فقط */}
                 {chat.currentUser?.userType === 'owner' && (
                   <Button
-                    className={`glass-effect rounded-lg hover:bg-blue-600 transition-all duration-200 flex items-center gap-2 ${
-                      isMobile ? 'px-2 py-2' : 'px-4 py-2'
+                    className={`glass-effect rounded-lg hover:bg-blue-600 transition-all duration-200 flex items-center ${
+                      isMobile ? 'flex-1 px-2 py-2 text-xs gap-1.5' : 'px-4 py-2 gap-2'
                     }`}
                     onClick={() => setShowPromotePanel(true)}
                   >
-                    <Crown className="w-4 h-4" />
-                    <span className={`font-medium ${isMobile ? 'text-xs tab-text-hide' : ''}`}>ترقية المستخدمين</span>
+                    <Crown className={isMobile ? "w-[18px] h-[18px]" : "w-4 h-4"} />
+                    <span className={`font-medium ${isMobile ? 'tab-text-hide' : ''}`}>ترقية المستخدمين</span>
                   </Button>
                 )}
 
                 <Button
-                  className={`glass-effect rounded-lg hover:bg-yellow-600 transition-all duration-200 flex items-center gap-2 border border-yellow-400 ${
-                    isMobile ? 'px-2 py-2' : 'px-4 py-2'
+                  className={`glass-effect rounded-lg hover:bg-yellow-600 transition-all duration-200 flex items-center border border-yellow-400 ${
+                    isMobile ? 'flex-1 px-2 py-2 text-xs gap-1.5' : 'px-4 py-2 gap-2'
                   }`}
                   onClick={() => setShowActiveActions(true)}
                 >
-                  <Lock className="w-4 h-4" />
-                  <span className={`font-medium ${isMobile ? 'text-xs tab-text-hide' : ''}`}>سجل الإجراءات النشطة</span>
+                  <Lock className={isMobile ? "w-[18px] h-[18px]" : "w-4 h-4"} />
+                  <span className={`font-medium ${isMobile ? 'tab-text-hide' : ''}`}>سجل الإجراءات النشطة</span>
                 </Button>
 
                 <Button
-                  className={`glass-effect rounded-lg hover:bg-red-600 transition-all duration-200 flex items-center gap-2 border border-red-400 relative ${
-                    isMobile ? 'px-2 py-2' : 'px-4 py-2'
+                  className={`glass-effect rounded-lg hover:bg-red-600 transition-all duration-200 flex items-center border border-red-400 relative ${
+                    isMobile ? 'flex-1 px-2 py-2 text-xs gap-1.5' : 'px-4 py-2 gap-2'
                   }`}
                   onClick={() => setShowReportsLog(true)}
                 >
-                  <AlertTriangle className="w-4 h-4" />
-                  <span className={`font-medium ${isMobile ? 'text-xs tab-text-hide' : ''}`}>سجل البلاغات</span>
+                  <AlertTriangle className={isMobile ? "w-[18px] h-[18px]" : "w-4 h-4"} />
+                  <span className={`font-medium ${isMobile ? 'tab-text-hide' : ''}`}>سجل البلاغات</span>
                   {pendingReportsCount > 0 && (
                     <span className="absolute -top-2 -right-2 inline-flex items-center justify-center text-[10px] min-w-[18px] h-[18px] px-1 rounded-full bg-red-600 text-white">
                       {pendingReportsCount}
@@ -823,8 +823,8 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                 </Button>
 
                 <Button
-                  className={`glass-effect rounded-lg transition-all duration-200 flex items-center gap-2 border ${
-                    isMobile ? 'px-2 py-2' : 'px-4 py-2'
+                  className={`glass-effect rounded-lg transition-all duration-200 flex items-center border ${
+                    isMobile ? 'flex-1 px-2 py-2 text-xs gap-1.5' : 'px-4 py-2 gap-2'
                   }`}
                   onClick={async () => {
                     if (!chat.currentUser) return;
@@ -843,38 +843,38 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                 >
                   {chat.currentUser?.isHidden ? (
                     <>
-                      <Eye className="w-4 h-4" />
-                      <span className={`font-medium ${isMobile ? 'text-xs tab-text-hide' : ''}`}>إظهار</span>
+                      <Eye className={isMobile ? "w-[18px] h-[18px]" : "w-4 h-4"} />
+                      <span className={`font-medium ${isMobile ? 'tab-text-hide' : ''}`}>إظهار</span>
                     </>
                   ) : (
                     <>
-                      <EyeOff className="w-4 h-4" />
-                      <span className={`font-medium ${isMobile ? 'text-xs tab-text-hide' : ''}`}>إخفاء</span>
+                      <EyeOff className={isMobile ? "w-[18px] h-[18px]" : "w-4 h-4"} />
+                      <span className={`font-medium ${isMobile ? 'tab-text-hide' : ''}`}>إخفاء</span>
                     </>
                   )}
                 </Button>
 
                 <Button
-                  className={`glass-effect rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2 ${
-                    isMobile ? 'px-2 py-2' : 'px-4 py-2'
+                  className={`glass-effect rounded-lg hover:bg-accent transition-all duration-200 flex items-center ${
+                    isMobile ? 'flex-1 px-2 py-2 text-xs gap-1.5' : 'px-4 py-2 gap-2'
                   }`}
                   onClick={() => setShowModerationPanel(true)}
                 >
-                  <Shield className="w-4 h-4" />
-                  <span className={`font-medium ${isMobile ? 'text-xs tab-text-hide' : ''}`}>إدارة</span>
+                  <Shield className={isMobile ? "w-[18px] h-[18px]" : "w-4 h-4"} />
+                  <span className={`font-medium ${isMobile ? 'tab-text-hide' : ''}`}>إدارة</span>
                 </Button>
               </>
             )}
 
           <Button
-            className={`glass-effect rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2 ${
-              isMobile ? 'px-2 py-2' : 'px-4 py-2'
+            className={`glass-effect rounded-lg hover:bg-accent transition-all duration-200 flex items-center ${
+              isMobile ? 'flex-1 px-2 py-2 text-xs gap-1.5' : 'px-4 py-2 gap-2'
             }`}
             onClick={() => setShowMessages(true)}
             title="الرسائل"
           >
-            <MessageSquare className="w-4 h-4" />
-            <span className={`font-medium ${isMobile ? 'text-xs tab-text-hide' : ''}`}>الرسائل</span>
+            <MessageSquare className={isMobile ? "w-[18px] h-[18px]" : "w-4 h-4"} />
+            <span className={`font-medium ${isMobile ? 'tab-text-hide' : ''}`}>الرسائل</span>
             {totalUnreadPrivateMessages > 0 && (
               <span className="ml-2 inline-flex items-center justify-center text-[10px] min-w-[18px] h-[18px] px-1 rounded-full bg-red-600 text-white">
                 {totalUnreadPrivateMessages}
@@ -883,13 +883,13 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           </Button>
 
           <Button
-            className={`glass-effect rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2 relative ${
-              isMobile ? 'px-2 py-2' : 'px-4 py-2'
+            className={`glass-effect rounded-lg hover:bg-accent transition-all duration-200 flex items-center relative ${
+              isMobile ? 'flex-1 px-2 py-2 text-xs gap-1.5' : 'px-4 py-2 gap-2'
             }`}
             onClick={() => setShowNotifications(true)}
           >
-            <Bell className="w-4 h-4" />
-            <span className={`font-medium ${isMobile ? 'text-xs tab-text-hide' : ''}`}>إشعارات</span>
+            <Bell className={isMobile ? "w-[18px] h-[18px]" : "w-4 h-4"} />
+            <span className={`font-medium ${isMobile ? 'tab-text-hide' : ''}`}>إشعارات</span>
             {unreadNotificationsCount > 0 && (
               <span className="ml-2 inline-flex items-center justify-center text-[10px] min-w-[18px] h-[18px] px-1 rounded-full bg-red-600 text-white">
                 {unreadNotificationsCount}
