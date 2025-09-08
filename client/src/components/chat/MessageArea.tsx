@@ -514,13 +514,13 @@ export default function MessageArea({
   }, []);
 
   return (
-    <section className={`flex-1 flex flex-col bg-white min-h-0 ${isMobile ? 'mobile-message-area' : ''}`}>
+    <section className={`flex-1 flex flex-col bg-gray-50 min-h-0 ${isMobile ? 'mobile-message-area' : ''}`}>
       {/* Chat Lock Status Indicator */}
       {(chatLockAll || chatLockVisitors) && (
-        <div className={`px-4 py-2 text-center text-sm font-medium border-b ${
+        <div className={`px-4 py-3 text-center text-sm font-medium border-b ${
           chatLockAll 
-            ? 'bg-red-100 text-red-800 border-red-200' 
-            : 'bg-yellow-100 text-yellow-800 border-yellow-200'
+            ? 'bg-red-50 text-red-700 border-red-200' 
+            : 'bg-yellow-50 text-yellow-700 border-yellow-200'
         }`}>
           {chatLockAll && (
             <div className="flex items-center justify-center gap-2">
@@ -537,15 +537,17 @@ export default function MessageArea({
         </div>
       )}
 
-      {/* Messages Container - Virtualized */}
+      {/* Messages Container - محسن */}
       <div
-        className={`relative flex-1 ${isMobile ? 'p-2' : 'p-4'} bg-gradient-to-b from-gray-50 to-white`}
+        className={`relative flex-1 ${isMobile ? 'p-3' : 'p-4'} bg-white`}
       >
         {validMessages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-gray-500">
-            <div className="text-6xl mb-4">💬</div>
-            <p className="text-lg font-medium">أهلاً وسهلاً في {currentRoomName}</p>
-            <p className="text-sm">ابدأ المحادثة بكتابة رسالتك الأولى</p>
+            <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mb-4">
+              <div className="text-3xl">💬</div>
+            </div>
+            <h3 className="text-xl font-semibold text-gray-700 mb-2">أهلاً وسهلاً في {currentRoomName}</h3>
+            <p className="text-gray-500 text-center">ابدأ المحادثة بكتابة رسالتك الأولى</p>
           </div>
         ) : (
           <Virtuoso
@@ -560,8 +562,7 @@ export default function MessageArea({
             itemContent={(index, message) => (
               <div
                 key={message.id}
-                className={`flex ${isMobile ? 'items-start' : 'items-center'} gap-2 p-2 rounded-lg border-r-4 bg-white shadow-sm hover:shadow-md transition-all duration-300 room-message-pulse soft-entrance`}
-                style={{ borderRightColor: getDynamicBorderColor(message.sender) }}
+                className={`flex ${isMobile ? 'items-start' : 'items-start'} gap-3 p-4 mb-3 rounded-xl bg-white border border-gray-100 shadow-sm hover:shadow-md transition-all duration-200 group`}
               >
                 {/* System message: one-line red without avatar/badge */}
                 {message.messageType === 'system' ? (
@@ -571,30 +572,32 @@ export default function MessageArea({
                         <ProfileImage
                           user={message.sender}
                           size="small"
-                          className="w-7 h-7 cursor-pointer hover:scale-110 transition-transform duration-200"
+                          className="w-10 h-10 cursor-pointer hover:scale-105 transition-transform duration-200 ring-2 ring-red-200 hover:ring-red-300"
                           onClick={(e) => onUserClick && onUserClick(e, message.sender!)}
                         />
                       </div>
                     )}
-                    <div className={`flex-1 min-w-0 flex ${isMobile ? 'flex-wrap items-start' : 'items-center'} gap-2`}>
-                      {message.sender && message.sender.userType !== 'bot' && (
-                        <UserRoleBadge user={message.sender} showOnlyIcon={true} hideGuestAndGender={true} size={16} />
-                      )}
-                      <button
-                        onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
-                        className="font-semibold hover:underline transition-colors duration-200 truncate"
-                        style={{ color: getFinalUsernameColor(message.sender) }}
-                      >
-                        {message.sender?.username}
-                      </button>
-                      <div className={`text-red-600 break-words flex-1 min-w-0 message-content-fix ${isMobile && !isMessageExpanded(message.id) ? 'line-clamp-2' : !isMobile ? 'truncate' : ''}`}>
-                        <span dir="auto" className={`${isMobile && !isMessageExpanded(message.id) ? 'line-clamp-2' : !isMobile ? 'truncate' : ''}`}>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        {message.sender && message.sender.userType !== 'bot' && (
+                          <UserRoleBadge user={message.sender} showOnlyIcon={true} hideGuestAndGender={true} size={16} />
+                        )}
+                        <button
+                          onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
+                          className="font-semibold hover:underline transition-colors duration-200"
+                          style={{ color: getFinalUsernameColor(message.sender) }}
+                        >
+                          {message.sender?.username}
+                        </button>
+                        <span className="text-xs text-red-400 ml-auto">
+                          {formatTime(message.timestamp)}
+                        </span>
+                      </div>
+                      <div className="text-red-600 break-words">
+                        <span dir="auto">
                           {message.content}
                         </span>
                       </div>
-                      <span className="text-xs text-red-500 whitespace-nowrap ml-2">
-                        {formatTime(message.timestamp)}
-                      </span>
                     </div>
                   </>
                 ) : (
@@ -605,31 +608,36 @@ export default function MessageArea({
                         <ProfileImage
                           user={message.sender}
                           size="small"
-                          className="w-7 h-7 cursor-pointer hover:scale-110 transition-transform duration-200"
+                          className="w-10 h-10 cursor-pointer hover:scale-105 transition-transform duration-200 ring-2 ring-blue-200 hover:ring-blue-300"
                           onClick={(e) => onUserClick && onUserClick(e, message.sender!)}
                         />
                       </div>
                     )}
 
-                    {/* Inline row: badge, name, content */}
-                    <div className={`flex-1 min-w-0 flex ${isMobile ? 'flex-wrap items-start' : 'items-center'} gap-2`}>
-                      {message.sender && message.sender.userType !== 'bot' && (
-                        <UserRoleBadge user={message.sender} showOnlyIcon={true} hideGuestAndGender={true} size={16} />
-                      )}
-                      <button
-                        onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
-                        className="font-semibold hover:underline transition-colors duration-200 truncate"
-                        style={{ color: getFinalUsernameColor(message.sender) }}
-                      >
-                        {message.sender?.username}
-                      </button>
+                    {/* Message Content */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        {message.sender && message.sender.userType !== 'bot' && (
+                          <UserRoleBadge user={message.sender} showOnlyIcon={true} hideGuestAndGender={true} size={16} />
+                        )}
+                        <button
+                          onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
+                          className="font-semibold hover:underline transition-colors duration-200"
+                          style={{ color: getFinalUsernameColor(message.sender) }}
+                        >
+                          {message.sender?.username}
+                        </button>
+                        <span className="text-xs text-gray-400 ml-auto">
+                          {formatTime(message.timestamp)}
+                        </span>
+                      </div>
 
-                      <div className={`text-gray-800 break-words flex-1 min-w-0 message-content-fix ${isMobile && !isMessageExpanded(message.id) ? 'line-clamp-2' : !isMobile ? 'truncate' : ''}`}>
+                      <div className="text-gray-700 break-words">
                         {message.messageType === 'image' ? (
                           <img
                             src={message.content}
                             alt="صورة"
-                            className="max-h-7 rounded cursor-pointer"
+                            className="max-h-48 rounded-lg cursor-pointer shadow-sm hover:shadow-md transition-shadow"
                             loading="lazy"
                             onLoad={() => {
                               if (isAtBottom) {
@@ -644,149 +652,153 @@ export default function MessageArea({
                             if (ids.length > 0) {
                               const firstId = ids[0];
                               return (
-                                <span dir="auto" className={`${isMobile && !isMessageExpanded(message.id) ? 'line-clamp-2' : !isMobile ? 'truncate' : ''} text-breathe flex items-center gap-2`} onClick={() => isMobile && toggleMessageExpanded(message.id)}>
-                                  {cleaned ? (
-                                    <span
-                                      className={`${isMobile && !isMessageExpanded(message.id) ? 'line-clamp-2' : !isMobile ? 'truncate' : ''}`}
-                                      style={
-                                        currentUser && message.senderId === currentUser.id
-                                          ? { color: composerTextColor, fontWeight: composerBold ? 600 : undefined }
-                                          : undefined
-                                      }
-                                    >
-                                      {renderMessageWithAnimatedEmojis(
-                                        cleaned,
-                                        (text) => renderMessageWithMentions(text, currentUser, onlineUsers)
-                                      )}
-                                    </span>
-                                  ) : null}
+                                <div className="flex items-start gap-3">
+                                  {cleaned && (
+                                    <div className="flex-1">
+                                      <span
+                                        dir="auto"
+                                        style={
+                                          currentUser && message.senderId === currentUser.id
+                                            ? { color: composerTextColor, fontWeight: composerBold ? 600 : undefined }
+                                            : undefined
+                                        }
+                                      >
+                                        {renderMessageWithAnimatedEmojis(
+                                          cleaned,
+                                          (text) => renderMessageWithMentions(text, currentUser, onlineUsers)
+                                        )}
+                                      </span>
+                                    </div>
+                                  )}
                                   <button
                                     onClick={() => setYoutubeModal({ open: true, videoId: firstId })}
-                                    className="flex items-center justify-center w-8 h-6 rounded bg-red-600 hover:bg-red-700 transition-colors"
+                                    className="flex items-center justify-center w-10 h-8 rounded-lg bg-red-600 hover:bg-red-700 transition-colors shadow-sm"
                                     title="فتح فيديو YouTube"
                                   >
-                                    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
                                       <path fill="#fff" d="M10 15l5.19-3L10 9v6z"></path>
                                     </svg>
                                   </button>
-                                </span>
+                                </div>
                               );
                             }
                             return (
-                              <span
-                                dir="auto"
-                                className={`${isMobile && !isMessageExpanded(message.id) ? 'line-clamp-2' : !isMobile ? 'truncate' : ''} text-breathe`}
-                                onClick={() => isMobile && toggleMessageExpanded(message.id)}
-                                style={
-                                  currentUser && message.senderId === currentUser.id
-                                    ? { color: composerTextColor, fontWeight: composerBold ? 600 : undefined }
-                                    : undefined
-                                }
-                              >
-                                {renderMessageWithAnimatedEmojis(
-                                  message.content, 
-                                  (text) => renderMessageWithMentions(text, currentUser, onlineUsers)
-                                )}
-                              </span>
+                              <div>
+                                <span
+                                  dir="auto"
+                                  style={
+                                    currentUser && message.senderId === currentUser.id
+                                      ? { color: composerTextColor, fontWeight: composerBold ? 600 : undefined }
+                                      : undefined
+                                  }
+                                >
+                                  {renderMessageWithAnimatedEmojis(
+                                    message.content, 
+                                    (text) => renderMessageWithMentions(text, currentUser, onlineUsers)
+                                  )}
+                                </span>
+                              </div>
                             );
                           })()
                         )}
                       </div>
 
-                      {/* Right side: time and report flag */}
-                      <span className="text-xs text-gray-500 whitespace-nowrap ml-2">
-                        {formatTime(message.timestamp)}
-                      </span>
-
-                      {onReportMessage &&
-                        message.sender &&
-                        currentUser &&
-                        message.sender.id !== currentUser.id && (
-                          <button
-                            onClick={() =>
-                              onReportMessage(message.sender!, message.content, message.id)
-                            }
-                            className="text-sm hover:opacity-80"
-                            title="تبليغ"
-                          >
-                            🚩
-                          </button>
-                        )}
-
-                      {currentUser &&
-                        message.sender &&
-                        (() => {
-                          const isOwner = currentUser.userType === 'owner';
-                          const isAdmin = currentUser.userType === 'admin';
-                          const isSender = currentUser.id === message.sender.id;
-                          const canDelete = isSender || isOwner || isAdmin;
-                          if (!canDelete) return null;
-                          const handleDelete = async () => {
-                            try {
-                              await apiRequest(`/api/messages/${message.id}`, {
-                                method: 'DELETE',
-                                body: {
-                                  userId: currentUser.id,
-                                  roomId: message.roomId || 'general',
-                                },
-                              });
-                            } catch (e) {
-                              console.error('خطأ في حذف الرسالة', e);
-                            }
-                          };
-                          return (
+                      {/* Action buttons */}
+                      <div className="flex items-center gap-2 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        {onReportMessage &&
+                          message.sender &&
+                          currentUser &&
+                          message.sender.id !== currentUser.id && (
                             <button
-                              onClick={handleDelete}
-                              className="text-xs text-gray-500 hover:text-gray-700 transition-colors duration-200"
-                              title="حذف الرسالة"
+                              onClick={() =>
+                                onReportMessage(message.sender!, message.content, message.id)
+                              }
+                              className="text-xs px-2 py-1 rounded-md bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
+                              title="تبليغ"
                             >
-                              🗑️
+                              🚩 تبليغ
                             </button>
-                          );
-                        })()}
-                      {/* Reactions (like/dislike/heart) */}
-                      {currentUser && !message.isPrivate && !isMobile && (
-                        <div className="flex items-center gap-1 ml-2">
-                          {(['like', 'dislike', 'heart'] as const).map((r) => {
-                            const isMine = message.myReaction === r;
-                            const count = message.reactions?.[r] ?? 0;
-                            const label = r === 'like' ? '👍' : r === 'dislike' ? '👎' : '❤️';
-                            const toggle = async () => {
+                          )}
+
+                        {currentUser &&
+                          message.sender &&
+                          (() => {
+                            const isOwner = currentUser.userType === 'owner';
+                            const isAdmin = currentUser.userType === 'admin';
+                            const isSender = currentUser.id === message.sender.id;
+                            const canDelete = isSender || isOwner || isAdmin;
+                            if (!canDelete) return null;
+                            const handleDelete = async () => {
                               try {
-                                if (isMine) {
-                                  await apiRequest(
-                                    `/api/messages/${message.id}/reactions`,
-                                    {
-                                      method: 'DELETE',
-                                    }
-                                  );
-                                } else {
-                                  await apiRequest(
-                                    `/api/messages/${message.id}/reactions`,
-                                    {
-                                      method: 'POST',
-                                      body: { type: r },
-                                    }
-                                  );
-                                }
+                                await apiRequest(`/api/messages/${message.id}`, {
+                                  method: 'DELETE',
+                                  body: {
+                                    userId: currentUser.id,
+                                    roomId: message.roomId || 'general',
+                                  },
+                                });
                               } catch (e) {
-                                console.error('reaction error', e);
+                                console.error('خطأ في حذف الرسالة', e);
                               }
                             };
                             return (
                               <button
-                                key={r}
-                                onClick={toggle}
-                                className={`text-xs px-1 py-0.5 rounded ${isMine ? 'bg-primary/10 text-primary' : 'text-gray-600 hover:text-gray-800'}`}
-                                title={r}
+                                onClick={handleDelete}
+                                className="text-xs px-2 py-1 rounded-md bg-gray-50 text-gray-600 hover:bg-red-50 hover:text-red-600 transition-colors"
+                                title="حذف الرسالة"
                               >
-                                <span className="mr-0.5">{label}</span>
-                                <span>{count}</span>
+                                🗑️ حذف
                               </button>
                             );
-                          })}
-                        </div>
-                      )}
+                          })()}
+                        {/* Reactions (like/dislike/heart) */}
+                        {currentUser && !message.isPrivate && !isMobile && (
+                          <div className="flex items-center gap-1">
+                            {(['like', 'dislike', 'heart'] as const).map((r) => {
+                              const isMine = message.myReaction === r;
+                              const count = message.reactions?.[r] ?? 0;
+                              const label = r === 'like' ? '👍' : r === 'dislike' ? '👎' : '❤️';
+                              const toggle = async () => {
+                                try {
+                                  if (isMine) {
+                                    await apiRequest(
+                                      `/api/messages/${message.id}/reactions`,
+                                      {
+                                        method: 'DELETE',
+                                      }
+                                    );
+                                  } else {
+                                    await apiRequest(
+                                      `/api/messages/${message.id}/reactions`,
+                                      {
+                                        method: 'POST',
+                                        body: { type: r },
+                                      }
+                                    );
+                                  }
+                                } catch (e) {
+                                  console.error('reaction error', e);
+                                }
+                              };
+                              return (
+                                <button
+                                  key={r}
+                                  onClick={toggle}
+                                  className={`text-xs px-2 py-1 rounded-md transition-colors ${
+                                    isMine 
+                                      ? 'bg-blue-50 text-blue-600 border border-blue-200' 
+                                      : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                                  }`}
+                                  title={r}
+                                >
+                                  <span className="mr-1">{label}</span>
+                                  {count > 0 && <span>{count}</span>}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
 
                       {/* Mobile: reactions in a three-dots menu */}
                       {currentUser && !message.isPrivate && isMobile && (
@@ -836,12 +848,12 @@ export default function MessageArea({
         {showScrollToBottom && (
           <button
             onClick={handleScrollDownClick}
-            className="absolute left-1/2 -translate-x-1/2 bottom-28 bg-primary text-white shadow-lg rounded-full px-3 py-1.5 flex items-center gap-2 hover:bg-primary/90 transition-colors"
+            className="absolute left-1/2 -translate-x-1/2 bottom-28 bg-blue-600 text-white shadow-xl rounded-full px-4 py-2 flex items-center gap-2 hover:bg-blue-700 transition-all hover:shadow-2xl"
             title="الانتقال لآخر الرسائل"
           >
-            <ChevronDown className="w-4 h-4" />
+            <ChevronDown className="w-5 h-5" />
             {unreadCount > 0 && (
-              <span className="text-xs bg-white/20 rounded px-1.5 py-0.5">
+              <span className="text-xs bg-red-500 text-white rounded-full px-2 py-1 min-w-[20px] text-center">
                 {unreadCount}
               </span>
             )}
@@ -892,18 +904,19 @@ export default function MessageArea({
         }}
       />
 
-      {/* Message Input - تحسين التثبيت لمنع التداخل */}
+      {/* Message Input - محسن */}
       <div
-        className={`p-3 bg-white border-t border-gray-200 w-full z-20 shadow-lg chat-input soft-entrance`}
+        className={`p-4 bg-white border-t border-gray-200 w-full z-20 shadow-lg`}
       >
         {/* Typing Indicator */}
         {typingUsers.size > 0 && (
-          <div className="mb-1.5 text-[11px] text-gray-500 animate-pulse">{typingDisplay}</div>
+          <div className="mb-3 px-3 py-2 bg-blue-50 rounded-lg text-sm text-blue-700 animate-pulse border border-blue-100">
+            {typingDisplay}
+          </div>
         )}
 
         <div
-          className={`flex ${isMobile ? 'gap-2 p-3' : 'gap-3 p-4'} items-end max-w-full mx-auto bg-white/80 backdrop-blur-sm border-t border-gray-200`}
-          style={{ paddingBottom: isMobile ? 'calc(env(safe-area-inset-bottom) + 0.75rem)' : '1rem' }}
+          className={`flex ${isMobile ? 'gap-3' : 'gap-4'} items-center max-w-full`}
         >
           {/* Emoji Picker */}
           <div className="relative">
@@ -913,9 +926,9 @@ export default function MessageArea({
               size="sm"
               onClick={() => setShowEmojiPicker(!showEmojiPicker)}
               disabled={isChatRestricted}
-              className={`aspect-square mobile-touch-button ${isMobile ? 'min-w-[44px] min-h-[44px]' : ''} ${isChatRestricted ? 'opacity-60 cursor-not-allowed' : ''}`}
+              className={`w-10 h-10 rounded-full hover:bg-blue-50 hover:border-blue-300 transition-colors ${isChatRestricted ? 'opacity-60 cursor-not-allowed' : ''}`}
             >
-              <Smile className="w-4 h-4" />
+              <Smile className="w-5 h-5 text-gray-600" />
             </Button>
             {showEmojiPicker && (
               <div className="absolute bottom-full mb-2 z-30">
@@ -945,10 +958,10 @@ export default function MessageArea({
                 setShowEnhancedEmoji(!showEnhancedEmoji);
               }}
               disabled={isChatRestricted}
-              className={`aspect-square mobile-touch-button ${isMobile ? 'min-w-[44px] min-h-[44px]' : ''} ${isChatRestricted ? 'opacity-60 cursor-not-allowed' : ''}`}
+              className={`w-10 h-10 rounded-full hover:bg-purple-50 hover:border-purple-300 transition-colors ${isChatRestricted ? 'opacity-60 cursor-not-allowed' : ''}`}
               title="سمايلات متحركة متقدمة"
             >
-              <Sparkles className="w-4 h-4" />
+              <Sparkles className="w-5 h-5 text-gray-600" />
             </Button>
             
             {/* Enhanced Emoji Picker (Default) */}
@@ -1017,7 +1030,7 @@ export default function MessageArea({
             onChange={handleMessageChange}
             onKeyPress={handleKeyPress}
             placeholder={isChatRestricted ? getRestrictionMessage : "اكتب رسالتك هنا..."}
-            className={`flex-1 resize-none bg-white placeholder:text-gray-500 ring-offset-white ${isMobile ? 'mobile-text' : ''} ${isChatRestricted ? 'cursor-not-allowed opacity-60' : ''}`}
+            className={`flex-1 h-12 rounded-full px-4 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all ${isChatRestricted ? 'cursor-not-allowed opacity-60' : ''}`}
             disabled={!currentUser || isChatRestricted}
             maxLength={1000}
             autoComplete="off"
@@ -1032,9 +1045,9 @@ export default function MessageArea({
           <Button
             onClick={handleSendMessage}
             disabled={!messageText.trim() || !currentUser || isChatRestricted}
-            className={`aspect-square bg-primary hover:bg-primary/90 mobile-touch-button ${isMobile ? 'min-w-[44px] min-h-[44px]' : ''} ${isChatRestricted ? 'opacity-60 cursor-not-allowed' : ''}`}
+            className={`w-12 h-12 rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl transition-all ${isChatRestricted ? 'opacity-60 cursor-not-allowed' : ''}`}
           >
-            <Send className="w-4 h-4" />
+            <Send className="w-5 h-5" />
           </Button>
 
           {/* Hidden File Input */}
