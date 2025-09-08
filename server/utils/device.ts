@@ -5,14 +5,9 @@ export function getDeviceIdFromHeaders(headers: Record<string, any>): string {
       | undefined;
     if (typeof raw === 'string' && raw.trim().length > 0) return raw.trim();
 
-    const userAgent = (headers['user-agent'] as string | undefined) || '';
-    const acceptLanguage = (headers['accept-language'] as string | undefined) || '';
-    const acceptEncoding = (headers['accept-encoding'] as string | undefined) || '';
-
-    const combined = `${userAgent}-${acceptLanguage}-${acceptEncoding}`;
-    if (combined.trim().length === 0) return 'unknown';
-
-    return Buffer.from(combined).toString('base64').substring(0, 32);
+    // لا تولّد معرفاً عاماً من user-agent/accept عند غياب x-device-id
+    // لأن ذلك قد يسبب تشارك نفس المعرّف بين عدة مستخدمين خلف نفس المتصفح/البروكسي
+    return 'unknown';
   } catch {
     return 'unknown';
   }
