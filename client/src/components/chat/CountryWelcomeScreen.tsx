@@ -184,7 +184,7 @@ export default function CountryWelcomeScreen({ onUserLogin, countryData }: Count
   };
 
   return (
-    <div className="min-h-screen">
+    <div className={`min-h-screen ${isMobile ? 'mobile-layout' : ''}`}>
       {/* SEO Structured Data */}
       <StructuredData
         type="WebPage"

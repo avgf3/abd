@@ -176,7 +176,7 @@ export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
   };
 
   return (
-    <div className="min-h-screen">
+    <div className={`min-h-screen ${isMobile ? 'mobile-layout' : ''}`}>
       {/* شريط العنوان */}
       <div className="bg-gray-900 text-white py-3 px-4">
         <div className="max-w-6xl mx-auto flex justify-between items-center">
@@ -222,7 +222,7 @@ export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
           </div>
 
         <div
-          className={`flex ${isMobile ? 'flex-col w-full max-w-xs' : 'flex-col sm:flex-row'} gap-3 sm:gap-4 justify-center items-center px-3`}
+          className={`flex ${isMobile ? 'flex-col w-full max-w-sm mx-auto' : 'flex-col sm:flex-row'} gap-3 sm:gap-4 justify-center items-center ${isMobile ? 'px-4' : 'px-3'}`}
         >
           <Button
             className={`modern-button btn-success text-white font-semibold py-4 px-10 rounded-2xl shadow-xl flex items-center gap-3 mobile-touch-button hover-glow ${isMobile ? 'w-full justify-center' : ''}`}
