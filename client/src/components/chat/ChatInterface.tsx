@@ -573,7 +573,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           let user = chat.onlineUsers.find((u) => u.id === userId);
           if (!user) {
             try {
-              const data = await apiRequest(`/api/users/${userId}?t=${Date.now()}`);
+              const data = await apiRequest(`/api/users/${userId}`);
               if (data && data.id) {
                 user = data as any;
                 // تحديث الكاش مع بيانات المستخدم
@@ -1380,7 +1380,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                 if (userId) {
                   (async () => {
                     try {
-                      const data = await apiRequest(`/api/users/${userId}?t=${Date.now()}`);
+                      const data = await apiRequest(`/api/users/${userId}`);
                       if (data && (data as any).id) {
                         setProfileUser(data as any);
                       }

@@ -598,7 +598,7 @@ export const useChat = () => {
                   !updatedUser.profileImage.startsWith('data:')))
             ) {
               try {
-                apiRequest(`/api/users/${updatedUser.id}?t=${Date.now()}`)
+                apiRequest(`/api/users/${updatedUser.id}`)
                   .then((full: any) => {
                     if (full && full.id) {
                       // تحديث الكاش مع البيانات الكاملة
