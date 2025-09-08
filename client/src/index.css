@@ -2146,28 +2146,18 @@ li::before {
     border-radius: 12px;
   }
   
-  /* تحسين توسيط صفحة الدخول للجوال */
-  .mobile-layout .welcome-gradient {
-    display: flex !important;
-    flex-direction: column !important;
-    justify-content: center !important;
-    align-items: center !important;
-    padding: 0 !important;
-    margin: 0 !important;
-  }
-  
-  .mobile-layout .welcome-gradient .text-center {
-    width: 100% !important;
-    text-align: center !important;
-    margin: 0 auto !important;
-  }
-  
-  .mobile-layout .welcome-gradient .flex {
-    width: 100% !important;
-    max-width: 24rem !important; /* max-w-sm equivalent */
-    margin: 0 auto !important;
-    justify-content: center !important;
-    align-items: center !important;
+  /* إصلاح توسيط أزرار تسجيل الدخول للجوال فقط */
+  @media (max-width: 768px) {
+    .welcome-login-buttons {
+      display: flex !important;
+      flex-direction: column !important;
+      width: 100% !important;
+      max-width: 20rem !important; /* max-w-sm */
+      margin: 0 auto !important;
+      justify-content: center !important;
+      align-items: center !important;
+      padding: 0 1rem !important;
+    }
   }
   
   /* تحسين قوائم المستخدمين للجوال */
