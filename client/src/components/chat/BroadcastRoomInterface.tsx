@@ -1014,7 +1014,7 @@ export default function BroadcastRoomInterface({
       {/* تخطيط سطح المكتب: عمود جانبي يسار + منطقة الرسائل */}
       <div className="flex-1 min-h-0 flex">
         {/* منطقة الرسائل */}
-        <div className="flex-1 min-h-0">
+        <div className="flex-1 min-h-0 flex flex-col">
           <MessageArea
             messages={messages}
             currentUser={currentUser}
