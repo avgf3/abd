@@ -44,7 +44,16 @@ export function checkIPSecurity(req: Request, res: Response, next: NextFunction)
 
   // Check if IP or device is blocked (device based on header)
   const deviceId = getDeviceIdFromHeaders(req.headers as any);
-  if (blockedIPs.has(clientIp) || moderationSystem.isBlocked(clientIp, deviceId)) {
+  
+  // تجاهل القيم العامة/غير المحددة لتجنب حظر الجميع
+  const validClientIp = clientIp && clientIp !== 'unknown' && clientIp !== '::1' && clientIp !== '127.0.0.1' ? clientIp : undefined;
+  const validDeviceId = deviceId && deviceId !== 'unknown' ? deviceId : undefined;
+  
+  // فحص الحظر فقط للقيم الصحيحة
+  const isLocallyBlocked = validClientIp && blockedIPs.has(validClientIp);
+  const isModerationBlocked = moderationSystem.isBlocked(validClientIp, validDeviceId);
+  
+  if (isLocallyBlocked || isModerationBlocked) {
     res.status(403).json({ error: 'عذراً، تم حظر هذا العنوان أو جهازك' });
     return;
   }
@@ -113,12 +122,26 @@ export function validateMessageContent(content: string): { isValid: boolean; rea
 
 // Add IP to block list
 export function blockIP(ip: string): void {
-  blockedIPs.add(ip);
+  // تجاهل القيم العامة/غير المحددة لتجنب حظر الجميع
+  if (ip && ip !== 'unknown' && ip !== '::1' && ip !== '127.0.0.1') {
+    blockedIPs.add(ip);
+  }
 }
 
 // Remove IP from block list
 export function unblockIP(ip: string): void {
   blockedIPs.delete(ip);
+}
+
+// Clear all blocked IPs (للطوارئ)
+export function clearAllBlockedIPs(): void {
+  blockedIPs.clear();
+  console.log('🧹 تم تنظيف جميع IPs المحجوبة محلياً');
+}
+
+// Get blocked IPs count
+export function getBlockedIPsCount(): number {
+  return blockedIPs.size;
 }
 
 // Security middleware to prevent common attacks
