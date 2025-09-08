@@ -74,8 +74,14 @@ export default function UnifiedSidebar({
   );
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState<'public' | 'friends'>('public');
-  const [posts, setPosts] = useState<WallPost[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [postsByTab, setPostsByTab] = useState<{ public: WallPost[]; friends: WallPost[] }>({
+    public: [],
+    friends: [],
+  });
+  const [loadingByTab, setLoadingByTab] = useState<{ public: boolean; friends: boolean }>({
+    public: false,
+    friends: false,
+  });
   const [newPostContent, setNewPostContent] = useState('');
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>('');
@@ -238,9 +244,11 @@ export default function UnifiedSidebar({
 
   useEffect(() => {
     const data = wallData as unknown as { posts?: WallPost[] } | undefined;
-    if (data?.posts) setPosts(data.posts);
-    setLoading(isFetching);
-  }, [wallData, isFetching]);
+    setLoadingByTab((prev) => ({ ...prev, [activeTab]: isFetching }));
+    if (data?.posts) {
+      setPostsByTab((prev) => ({ ...prev, [activeTab]: data.posts! }));
+    }
+  }, [wallData, isFetching, activeTab]);
 
   // تحديث activeView عند تغيير propActiveView
   useEffect(() => {
@@ -267,20 +275,25 @@ export default function UnifiedSidebar({
           // يدعم الشكل {type: ...} أو {envelope: {type: ...}}
           const message = payload?.envelope || payload || {};
           if (message.type === 'newWallPost') {
-            const postType = message.wallType || message.post?.type || 'public';
-            if (postType === activeTab) {
-              setPosts((prev) => [message.post, ...prev]);
-              queryClient.setQueryData(
-                ['/api/wall/posts', activeTab, currentUser.id],
-                (old: any) => {
-                  const oldPosts: WallPost[] = old?.posts || [];
-                  return { ...(old || {}), posts: [message.post, ...oldPosts] };
-                }
-              );
-            }
+            const postType: 'public' | 'friends' =
+              (message.wallType || message.post?.type || 'public') === 'friends' ? 'friends' : 'public';
+            // حدّث بيانات التبويب المقابل دائماً
+            setPostsByTab((prev) => ({ ...prev, [postType]: [message.post, ...(prev[postType] || [])] }));
+            queryClient.setQueryData(
+              ['/api/wall/posts', postType, currentUser.id],
+              (old: any) => {
+                const oldPosts: WallPost[] = old?.posts || [];
+                return { ...(old || {}), posts: [message.post, ...oldPosts] };
+              }
+            );
           } else if (message.type === 'wallPostReaction') {
-            setPosts((prev) => prev.map((p) => (p.id === message.post?.id ? message.post : p)));
-            queryClient.setQueryData(['/api/wall/posts', activeTab, currentUser.id], (old: any) => {
+            const postType: 'public' | 'friends' =
+              (message.wallType || message.post?.type || 'public') === 'friends' ? 'friends' : 'public';
+            setPostsByTab((prev) => ({
+              ...prev,
+              [postType]: (prev[postType] || []).map((p) => (p.id === message.post?.id ? message.post : p)),
+            }));
+            queryClient.setQueryData(['/api/wall/posts', postType, currentUser.id], (old: any) => {
               const oldPosts: WallPost[] = old?.posts || [];
               return {
                 ...(old || {}),
@@ -288,8 +301,12 @@ export default function UnifiedSidebar({
               };
             });
           } else if (message.type === 'wallPostDeleted') {
-            setPosts((prev) => prev.filter((p) => p.id !== message.postId));
-            queryClient.setQueryData(['/api/wall/posts', activeTab, currentUser.id], (old: any) => {
+            const postType: 'public' | 'friends' = (message.wallType || 'public') === 'friends' ? 'friends' : 'public';
+            setPostsByTab((prev) => ({
+              ...prev,
+              [postType]: (prev[postType] || []).filter((p) => p.id !== message.postId),
+            }));
+            queryClient.setQueryData(['/api/wall/posts', postType, currentUser.id], (old: any) => {
               const oldPosts: WallPost[] = old?.posts || [];
               return { ...(old || {}), posts: oldPosts.filter((p) => p.id !== message.postId) };
             });
@@ -378,7 +395,7 @@ export default function UnifiedSidebar({
       const data = result as any;
       if (data?.post) {
         const newPost = data.post || data;
-        setPosts((prev) => [newPost, ...prev]);
+        setPostsByTab((prev) => ({ ...prev, [activeTab]: [newPost, ...(prev[activeTab] || [])] }));
         queryClient.setQueryData(['/api/wall/posts', activeTab, currentUser.id], (old: any) => {
           const oldPosts = old?.posts || [];
           return { ...(old || {}), posts: [newPost, ...oldPosts] };
@@ -419,7 +436,10 @@ export default function UnifiedSidebar({
 
       const data = result as any;
       if (data?.post) {
-        setPosts((prevPosts) => prevPosts.map((post) => (post.id === postId ? data.post : post)));
+        setPostsByTab((prev) => ({
+          ...prev,
+          [activeTab]: (prev[activeTab] || []).map((post) => (post.id === postId ? data.post : post)),
+        }));
         queryClient.setQueryData(['/api/wall/posts', activeTab, currentUser.id], (old: any) => {
           const oldPosts: WallPost[] = old?.posts || [];
           return { ...(old || {}), posts: oldPosts.map((p) => (p.id === postId ? data.post : p)) };
@@ -444,7 +464,10 @@ export default function UnifiedSidebar({
         title: 'تم الحذف',
         description: 'تم حذف المنشور بنجاح',
       });
-      setPosts((prevPosts) => prevPosts.filter((post) => post.id !== postId));
+      setPostsByTab((prev) => ({
+        ...prev,
+        [activeTab]: (prev[activeTab] || []).filter((post) => post.id !== postId),
+      }));
       queryClient.setQueryData(['/api/wall/posts', activeTab, currentUser.id], (old: any) => {
         const oldPosts: WallPost[] = old?.posts || [];
         return { ...(old || {}), posts: oldPosts.filter((p) => p.id !== postId) };
@@ -674,13 +697,130 @@ export default function UnifiedSidebar({
               )}
 
               {/* Posts List */}
-              <TabsContent value={activeTab} className="mt-0 space-y-3">
-                {loading ? (
+              <TabsContent value="public" className="mt-0 space-y-3">
+                {loadingByTab.public ? (
                   <div className="text-center py-8 text-gray-500">جاري التحميل...</div>
-                ) : posts.length === 0 ? (
+                ) : postsByTab.public.length === 0 ? (
                   <div className="text-center py-8 text-gray-500">لا توجد منشورات حتى الآن</div>
                 ) : (
-                  posts.map((post) => (
+                  postsByTab.public.map((post) => (
+                    <Card key={post.id} className="border border-border bg-card">
+                      <CardHeader className="pb-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
+                            {post.userProfileImage ? (
+                              <img
+                                src={getImageSrc(post.userProfileImage)}
+                                alt={post.username}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <span className="text-xs">{post.username.charAt(0)}</span>
+                            )}
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <span
+                                className="font-medium text-sm cursor-pointer hover:underline"
+                                style={{ color: post.usernameColor || 'inherit' }}
+                                onClick={(e) => {
+                                  const targetUser: ChatUser = {
+                                    id: post.userId,
+                                    username: post.username,
+                                    role: (post.userRole as any) || 'member',
+                                    userType: post.userRole || 'member',
+                                    isOnline: true,
+                                    profileImage: post.userProfileImage,
+                                    usernameColor: post.usernameColor,
+                                  } as ChatUser;
+                                  handleUserClick(e as any, targetUser);
+                                }}
+                                title="عرض خيارات المستخدم"
+                              >
+                                {post.username}
+                              </span>
+                              {/* 🏅 شارة الرتبة الموحدة */}
+                              <UserRoleBadge
+                                user={{ userType: post.userRole } as ChatUser}
+                                size={16}
+                              />
+                            </div>
+                            <p className="text-xs text-gray-500">
+                              {formatTimeAgo(post.timestamp.toString())}
+                            </p>
+                          </div>
+                          {(currentUser?.id === post.userId ||
+                            currentUser?.userType === 'owner' ||
+                            currentUser?.userType === 'admin') && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleDeletePost(post.id)}
+                              className="text-red-500 hover:bg-red-50"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          )}
+                        </div>
+                      </CardHeader>
+
+                      <CardContent className="pt-0">
+                        {post.content && (
+                          <p className="text-sm mb-3 whitespace-pre-wrap">{post.content}</p>
+                        )}
+
+                        {post.imageUrl && (
+                          <img
+                            src={post.imageUrl}
+                            alt="Post image"
+                            className="w-full max-h-60 object-cover rounded-lg mb-3"
+                          />
+                        )}
+
+                        {/* Reactions */}
+                        <div className="flex items-center gap-4 pt-3 border-t border-gray-100">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleReaction(post.id, 'like')}
+                            className="flex items-center gap-1 text-blue-600 hover:bg-blue-50"
+                          >
+                            <ThumbsUp className="w-4 h-4" />
+                            <span className="text-xs">{post.totalLikes || 0}</span>
+                          </Button>
+
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleReaction(post.id, 'heart')}
+                            className="flex items-center gap-1 text-red-600 hover:bg-red-50"
+                          >
+                            <Heart className="w-4 h-4" />
+                            <span className="text-xs">{post.totalHearts || 0}</span>
+                          </Button>
+
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleReaction(post.id, 'dislike')}
+                            className="flex items-center gap-1 text-gray-600 hover:bg-gray-50"
+                          >
+                            <ThumbsDown className="w-4 h-4" />
+                            <span className="text-xs">{post.totalDislikes || 0}</span>
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))
+                )}
+              </TabsContent>
+              <TabsContent value="friends" className="mt-0 space-y-3">
+                {loadingByTab.friends ? (
+                  <div className="text-center py-8 text-gray-500">جاري التحميل...</div>
+                ) : postsByTab.friends.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">لا توجد منشورات حتى الآن</div>
+                ) : (
+                  postsByTab.friends.map((post) => (
                     <Card key={post.id} className="border border-border bg-card">
                       <CardHeader className="pb-3">
                         <div className="flex items-center gap-3">
