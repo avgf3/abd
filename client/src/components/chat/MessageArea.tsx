@@ -540,6 +540,9 @@ export default function MessageArea({
       {/* Messages Container - Virtualized */}
       <div
         className={`relative flex-1 ${isMobile ? 'p-2' : 'p-4'} bg-gradient-to-b from-gray-50 to-white`}
+        style={{ 
+          paddingBottom: isMobile ? '120px' : '100px' // مساحة لمنطقة الإدخال الثابتة
+        }}
       >
         {validMessages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-gray-500">
@@ -836,7 +839,7 @@ export default function MessageArea({
         {showScrollToBottom && (
           <button
             onClick={handleScrollDownClick}
-            className="absolute left-1/2 -translate-x-1/2 bottom-28 bg-primary text-white shadow-lg rounded-full px-3 py-1.5 flex items-center gap-2 hover:bg-primary/90 transition-colors"
+            className="absolute left-1/2 -translate-x-1/2 bottom-32 bg-primary text-white shadow-lg rounded-full px-3 py-1.5 flex items-center gap-2 hover:bg-primary/90 transition-colors z-10"
             title="الانتقال لآخر الرسائل"
           >
             <ChevronDown className="w-4 h-4" />
@@ -892,9 +895,12 @@ export default function MessageArea({
         }}
       />
 
-      {/* Message Input - تحسين التثبيت لمنع التداخل */}
+      {/* Message Input - مثبت في الأسفل */}
       <div
-        className={`p-3 bg-white border-t border-gray-200 w-full z-20 shadow-lg chat-input soft-entrance`}
+        className={`fixed bottom-0 left-0 right-0 p-3 bg-white border-t border-gray-200 w-full z-20 shadow-lg chat-input soft-entrance`}
+        style={{ 
+          paddingBottom: isMobile ? 'calc(env(safe-area-inset-bottom) + 0.75rem)' : '1rem'
+        }}
       >
         {/* Typing Indicator */}
         {typingUsers.size > 0 && (
@@ -902,8 +908,7 @@ export default function MessageArea({
         )}
 
         <div
-          className={`flex ${isMobile ? 'gap-2 p-3' : 'gap-3 p-4'} items-end max-w-full mx-auto bg-white/80 backdrop-blur-sm border-t border-gray-200`}
-          style={{ paddingBottom: isMobile ? 'calc(env(safe-area-inset-bottom) + 0.75rem)' : '1rem' }}
+          className={`flex ${isMobile ? 'gap-2 p-3' : 'gap-3 p-4'} items-end max-w-full mx-auto bg-white/80 backdrop-blur-sm`}
         >
           {/* Emoji Picker */}
           <div className="relative">
