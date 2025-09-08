@@ -512,6 +512,32 @@ export class DatabaseService {
     }
   }
 
+  // Get staff users (owner, admin, moderator) without pagination
+  async getStaffUsers(): Promise<User[]> {
+    if (!this.isConnected()) return [];
+
+    try {
+      if (this.type === 'postgresql') {
+        return await (this.db as any)
+          .select()
+          .from(schema.users)
+          .where(
+            or(
+              eq(schema.users.userType, 'owner' as any),
+              eq(schema.users.userType, 'admin' as any),
+              eq(schema.users.userType, 'moderator' as any)
+            )
+          );
+      } else {
+        // SQLite has no users table, so this will return empty array
+        return [];
+      }
+    } catch (error) {
+      console.error('Error getting staff users:', error);
+      return [];
+    }
+  }
+
   async getOnlineUsers(): Promise<User[]> {
     if (!this.isConnected()) return [];
 
