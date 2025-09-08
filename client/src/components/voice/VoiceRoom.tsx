@@ -78,24 +78,52 @@ const VoiceUserCard: React.FC<VoiceUserCardProps> = ({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
       className={`
-        relative p-3 rounded-lg border transition-all duration-300
-        ${user.isSpeaking ? 'bg-green-50 border-green-200 shadow-lg' : 'bg-card border-border'}
+        relative p-4 rounded-2xl backdrop-blur-sm transition-all duration-500 group
+        ${user.isSpeaking 
+          ? 'bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 border-2 border-green-300 shadow-2xl shadow-green-200/50' 
+          : 'bg-gradient-to-br from-white/80 via-gray-50/80 to-slate-50/80 border border-gray-200/60 hover:border-gray-300/80 shadow-lg hover:shadow-xl'
+        }
         ${user.isMuted ? 'opacity-75' : ''}
+        hover:scale-[1.02] hover:shadow-2xl
       `}
     >
-      {/* مؤشر الكلام */}
+      {/* مؤشر الكلام المحسن */}
       {user.isSpeaking && (
-        <motion.div
-          className="absolute inset-0 rounded-lg bg-green-400/20 border-2 border-green-400"
-          animate={{ scale: [1, 1.05, 1] }}
-          transition={{ duration: 1, repeat: Infinity }}
-        />
+        <>
+          <motion.div
+            className="absolute inset-0 rounded-2xl bg-gradient-to-r from-green-400/30 via-emerald-400/20 to-teal-400/30"
+            animate={{ 
+              scale: [1, 1.02, 1],
+              opacity: [0.3, 0.6, 0.3]
+            }}
+            transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+          />
+          <motion.div
+            className="absolute inset-0 rounded-2xl border-2 border-gradient-to-r from-green-400 to-emerald-400"
+            animate={{ 
+              boxShadow: [
+                "0 0 0 0px rgba(34, 197, 94, 0.4)",
+                "0 0 0 8px rgba(34, 197, 94, 0.1)",
+                "0 0 0 0px rgba(34, 197, 94, 0.4)"
+              ]
+            }}
+            transition={{ duration: 2, repeat: Infinity }}
+            style={{
+              background: 'linear-gradient(45deg, rgba(34, 197, 94, 0.2), rgba(16, 185, 129, 0.2))',
+              borderImage: 'linear-gradient(45deg, #22c55e, #10b981) 1'
+            }}
+          />
+        </>
       )}
 
       <div className="flex items-center gap-3 relative z-10">
-        {/* صورة المستخدم */}
-        <div className="relative">
-          <div className="w-10 h-10 rounded-full overflow-hidden bg-muted flex items-center justify-center">
+        {/* صورة المستخدم المحسنة */}
+        <div className="relative group">
+          <motion.div 
+            className="relative w-12 h-12 rounded-full overflow-hidden bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center ring-2 ring-white shadow-lg group-hover:shadow-xl transition-all duration-300"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
             {user.profileImage ? (
               <img 
                 src={user.profileImage} 
@@ -103,53 +131,119 @@ const VoiceUserCard: React.FC<VoiceUserCardProps> = ({
                 className="w-full h-full object-cover"
               />
             ) : (
-              <span className="text-sm font-bold text-muted-foreground">
+              <span className="text-sm font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                 {user.username.charAt(0).toUpperCase()}
               </span>
             )}
-          </div>
+          </motion.div>
 
-          {/* مؤشر الاتصال */}
-          <div className={`
-            absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-white
-            ${user.isConnected ? 'bg-green-500' : 'bg-red-500'}
-          `} />
+          {/* مؤشر الاتصال المحسن */}
+          <motion.div 
+            className={`
+              absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full border-3 border-white shadow-lg
+              ${user.isConnected 
+                ? 'bg-gradient-to-r from-green-400 to-emerald-500' 
+                : 'bg-gradient-to-r from-red-400 to-rose-500'
+              }
+            `}
+            animate={user.isConnected ? {
+              boxShadow: [
+                "0 0 0 0px rgba(34, 197, 94, 0.7)",
+                "0 0 0 4px rgba(34, 197, 94, 0)",
+                "0 0 0 0px rgba(34, 197, 94, 0.7)"
+              ]
+            } : {}}
+            transition={{ duration: 2, repeat: Infinity }}
+          />
+
+          {/* مؤشر الكلام على الصورة */}
+          {user.isSpeaking && (
+            <motion.div
+              className="absolute inset-0 rounded-full border-2 border-green-400"
+              animate={{ 
+                scale: [1, 1.2, 1],
+                opacity: [0.5, 1, 0.5]
+              }}
+              transition={{ duration: 0.8, repeat: Infinity }}
+            />
+          )}
         </div>
 
-        {/* معلومات المستخدم */}
+        {/* معلومات المستخدم المحسنة */}
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1 mb-1">
-            <span className="font-medium text-sm truncate">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="font-semibold text-sm truncate bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
               {user.displayName || user.username}
             </span>
-            {getRoleIcon(user.role)}
-            {isSpeaker && <Mic className="w-3 h-3 text-green-500" />}
-            {isInQueue && <Hand className="w-3 h-3 text-orange-500" />}
+            <div className="flex items-center gap-1">
+              {getRoleIcon(user.role)}
+              {isSpeaker && (
+                <motion.div
+                  animate={{ rotate: [0, 10, -10, 0] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                >
+                  <Mic className="w-3 h-3 text-green-500" />
+                </motion.div>
+              )}
+              {isInQueue && (
+                <motion.div
+                  animate={{ y: [0, -2, 0] }}
+                  transition={{ duration: 1.5, repeat: Infinity }}
+                >
+                  <Hand className="w-3 h-3 text-orange-500" />
+                </motion.div>
+              )}
+            </div>
           </div>
 
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            {/* حالة الميكروفون */}
-            {user.isMuted ? (
-              <MicOff className="w-3 h-3 text-red-500" />
-            ) : (
-              <Mic className="w-3 h-3 text-green-500" />
-            )}
-
-            {/* جودة الاتصال */}
-            <div className={`flex items-center gap-1 ${getConnectionColor(user.connectionQuality)}`}>
-              {user.connectionQuality === 'poor' ? <WifiOff className="w-3 h-3" /> : <Wifi className="w-3 h-3" />}
-              <span>{user.latency}ms</span>
+          <div className="flex items-center gap-3 text-xs">
+            {/* حالة الميكروفون المحسنة */}
+            <div className="flex items-center gap-1">
+              {user.isMuted ? (
+                <motion.div
+                  animate={{ scale: [1, 1.1, 1] }}
+                  transition={{ duration: 1, repeat: Infinity }}
+                >
+                  <MicOff className="w-3 h-3 text-red-500" />
+                </motion.div>
+              ) : (
+                <motion.div
+                  animate={user.isSpeaking ? { scale: [1, 1.2, 1] } : {}}
+                  transition={{ duration: 0.5, repeat: Infinity }}
+                >
+                  <Mic className="w-3 h-3 text-green-500" />
+                </motion.div>
+              )}
             </div>
 
-            {/* مستوى الصوت */}
+            {/* جودة الاتصال المحسنة */}
+            <div className={`flex items-center gap-1 px-2 py-1 rounded-full ${getConnectionColor(user.connectionQuality)} bg-opacity-10`}>
+              {user.connectionQuality === 'poor' ? (
+                <motion.div animate={{ opacity: [0.5, 1, 0.5] }} transition={{ duration: 1, repeat: Infinity }}>
+                  <WifiOff className="w-3 h-3" />
+                </motion.div>
+              ) : (
+                <Wifi className="w-3 h-3" />
+              )}
+              <span className="font-medium">{user.latency}ms</span>
+            </div>
+
+            {/* مستوى الصوت المحسن */}
             {user.isSpeaking && (
-              <div className="flex items-center gap-1">
-                <Volume1 className="w-3 h-3" />
-                <div className="w-8 h-1 bg-gray-200 rounded-full overflow-hidden">
+              <div className="flex items-center gap-2 px-2 py-1 bg-green-50 rounded-full">
+                <Volume1 className="w-3 h-3 text-green-600" />
+                <div className="w-12 h-1.5 bg-green-100 rounded-full overflow-hidden">
                   <motion.div
-                    className="h-full bg-green-500"
+                    className="h-full bg-gradient-to-r from-green-400 to-emerald-500 rounded-full"
                     style={{ width: `${user.volume}%` }}
-                    animate={{ width: `${user.volume}%` }}
+                    animate={{ 
+                      width: `${user.volume}%`,
+                      boxShadow: [
+                        "0 0 0 0px rgba(34, 197, 94, 0.4)",
+                        "0 0 4px 2px rgba(34, 197, 94, 0.2)",
+                        "0 0 0 0px rgba(34, 197, 94, 0.4)"
+                      ]
+                    }}
                     transition={{ duration: 0.1 }}
                   />
                 </div>
@@ -299,11 +393,27 @@ export default function VoiceRoom({
 
   if (!room) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <div className="text-center text-muted-foreground">
-          <Phone className="w-12 h-12 mx-auto mb-4 opacity-50" />
-          <p>لا توجد غرفة صوتية نشطة</p>
-        </div>
+      <div className="flex items-center justify-center h-full bg-gradient-to-br from-slate-50 via-blue-50/30 to-purple-50/30">
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="text-center p-8 bg-gradient-to-br from-white/80 via-blue-50/50 to-purple-50/50 rounded-3xl shadow-2xl backdrop-blur-md border border-blue-200/50"
+        >
+          <motion.div
+            animate={{ 
+              rotate: [0, 10, -10, 0],
+              scale: [1, 1.1, 1]
+            }}
+            transition={{ duration: 3, repeat: Infinity }}
+            className="mb-6"
+          >
+            <Phone className="w-16 h-16 mx-auto text-blue-400" />
+          </motion.div>
+          <h3 className="text-xl font-bold bg-gradient-to-r from-blue-700 to-purple-700 bg-clip-text text-transparent mb-2">
+            لا توجد غرفة صوتية نشطة
+          </h3>
+          <p className="text-gray-600">انضم إلى غرفة صوتية للبدء في المحادثة</p>
+        </motion.div>
       </div>
     );
   }
@@ -315,161 +425,260 @@ export default function VoiceRoom({
 
   return (
     <TooltipProvider>
-      <div className="h-full flex flex-col bg-background">
+      <div className="h-full flex flex-col bg-gradient-to-br from-slate-50 via-blue-50/30 to-purple-50/30 backdrop-blur-sm">
         {/* رأس الغرفة */}
-        <Card className="rounded-none border-x-0 border-t-0">
-          <CardHeader className="pb-4">
+        <Card className="rounded-none border-x-0 border-t-0 bg-gradient-to-r from-white/80 via-blue-50/50 to-purple-50/50 backdrop-blur-md shadow-lg">
+          <CardHeader className="pb-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                {/* أيقونة الغرفة */}
-                <div className="w-12 h-12 rounded-lg overflow-hidden bg-muted flex items-center justify-center">
+                {/* أيقونة الغرفة المحسنة */}
+                <motion.div 
+                  className="w-14 h-14 rounded-2xl overflow-hidden bg-gradient-to-br from-blue-100 via-purple-100 to-pink-100 flex items-center justify-center shadow-lg ring-2 ring-white/50"
+                  whileHover={{ scale: 1.05, rotate: 5 }}
+                  whileTap={{ scale: 0.95 }}
+                >
                   {room.icon ? (
                     <img src={room.icon} alt={room.name} className="w-full h-full object-cover" />
                   ) : (
-                    <span className="text-lg font-bold text-primary">
+                    <span className="text-xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
                       {room.name.charAt(0)}
                     </span>
                   )}
-                </div>
+                </motion.div>
 
-                {/* معلومات الغرفة */}
+                {/* معلومات الغرفة المحسنة */}
                 <div>
-                  <CardTitle className="text-lg flex items-center gap-2">
+                  <CardTitle className="text-xl font-bold flex items-center gap-3 bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800 bg-clip-text text-transparent">
                     {room.name}
                     {room.isBroadcastRoom && (
-                      <Badge variant="secondary" className="text-orange-600">
-                        <Mic className="w-3 h-3 mr-1" />
-                        بث مباشر
-                      </Badge>
+                      <motion.div
+                        animate={{ scale: [1, 1.05, 1] }}
+                        transition={{ duration: 2, repeat: Infinity }}
+                      >
+                        <Badge className="bg-gradient-to-r from-orange-400 to-red-500 text-white shadow-lg border-0 px-3 py-1">
+                          <motion.div
+                            animate={{ rotate: [0, 10, -10, 0] }}
+                            transition={{ duration: 2, repeat: Infinity }}
+                            className="mr-1"
+                          >
+                            <Mic className="w-3 h-3" />
+                          </motion.div>
+                          بث مباشر
+                        </Badge>
+                      </motion.div>
                     )}
                   </CardTitle>
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
-                    <div className="flex items-center gap-1">
-                      <Users className="w-4 h-4" />
-                      <span>{room.userCount} متصل</span>
+                  <div className="flex items-center gap-4 text-sm mt-3">
+                    <div className="flex items-center gap-2 px-3 py-1 bg-blue-50 rounded-full">
+                      <Users className="w-4 h-4 text-blue-600" />
+                      <span className="font-medium text-blue-800">{room.userCount} متصل</span>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <Signal className="w-4 h-4" />
-                      <span>{room.audioCodec.toUpperCase()} {room.bitrate}kbps</span>
+                    <div className="flex items-center gap-2 px-3 py-1 bg-purple-50 rounded-full">
+                      <Signal className="w-4 h-4 text-purple-600" />
+                      <span className="font-medium text-purple-800">{room.audioCodec.toUpperCase()} {room.bitrate}kbps</span>
                     </div>
-                    <div className={`flex items-center gap-1 ${
-                      connectionStats.quality === 'excellent' ? 'text-green-600' :
-                      connectionStats.quality === 'good' ? 'text-yellow-600' : 'text-red-600'
+                    <div className={`flex items-center gap-2 px-3 py-1 rounded-full ${
+                      connectionStats.quality === 'excellent' ? 'bg-green-50 text-green-800' :
+                      connectionStats.quality === 'good' ? 'bg-yellow-50 text-yellow-800' : 'bg-red-50 text-red-800'
                     }`}>
-                      <Wifi className="w-4 h-4" />
-                      <span>{connectionStats.latency}ms</span>
+                      <motion.div
+                        animate={connectionStats.quality !== 'excellent' ? { scale: [1, 1.1, 1] } : {}}
+                        transition={{ duration: 1.5, repeat: Infinity }}
+                      >
+                        <Wifi className="w-4 h-4" />
+                      </motion.div>
+                      <span className="font-medium">{connectionStats.latency}ms</span>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* أزرار التحكم */}
-              <div className="flex items-center gap-2">
+              {/* أزرار التحكم المحسنة */}
+              <div className="flex items-center gap-3">
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setShowSettings(true)}
+                    <motion.div
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
                     >
-                      <Settings className="w-4 h-4" />
-                    </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowSettings(true)}
+                        className="bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200 hover:from-blue-100 hover:to-purple-100 shadow-lg hover:shadow-xl transition-all duration-300"
+                      >
+                        <motion.div
+                          animate={{ rotate: [0, 180, 360] }}
+                          transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                        >
+                          <Settings className="w-4 h-4 text-blue-600" />
+                        </motion.div>
+                      </Button>
+                    </motion.div>
                   </TooltipTrigger>
                   <TooltipContent>إعدادات الصوت</TooltipContent>
                 </Tooltip>
 
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={onLeaveRoom}
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                 >
-                  <PhoneOff className="w-4 h-4 mr-2" />
-                  مغادرة
-                </Button>
+                  <Button
+                    onClick={onLeaveRoom}
+                    className="bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 shadow-lg hover:shadow-xl transition-all duration-300 border-0"
+                  >
+                    <motion.div
+                      animate={{ rotate: [0, -10, 10, 0] }}
+                      transition={{ duration: 2, repeat: Infinity }}
+                      className="mr-2"
+                    >
+                      <PhoneOff className="w-4 h-4" />
+                    </motion.div>
+                    مغادرة
+                  </Button>
+                </motion.div>
               </div>
             </div>
           </CardHeader>
         </Card>
 
         {/* أدوات التحكم السريع */}
-        <Card className="rounded-none border-x-0 border-t-0">
-          <CardContent className="py-4">
+        <Card className="rounded-none border-x-0 border-t-0 bg-gradient-to-r from-white/90 via-slate-50/90 to-gray-50/90 backdrop-blur-md shadow-md">
+          <CardContent className="py-6">
             <div className="flex items-center justify-between">
-              {/* التحكم في الميكروفون */}
-              <div className="flex items-center gap-4">
+              {/* التحكم في الميكروفون المحسن */}
+              <div className="flex items-center gap-6">
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button
-                      variant={isMuted ? "destructive" : "default"}
-                      size="lg"
-                      onClick={onToggleMute}
-                      className="rounded-full w-12 h-12 p-0"
+                    <motion.div
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
                     >
-                      {isMuted ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
-                    </Button>
+                      <Button
+                        variant={isMuted ? "destructive" : "default"}
+                        size="lg"
+                        onClick={onToggleMute}
+                        className={`
+                          rounded-full w-14 h-14 p-0 shadow-xl transition-all duration-300 border-2
+                          ${isMuted 
+                            ? 'bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 border-red-300 shadow-red-200/50' 
+                            : 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 border-green-300 shadow-green-200/50'
+                          }
+                        `}
+                      >
+                        <motion.div
+                          animate={!isMuted && voiceLevel > 0 ? { 
+                            scale: [1, 1.2, 1],
+                            rotate: [0, 5, -5, 0]
+                          } : {}}
+                          transition={{ duration: 0.5, repeat: Infinity }}
+                        >
+                          {isMuted ? <MicOff className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
+                        </motion.div>
+                      </Button>
+                    </motion.div>
                   </TooltipTrigger>
                   <TooltipContent>
                     {isMuted ? 'إلغاء كتم الميكروفون' : 'كتم الميكروفون'}
                   </TooltipContent>
                 </Tooltip>
 
-                {/* مؤشر مستوى الصوت */}
-                <div className="flex items-center gap-2">
-                  <Volume1 className="w-4 h-4 text-muted-foreground" />
-                  <Progress 
-                    value={voiceLevel} 
-                    className="w-20 h-2"
-                  />
+                {/* مؤشر مستوى الصوت المحسن */}
+                <div className="flex items-center gap-3 px-4 py-2 bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl shadow-md">
+                  <Volume1 className="w-5 h-5 text-blue-600" />
+                  <div className="relative w-24 h-3 bg-gray-200 rounded-full overflow-hidden">
+                    <motion.div
+                      className="h-full bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500 rounded-full"
+                      style={{ width: `${voiceLevel}%` }}
+                      animate={{ 
+                        width: `${voiceLevel}%`,
+                        boxShadow: voiceLevel > 50 ? [
+                          "0 0 0 0px rgba(59, 130, 246, 0.5)",
+                          "0 0 8px 4px rgba(59, 130, 246, 0.2)",
+                          "0 0 0 0px rgba(59, 130, 246, 0.5)"
+                        ] : []
+                      }}
+                      transition={{ duration: 0.1 }}
+                    />
+                  </div>
                 </div>
 
-                {/* مستوى الميكروفون */}
-                <div className="flex items-center gap-2 min-w-[120px]">
-                  <Mic className="w-4 h-4 text-muted-foreground" />
-                  <Slider
-                    value={[settings?.micVolume || 80]}
-                    onValueChange={handleMicVolumeChange}
-                    max={100}
-                    step={1}
-                    className="flex-1"
-                  />
+                {/* مستوى الميكروفون المحسن */}
+                <div className="flex items-center gap-3 px-4 py-2 bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl shadow-md min-w-[140px]">
+                  <Mic className="w-5 h-5 text-green-600" />
+                  <div className="flex-1 relative">
+                    <Slider
+                      value={[settings?.micVolume || 80]}
+                      onValueChange={handleMicVolumeChange}
+                      max={100}
+                      step={1}
+                      className="w-full [&>span:first-child]:bg-gradient-to-r [&>span:first-child]:from-green-200 [&>span:first-child]:to-emerald-200 [&>span:first-child]:h-2 [&>span:last-child]:bg-gradient-to-r [&>span:last-child]:from-green-500 [&>span:last-child]:to-emerald-500 [&>span:last-child]:h-2"
+                    />
+                  </div>
                 </div>
               </div>
 
-              {/* التحكم في السماعة */}
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2 min-w-[120px]">
-                  <Volume2 className="w-4 h-4 text-muted-foreground" />
-                  <Slider
-                    value={[settings?.speakerVolume || 80]}
-                    onValueChange={handleVolumeChange}
-                    max={100}
-                    step={1}
-                    className="flex-1"
-                  />
+              {/* التحكم في السماعة المحسن */}
+              <div className="flex items-center gap-6">
+                <div className="flex items-center gap-3 px-4 py-2 bg-gradient-to-r from-orange-50 to-yellow-50 rounded-2xl shadow-md min-w-[140px]">
+                  <Volume2 className="w-5 h-5 text-orange-600" />
+                  <div className="flex-1 relative">
+                    <Slider
+                      value={[settings?.speakerVolume || 80]}
+                      onValueChange={handleVolumeChange}
+                      max={100}
+                      step={1}
+                      className="w-full [&>span:first-child]:bg-gradient-to-r [&>span:first-child]:from-orange-200 [&>span:first-child]:to-yellow-200 [&>span:first-child]:h-2 [&>span:last-child]:bg-gradient-to-r [&>span:last-child]:from-orange-500 [&>span:last-child]:to-yellow-500 [&>span:last-child]:h-2"
+                    />
+                  </div>
                 </div>
 
                 {/* طلب الميكروفون في غرف البث */}
                 {room.isBroadcastRoom && !isCurrentUserSpeaker && (
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Button
-                        variant={isCurrentUserInQueue ? "secondary" : "outline"}
-                        size="sm"
-                        onClick={handleRequestMic}
-                        disabled={isCurrentUserInQueue}
+                      <motion.div
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
                       >
-                        {isCurrentUserInQueue ? (
-                          <>
-                            <Hand className="w-4 h-4 mr-2" />
-                            في الانتظار
-                          </>
-                        ) : (
-                          <>
-                            <Hand className="w-4 h-4 mr-2" />
-                            طلب الميكروفون
-                          </>
-                        )}
-                      </Button>
+                        <Button
+                          variant={isCurrentUserInQueue ? "secondary" : "outline"}
+                          size="sm"
+                          onClick={handleRequestMic}
+                          disabled={isCurrentUserInQueue}
+                          className={`
+                            px-6 py-3 rounded-2xl shadow-lg transition-all duration-300 border-2
+                            ${isCurrentUserInQueue 
+                              ? 'bg-gradient-to-r from-yellow-100 to-orange-100 border-yellow-300 text-yellow-800' 
+                              : 'bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200 hover:from-blue-100 hover:to-purple-100 text-blue-800 hover:border-blue-300'
+                            }
+                          `}
+                        >
+                          {isCurrentUserInQueue ? (
+                            <>
+                              <motion.div
+                                animate={{ y: [0, -2, 0] }}
+                                transition={{ duration: 1.5, repeat: Infinity }}
+                                className="mr-2"
+                              >
+                                <Hand className="w-4 h-4" />
+                              </motion.div>
+                              في الانتظار
+                            </>
+                          ) : (
+                            <>
+                              <motion.div
+                                animate={{ rotate: [0, 20, -20, 0] }}
+                                transition={{ duration: 2, repeat: Infinity }}
+                                className="mr-2"
+                              >
+                                <Hand className="w-4 h-4" />
+                              </motion.div>
+                              طلب الميكروفون
+                            </>
+                          )}
+                        </Button>
+                      </motion.div>
                     </TooltipTrigger>
                     <TooltipContent>
                       {isCurrentUserInQueue ? 'طلبك في قائمة الانتظار' : 'طلب إذن للتحدث'}
@@ -481,16 +690,35 @@ export default function VoiceRoom({
           </CardContent>
         </Card>
 
-        {/* قائمة المستخدمين */}
-        <div className="flex-1 overflow-y-auto p-4">
-          <div className="space-y-3">
+        {/* قائمة المستخدمين المحسنة */}
+        <div className="flex-1 overflow-y-auto p-6 bg-gradient-to-b from-transparent via-slate-50/20 to-blue-50/30">
+          <div className="space-y-6">
             {/* المتحدثون في غرف البث */}
             {room.isBroadcastRoom && room.speakers.length > 0 && (
-              <div className="mb-6">
-                <h3 className="text-sm font-semibold text-muted-foreground mb-3 flex items-center gap-2">
-                  <Mic className="w-4 h-4" />
-                  المتحدثون ({room.speakers.length})
-                </h3>
+              <div className="mb-8">
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="flex items-center gap-3 mb-4 px-4 py-2 bg-gradient-to-r from-green-100 via-emerald-100 to-teal-100 rounded-2xl shadow-md"
+                >
+                  <motion.div
+                    animate={{ rotate: [0, 10, -10, 0] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                  >
+                    <Mic className="w-5 h-5 text-green-600" />
+                  </motion.div>
+                  <h3 className="text-base font-bold bg-gradient-to-r from-green-700 to-emerald-700 bg-clip-text text-transparent">
+                    المتحدثون ({room.speakers.length})
+                  </h3>
+                  <motion.div
+                    className="w-2 h-2 bg-green-500 rounded-full"
+                    animate={{ 
+                      scale: [1, 1.5, 1],
+                      opacity: [0.5, 1, 0.5]
+                    }}
+                    transition={{ duration: 1.5, repeat: Infinity }}
+                  />
+                </motion.div>
                 <div className="grid gap-3">
                   {room.connectedUsers
                     .filter(user => room.speakers.includes(user.id))
@@ -509,11 +737,30 @@ export default function VoiceRoom({
 
             {/* قائمة انتظار الميكروفون */}
             {room.isBroadcastRoom && room.micQueue.length > 0 && (
-              <div className="mb-6">
-                <h3 className="text-sm font-semibold text-muted-foreground mb-3 flex items-center gap-2">
-                  <Hand className="w-4 h-4" />
-                  قائمة انتظار الميكروفون ({room.micQueue.length})
-                </h3>
+              <div className="mb-8">
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="flex items-center gap-3 mb-4 px-4 py-2 bg-gradient-to-r from-orange-100 via-yellow-100 to-amber-100 rounded-2xl shadow-md"
+                >
+                  <motion.div
+                    animate={{ y: [0, -3, 0] }}
+                    transition={{ duration: 1.5, repeat: Infinity }}
+                  >
+                    <Hand className="w-5 h-5 text-orange-600" />
+                  </motion.div>
+                  <h3 className="text-base font-bold bg-gradient-to-r from-orange-700 to-amber-700 bg-clip-text text-transparent">
+                    قائمة انتظار الميكروفون ({room.micQueue.length})
+                  </h3>
+                  <motion.div
+                    className="w-2 h-2 bg-orange-500 rounded-full"
+                    animate={{ 
+                      scale: [1, 1.5, 1],
+                      opacity: [0.5, 1, 0.5]
+                    }}
+                    transition={{ duration: 1.2, repeat: Infinity }}
+                  />
+                </motion.div>
                 <div className="grid gap-3">
                   {room.connectedUsers
                     .filter(user => room.micQueue.includes(user.id))
@@ -532,14 +779,33 @@ export default function VoiceRoom({
 
             {/* جميع المستخدمين */}
             <div>
-              <h3 className="text-sm font-semibold text-muted-foreground mb-3 flex items-center gap-2">
-                <Users className="w-4 h-4" />
-                {room.isBroadcastRoom ? 'المستمعون' : 'المتصلون'} ({
-                  room.isBroadcastRoom 
-                    ? room.connectedUsers.filter(u => !room.speakers.includes(u.id)).length
-                    : room.connectedUsers.length
-                })
-              </h3>
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex items-center gap-3 mb-4 px-4 py-2 bg-gradient-to-r from-blue-100 via-purple-100 to-indigo-100 rounded-2xl shadow-md"
+              >
+                <motion.div
+                  animate={{ scale: [1, 1.1, 1] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                >
+                  <Users className="w-5 h-5 text-blue-600" />
+                </motion.div>
+                <h3 className="text-base font-bold bg-gradient-to-r from-blue-700 to-purple-700 bg-clip-text text-transparent">
+                  {room.isBroadcastRoom ? 'المستمعون' : 'المتصلون'} ({
+                    room.isBroadcastRoom 
+                      ? room.connectedUsers.filter(u => !room.speakers.includes(u.id)).length
+                      : room.connectedUsers.length
+                  })
+                </h3>
+                <motion.div
+                  className="w-2 h-2 bg-blue-500 rounded-full"
+                  animate={{ 
+                    scale: [1, 1.5, 1],
+                    opacity: [0.5, 1, 0.5]
+                  }}
+                  transition={{ duration: 1.8, repeat: Infinity }}
+                />
+              </motion.div>
               <div className="grid gap-3">
                 <AnimatePresence>
                   {room.connectedUsers
@@ -559,77 +825,126 @@ export default function VoiceRoom({
           </div>
         </div>
 
-        {/* مربع حوار الإعدادات */}
+        {/* مربع حوار الإعدادات المحسن */}
         <Dialog open={showSettings} onOpenChange={setShowSettings}>
-          <DialogContent className="sm:max-w-md" dir="rtl">
-            <DialogHeader>
-              <DialogTitle>إعدادات الصوت</DialogTitle>
+          <DialogContent className="sm:max-w-lg bg-gradient-to-br from-white via-blue-50/30 to-purple-50/30 backdrop-blur-md border-2 border-blue-200/50 shadow-2xl" dir="rtl">
+            <DialogHeader className="pb-6">
+              <DialogTitle className="text-xl font-bold bg-gradient-to-r from-blue-700 via-purple-700 to-indigo-700 bg-clip-text text-transparent flex items-center gap-3">
+                <motion.div
+                  animate={{ rotate: [0, 180, 360] }}
+                  transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                >
+                  <Settings className="w-6 h-6 text-blue-600" />
+                </motion.div>
+                إعدادات الصوت
+              </DialogTitle>
             </DialogHeader>
             
-            <div className="space-y-6">
-              {/* إعدادات الميكروفون */}
-              <div className="space-y-4">
-                <h4 className="font-semibold">الميكروفون</h4>
+            <div className="space-y-8">
+              {/* إعدادات الميكروفون المحسنة */}
+              <motion.div 
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="space-y-4 p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl shadow-md border border-green-200/50"
+              >
+                <div className="flex items-center gap-3">
+                  <Mic className="w-5 h-5 text-green-600" />
+                  <h4 className="font-bold text-green-800">الميكروفون</h4>
+                </div>
                 
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">مستوى الميكروفون</label>
+                <div className="space-y-3">
+                  <label className="text-sm font-medium text-green-700">مستوى الميكروفون</label>
                   <Slider
                     value={[settings?.micVolume || 80]}
                     onValueChange={handleMicVolumeChange}
                     max={100}
                     step={1}
-                    className="w-full"
+                    className="w-full [&>span:first-child]:bg-green-200 [&>span:first-child]:h-3 [&>span:last-child]:bg-gradient-to-r [&>span:last-child]:from-green-500 [&>span:last-child]:to-emerald-500 [&>span:last-child]:h-3"
                   />
+                  <div className="text-xs text-green-600 text-center">{settings?.micVolume || 80}%</div>
                 </div>
-              </div>
+              </motion.div>
 
-              {/* إعدادات السماعة */}
-              <div className="space-y-4">
-                <h4 className="font-semibold">السماعة</h4>
+              {/* إعدادات السماعة المحسنة */}
+              <motion.div 
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.1 }}
+                className="space-y-4 p-4 bg-gradient-to-r from-orange-50 to-yellow-50 rounded-2xl shadow-md border border-orange-200/50"
+              >
+                <div className="flex items-center gap-3">
+                  <Volume2 className="w-5 h-5 text-orange-600" />
+                  <h4 className="font-bold text-orange-800">السماعة</h4>
+                </div>
                 
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">مستوى الصوت</label>
+                <div className="space-y-3">
+                  <label className="text-sm font-medium text-orange-700">مستوى الصوت</label>
                   <Slider
                     value={[settings?.speakerVolume || 80]}
                     onValueChange={handleVolumeChange}
                     max={100}
                     step={1}
-                    className="w-full"
+                    className="w-full [&>span:first-child]:bg-orange-200 [&>span:first-child]:h-3 [&>span:last-child]:bg-gradient-to-r [&>span:last-child]:from-orange-500 [&>span:last-child]:to-yellow-500 [&>span:last-child]:h-3"
                   />
+                  <div className="text-xs text-orange-600 text-center">{settings?.speakerVolume || 80}%</div>
                 </div>
-              </div>
+              </motion.div>
 
-              {/* إحصائيات الاتصال */}
-              <div className="space-y-4">
-                <h4 className="font-semibold">إحصائيات الاتصال</h4>
+              {/* إحصائيات الاتصال المحسنة */}
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="space-y-4 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl shadow-md border border-blue-200/50"
+              >
+                <div className="flex items-center gap-3">
+                  <Signal className="w-5 h-5 text-blue-600" />
+                  <h4 className="font-bold text-blue-800">إحصائيات الاتصال</h4>
+                </div>
                 
                 <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="text-muted-foreground">زمن الاستجابة:</span>
-                    <span className="font-medium ml-2">{connectionStats.latency}ms</span>
+                  <div className="p-3 bg-white/50 rounded-xl">
+                    <div className="text-gray-600 mb-1">زمن الاستجابة</div>
+                    <div className={`font-bold text-lg ${
+                      connectionStats.latency < 50 ? 'text-green-600' :
+                      connectionStats.latency < 100 ? 'text-yellow-600' : 'text-red-600'
+                    }`}>
+                      {connectionStats.latency}ms
+                    </div>
                   </div>
-                  <div>
-                    <span className="text-muted-foreground">الحزم المفقودة:</span>
-                    <span className="font-medium ml-2">{connectionStats.packetsLost}</span>
+                  <div className="p-3 bg-white/50 rounded-xl">
+                    <div className="text-gray-600 mb-1">الحزم المفقودة</div>
+                    <div className="font-bold text-lg text-blue-600">{connectionStats.packetsLost}</div>
                   </div>
-                  <div>
-                    <span className="text-muted-foreground">جودة الاتصال:</span>
-                    <Badge variant="outline" className="ml-2">
+                  <div className="p-3 bg-white/50 rounded-xl">
+                    <div className="text-gray-600 mb-1">جودة الاتصال</div>
+                    <Badge className={`${
+                      connectionStats.quality === 'excellent' ? 'bg-green-500' :
+                      connectionStats.quality === 'good' ? 'bg-yellow-500' : 'bg-red-500'
+                    } text-white`}>
                       {connectionStats.quality === 'excellent' ? 'ممتازة' :
                        connectionStats.quality === 'good' ? 'جيدة' : 'ضعيفة'}
                     </Badge>
                   </div>
-                  <div>
-                    <span className="text-muted-foreground">ترميز الصوت:</span>
-                    <span className="font-medium ml-2">{room.audioCodec.toUpperCase()}</span>
+                  <div className="p-3 bg-white/50 rounded-xl">
+                    <div className="text-gray-600 mb-1">ترميز الصوت</div>
+                    <div className="font-bold text-lg text-purple-600">{room.audioCodec.toUpperCase()}</div>
                   </div>
                 </div>
-              </div>
+              </motion.div>
 
-              <div className="flex justify-end">
-                <Button onClick={() => setShowSettings(false)}>
-                  إغلاق
-                </Button>
+              <div className="flex justify-end pt-4">
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <Button 
+                    onClick={() => setShowSettings(false)}
+                    className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-300 px-6"
+                  >
+                    إغلاق
+                  </Button>
+                </motion.div>
               </div>
             </div>
           </DialogContent>
