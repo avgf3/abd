@@ -12,11 +12,11 @@ function getArabicRole(userType?: string): string {
     case 'member':
       return 'عضو';
     case 'moderator':
-      return 'مشرف';
+      return 'moderator';
     case 'admin':
-      return 'إداري';
+      return 'admin';
     case 'owner':
-      return 'مالك';
+      return 'owner';
     default:
       return userType || 'عضو';
   }
@@ -38,22 +38,22 @@ export function formatRoomEventMessage(
   const levelNum = typeof user?.level === 'number' && user.level ? user.level : undefined;
   const levelTitle = levelNum ? getLevelInfo(levelNum)?.title : undefined;
 
-  // بناء الميتاداتا داخل القوسين
-  // زائر => "# زائر #"
-  // عضو => "# عضو — لقب: {title} — رتبة {level} #"
-  // إداري/مالك/مشرف => "# {roleAr}{levelTitle ? ` — لقب: ${levelTitle}` : ''} #"
+  // بناء الميتاداتا داخل القوسين - مبسط
+  // زائر => "# زائر #" (بدون تغيير)
+  // عضو => "# عضو رتبة {level} #" (فقط الرتبة)
+  // إداري/مالك/مشرف => "# {roleAr} #" (فقط الدور)
   const meta = (() => {
     if (normalizedType === 'guest') {
       return `# ${roleAr} #`;
     }
     if (normalizedType === 'member') {
-      if (levelNum && levelTitle) {
-        return `# ${roleAr} — لقب: ${levelTitle} — رتبة ${levelNum} #`;
+      if (levelNum) {
+        return `# ${roleAr} رتبة ${levelNum} #`;
       }
       return `# ${roleAr} #`;
     }
-    // مشرف/إداري/مالك
-    return `# ${roleAr}${levelTitle ? ` — لقب: ${levelTitle}` : ''} #`;
+    // مشرف/إداري/مالك - فقط اسم الدور
+    return `# ${roleAr} #`;
   })();
 
   if (action === 'join') {
