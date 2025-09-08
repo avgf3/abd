@@ -141,12 +141,12 @@ export class ModerationSystem {
       banExpiry: banExpiry,
     });
 
-    // حجب IP والجهاز لمدة الطرد
-    if (ipAddress) {
+    // حجب IP والجهاز لمدة الطرد (تجاهل القيم العامة/غير المعروفة)
+    if (ipAddress && ipAddress !== 'unknown') {
       this.blockedIPs.add(ipAddress);
       setTimeout(() => this.blockedIPs.delete(ipAddress), durationMinutes * 60 * 1000);
     }
-    if (deviceId) {
+    if (deviceId && deviceId !== 'unknown') {
       this.blockedDevices.add(deviceId);
       setTimeout(() => this.blockedDevices.delete(deviceId), durationMinutes * 60 * 1000);
     }
@@ -366,9 +366,15 @@ export class ModerationSystem {
       deviceId: null,
     });
 
-    // إزالة IP والجهاز من القائمة المحجوبة في الذاكرة
-    if (target.ipAddress) this.blockedIPs.delete(target.ipAddress);
-    if (target.deviceId) this.blockedDevices.delete(target.deviceId);
+    // إزالة جميع قيود الحظر المرتبطة بالمستخدم من الذاكرة، بالاعتماد على جدول blocked_devices
+    try {
+      const allBlocked = await storage.getBlockedDevices();
+      const mine = (allBlocked || []).filter((d: any) => d && d.userId === targetUserId);
+      for (const entry of mine) {
+        if (entry.ipAddress && entry.ipAddress !== 'unknown') this.blockedIPs.delete(entry.ipAddress);
+        if (entry.deviceId && entry.deviceId !== 'unknown') this.blockedDevices.delete(entry.deviceId);
+      }
+    } catch {}
 
     // حذف بيانات الحجب من قاعدة البيانات
     try {

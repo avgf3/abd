@@ -1081,19 +1081,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'المدة يجب أن تكون بين 1 و 1440 دقيقة' });
       }
 
-      // استخدم IP والجهاز الخاصين بالمستخدم المستهدف لضمان دقة الحظر
+      // استخدم IP والجهاز الخاصين بالمستخدم المستهدف فقط (بدون الرجوع إلى هيدر طلب المشرف)
       const target = await storage.getUser(targetUserId);
       const clientIP =
         target?.ipAddress && target.ipAddress !== 'unknown'
           ? target.ipAddress
-          : getClientIpFromHeaders(
-              req.headers as any,
-              (req.ip || (req.connection as any)?.remoteAddress) as any
-            );
+          : undefined;
       const deviceId =
         target?.deviceId && target.deviceId !== 'unknown'
           ? target.deviceId
-          : getDeviceIdFromHeaders(req.headers as any);
+          : undefined;
 
       const success = await moderationSystem.muteUser(
         moderatorId,
@@ -1244,19 +1241,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'لا يمكنك حجب نفسك' });
       }
 
-      // الحصول على IP والجهاز الحقيقيين للمستخدم المستهدف (ليس المشرف)
+      // الحصول على IP والجهاز الخاصين بالمستخدم المستهدف فقط (بدون الرجوع إلى هيدر طلب المشرف)
       const target = await storage.getUser(targetUserId);
       const clientIP =
         target?.ipAddress && target.ipAddress !== 'unknown'
           ? target.ipAddress
-          : getClientIpFromHeaders(
-              req.headers as any,
-              (req.ip || (req.connection as any)?.remoteAddress) as any
-            );
+          : undefined;
       const deviceId =
         target?.deviceId && target.deviceId !== 'unknown'
           ? target.deviceId
-          : getDeviceIdFromHeaders(req.headers as any);
+          : undefined;
 
       const success = await moderationSystem.blockUser(
         moderatorId,
