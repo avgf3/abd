@@ -9,6 +9,7 @@ import { pointsService } from './services/pointsService';
 import { roomMessageService } from './services/roomMessageService';
 import { formatRoomEventMessage } from './utils/roomEventFormatter';
 import { roomService } from './services/roomService';
+import { voiceService } from './services/voiceService';
 import { storage } from './storage';
 import { sanitizeUsersArray } from './utils/data-sanitizer';
 import { getClientIpFromHeaders, getDeviceIdFromHeaders } from './utils/device';
@@ -547,6 +548,9 @@ export function setupRealtime(httpServer: HttpServer): IOServer {
   });
 
   ioInstance = io;
+
+  // تهيئة خدمة الصوت مع Socket.IO
+  voiceService.initialize(io);
 
   io.on('connection', (rawSocket) => {
     const socket = rawSocket as CustomSocket;

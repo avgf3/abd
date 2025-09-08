@@ -1,4 +1,4 @@
-import { MoreVertical, Mic, Lock, Unlock, Settings, Trash2 } from 'lucide-react';
+import { MoreVertical, Mic, Lock, Unlock, Settings, Trash2, Phone, PhoneOff } from 'lucide-react';
 import React, { useState, useRef, useEffect } from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,10 @@ interface RoomListItemProps {
   onDelete?: (roomId: string, e: React.MouseEvent) => void;
   onChangeIcon?: (roomId: string) => void;
   onToggleLock?: (roomId: string, isLocked: boolean) => void;
+  onVoiceJoin?: (roomId: string) => void;
+  onVoiceLeave?: () => void;
+  isVoiceConnected?: boolean;
+  currentVoiceRoom?: string | null;
 }
 
 export default function RoomListItem({
@@ -22,6 +26,10 @@ export default function RoomListItem({
   onDelete,
   onChangeIcon,
   onToggleLock,
+  onVoiceJoin,
+  onVoiceLeave,
+  isVoiceConnected = false,
+  currentVoiceRoom = null,
 }: RoomListItemProps) {
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -87,6 +95,30 @@ export default function RoomListItem({
             <span className="text-xs text-muted-foreground">
               {room.userCount || 0} متصل
             </span>
+            
+            {/* زر الصوت */}
+            {onVoiceJoin && onVoiceLeave && (
+              <Button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (isVoiceConnected && currentVoiceRoom === room.id) {
+                    onVoiceLeave();
+                  } else {
+                    onVoiceJoin(room.id);
+                  }
+                }}
+                variant={isVoiceConnected && currentVoiceRoom === room.id ? "default" : "ghost"}
+                size="sm"
+                className="h-6 w-6 p-0"
+              >
+                {isVoiceConnected && currentVoiceRoom === room.id ? (
+                  <PhoneOff className="w-3 h-3" />
+                ) : (
+                  <Phone className="w-3 h-3" />
+                )}
+              </Button>
+            )}
+            
             {(canModerate || canDelete) && (
               <div className="relative" ref={menuRef}>
                 <Button
