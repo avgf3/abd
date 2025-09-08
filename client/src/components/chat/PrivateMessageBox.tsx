@@ -4,7 +4,7 @@ import { Virtuoso, type VirtuosoHandle } from 'react-virtuoso';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
-import { Dialog, FloatingDialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, FloatingDialogContent } from '@/components/ui/dialog';
 import ImageLightbox from '@/components/ui/ImageLightbox';
 import UserRoleBadge from '@/components/chat/UserRoleBadge';
 import { Input } from '@/components/ui/input';
