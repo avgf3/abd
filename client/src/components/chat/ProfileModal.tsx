@@ -2767,7 +2767,7 @@ export default function ProfileModal({
                     color: '#fff',
                     borderBottom: '1px solid rgba(255,255,255,0.1)',
                     paddingBottom: '4px'
-                  }}>خيارات الخصوصية</h5>
+                  }}>🛡️ خيارات الخصوصية</h5>
 
 
 
@@ -2780,7 +2780,7 @@ export default function ProfileModal({
                     borderRadius: '6px',
                     background: 'rgba(255,255,255,0.04)'
                   }}>
-                    <span style={{ color: '#fff', fontSize: '14px' }}>طلبات الصداقة</span>
+                    <span style={{ color: '#fff', fontSize: '14px' }}>👥 طلبات الصداقة</span>
                     <span style={{ color: '#888', fontSize: '12px' }}>قيد التطوير</span>
                   </div>
 
@@ -2797,7 +2797,7 @@ export default function ProfileModal({
                     borderRadius: '6px',
                     background: 'rgba(255,255,255,0.04)'
                   }}>
-                    <span style={{ color: '#fff', fontSize: '14px' }}>من يمكنه رؤية نقاطي</span>
+                    <span style={{ color: '#fff', fontSize: '14px' }}>🏅 من يمكنه رؤية نقاطي</span>
                     <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#ddd' }}>
                       <input
                         type="checkbox"
@@ -2818,7 +2818,7 @@ export default function ProfileModal({
                     borderRadius: '6px',
                     background: 'rgba(255,255,255,0.04)'
                   }}>
-                    <span style={{ color: '#fff', fontSize: '14px' }}>إظهار رسائل النظام (انضمام/مغادرة)</span>
+                    <span style={{ color: '#fff', fontSize: '14px' }}>🧩 إظهار رسائل النظام (انضمام/مغادرة)</span>
                     <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#ddd' }}>
                       <input
                         type="checkbox"
@@ -2839,7 +2839,7 @@ export default function ProfileModal({
                     borderRadius: '6px',
                     background: 'rgba(255,255,255,0.04)'
                   }}>
-                    <span style={{ color: '#fff', fontSize: '14px' }}>الأصوات في الموقع</span>
+                    <span style={{ color: '#fff', fontSize: '14px' }}>🔊 الأصوات في الموقع</span>
                     <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#ddd' }}>
                       <input
                         type="checkbox"
@@ -2874,10 +2874,10 @@ export default function ProfileModal({
                   ) && (
                     <>
                       <p onClick={() => setCurrentEditType('theme')} style={{ cursor: 'pointer' }}>
-                        لون الملف الشخصي: <span>اضغط للتغيير</span>
+                        🎨 لون الملف الشخصي: <span>اضغط للتغيير</span>
                       </p>
                       <p onClick={() => setCurrentEditType('effects')} style={{ cursor: 'pointer' }}>
-                        تأثيرات حركية: <span>اضغط للتغيير</span>
+                        ✨ تأثيرات حركية: <span>اضغط للتغيير</span>
                       </p>
                     </>
                   )}
@@ -2897,9 +2897,9 @@ export default function ProfileModal({
                       }}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                        <strong>موسيقى البروفايل</strong>
+                        <strong>🎵 موسيقى البروفايل</strong>
                         {localUser?.profileMusicUrl && (
-                          <span style={{ fontSize: '11px', color: '#4caf50' }}>نشط</span>
+                          <span style={{ fontSize: '11px', color: '#4caf50' }}>✅ نشط</span>
                         )}
                       </div>
 
@@ -2907,7 +2907,7 @@ export default function ProfileModal({
                         {localUser?.profileMusicUrl ? (
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                             <span style={{ fontSize: '12px', color: '#fff', flex: 1 }}>
-                              {musicTitle || 'موسيقى البروفايل'}
+                              🎵 {musicTitle || 'موسيقى البروفايل'}
                             </span>
                             <button
                               onClick={async () => {
@@ -2974,7 +2974,7 @@ export default function ProfileModal({
                               cursor: 'pointer'
                             }}
                           >
-                            اختر ملف صوتي (MP3, WAV, OGG)
+                            📁 اختر ملف صوتي (MP3, WAV, OGG)
                           </button>
                         )}
                       </div>
