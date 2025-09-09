@@ -112,8 +112,50 @@ export default function ProfileModal({
     const found = rooms.find((r) => r.id === resolvedRoomId);
     resolvedRoomName = (found && found.name) || String(resolvedRoomId);
   }
-  const lastSeenLiteral = 'الوقت الحقيقي or bm AM';
-  const lastSeenText = `${lastSeenLiteral} / غرفة║${resolvedRoomName} ... آخر تواجد`;
+  
+  // دالة تنسيق آخر تواجد
+  const formatLastSeenWithRoom = (lastSeen?: string | Date | null, roomName?: string): string => {
+    if (!lastSeen) return 'غير معروف';
+    
+    try {
+      const lastSeenDate = lastSeen instanceof Date ? lastSeen : new Date(lastSeen);
+      
+      if (isNaN(lastSeenDate.getTime())) {
+        return 'غير معروف';
+      }
+      
+      const now = new Date();
+      const isToday = lastSeenDate.toDateString() === now.toDateString();
+      
+      const timeString = lastSeenDate.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+      });
+      
+      let formattedTime: string;
+      
+      if (isToday) {
+        // نفس اليوم: الوقت فقط
+        formattedTime = timeString;
+      } else {
+        // أكثر من يوم: التاريخ + الوقت
+        const dateString = lastSeenDate.toLocaleDateString('en-GB', {
+          day: '2-digit',
+          month: '2-digit'
+        });
+        formattedTime = `${dateString} ${timeString}`;
+      }
+      
+      const finalRoomName = roomName || resolvedRoomName;
+      return `${formattedTime} / غرفة║${finalRoomName}`;
+      
+    } catch (error) {
+      return 'غير معروف';
+    }
+  };
+  
+  const lastSeenText = `آخر تواجد\n${formatLastSeenWithRoom(localUser?.lastSeen, resolvedRoomName)}`;
   
   // ضبط مستوى الصوت عند تحميل الصوت
   useEffect(() => {
