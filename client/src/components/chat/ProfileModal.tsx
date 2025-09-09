@@ -20,6 +20,7 @@ import { getUserLevelIcon } from '@/components/chat/UserRoleBadge';
 import CountryFlag from '@/components/ui/CountryFlag';
 import ProfileImage from './ProfileImage';
 import { useStories } from '@/hooks/useStories';
+import { useRoomManager } from '@/hooks/useRoomManager';
 
 interface ProfileModalProps {
   user: ChatUser | null;
@@ -85,6 +86,34 @@ export default function ProfileModal({
   
   // حالة التبويبات
   const [activeTab, setActiveTab] = useState<'info' | 'options' | 'other'>('info');
+
+  // ===== آخر تواجد + اسم الغرفة =====
+  const { rooms, fetchRooms } = useRoomManager({ autoRefresh: false });
+  useEffect(() => {
+    fetchRooms(false).catch(() => {});
+  }, [fetchRooms]);
+
+  const formatAmPmTime = (date?: Date | string): string => {
+    if (!date) return 'غير معروف';
+    const d = date instanceof Date ? date : new Date(date);
+    if (isNaN(d.getTime())) return 'غير معروف';
+    let hours = d.getHours();
+    const minutes = d.getMinutes().toString().padStart(2, '0');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12;
+    if (hours === 0) hours = 12;
+    const hh = hours.toString().padStart(2, '0');
+    return `${hh}:${minutes} ${ampm}`;
+  };
+
+  const resolvedRoomId = (localUser as any)?.currentRoom || localUser?.roomId || 'general';
+  let resolvedRoomName = 'الدردشة العامة';
+  if (resolvedRoomId && resolvedRoomId !== 'general') {
+    const found = rooms.find((r) => r.id === resolvedRoomId);
+    resolvedRoomName = (found && found.name) || String(resolvedRoomId);
+  }
+  const lastSeenLiteral = 'الوقت الحقيقي or bm AM';
+  const lastSeenText = `${lastSeenLiteral} / غرفة║${resolvedRoomName} ... آخر تواجد`;
   
   // ضبط مستوى الصوت عند تحميل الصوت
   useEffect(() => {
@@ -2565,16 +2594,14 @@ export default function ProfileModal({
               
               <div className="profile-info">
                 <small
-                  onClick={() => localUser?.id === currentUser?.id && openEditModal('status')}
                   style={{ 
-                    cursor: localUser?.id === currentUser?.id ? 'pointer' : 'default', 
                     display: 'block', 
                     textAlign: 'center',
                     width: '100%',
                     margin: '0 auto 12px auto'
                   }}
                 >
-                  {localUser?.status || (localUser?.id === currentUser?.id ? 'اضغط لإضافة حالة' : '')}
+                  {lastSeenText}
                 </small>
               </div>
 
@@ -2628,7 +2655,7 @@ export default function ProfileModal({
                   </p>
                 )}
                 <p>
-                  🧾 الحالة: <span>{localUser?.isOnline ? 'متصل' : 'غير متصل'}</span>
+                  🧾 <span>{lastSeenText}</span>
                 </p>
                 
                 {localUser?.id === currentUser?.id && (
