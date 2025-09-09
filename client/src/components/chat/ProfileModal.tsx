@@ -2479,7 +2479,7 @@ export default function ProfileModal({
                   borderRight: '1px solid rgba(255,255,255,0.08)'
                 }}
               >
-                📋 معلوماتي
+                معلوماتي
               </button>
               <button
                 onClick={() => setActiveTab('options')}
@@ -2512,7 +2512,7 @@ export default function ProfileModal({
                   transition: 'background 0.2s ease'
                 }}
               >
-                🚧 قيد التطوير
+                قيد التطوير
               </button>
             </div>
 
@@ -2532,7 +2532,7 @@ export default function ProfileModal({
                   textAlign: 'center',
                   borderBottom: '1px solid rgba(255,255,255,0.1)',
                   paddingBottom: '8px'
-                }}>📋 معلوماتي</h4>
+                }}>معلوماتي</h4>
               
               <div className="profile-info">
                 <small
@@ -2680,53 +2680,7 @@ export default function ProfileModal({
                     paddingBottom: '4px'
                   }}>🛡️ خيارات الخصوصية</h5>
 
-                  <div style={{ 
-                    display: 'flex', 
-                    justifyContent: 'space-between', 
-                    alignItems: 'center',
-                    marginBottom: '8px',
-                    padding: '8px',
-                    borderRadius: '6px',
-                    background: 'rgba(255,255,255,0.04)'
-                  }}>
-                    <span style={{ color: '#fff', fontSize: '14px' }}>📷 الذين يمكنهم إرسال صور خاصة</span>
-                    <select style={{ 
-                      background: 'rgba(255,255,255,0.1)', 
-                      color: '#fff', 
-                      border: '1px solid rgba(255,255,255,0.2)',
-                      borderRadius: '4px',
-                      padding: '4px 8px',
-                      fontSize: '12px'
-                    }}>
-                      <option value="all">الجميع</option>
-                      <option value="members">عضو</option>
-                      <option value="off">إيقاف</option>
-                    </select>
-                  </div>
 
-                  <div style={{ 
-                    display: 'flex', 
-                    justifyContent: 'space-between', 
-                    alignItems: 'center',
-                    marginBottom: '8px',
-                    padding: '8px',
-                    borderRadius: '6px',
-                    background: 'rgba(255,255,255,0.04)'
-                  }}>
-                    <span style={{ color: '#fff', fontSize: '14px' }}>🗺️ خريطة خاصة</span>
-                    <select style={{ 
-                      background: 'rgba(255,255,255,0.1)', 
-                      color: '#fff', 
-                      border: '1px solid rgba(255,255,255,0.2)',
-                      borderRadius: '4px',
-                      padding: '4px 8px',
-                      fontSize: '12px'
-                    }}>
-                      <option value="all">الجميع</option>
-                      <option value="members">عضو</option>
-                      <option value="off">إيقاف</option>
-                    </select>
-                  </div>
 
                   <div style={{ 
                     display: 'flex', 
@@ -2741,28 +2695,6 @@ export default function ProfileModal({
                     <span style={{ color: '#888', fontSize: '12px' }}>قيد التطوير</span>
                   </div>
 
-                  <div style={{ 
-                    display: 'flex', 
-                    justifyContent: 'space-between', 
-                    alignItems: 'center',
-                    marginBottom: '8px',
-                    padding: '8px',
-                    borderRadius: '6px',
-                    background: 'rgba(255,255,255,0.04)'
-                  }}>
-                    <span style={{ color: '#fff', fontSize: '14px' }}>💬 طلبات التحدث</span>
-                    <select style={{ 
-                      background: 'rgba(255,255,255,0.1)', 
-                      color: '#fff', 
-                      border: '1px solid rgba(255,255,255,0.2)',
-                      borderRadius: '4px',
-                      padding: '4px 8px',
-                      fontSize: '12px'
-                    }}>
-                      <option value="on">تشغيل</option>
-                      <option value="off">إيقاف</option>
-                    </select>
-                  </div>
 
                   <div style={{ 
                     display: 'flex', 
@@ -2840,7 +2772,7 @@ export default function ProfileModal({
                       color: '#fff',
                       borderBottom: '1px solid rgba(255,255,255,0.1)',
                       paddingBottom: '4px'
-                    }}>👑 خيارات المشرفين</h5>
+                    }}>خيارات المشرفين</h5>
                     <div className="additional-details">
                   {currentUser && (
                     currentUser.userType === 'owner' || 
@@ -3086,7 +3018,7 @@ export default function ProfileModal({
                   textAlign: 'center',
                   borderBottom: '1px solid rgba(255,255,255,0.1)',
                   paddingBottom: '8px'
-                }}>🚧 قيد التطوير</h4>
+                }}>قيد التطوير</h4>
                 <p style={{ color: '#888', fontSize: '14px' }}>
                   هذا القسم قيد التطوير وسيتم إضافة المزيد من الميزات قريباً
                 </p>
