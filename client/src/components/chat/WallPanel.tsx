@@ -242,12 +242,8 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
 
       const data = result as any;
       if (data?.post) {
-        const newPost = data.post || data;
-        setPostsByTab((prev) => ({ ...prev, [activeTab]: [newPost, ...(prev[activeTab] || [])] }));
-        queryClient.setQueryData(['/api/wall/posts', activeTab, currentUser.id], (old: any) => {
-          const oldPosts = old?.posts || [];
-          return { ...(old || {}), posts: [newPost, ...oldPosts] };
-        });
+        // لا نضيف المنشور محلياً هنا لأن Socket.IO سيقوم بذلك تلقائياً
+        // هذا يمنع ظهور المنشور مكرراً مرتين
         setNewPostContent('');
         removeSelectedImage();
         toast({
