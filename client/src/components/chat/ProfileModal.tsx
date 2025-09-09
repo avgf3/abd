@@ -2468,7 +2468,7 @@ export default function ProfileModal({
                 onClick={() => setActiveTab('info')}
                 style={{
                   flex: 1,
-                  padding: '12px',
+                  padding: '8px',
                   background: activeTab === 'info' ? 'rgba(255,255,255,0.1)' : 'transparent',
                   color: '#fff',
                   border: 'none',
@@ -2485,7 +2485,7 @@ export default function ProfileModal({
                 onClick={() => setActiveTab('options')}
                 style={{
                   flex: 1,
-                  padding: '12px',
+                  padding: '8px',
                   background: activeTab === 'options' ? 'rgba(255,255,255,0.1)' : 'transparent',
                   color: '#fff',
                   border: 'none',
@@ -2496,13 +2496,13 @@ export default function ProfileModal({
                   borderRight: '1px solid rgba(255,255,255,0.08)'
                 }}
               >
-                ⚙️ خيارات
+                خيارات
               </button>
               <button
                 onClick={() => setActiveTab('other')}
                 style={{
                   flex: 1,
-                  padding: '12px',
+                  padding: '8px',
                   background: activeTab === 'other' ? 'rgba(255,255,255,0.1)' : 'transparent',
                   color: '#fff',
                   border: 'none',
@@ -2628,7 +2628,7 @@ export default function ProfileModal({
                   textAlign: 'center',
                   borderBottom: '1px solid rgba(255,255,255,0.1)',
                   paddingBottom: '8px'
-                }}>⚙️ خيارات</h4>
+                }}>خيارات</h4>
 
                 {/* إعدادات الرسائل الخاصة */}
                 <div style={{ marginBottom: '16px' }}>
@@ -2696,27 +2696,7 @@ export default function ProfileModal({
                   </div>
 
 
-                  <div style={{ 
-                    display: 'flex', 
-                    justifyContent: 'space-between', 
-                    alignItems: 'center',
-                    marginBottom: '8px',
-                    padding: '8px',
-                    borderRadius: '6px',
-                    background: 'rgba(255,255,255,0.04)'
-                  }}>
-                    <span style={{ color: '#fff', fontSize: '14px' }}>⚙️ من يمكنه رؤية إعدادتي</span>
-                    <select style={{ 
-                      background: 'rgba(255,255,255,0.1)', 
-                      color: '#fff', 
-                      border: '1px solid rgba(255,255,255,0.2)',
-                      borderRadius: '4px',
-                      padding: '4px 8px',
-                      fontSize: '12px'
-                    }}>
-                      <option value="me">أنا فقط</option>
-                    </select>
-                  </div>
+                  
 
                   <div style={{ 
                     display: 'flex', 
