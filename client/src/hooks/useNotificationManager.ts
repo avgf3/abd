@@ -104,12 +104,11 @@ export function useNotificationManager(currentUser: ChatUser | null) {
     queryClient.invalidateQueries({
       queryKey: ['/api/friends', currentUser.id],
     });
-    queryClient.invalidateQueries({
-      queryKey: ['/api/friend-requests/incoming', currentUser.id],
-    });
-    queryClient.invalidateQueries({
-      queryKey: ['/api/friend-requests/outgoing', currentUser.id],
-    });
+    // تم تعطيل طلبات الصداقة
+    try {
+      queryClient.removeQueries({ queryKey: ['/api/friend-requests/incoming', currentUser.id] });
+      queryClient.removeQueries({ queryKey: ['/api/friend-requests/outgoing', currentUser.id] });
+    } catch {}
   }, [currentUser?.id, queryClient]);
 
   // Update all notification-related queries
@@ -127,32 +126,14 @@ export function useNotificationManager(currentUser: ChatUser | null) {
   );
 
   // Handle friend request received event
-  const handleFriendRequestReceived = useCallback(
-    (event: CustomEvent<NotificationEventDetail>) => {
-      updateAllQueries();
-
-      showToast({
-        title: 'طلب صداقة جديد',
-        description: `${event.detail.senderName} يريد إضافتك كصديق`,
-        playSound: true,
-      });
-    },
-    [updateAllQueries, showToast]
-  );
+  const handleFriendRequestReceived = useCallback(() => {
+    // تم تعطيل طلبات الصداقة
+  }, []);
 
   // Handle friend request accepted event
-  const handleFriendRequestAccepted = useCallback(
-    (event: CustomEvent<NotificationEventDetail>) => {
-      updateAllQueries();
-
-      showToast({
-        title: 'تم قبول طلب الصداقة',
-        description: `${event.detail.friendName} قبل طلب صداقتك`,
-        playSound: true,
-      });
-    },
-    [updateAllQueries, showToast]
-  );
+  const handleFriendRequestAccepted = useCallback(() => {
+    // تم تعطيل طلبات الصداقة
+  }, []);
 
   // Handle friend added event
   const handleFriendAdded = useCallback(
@@ -168,8 +149,7 @@ export function useNotificationManager(currentUser: ChatUser | null) {
 
     const events = [
       { name: 'notificationReceived', handler: handleNotificationReceived },
-      { name: 'friendRequestReceived', handler: handleFriendRequestReceived },
-      { name: 'friendRequestAccepted', handler: handleFriendRequestAccepted },
+      // تم تعطيل طلبات الصداقة: إزالة مستمعي friendRequestReceived و friendRequestAccepted
       { name: 'friendAdded', handler: handleFriendAdded },
     ];
 
