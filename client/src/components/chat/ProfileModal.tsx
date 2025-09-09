@@ -2660,15 +2660,6 @@ export default function ProfileModal({
                 border: '1px solid rgba(255,255,255,0.08)',
                 background: 'rgba(255,255,255,0.04)'
               }}>
-                <h4 style={{ 
-                  margin: '0 0 12px 0', 
-                  fontSize: '14px', 
-                  fontWeight: 'bold', 
-                  color: '#fff',
-                  textAlign: 'center',
-                  borderBottom: '1px solid rgba(255,255,255,0.1)',
-                  paddingBottom: '8px'
-                }}>معلوماتي</h4>
               
               <div className="profile-info">
                 <small
