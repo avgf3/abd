@@ -318,10 +318,19 @@ export default function UserContextMenu({
           <ContextMenuItem
             className="flex items-center gap-3 text-blue-600 font-semibold bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg p-2 cursor-pointer transition-all duration-200"
             onClick={() => {
+              if (targetUser?.dmPrivacy === 'none') {
+                toast({
+                  title: 'غير مسموح',
+                  description: 'هذا المستخدم أغلق الرسائل الخاصة',
+                  variant: 'destructive',
+                });
+                return;
+              }
               if (targetUser?.id) {
                 onStartPrivateChat?.(targetUser);
               }
             }}
+            disabled={targetUser?.dmPrivacy === 'none'}
           >
             <MessageSquare className="w-5 h-5" />
             <span className="text-lg">💬 رسالة خاصة</span>

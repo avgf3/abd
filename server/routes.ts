@@ -999,6 +999,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // تحديث إعداد خصوصية الرسائل الخاصة للمستخدم
+  const dmPrivacySchema = z.object({
+    dmPrivacy: z.enum(['all', 'friends', 'none']),
+  });
+  app.post('/api/users/:userId/dm-privacy', protect.ownership, async (req, res) => {
+    try {
+      const userId = parseEntityId(req.params.userId as any).id as number;
+      if (!userId || isNaN(userId)) {
+        return res.status(400).json({ error: 'معرف المستخدم غير صالح' });
+      }
+
+      const parsed = dmPrivacySchema.safeParse(req.body || {});
+      if (!parsed.success) {
+        return res.status(400).json({ error: 'قيمة خصوصية غير صالحة' });
+      }
+
+      const updated = await storage.updateUser(userId, { dmPrivacy: parsed.data.dmPrivacy } as any);
+      if (!updated) {
+        return res.status(500).json({ error: 'فشل في تحديث الإعداد' });
+      }
+
+      // بث التحديث للمستخدم والجميع لتحديث الواجهات
+      try { emitUserUpdatedToUser(userId, updated); } catch {}
+      try { emitUserUpdatedToAll(updated); } catch {}
+
+      res.json({ success: true, dmPrivacy: (updated as any).dmPrivacy || 'all' });
+    } catch (error: any) {
+      console.error('❌ خطأ في تحديث dmPrivacy:', error);
+      res.status(500).json({ error: 'خطأ في الخادم' });
+    }
+  });
+
   // API endpoints للإدارة
   // Removed duplicate moderation actions endpoint - kept the more detailed one below
 
@@ -4285,6 +4317,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       levelProgress: sanitized.levelProgress,
       gender: sanitized.gender,
       country: sanitized.country,
+      dmPrivacy: sanitized.dmPrivacy,
       isMuted: sanitized.isMuted,
       // موسيقى البروفايل
       profileMusicUrl: sanitized.profileMusicUrl,

@@ -32,6 +32,8 @@ export interface ChatUser {
   level?: number;
   totalPoints?: number;
   levelProgress?: number;
+  // خصوصية الرسائل الخاصة
+  dmPrivacy?: 'all' | 'friends' | 'none';
   // موسيقى البروفايل
   profileMusicUrl?: string;
   profileMusicTitle?: string;

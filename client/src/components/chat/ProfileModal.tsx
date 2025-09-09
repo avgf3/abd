@@ -2,6 +2,7 @@ import { X } from 'lucide-react';
 import React, { useState, useRef, useEffect } from 'react';
 
 import { Button } from '@/components/ui/button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import PointsSentNotification from '@/components/ui/PointsSentNotification';
 import { useToast } from '@/hooks/use-toast';
@@ -309,6 +310,21 @@ export default function ProfileModal({
         description: err.message || 'فشل في تحديث بيانات الملف الشخصي من السيرفر',
         variant: 'destructive',
       });
+    }
+  };
+
+  // تحديث إعداد خصوصية الرسائل الخاصة
+  const updateDmPrivacy = async (value: 'all' | 'friends' | 'none') => {
+    try {
+      if (!currentUser || currentUser.id !== localUser?.id) return;
+      await apiRequest(`/api/users/${currentUser.id}/dm-privacy`, {
+        method: 'POST',
+        body: { dmPrivacy: value },
+      });
+      updateUserData({ dmPrivacy: value } as any);
+      toast({ title: 'تم', description: 'تم تحديث إعدادات الخاص' });
+    } catch (err: any) {
+      toast({ title: 'خطأ', description: err?.message || 'فشل تحديث الإعداد', variant: 'destructive' });
     }
   };
 
@@ -2432,8 +2448,31 @@ export default function ProfileModal({
               </button>
             )}
 
-            {/* الأزرار - على حافة صورة الغلاف السفلية */}
-            {/* تم حذف الأزرار: إضافة صديق، تجاهل، إبلاغ، محادثة خاصة */}
+            {/* قائمة الخيارات أسفل الصورة: تبويب "خيارات" */}
+            {localUser?.id === currentUser?.id && (
+              <div style={{ position: 'absolute', bottom: '-18px', left: '12px', zIndex: 20 }}>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button size="sm" className="bg-white/90 hover:bg-white text-gray-900 border border-gray-300 rounded-md">
+                      ⚙️ خيارات
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="w-56">
+                    <DropdownMenuLabel>إعدادات الرسائل الخاصة</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => updateDmPrivacy('none')}>
+                      🚫 قفل الخاص (لا أحد)
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => updateDmPrivacy('friends')}>
+                      👥 السماح للأصدقاء فقط
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => updateDmPrivacy('all')}>
+                      🌐 السماح للجميع
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            )}
           </div>
 
           {/* Profile Body - exact match to original */}
