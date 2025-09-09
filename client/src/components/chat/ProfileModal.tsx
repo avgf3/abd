@@ -2648,7 +2648,7 @@ export default function ProfileModal({
                   transition: 'background 0.2s ease'
                 }}
               >
-                {localUser?.id === currentUser?.id ? 'قيد التطوير' : 'الأصدقاء'}
+                الأصدقاء
               </button>
             </div>
 
@@ -2812,7 +2812,6 @@ export default function ProfileModal({
                     background: 'rgba(255,255,255,0.04)'
                   }}>
                     <span style={{ color: '#fff', fontSize: '14px' }}>👥 طلبات الصداقة</span>
-                    <span style={{ color: '#888', fontSize: '12px' }}>قيد التطوير</span>
                   </div>
 
 
@@ -3142,13 +3141,42 @@ export default function ProfileModal({
               borderBottom: '1px solid rgba(255,255,255,0.1)',
               paddingBottom: '8px'
             }}>
-              {localUser?.id === currentUser?.id ? 'قيد التطوير' : 'الأصدقاء'}
+              الأصدقاء
             </h4>
             
             {localUser?.id === currentUser?.id ? (
-              <p style={{ color: '#888', fontSize: '14px', textAlign: 'center' }}>
-                هذا القسم قيد التطوير وسيتم إضافة المزيد من الميزات قريباً
-              </p>
+              <div>
+                {loadingFriends ? (
+                  <div style={{ textAlign: 'center', color: '#888', fontSize: '14px' }}>
+                    جاري تحميل الأصدقاء...
+                  </div>
+                ) : friends.length === 0 ? (
+                  <div style={{ textAlign: 'center', color: '#888', fontSize: '14px' }}>
+                    لا يوجد أصدقاء بعد
+                  </div>
+                ) : (
+                  <div>
+                    {friends.map(friend => (
+                      <div key={friend.id} style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        marginBottom: '8px',
+                        padding: '8px',
+                        borderRadius: '6px',
+                        background: 'rgba(255,255,255,0.04)'
+                      }}>
+                        <img 
+                          src={friend.profileImage || '/default-avatar.png'} 
+                          alt={friend.username}
+                          style={{ width: '32px', height: '32px', borderRadius: '50%' }}
+                        />
+                        <span style={{ color: '#fff', fontSize: '14px' }}>{friend.username}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             ) : (
               <div>
                 {loadingFriends ? (
