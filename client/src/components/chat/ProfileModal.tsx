@@ -2613,7 +2613,7 @@ export default function ProfileModal({
                   borderRight: '1px solid rgba(255,255,255,0.08)'
                 }}
               >
-                معلوماتي
+                الحالة
               </button>
               {/* إخفاء تبويب "خيارات" للمستخدمين الآخرين لأنه فارغ */}
               {localUser?.id === currentUser?.id && (
@@ -2651,7 +2651,7 @@ export default function ProfileModal({
                   transition: 'background 0.2s ease'
                 }}
               >
-                {localUser?.id === currentUser?.id ? 'قيد التطوير' : 'الأصدقاء'}
+                {localUser?.id === currentUser?.id ? 'معلوماتي' : 'الأصدقاء'}
               </button>
             </div>
 
@@ -2683,70 +2683,7 @@ export default function ProfileModal({
                 </small>
               </div>
 
-              <div className="profile-details">
-                <p
-                  onClick={() => localUser?.id === currentUser?.id && openEditModal('gender')}
-                  style={{ cursor: localUser?.id === currentUser?.id ? 'pointer' : 'default' }}
-                >
-                  الجنس: <span>{localUser?.gender || 'غير محدد'}</span>
-                </p>
-                <p
-                  onClick={() => localUser?.id === currentUser?.id && openEditModal('country')}
-                  style={{ cursor: localUser?.id === currentUser?.id ? 'pointer' : 'default' }}
-                >
-                  🌍 البلد: <span className="inline-flex items-center gap-1">
-                    {localUser?.country || 'غير محدد'}
-                    {localUser?.country && <CountryFlag country={localUser?.country} size={14} />}
-                  </span>
-                </p>
-                <p
-                  onClick={() => localUser?.id === currentUser?.id && openEditModal('age')}
-                  style={{ cursor: localUser?.id === currentUser?.id ? 'pointer' : 'default' }}
-                >
-                  العمر: <span>{localUser?.age ? `${localUser.age} سنة` : 'غير محدد'}</span>
-                </p>
-                <p
-                  onClick={() => localUser?.id === currentUser?.id && openEditModal('socialStatus')}
-                  style={{ cursor: localUser?.id === currentUser?.id ? 'pointer' : 'default' }}
-                >
-                  الحالة الاجتماعية: <span>{localUser?.relation || 'غير محدد'}</span>
-                </p>
-                <p>
-                  تاريخ الإنضمام:{' '}
-                  <span>
-                    {localUser?.createdAt
-                      ? new Date(localUser.createdAt).toLocaleDateString('ar-SA')
-                      : 'غير محدد'}
-                  </span>
-                </p>
-                <p>
-                  نقاط الهدايا: <span>
-                    {currentUser && localUser && currentUser.id !== localUser.id && (localUser as any)?.showPointsToOthers === false
-                      ? 'مخفية'
-                      : (localUser?.points || 0)}
-                  </span>
-                </p>
-                {/* إرسال النقاط - يظهر فقط للمستخدمين الآخرين */}
-                {currentUser && currentUser.id !== localUser?.id && (
-                  <p onClick={() => setCurrentEditType('sendPoints')} style={{ cursor: 'pointer' }}>
-                    إرسال النقاط: <span>اضغط للإرسال</span>
-                  </p>
-                )}
-                <p>
-                  <span>{lastSeenText}</span>
-                </p>
-                
-                {localUser?.id === currentUser?.id && (
-                  <>
-                    <p>
-                      💬 عدد الرسائل: <span>0</span>
-                    </p>
-                    <p>
-                      ⭐ مستوى العضو: <span>مستوى {localUser?.level || 1}</span>
-                    </p>
-                  </>
-                )}
-              </div>
+              {/* تم نقل تفاصيل "معلوماتي" إلى تبويب "other" عند عرض ملفي */}
               </div>
             )}
 
@@ -3145,13 +3082,74 @@ export default function ProfileModal({
               borderBottom: '1px solid rgba(255,255,255,0.1)',
               paddingBottom: '8px'
             }}>
-              {localUser?.id === currentUser?.id ? 'قيد التطوير' : 'الأصدقاء'}
+              {localUser?.id === currentUser?.id ? 'معلوماتي' : 'الأصدقاء'}
             </h4>
             
             {localUser?.id === currentUser?.id ? (
-              <p style={{ color: '#888', fontSize: '14px', textAlign: 'center' }}>
-                هذا القسم قيد التطوير وسيتم إضافة المزيد من الميزات قريباً
-              </p>
+              <div>
+                <div className="profile-details">
+                  <p
+                    onClick={() => localUser?.id === currentUser?.id && openEditModal('gender')}
+                    style={{ cursor: localUser?.id === currentUser?.id ? 'pointer' : 'default' }}
+                  >
+                    الجنس: <span>{localUser?.gender || 'غير محدد'}</span>
+                  </p>
+                  <p
+                    onClick={() => localUser?.id === currentUser?.id && openEditModal('country')}
+                    style={{ cursor: localUser?.id === currentUser?.id ? 'pointer' : 'default' }}
+                  >
+                    🌍 البلد: <span className="inline-flex items-center gap-1">
+                      {localUser?.country || 'غير محدد'}
+                      {localUser?.country && <CountryFlag country={localUser?.country} size={14} />}
+                    </span>
+                  </p>
+                  <p
+                    onClick={() => localUser?.id === currentUser?.id && openEditModal('age')}
+                    style={{ cursor: localUser?.id === currentUser?.id ? 'pointer' : 'default' }}
+                  >
+                    العمر: <span>{localUser?.age ? `${localUser.age} سنة` : 'غير محدد'}</span>
+                  </p>
+                  <p
+                    onClick={() => localUser?.id === currentUser?.id && openEditModal('socialStatus')}
+                    style={{ cursor: localUser?.id === currentUser?.id ? 'pointer' : 'default' }}
+                  >
+                    الحالة الاجتماعية: <span>{localUser?.relation || 'غير محدد'}</span>
+                  </p>
+                  <p>
+                    تاريخ الإنضمام:{' '}
+                    <span>
+                      {localUser?.createdAt
+                        ? new Date(localUser.createdAt).toLocaleDateString('ar-SA')
+                        : 'غير محدد'}
+                    </span>
+                  </p>
+                  <p>
+                    نقاط الهدايا: <span>
+                      {currentUser && localUser && currentUser.id !== localUser.id && (localUser as any)?.showPointsToOthers === false
+                        ? 'مخفية'
+                        : (localUser?.points || 0)}
+                    </span>
+                  </p>
+                  {currentUser && currentUser.id !== localUser?.id && (
+                    <p onClick={() => setCurrentEditType('sendPoints')} style={{ cursor: 'pointer' }}>
+                      إرسال النقاط: <span>اضغط للإرسال</span>
+                    </p>
+                  )}
+                  <p>
+                    <span>{lastSeenText}</span>
+                  </p>
+                  {localUser?.id === currentUser?.id && (
+                    <>
+                      <p>
+                        💬 عدد الرسائل: <span>0</span>
+                      </p>
+                      <p>
+                        ⭐ مستوى العضو: <span>مستوى {localUser?.level || 1}</span>
+                      </p>
+                    </>
+                  )}
+                </div>
+              </div>
             ) : (
               <div>
                 {loadingFriends ? (
