@@ -249,6 +249,8 @@ export const wallPosts = pgTable('wall_posts', {
     .references(() => users.id),
   username: text('username').notNull(),
   userRole: text('user_role').notNull(),
+  userGender: text('user_gender'), // إضافة الجنس لعرض الشعار الصحيح
+  userLevel: integer('user_level').default(1), // إضافة المستوى لعرض الشعار الصحيح
   content: text('content'),
   imageUrl: text('image_url'),
   type: text('type').notNull().default('public'), // 'public', 'friends'

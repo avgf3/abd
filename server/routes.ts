@@ -3792,6 +3792,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId: user.id,
         username: user.username,
         userRole: user.userType,
+        userGender: user.gender, // إضافة الجنس لعرض الشعار الصحيح
+        userLevel: user.level || 1, // إضافة المستوى لعرض الشعار الصحيح
         content: cleanContent ? sanitizeInput(cleanContent) : '',
         imageUrl: computedImageUrl,
         type: type || 'public',

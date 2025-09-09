@@ -319,6 +319,8 @@ export async function createWallPost(postData: any): Promise<any> {
           userId: postData.userId,
           username: postData.username,
           userRole: postData.userRole,
+          userGender: postData.userGender ?? null, // إضافة الجنس
+          userLevel: postData.userLevel ?? 1, // إضافة المستوى
           content: postData.content ?? null,
           imageUrl: postData.imageUrl ?? null,
           type: postData.type ?? 'public',
