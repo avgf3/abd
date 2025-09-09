@@ -99,7 +99,15 @@ export default function CountryChat() {
     chat.joinRoom(roomId);
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      // استدعاء API تسجيل الخروج لمسح الكوكي من الخادم
+      await apiRequest('/api/auth/logout', { method: 'POST' });
+    } catch (error) {
+      console.error('خطأ في تسجيل الخروج:', error);
+      // نكمل عملية الخروج حتى لو فشل الطلب
+    }
+    
     clearSession();
     chat.disconnect();
     setShowWelcome(true);
