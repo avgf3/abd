@@ -2601,11 +2601,12 @@ export default function ProfileModal({
                 onClick={() => setActiveTab('info')}
                 style={{
                   flex: 1,
-                  padding: '8px',
+                  padding: '2px 8px',
                   background: activeTab === 'info' ? 'rgba(255,255,255,0.1)' : 'transparent',
                   color: '#fff',
                   border: 'none',
                   fontSize: '14px',
+                  lineHeight: 1.1,
                   fontWeight: 'bold',
                   cursor: 'pointer',
                   transition: 'background 0.2s ease',
@@ -2620,11 +2621,12 @@ export default function ProfileModal({
                   onClick={() => setActiveTab('options')}
                   style={{
                     flex: 1,
-                    padding: '8px',
+                    padding: '2px 8px',
                     background: activeTab === 'options' ? 'rgba(255,255,255,0.1)' : 'transparent',
                     color: '#fff',
                     border: 'none',
                     fontSize: '14px',
+                    lineHeight: 1.1,
                     fontWeight: 'bold',
                     cursor: 'pointer',
                     transition: 'background 0.2s ease',
@@ -2638,11 +2640,12 @@ export default function ProfileModal({
                 onClick={() => setActiveTab('other')}
                 style={{
                   flex: 1,
-                  padding: '8px',
+                  padding: '2px 8px',
                   background: activeTab === 'other' ? 'rgba(255,255,255,0.1)' : 'transparent',
                   color: '#fff',
                   border: 'none',
                   fontSize: '14px',
+                  lineHeight: 1.1,
                   fontWeight: 'bold',
                   cursor: 'pointer',
                   transition: 'background 0.2s ease'
