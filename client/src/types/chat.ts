@@ -61,6 +61,8 @@ export interface ChatUser {
   profileMusicTitle?: string;
   profileMusicEnabled?: boolean;
   profileMusicVolume?: number; // 0-100
+  // خصوصية الرسائل الخاصة
+  dmPrivacy?: 'all' | 'friends' | 'none';
 }
 
 // 🔥 UNIFIED ChatMessage interface - مصدر واحد للحقيقة

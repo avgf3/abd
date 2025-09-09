@@ -9,6 +9,7 @@ import { sanitizeInput, limiters, SecurityConfig, validateMessageContent } from 
 import { moderationSystem } from '../moderation';
 import { z } from 'zod';
 import { parseEntityId } from '../types/entities';
+import { friendService } from '../services/friendService';
 
 // Helper type for conversation item (server-side internal)
 type ConversationItem = {
@@ -90,6 +91,23 @@ router.post('/send', protect.auth, limiters.pmSend, async (req, res) => {
     if (!receiver) {
       return res.status(404).json({ error: 'المستلم غير موجود' });
     }
+
+    // فرض إعدادات خصوصية المستلم
+    try {
+      const dmPrivacy = ((receiver as any).dmPrivacy || 'all') as string;
+      if (dmPrivacy === 'none') {
+        return res.status(403).json({ error: 'هذا المستخدم أغلق الرسائل الخاصة' });
+      }
+      if (dmPrivacy === 'friends') {
+        const friendship = await friendService.getFriendship(
+          parseInt(String(senderId)),
+          parseInt(String(receiverId))
+        );
+        if (!friendship || (friendship as any).status !== 'accepted') {
+          return res.status(403).json({ error: 'الرسائل الخاصة مسموحة للأصدقاء فقط' });
+        }
+      }
+    } catch {}
 
     // فحص السبام/التكرار
     const check = spamProtection.checkMessage(parseInt(String(senderId)), text);

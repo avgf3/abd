@@ -118,11 +118,16 @@ export function sanitizeUserData(user: any): any {
       ? user.profileMusicUrl
       : undefined;
 
+  // sanitize dmPrivacy
+  const rawDmPrivacy = typeof user.dmPrivacy === 'string' ? user.dmPrivacy : 'all';
+  const dmPrivacy = ['all', 'friends', 'none'].includes(rawDmPrivacy) ? rawDmPrivacy : 'all';
+
   return {
     ...user,
     profileBackgroundColor: sanitizeProfileBackgroundColor(user.profileBackgroundColor),
     usernameColor: sanitizeHexColor(user.usernameColor, '#000000'),
     profileEffect: sanitizeEffect(user.profileEffect),
+    dmPrivacy,
     // موسيقى البروفايل
     profileMusicUrl: safeMusicUrl,
     profileMusicTitle: typeof user.profileMusicTitle === 'string' ? user.profileMusicTitle : undefined,

@@ -54,6 +54,8 @@ export const users = pgTable('users', {
   profileMusicTitle: text('profile_music_title'),
   profileMusicEnabled: boolean('profile_music_enabled').default(true),
   profileMusicVolume: integer('profile_music_volume').default(70),
+  // إعداد خصوصية الرسائل الخاصة: all | friends | none
+  dmPrivacy: text('dm_privacy').notNull().default('all'),
 });
 
 export const messages = pgTable(
@@ -405,6 +407,8 @@ export const insertUserSchema = z.object({
   level: z.number().optional(),
   totalPoints: z.number().optional(),
   levelProgress: z.number().optional(),
+  // خصوصية الرسائل الخاصة
+  dmPrivacy: z.enum(['all', 'friends', 'none']).optional(),
 });
 
 export const insertMessageSchema = z.object({
