@@ -2685,7 +2685,7 @@ export default function ProfileModal({
                   }}
                   title={localUser?.id === currentUser?.id ? 'اضغط لتعديل الحالة' : ''}
                 >
-                  {localUser?.status || 'لا توجد حالة'}
+                  {localUser?.status || ''}
                 </small>
               </div>
 
