@@ -27,6 +27,7 @@ interface ProfileModalProps {
   currentUser: ChatUser | null;
   onClose: () => void;
   onUpdate?: (user: ChatUser) => void;
+  onUserClick?: (user: ChatUser) => void;
   // عند التفعيل: يتم إدارة الصوت خارجياً من ChatInterface
   externalAudioManaged?: boolean;
 }
@@ -36,6 +37,7 @@ export default function ProfileModal({
   currentUser,
   onClose,
   onUpdate,
+  onUserClick,
   externalAudioManaged,
 }: ProfileModalProps) {
   const { toast } = useToast();
@@ -74,6 +76,10 @@ export default function ProfileModal({
   // موسيقى البروفايل
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [musicTitle, setMusicTitle] = useState(localUser?.profileMusicTitle || '');
+
+  // قائمة الأصدقاء
+  const [friends, setFriends] = useState<ChatUser[]>([]);
+  const [loadingFriends, setLoadingFriends] = useState(false);
   const [musicEnabled, setMusicEnabled] = useState(
     localUser?.profileMusicEnabled ?? true
   );
@@ -312,6 +318,13 @@ export default function ProfileModal({
       
     }
   }, [user]);
+
+  // جلب الأصدقاء عند تغيير المستخدم أو فتح تبويب الأصدقاء
+  useEffect(() => {
+    if (localUser?.id && localUser.id !== currentUser?.id && activeTab === 'other') {
+      fetchFriends(localUser.id);
+    }
+  }, [localUser?.id, currentUser?.id, activeTab]);
   // Stories
   const { fetchMine } = useStories({ autoRefresh: false });
 
@@ -1021,6 +1034,26 @@ export default function ProfileModal({
       // تنظيف input files
       if (fileInputRef.current) fileInputRef.current.value = '';
       if (avatarInputRef.current) avatarInputRef.current.value = '';
+    }
+  };
+
+  // جلب قائمة الأصدقاء
+  const fetchFriends = async (userId: number) => {
+    if (loadingFriends) return;
+    
+    setLoadingFriends(true);
+    try {
+      const response = await fetch(`/api/friends/${userId}`);
+      const data = await response.json();
+      
+      if (data.friends) {
+        setFriends(data.friends);
+      }
+    } catch (error) {
+      console.error('خطأ في جلب الأصدقاء:', error);
+      setFriends([]);
+    } finally {
+      setLoadingFriends(false);
     }
   };
 
@@ -2612,7 +2645,7 @@ export default function ProfileModal({
                   transition: 'background 0.2s ease'
                 }}
               >
-                قيد التطوير
+                {localUser?.id === currentUser?.id ? 'قيد التطوير' : 'الأصدقاء'}
               </button>
             </div>
 
@@ -3092,29 +3125,118 @@ export default function ProfileModal({
           </div>
         )}
 
-        {/* Tab Content - Other (Under Development) */}
+        {/* Tab Content - Other (Under Development or Friends) */}
         {activeTab === 'other' && (
-              <div style={{ 
-                padding: '12px',
-                borderRadius: '8px',
-                border: '1px solid rgba(255,255,255,0.08)',
-                background: 'rgba(255,255,255,0.04)',
-                textAlign: 'center'
-              }}>
-                <h4 style={{ 
-                  margin: '0 0 12px 0', 
-                  fontSize: '14px', 
-                  fontWeight: 'bold', 
-                  color: '#fff',
-                  textAlign: 'center',
-                  borderBottom: '1px solid rgba(255,255,255,0.1)',
-                  paddingBottom: '8px'
-                }}>قيد التطوير</h4>
-                <p style={{ color: '#888', fontSize: '14px' }}>
-                  هذا القسم قيد التطوير وسيتم إضافة المزيد من الميزات قريباً
-                </p>
+          <div style={{ 
+            padding: '12px',
+            borderRadius: '8px',
+            border: '1px solid rgba(255,255,255,0.08)',
+            background: 'rgba(255,255,255,0.04)'
+          }}>
+            <h4 style={{ 
+              margin: '0 0 12px 0', 
+              fontSize: '14px', 
+              fontWeight: 'bold', 
+              color: '#fff',
+              textAlign: 'center',
+              borderBottom: '1px solid rgba(255,255,255,0.1)',
+              paddingBottom: '8px'
+            }}>
+              {localUser?.id === currentUser?.id ? 'قيد التطوير' : 'الأصدقاء'}
+            </h4>
+            
+            {localUser?.id === currentUser?.id ? (
+              <p style={{ color: '#888', fontSize: '14px', textAlign: 'center' }}>
+                هذا القسم قيد التطوير وسيتم إضافة المزيد من الميزات قريباً
+              </p>
+            ) : (
+              <div>
+                {loadingFriends ? (
+                  <div style={{ textAlign: 'center', color: '#888', fontSize: '14px' }}>
+                    جاري تحميل الأصدقاء...
+                  </div>
+                ) : friends.length === 0 ? (
+                  <div style={{ textAlign: 'center', color: '#888', fontSize: '14px' }}>
+                    لا يوجد أصدقاء بعد
+                  </div>
+                ) : (
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))',
+                    gap: '12px',
+                    maxHeight: '300px',
+                    overflowY: 'auto'
+                  }}>
+                    {friends.map((friend) => (
+                      <div
+                        key={friend.id}
+                        onClick={() => onUserClick?.(friend)}
+                        style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          padding: '8px',
+                          borderRadius: '8px',
+                          background: 'rgba(255,255,255,0.05)',
+                          border: '1px solid rgba(255,255,255,0.08)',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease',
+                          ':hover': {
+                            background: 'rgba(255,255,255,0.1)'
+                          }
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+                        }}
+                      >
+                        <div style={{
+                          width: '50px',
+                          height: '50px',
+                          borderRadius: '50%',
+                          overflow: 'hidden',
+                          marginBottom: '6px',
+                          border: '2px solid rgba(255,255,255,0.2)'
+                        }}>
+                          <img
+                            src={getProfileImageSrc(friend.profileImage, friend.gender)}
+                            alt={friend.username}
+                            style={{
+                              width: '100%',
+                              height: '100%',
+                              objectFit: 'cover'
+                            }}
+                          />
+                        </div>
+                        <span style={{
+                          fontSize: '12px',
+                          color: friend.usernameColor || '#fff',
+                          fontWeight: 'bold',
+                          textAlign: 'center',
+                          wordBreak: 'break-word',
+                          lineHeight: '1.2'
+                        }}>
+                          {friend.username}
+                        </span>
+                        {friend.isOnline && (
+                          <div style={{
+                            width: '8px',
+                            height: '8px',
+                            borderRadius: '50%',
+                            background: '#4ade80',
+                            marginTop: '2px'
+                          }} />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
+          </div>
+        )}
           </div>
 
           {/* Hidden File Inputs */}
