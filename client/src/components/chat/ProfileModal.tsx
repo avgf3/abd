@@ -2876,7 +2876,7 @@ export default function ProfileModal({
                         {localUser?.profileMusicUrl && (
                           <span style={{ fontSize: '11px', color: '#4caf50' }}>✅ نشط</span>
                         )}
-                    </div>
+                      </div>
 
                       <div style={{ marginTop: '8px' }}>
                         {localUser?.profileMusicUrl ? (
@@ -3056,20 +3056,21 @@ export default function ProfileModal({
                 </div>
               </div>
             )}
-          </div>
+        </div>
+        )}
 
-          {/* مؤشر التحميل */}
-          {isLoading && (
-            <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-xl z-30">
-              <div className="bg-white/90 backdrop-blur-md rounded-lg p-4 flex flex-col items-center gap-3">
-                <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                <span className="text-gray-700 font-medium">جاري الحفظ...</span>
-              </div>
+        {/* مؤشر التحميل */}
+        {isLoading && (
+          <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-xl z-30">
+            <div className="bg-white/90 backdrop-blur-md rounded-lg p-4 flex flex-col items-center gap-3">
+              <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+              <span className="text-gray-700 font-medium">جاري الحفظ...</span>
             </div>
-            )}
+          </div>
+        )}
 
-            {/* Tab Content - Other (Under Development) */}
-            {activeTab === 'other' && (
+        {/* Tab Content - Other (Under Development) */}
+        {activeTab === 'other' && (
               <div style={{ 
                 padding: '12px',
                 borderRadius: '8px',
