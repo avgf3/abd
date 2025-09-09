@@ -2496,7 +2496,7 @@ export default function ProfileModal({
                   borderRight: '1px solid rgba(255,255,255,0.08)'
                 }}
               >
-                ⚙️ خيارات
+                خيارات
               </button>
               <button
                 onClick={() => setActiveTab('other')}
@@ -2519,19 +2519,19 @@ export default function ProfileModal({
             {/* Tab Content */}
             {activeTab === 'info' && (
               <div style={{ 
-                padding: '12px',
+                padding: '8px',
                 borderRadius: '8px',
                 border: '1px solid rgba(255,255,255,0.08)',
                 background: 'rgba(255,255,255,0.04)'
               }}>
                 <h4 style={{ 
-                  margin: '0 0 12px 0', 
+                  margin: '0 0 8px 0', 
                   fontSize: '14px', 
                   fontWeight: 'bold', 
                   color: '#fff',
                   textAlign: 'center',
                   borderBottom: '1px solid rgba(255,255,255,0.1)',
-                  paddingBottom: '8px'
+                  paddingBottom: '6px'
                 }}>معلوماتي</h4>
               
               <div className="profile-info">
@@ -2542,7 +2542,7 @@ export default function ProfileModal({
                     display: 'block', 
                     textAlign: 'center',
                     width: '100%',
-                    margin: '0 auto 12px auto'
+                    margin: '0 auto 8px auto'
                   }}
                 >
                   {localUser?.status || (localUser?.id === currentUser?.id ? 'اضغط لإضافة حالة' : '')}
@@ -2628,7 +2628,7 @@ export default function ProfileModal({
                   textAlign: 'center',
                   borderBottom: '1px solid rgba(255,255,255,0.1)',
                   paddingBottom: '8px'
-                }}>⚙️ خيارات</h4>
+                }}>خيارات</h4>
 
                 {/* إعدادات الرسائل الخاصة */}
                 <div style={{ marginBottom: '16px' }}>
@@ -2696,27 +2696,6 @@ export default function ProfileModal({
                   </div>
 
 
-                  <div style={{ 
-                    display: 'flex', 
-                    justifyContent: 'space-between', 
-                    alignItems: 'center',
-                    marginBottom: '8px',
-                    padding: '8px',
-                    borderRadius: '6px',
-                    background: 'rgba(255,255,255,0.04)'
-                  }}>
-                    <span style={{ color: '#fff', fontSize: '14px' }}>⚙️ من يمكنه رؤية إعدادتي</span>
-                    <select style={{ 
-                      background: 'rgba(255,255,255,0.1)', 
-                      color: '#fff', 
-                      border: '1px solid rgba(255,255,255,0.2)',
-                      borderRadius: '4px',
-                      padding: '4px 8px',
-                      fontSize: '12px'
-                    }}>
-                      <option value="me">أنا فقط</option>
-                    </select>
-                  </div>
 
                   <div style={{ 
                     display: 'flex', 
@@ -3004,20 +2983,20 @@ export default function ProfileModal({
         {/* Tab Content - Other (Under Development) */}
         {activeTab === 'other' && (
               <div style={{ 
-                padding: '12px',
+                padding: '8px',
                 borderRadius: '8px',
                 border: '1px solid rgba(255,255,255,0.08)',
                 background: 'rgba(255,255,255,0.04)',
                 textAlign: 'center'
               }}>
                 <h4 style={{ 
-                  margin: '0 0 12px 0', 
+                  margin: '0 0 8px 0', 
                   fontSize: '14px', 
                   fontWeight: 'bold', 
                   color: '#fff',
                   textAlign: 'center',
                   borderBottom: '1px solid rgba(255,255,255,0.1)',
-                  paddingBottom: '8px'
+                  paddingBottom: '6px'
                 }}>قيد التطوير</h4>
                 <p style={{ color: '#888', fontSize: '14px' }}>
                   هذا القسم قيد التطوير وسيتم إضافة المزيد من الميزات قريباً
