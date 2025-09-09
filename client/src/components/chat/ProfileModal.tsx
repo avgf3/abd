@@ -2672,14 +2672,20 @@ export default function ProfileModal({
               
               <div className="profile-info">
                 <small
+                  onClick={() => localUser?.id === currentUser?.id && openEditModal('status')}
                   style={{ 
                     display: 'block', 
                     textAlign: 'center',
                     width: '100%',
-                    margin: '0 auto 12px auto'
+                    margin: '0 auto 12px auto',
+                    cursor: localUser?.id === currentUser?.id ? 'pointer' : 'default',
+                    color: '#ddd',
+                    fontSize: '13px',
+                    fontStyle: 'italic'
                   }}
+                  title={localUser?.id === currentUser?.id ? 'اضغط لتعديل الحالة' : ''}
                 >
-                  {lastSeenText}
+                  {localUser?.status || 'لا توجد حالة'}
                 </small>
               </div>
 
