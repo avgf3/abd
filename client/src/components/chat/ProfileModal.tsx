@@ -2694,7 +2694,7 @@ export default function ProfileModal({
                   onClick={() => localUser?.id === currentUser?.id && openEditModal('gender')}
                   style={{ cursor: localUser?.id === currentUser?.id ? 'pointer' : 'default' }}
                 >
-                  🧍‍♀️ الجنس: <span>{localUser?.gender || 'غير محدد'}</span>
+                  الجنس: <span>{localUser?.gender || 'غير محدد'}</span>
                 </p>
                 <p
                   onClick={() => localUser?.id === currentUser?.id && openEditModal('country')}
@@ -2709,16 +2709,16 @@ export default function ProfileModal({
                   onClick={() => localUser?.id === currentUser?.id && openEditModal('age')}
                   style={{ cursor: localUser?.id === currentUser?.id ? 'pointer' : 'default' }}
                 >
-                  🎂 العمر: <span>{localUser?.age ? `${localUser.age} سنة` : 'غير محدد'}</span>
+                  العمر: <span>{localUser?.age ? `${localUser.age} سنة` : 'غير محدد'}</span>
                 </p>
                 <p
                   onClick={() => localUser?.id === currentUser?.id && openEditModal('socialStatus')}
                   style={{ cursor: localUser?.id === currentUser?.id ? 'pointer' : 'default' }}
                 >
-                  💍 الحالة الاجتماعية: <span>{localUser?.relation || 'غير محدد'}</span>
+                  الحالة الاجتماعية: <span>{localUser?.relation || 'غير محدد'}</span>
                 </p>
                 <p>
-                  📅 تاريخ الإنضمام:{' '}
+                  تاريخ الإنضمام:{' '}
                   <span>
                     {localUser?.createdAt
                       ? new Date(localUser.createdAt).toLocaleDateString('ar-SA')
@@ -2726,7 +2726,7 @@ export default function ProfileModal({
                   </span>
                 </p>
                 <p>
-                  🎁 نقاط الهدايا: <span>
+                  نقاط الهدايا: <span>
                     {currentUser && localUser && currentUser.id !== localUser.id && (localUser as any)?.showPointsToOthers === false
                       ? 'مخفية'
                       : (localUser?.points || 0)}
@@ -2735,11 +2735,11 @@ export default function ProfileModal({
                 {/* إرسال النقاط - يظهر فقط للمستخدمين الآخرين */}
                 {currentUser && currentUser.id !== localUser?.id && (
                   <p onClick={() => setCurrentEditType('sendPoints')} style={{ cursor: 'pointer' }}>
-                    💰 إرسال النقاط: <span>اضغط للإرسال</span>
+                    إرسال النقاط: <span>اضغط للإرسال</span>
                   </p>
                 )}
                 <p>
-                  🧾 <span>{lastSeenText}</span>
+                  <span>{lastSeenText}</span>
                 </p>
                 
                 {localUser?.id === currentUser?.id && (
@@ -3290,7 +3290,7 @@ export default function ProfileModal({
               {currentEditType === 'socialStatus' && 'تعديل الحالة الاجتماعية'}
               {currentEditType === 'theme' && '🎨 اختيار لون الملف الشخصي (خلفية الصندوق)'}
               {currentEditType === 'effects' && '✨ تعديل التأثيرات الحركية'}
-              {currentEditType === 'sendPoints' && '💰 إرسال النقاط'}
+              {currentEditType === 'sendPoints' && 'إرسال النقاط'}
             </h3>
 
             {currentEditType === 'theme' ? (
@@ -3396,7 +3396,7 @@ export default function ProfileModal({
                         transition: 'all 0.3s ease',
                       }}
                     >
-                      {sendingPoints ? '⏳' : '🎁'} إرسال
+                      {sendingPoints ? '⏳' : ''} إرسال
                     </button>
                   </div>
 
@@ -3456,7 +3456,7 @@ export default function ProfileModal({
                     <select value={editValue} onChange={(e) => setEditValue(e.target.value)} aria-label="اختيار الحالة الاجتماعية">
                       <option value="">اختر...</option>
                       <option value="أعزب">💚 أعزب</option>
-                      <option value="متزوج">💍 متزوج</option>
+                      <option value="متزوج">متزوج</option>
                       <option value="مطلق">💔 مطلق</option>
                       <option value="أرمل">🖤 أرمل</option>
                     </select>
