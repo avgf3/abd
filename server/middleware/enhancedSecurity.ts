@@ -56,11 +56,24 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
     }
 
     if (!userId || isNaN(userId)) {
-      log.security('محاولة وصول بدون معرف مستخدم صالح', {
-        ip: req.ip,
-        path: req.path,
-        method: req.method,
-      });
+      // تقليل ضوضاء السجل: لا نسجل كل طلب GET عام كتحذير أمني
+      const method = (req.method || 'GET').toUpperCase();
+      const isReadOnly = method === 'GET' || method === 'HEAD' || method === 'OPTIONS';
+      const isPublicPath =
+        req.path.startsWith('/svgs') ||
+        req.path.startsWith('/icons') ||
+        req.path.startsWith('/uploads') ||
+        req.path.startsWith('/health') ||
+        req.path === '/' ||
+        req.path.startsWith('/api/health');
+
+      if (!(isReadOnly && isPublicPath)) {
+        log.security('محاولة وصول بدون معرف مستخدم صالح', {
+          ip: req.ip,
+          path: req.path,
+          method: req.method,
+        });
+      }
       throw createError.unauthorized('معرف المستخدم مطلوب للوصول لهذه الخدمة');
     }
 

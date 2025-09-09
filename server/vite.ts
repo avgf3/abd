@@ -1,18 +1,27 @@
 import fs from 'fs';
 import { type Server } from 'http';
 import path from 'path';
+import { fileURLToPath } from 'url';
 
 import express, { type Express } from 'express';
 import { nanoid } from 'nanoid';
 
 // استخدام نظام التسجيل الموحد من logger.ts
-import { log as logger } from './utils/logger';
+import { logger } from './utils/logger';
 
 export function log(message: string, source = 'express') {
   logger.info(`[${source}] ${message}`);
 }
 
 export async function setupVite(app: Express, server: Server) {
+  // حساب مسار الملف الحالي بطريقة متوافقة مع ESM حتى بعد عملية bundling
+  const moduleDir = (() => {
+    try {
+      return path.dirname(fileURLToPath(import.meta.url));
+    } catch {
+      return process.cwd();
+    }
+  })();
   const serverOptions = {
     middlewareMode: true,
     hmr: { server },
@@ -51,7 +60,7 @@ export async function setupVite(app: Express, server: Server) {
     const url = req.originalUrl;
 
     try {
-      const clientTemplate = path.resolve(import.meta.dirname, '..', 'client', 'index.html');
+      const clientTemplate = path.resolve(moduleDir, '..', 'client', 'index.html');
 
       // always reload the index.html file from disk incase it changes
       let template = await fs.promises.readFile(clientTemplate, 'utf-8');
