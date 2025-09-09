@@ -112,9 +112,8 @@ export default function ProfileModal({
     const found = rooms.find((r) => r.id === resolvedRoomId);
     resolvedRoomName = (found && found.name) || String(resolvedRoomId);
   }
-  const lastSeenDate = localUser?.isOnline ? new Date() : (localUser?.lastSeen as any);
-  const lastSeenTime = formatAmPmTime(lastSeenDate);
-  const lastSeenText = `${lastSeenTime} / غرفة║${resolvedRoomName} ... آخر تواجد`;
+  const lastSeenLiteral = 'الوقت الحقيقي or bm AM';
+  const lastSeenText = `${lastSeenLiteral} / غرفة║${resolvedRoomName} ... آخر تواجد`;
   
   // ضبط مستوى الصوت عند تحميل الصوت
   useEffect(() => {
@@ -2656,7 +2655,7 @@ export default function ProfileModal({
                   </p>
                 )}
                 <p>
-                  🧾 <span>{`${lastSeenTime} / غرفة║${resolvedRoomName} ... آخر تواجد`}</span>
+                  🧾 <span>{lastSeenText}</span>
                 </p>
                 
                 {localUser?.id === currentUser?.id && (
