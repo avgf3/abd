@@ -83,6 +83,9 @@ export default function ProfileModal({
   const [audioLoading, setAudioLoading] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   
+  // حالة التبويبات
+  const [activeTab, setActiveTab] = useState<'info' | 'options' | 'other'>('info');
+  
   // ضبط مستوى الصوت عند تحميل الصوت
   useEffect(() => {
     if (audioRef.current && localUser?.profileMusicUrl) {
@@ -2448,52 +2451,88 @@ export default function ProfileModal({
               </button>
             )}
 
-            {/* قائمة الخيارات أسفل الصورة: تبويب "خيارات" */}
-            {localUser?.id === currentUser?.id && (
-              <div style={{ position: 'absolute', bottom: '-18px', left: '12px', zIndex: 20 }}>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button size="sm" className="bg-white/90 hover:bg-white text-gray-900 border border-gray-300 rounded-md">
-                      ⚙️ خيارات
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start" className="w-56">
-                    <DropdownMenuLabel>إعدادات الرسائل الخاصة</DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => updateDmPrivacy('none')}>
-                      🚫 قفل الخاص (لا أحد)
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => updateDmPrivacy('friends')}>
-                      👥 السماح للأصدقاء فقط
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => updateDmPrivacy('all')}>
-                      🌐 السماح للجميع
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            )}
           </div>
 
-          {/* Profile Body - reorganized into sections */}
+          {/* Profile Body - Tab System */}
           <div className="profile-body">
-            {/* Section 1: معلوماتي */}
-            <div style={{ 
+            {/* Tab Navigation */}
+            <div style={{
+              display: 'flex',
               marginBottom: '16px',
-              padding: '12px',
               borderRadius: '8px',
+              background: 'rgba(255,255,255,0.04)',
               border: '1px solid rgba(255,255,255,0.08)',
-              background: 'rgba(255,255,255,0.04)'
+              overflow: 'hidden'
             }}>
-              <h4 style={{ 
-                margin: '0 0 12px 0', 
-                fontSize: '14px', 
-                fontWeight: 'bold', 
-                color: '#fff',
-                textAlign: 'center',
-                borderBottom: '1px solid rgba(255,255,255,0.1)',
-                paddingBottom: '8px'
-              }}>📋 معلوماتي</h4>
+              <button
+                onClick={() => setActiveTab('info')}
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  background: activeTab === 'info' ? 'rgba(255,255,255,0.1)' : 'transparent',
+                  color: '#fff',
+                  border: 'none',
+                  fontSize: '14px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  transition: 'background 0.2s ease',
+                  borderRight: '1px solid rgba(255,255,255,0.08)'
+                }}
+              >
+                📋 معلوماتي
+              </button>
+              <button
+                onClick={() => setActiveTab('options')}
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  background: activeTab === 'options' ? 'rgba(255,255,255,0.1)' : 'transparent',
+                  color: '#fff',
+                  border: 'none',
+                  fontSize: '14px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  transition: 'background 0.2s ease',
+                  borderRight: '1px solid rgba(255,255,255,0.08)'
+                }}
+              >
+                ⚙️ خيارات
+              </button>
+              <button
+                onClick={() => setActiveTab('other')}
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  background: activeTab === 'other' ? 'rgba(255,255,255,0.1)' : 'transparent',
+                  color: '#fff',
+                  border: 'none',
+                  fontSize: '14px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  transition: 'background 0.2s ease'
+                }}
+              >
+                🚧 قيد التطوير
+              </button>
+            </div>
+
+            {/* Tab Content */}
+            {activeTab === 'info' && (
+              <div style={{ 
+                padding: '12px',
+                borderRadius: '8px',
+                border: '1px solid rgba(255,255,255,0.08)',
+                background: 'rgba(255,255,255,0.04)'
+              }}>
+                <h4 style={{ 
+                  margin: '0 0 12px 0', 
+                  fontSize: '14px', 
+                  fontWeight: 'bold', 
+                  color: '#fff',
+                  textAlign: 'center',
+                  borderBottom: '1px solid rgba(255,255,255,0.1)',
+                  paddingBottom: '8px'
+                }}>📋 معلوماتي</h4>
               
               <div className="profile-info">
                 <small
@@ -2570,10 +2609,11 @@ export default function ProfileModal({
                   </>
                 )}
               </div>
-            </div>
+              </div>
+            )}
 
-            {/* Section 2: خيارات - only for current user */}
-            {localUser?.id === currentUser?.id && (
+            {/* Tab Content - Options */}
+            {activeTab === 'options' && localUser?.id === currentUser?.id && (
               <div style={{ 
                 padding: '12px',
                 borderRadius: '8px',
@@ -2589,8 +2629,219 @@ export default function ProfileModal({
                   borderBottom: '1px solid rgba(255,255,255,0.1)',
                   paddingBottom: '8px'
                 }}>⚙️ خيارات</h4>
-                
-                <div className="additional-details">
+
+                {/* إعدادات الرسائل الخاصة */}
+                <div style={{ marginBottom: '16px' }}>
+                  <h5 style={{ 
+                    margin: '0 0 8px 0', 
+                    fontSize: '13px', 
+                    fontWeight: 'bold', 
+                    color: '#fff',
+                    borderBottom: '1px solid rgba(255,255,255,0.1)',
+                    paddingBottom: '4px'
+                  }}>💬 إعدادات الرسائل الخاصة</h5>
+
+                  <div style={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center',
+                    marginBottom: '8px',
+                    padding: '8px',
+                    borderRadius: '6px',
+                    background: 'rgba(255,255,255,0.04)'
+                  }}>
+                    <span style={{ color: '#fff', fontSize: '14px' }}>🔒 إعدادات الخصوصية</span>
+                    <select 
+                      style={{ 
+                        background: 'rgba(255,255,255,0.1)', 
+                        color: '#fff', 
+                        border: '1px solid rgba(255,255,255,0.2)',
+                        borderRadius: '4px',
+                        padding: '4px 8px',
+                        fontSize: '12px'
+                      }}
+                      onChange={(e) => updateDmPrivacy(e.target.value)}
+                    >
+                      <option value="all">🌐 السماح للجميع</option>
+                      <option value="friends">👥 السماح للأصدقاء فقط</option>
+                      <option value="none">🚫 قفل الخاص (لا أحد)</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* خيارات الخصوصية */}
+                <div style={{ marginBottom: '16px' }}>
+                  <h5 style={{ 
+                    margin: '0 0 8px 0', 
+                    fontSize: '13px', 
+                    fontWeight: 'bold', 
+                    color: '#fff',
+                    borderBottom: '1px solid rgba(255,255,255,0.1)',
+                    paddingBottom: '4px'
+                  }}>🛡️ خيارات الخصوصية</h5>
+
+                  <div style={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center',
+                    marginBottom: '8px',
+                    padding: '8px',
+                    borderRadius: '6px',
+                    background: 'rgba(255,255,255,0.04)'
+                  }}>
+                    <span style={{ color: '#fff', fontSize: '14px' }}>📷 الذين يمكنهم إرسال صور خاصة</span>
+                    <select style={{ 
+                      background: 'rgba(255,255,255,0.1)', 
+                      color: '#fff', 
+                      border: '1px solid rgba(255,255,255,0.2)',
+                      borderRadius: '4px',
+                      padding: '4px 8px',
+                      fontSize: '12px'
+                    }}>
+                      <option value="all">الجميع</option>
+                      <option value="members">عضو</option>
+                      <option value="off">إيقاف</option>
+                    </select>
+                  </div>
+
+                  <div style={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center',
+                    marginBottom: '8px',
+                    padding: '8px',
+                    borderRadius: '6px',
+                    background: 'rgba(255,255,255,0.04)'
+                  }}>
+                    <span style={{ color: '#fff', fontSize: '14px' }}>🗺️ خريطة خاصة</span>
+                    <select style={{ 
+                      background: 'rgba(255,255,255,0.1)', 
+                      color: '#fff', 
+                      border: '1px solid rgba(255,255,255,0.2)',
+                      borderRadius: '4px',
+                      padding: '4px 8px',
+                      fontSize: '12px'
+                    }}>
+                      <option value="all">الجميع</option>
+                      <option value="members">عضو</option>
+                      <option value="off">إيقاف</option>
+                    </select>
+                  </div>
+
+                  <div style={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center',
+                    marginBottom: '8px',
+                    padding: '8px',
+                    borderRadius: '6px',
+                    background: 'rgba(255,255,255,0.04)'
+                  }}>
+                    <span style={{ color: '#fff', fontSize: '14px' }}>👥 طلبات الصداقة</span>
+                    <span style={{ color: '#888', fontSize: '12px' }}>قيد التطوير</span>
+                  </div>
+
+                  <div style={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center',
+                    marginBottom: '8px',
+                    padding: '8px',
+                    borderRadius: '6px',
+                    background: 'rgba(255,255,255,0.04)'
+                  }}>
+                    <span style={{ color: '#fff', fontSize: '14px' }}>💬 طلبات التحدث</span>
+                    <select style={{ 
+                      background: 'rgba(255,255,255,0.1)', 
+                      color: '#fff', 
+                      border: '1px solid rgba(255,255,255,0.2)',
+                      borderRadius: '4px',
+                      padding: '4px 8px',
+                      fontSize: '12px'
+                    }}>
+                      <option value="on">تشغيل</option>
+                      <option value="off">إيقاف</option>
+                    </select>
+                  </div>
+
+                  <div style={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center',
+                    marginBottom: '8px',
+                    padding: '8px',
+                    borderRadius: '6px',
+                    background: 'rgba(255,255,255,0.04)'
+                  }}>
+                    <span style={{ color: '#fff', fontSize: '14px' }}>⚙️ من يمكنه رؤية إعدادتي</span>
+                    <select style={{ 
+                      background: 'rgba(255,255,255,0.1)', 
+                      color: '#fff', 
+                      border: '1px solid rgba(255,255,255,0.2)',
+                      borderRadius: '4px',
+                      padding: '4px 8px',
+                      fontSize: '12px'
+                    }}>
+                      <option value="me">أنا فقط</option>
+                    </select>
+                  </div>
+
+                  <div style={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center',
+                    marginBottom: '8px',
+                    padding: '8px',
+                    borderRadius: '6px',
+                    background: 'rgba(255,255,255,0.04)'
+                  }}>
+                    <span style={{ color: '#fff', fontSize: '14px' }}>💰 من يمكنه رؤية نقاطي</span>
+                    <span style={{ color: '#888', fontSize: '12px' }}>قيد التطوير</span>
+                  </div>
+
+                  <div style={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center',
+                    marginBottom: '8px',
+                    padding: '8px',
+                    borderRadius: '6px',
+                    background: 'rgba(255,255,255,0.04)'
+                  }}>
+                    <span style={{ color: '#fff', fontSize: '14px' }}>📢 ظهور رسائل الانضمام</span>
+                    <span style={{ color: '#888', fontSize: '12px' }}>قيد التطوير</span>
+                  </div>
+
+                  <div style={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center',
+                    marginBottom: '8px',
+                    padding: '8px',
+                    borderRadius: '6px',
+                    background: 'rgba(255,255,255,0.04)'
+                  }}>
+                    <span style={{ color: '#fff', fontSize: '14px' }}>🔊 الأصوات</span>
+                    <span style={{ color: '#888', fontSize: '12px' }}>قيد التطوير</span>
+                  </div>
+                </div>
+
+                {/* خيارات المشرفين */}
+                {currentUser && (
+                  currentUser.userType === 'owner' || 
+                  currentUser.userType === 'admin' || 
+                  currentUser.userType === 'moderator'
+                ) && (
+                  <div style={{ marginTop: '16px' }}>
+                    <h5 style={{ 
+                      margin: '0 0 8px 0', 
+                      fontSize: '13px', 
+                      fontWeight: 'bold', 
+                      color: '#fff',
+                      borderBottom: '1px solid rgba(255,255,255,0.1)',
+                      paddingBottom: '4px'
+                    }}>👑 خيارات المشرفين</h5>
+                    <div className="additional-details">
                   {currentUser && (
                     currentUser.userType === 'owner' || 
                     currentUser.userType === 'admin' || 
@@ -2815,7 +3066,32 @@ export default function ProfileModal({
                 <span className="text-gray-700 font-medium">جاري الحفظ...</span>
               </div>
             </div>
-          )}
+            )}
+
+            {/* Tab Content - Other (Under Development) */}
+            {activeTab === 'other' && (
+              <div style={{ 
+                padding: '12px',
+                borderRadius: '8px',
+                border: '1px solid rgba(255,255,255,0.08)',
+                background: 'rgba(255,255,255,0.04)',
+                textAlign: 'center'
+              }}>
+                <h4 style={{ 
+                  margin: '0 0 12px 0', 
+                  fontSize: '14px', 
+                  fontWeight: 'bold', 
+                  color: '#fff',
+                  textAlign: 'center',
+                  borderBottom: '1px solid rgba(255,255,255,0.1)',
+                  paddingBottom: '8px'
+                }}>🚧 قيد التطوير</h4>
+                <p style={{ color: '#888', fontSize: '14px' }}>
+                  هذا القسم قيد التطوير وسيتم إضافة المزيد من الميزات قريباً
+                </p>
+              </div>
+            )}
+          </div>
 
           {/* Hidden File Inputs */}
           {localUser?.id === currentUser?.id && (
