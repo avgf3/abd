@@ -2757,37 +2757,6 @@ export default function ProfileModal({
               }}>
                 
 
-                {/* إعدادات الرسائل الخاصة */}
-                <div style={{ marginBottom: '16px' }}>
-                  
-
-                  <div style={{ 
-                    display: 'flex', 
-                    justifyContent: 'space-between', 
-                    alignItems: 'center',
-                    marginBottom: '8px',
-                    padding: '8px',
-                    borderRadius: '6px',
-                    background: 'rgba(255,255,255,0.04)'
-                  }}>
-                    <span style={{ color: '#fff', fontSize: '14px' }}>💬 إعدادات الرسائل الخاصة</span>
-                    <select 
-                      style={{ 
-                        background: 'rgba(255,255,255,0.1)', 
-                        color: '#fff', 
-                        border: '1px solid rgba(255,255,255,0.2)',
-                        borderRadius: '4px',
-                        padding: '4px 8px',
-                        fontSize: '12px'
-                      }}
-                      onChange={(e) => updateDmPrivacy(e.target.value)}
-                    >
-                      <option value="all">🌐 السماح للجميع</option>
-                      <option value="friends">👥 السماح للأصدقاء فقط</option>
-                      <option value="none">🚫 قفل الخاص (لا أحد)</option>
-                    </select>
-                  </div>
-                </div>
 
                 {/* خيارات الخصوصية */}
                 <div style={{ marginBottom: '16px' }}>
