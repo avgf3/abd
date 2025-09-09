@@ -7,14 +7,12 @@ import {
   Image as ImageIcon,
   Trash2,
   X,
-  Users,
   Globe,
 } from 'lucide-react';
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Virtuoso } from 'react-virtuoso';
 import type { Socket } from 'socket.io-client';
 
-import FriendsTabPanel from './FriendsTabPanel';
 import ProfileImage from './ProfileImage';
 import RoomComponent from './RoomComponent';
 import SimpleUserMenu from './SimpleUserMenu';
@@ -46,7 +44,7 @@ interface UnifiedSidebarProps {
   users: ChatUser[];
   onUserClick: (event: React.MouseEvent, user: ChatUser) => void;
   currentUser?: ChatUser | null;
-  activeView?: 'users' | 'walls' | 'rooms' | 'friends';
+  activeView?: 'users' | 'walls' | 'rooms';
   rooms?: ChatRoom[];
   currentRoomId?: string;
   onRoomChange?: (roomId: string) => void;
@@ -69,18 +67,16 @@ export default function UnifiedSidebar({
   onRefreshRooms,
   onStartPrivateChat,
 }: UnifiedSidebarProps) {
-  const [activeView, setActiveView] = useState<'users' | 'walls' | 'rooms' | 'friends'>(
+  const [activeView, setActiveView] = useState<'users' | 'walls' | 'rooms'>(
     propActiveView || 'users'
   );
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeTab, setActiveTab] = useState<'public' | 'friends'>('public');
-  const [postsByTab, setPostsByTab] = useState<{ public: WallPost[]; friends: WallPost[] }>({
+  const [activeTab, setActiveTab] = useState<'public'>('public');
+  const [postsByTab, setPostsByTab] = useState<{ public: WallPost[] }>({
     public: [],
-    friends: [],
   });
-  const [loadingByTab, setLoadingByTab] = useState<{ public: boolean; friends: boolean }>({
+  const [loadingByTab, setLoadingByTab] = useState<{ public: boolean }>({
     public: false,
-    friends: false,
   });
   const [newPostContent, setNewPostContent] = useState('');
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
@@ -603,17 +599,13 @@ export default function UnifiedSidebar({
           {/* Wall Tabs */}
           <Tabs
             value={activeTab}
-            onValueChange={(value) => setActiveTab(value as 'public' | 'friends')}
+            onValueChange={(value) => setActiveTab(value as 'public')}
             className="flex-1 flex flex-col min-h-0 overflow-hidden"
           >
-            <TabsList className="grid w-full grid-cols-2 m-2 flex-shrink-0">
+            <TabsList className="grid w-full grid-cols-1 m-2 flex-shrink-0">
               <TabsTrigger value="public" className="flex items-center gap-2">
                 <Globe className="w-4 h-4" />
                 عام
-              </TabsTrigger>
-              <TabsTrigger value="friends" className="flex items-center gap-2">
-                <Users className="w-4 h-4" />
-                الأصدقاء
               </TabsTrigger>
             </TabsList>
 
@@ -814,123 +806,7 @@ export default function UnifiedSidebar({
                   ))
                 )}
               </TabsContent>
-              <TabsContent value="friends" className="mt-0 space-y-3">
-                {loadingByTab.friends ? (
-                  <div className="text-center py-8 text-gray-500">جاري التحميل...</div>
-                ) : postsByTab.friends.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">لا توجد منشورات حتى الآن</div>
-                ) : (
-                  postsByTab.friends.map((post) => (
-                    <Card key={post.id} className="border border-border bg-card">
-                      <CardHeader className="pb-3">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
-                            {post.userProfileImage ? (
-                              <img
-                                src={getImageSrc(post.userProfileImage)}
-                                alt={post.username}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <span className="text-xs">{post.username.charAt(0)}</span>
-                            )}
-                          </div>
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <span
-                                className="font-medium text-sm cursor-pointer hover:underline"
-                                style={{ color: post.usernameColor || 'inherit' }}
-                                onClick={(e) => {
-                                  const targetUser: ChatUser = {
-                                    id: post.userId,
-                                    username: post.username,
-                                    role: (post.userRole as any) || 'member',
-                                    userType: post.userRole || 'member',
-                                    isOnline: true,
-                                    profileImage: post.userProfileImage,
-                                    usernameColor: post.usernameColor,
-                                  } as ChatUser;
-                                  handleUserClick(e as any, targetUser);
-                                }}
-                                title="عرض خيارات المستخدم"
-                              >
-                                {post.username}
-                              </span>
-                              {/* 🏅 شارة الرتبة الموحدة */}
-                              <UserRoleBadge
-                                user={{ userType: post.userRole } as ChatUser}
-                                size={16}
-                              />
-                            </div>
-                            <p className="text-xs text-gray-500">
-                              {formatTimeAgo(post.timestamp.toString())}
-                            </p>
-                          </div>
-                          {(currentUser?.id === post.userId ||
-                            currentUser?.userType === 'owner' ||
-                            currentUser?.userType === 'admin') && (
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => handleDeletePost(post.id)}
-                              className="text-red-500 hover:bg-red-50"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          )}
-                        </div>
-                      </CardHeader>
-
-                      <CardContent className="pt-0">
-                        {post.content && (
-                          <p className="text-sm mb-3 whitespace-pre-wrap">{post.content}</p>
-                        )}
-
-                        {post.imageUrl && (
-                          <img
-                            src={post.imageUrl}
-                            alt="Post image"
-                            className="w-full max-h-60 object-cover rounded-lg mb-3"
-                          />
-                        )}
-
-                        {/* Reactions */}
-                        <div className="flex items-center gap-4 pt-3 border-t border-gray-100">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => handleReaction(post.id, 'like')}
-                            className="flex items-center gap-1 text-blue-600 hover:bg-blue-50"
-                          >
-                            <ThumbsUp className="w-4 h-4" />
-                            <span className="text-xs">{post.totalLikes || 0}</span>
-                          </Button>
-
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => handleReaction(post.id, 'heart')}
-                            className="flex items-center gap-1 text-red-600 hover:bg-red-50"
-                          >
-                            <Heart className="w-4 h-4" />
-                            <span className="text-xs">{post.totalHearts || 0}</span>
-                          </Button>
-
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => handleReaction(post.id, 'dislike')}
-                            className="flex items-center gap-1 text-gray-600 hover:bg-gray-50"
-                          >
-                            <ThumbsDown className="w-4 h-4" />
-                            <span className="text-xs">{post.totalDislikes || 0}</span>
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))
-                )}
-              </TabsContent>
+              
 
               {!isAtBottomSidebarWall && (
                 <div className="absolute bottom-4 right-4 z-10">
@@ -972,19 +848,7 @@ export default function UnifiedSidebar({
         </div>
       )}
 
-      {/* Friends View - تحسين التمرير */}
-      {activeView === 'friends' && (
-        <div
-          className="flex-1 min-h-0 flex flex-col overflow-hidden"
-          style={{ height: '100%' }}
-        >
-          <FriendsTabPanel
-            currentUser={currentUser}
-            onlineUsers={users}
-            onStartPrivateChat={onStartPrivateChat || (() => {})}
-          />
-        </div>
-      )}
+      
     </aside>
   );
 }

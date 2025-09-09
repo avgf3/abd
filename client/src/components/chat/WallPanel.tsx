@@ -34,14 +34,12 @@ interface WallPanelProps {
 }
 
 export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelProps) {
-  const [activeTab, setActiveTab] = useState<'public' | 'friends'>('public');
-  const [postsByTab, setPostsByTab] = useState<{ public: WallPost[]; friends: WallPost[] }>(() => ({
+  const [activeTab, setActiveTab] = useState<'public'>('public');
+  const [postsByTab, setPostsByTab] = useState<{ public: WallPost[] }>(() => ({
     public: [],
-    friends: [],
   }));
-  const [loadingByTab, setLoadingByTab] = useState<{ public: boolean; friends: boolean }>(() => ({
+  const [loadingByTab, setLoadingByTab] = useState<{ public: boolean }>(() => ({
     public: false,
-    friends: false,
   }));
   const [newPostContent, setNewPostContent] = useState('');
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
@@ -114,8 +112,7 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
 
       const handleWallMessage = (message: any) => {
         if (message.type === 'newWallPost') {
-          const postType: 'public' | 'friends' =
-            (message.wallType || message.post?.type || 'public') === 'friends' ? 'friends' : 'public';
+          const postType: 'public' = 'public';
           setPostsByTab((prev) => ({
             ...prev,
             [postType]: [message.post, ...(prev[postType] || [])],
@@ -128,8 +125,7 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
             toast({ title: 'منشور جديد ✨', description: `منشور جديد من ${message.post.username}` });
           }
         } else if (message.type === 'wallPostReaction') {
-          const postType: 'public' | 'friends' =
-            (message.wallType || message.post?.type || 'public') === 'friends' ? 'friends' : 'public';
+          const postType: 'public' = 'public';
           setPostsByTab((prev) => ({
             ...prev,
             [postType]: (prev[postType] || []).map((p) => (p.id === message.post.id ? message.post : p)),
@@ -139,7 +135,7 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
             return { ...(old || {}), posts: oldPosts.map((p) => (p.id === message.post.id ? message.post : p)) };
           });
         } else if (message.type === 'wallPostDeleted') {
-          const postType: 'public' | 'friends' = (message.wallType || 'public') === 'friends' ? 'friends' : 'public';
+          const postType: 'public' = 'public';
           setPostsByTab((prev) => ({
             ...prev,
             [postType]: (prev[postType] || []).filter((p) => p.id !== message.postId),
@@ -394,23 +390,16 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
           <div className="w-full sm:w-2/5 border-l border-border/50 p-4 sm:p-6 flex flex-col bg-gradient-to-b from-muted/20 to-transparent min-h-0 max-h-full overflow-hidden">
             <Tabs
               value={activeTab}
-              onValueChange={(value) => setActiveTab(value as 'public' | 'friends')}
+              onValueChange={(value) => setActiveTab(value as 'public')}
               className="flex-1 flex flex-col min-h-0 overflow-hidden"
             >
-              <TabsList className="grid w-full grid-cols-2 mb-6 bg-muted/50 backdrop-blur-sm rounded-xl p-1">
+              <TabsList className="grid w-full grid-cols-1 mb-6 bg-muted/50 backdrop-blur-sm rounded-xl p-1">
                 <TabsTrigger
                   value="public"
                   className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm flex items-center gap-2"
                 >
                   <Globe className="h-4 w-4" />
                   الحائط العام
-                </TabsTrigger>
-                <TabsTrigger
-                  value="friends"
-                  className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm flex items-center gap-2"
-                >
-                  <Users className="h-4 w-4" />
-                  حائط الأصدقاء
                 </TabsTrigger>
               </TabsList>
 
@@ -548,35 +537,7 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
                 </div>
               </TabsContent>
 
-              <TabsContent value="friends" className="flex-1 min-h-0">
-                <div
-                  ref={panelScrollRef}
-                  onScroll={handleWallScroll}
-                  className="h-full overflow-y-auto space-y-4 pr-2 pb-24 cursor-grab"
-                >
-                  <WallPostList
-                    posts={postsByTab.friends}
-                    loading={loadingByTab.friends}
-                    emptyFor="friends"
-                    currentUser={currentUser}
-                    onDelete={handleDeletePost}
-                    onReact={handleReaction}
-                    canDelete={canDeletePost}
-                    onUserClick={handleUserClick}
-                  />
-                  {!isAtBottomWall && (
-                    <div className="absolute bottom-4 right-4 z-10">
-                      <Button
-                        size="sm"
-                        onClick={() => scrollWallToBottom('smooth')}
-                        className="px-3 py-1.5 rounded-full text-xs bg-primary text-primary-foreground shadow"
-                      >
-                        الانتقال لأسفل
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </TabsContent>
+              
             </Tabs>
           </div>
 
@@ -601,24 +562,14 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
           x={userPopup.x}
           y={userPopup.y}
           onPrivateMessage={() => {
-            // فتح رسالة خاصة عبر الهاش ليستلمها ChatInterface إن لزم
             try {
               window.location.hash = `#pm${userPopup.user!.id}`;
             } catch {}
             closeUserPopup();
-          }}
-          onAddFriend={async () => {
-            try {
-              const { apiRequest } = await import('@/lib/queryClient');
-              await apiRequest('/api/friend-requests', {
-                method: 'POST',
-                body: { senderId: currentUser.id, receiverId: userPopup.user!.id },
-              });
-            } catch {}
-            closeUserPopup();
-          }}
+          }
+          }
+          onAddFriend={() => {}}
           onIgnore={() => {
-            // بث حدث عام ليتولى ChatInterface التجاهل إن أراد
             try {
               const ev = new CustomEvent('ignoreUser', { detail: { userId: userPopup.user!.id } });
               window.dispatchEvent(ev);

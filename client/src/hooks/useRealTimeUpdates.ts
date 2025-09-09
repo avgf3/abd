@@ -21,8 +21,6 @@ export function useRealTimeUpdates(currentUserId?: number) {
       const queries = [
         ['/api/notifications', currentUserId],
         ['/api/notifications/unread-count', currentUserId],
-        ['/api/friend-requests/incoming', currentUserId],
-        ['/api/friend-requests/outgoing', currentUserId],
         ['/api/friends', currentUserId],
         ['/api/messages/public'],
       ];
@@ -60,10 +58,12 @@ export function useRealTimeUpdates(currentUserId?: number) {
       queryKey: ['/api/friends', currentUserId],
     });
     queryClient.invalidateQueries({
-      queryKey: ['/api/friend-requests/incoming', currentUserId],
+      // تم تعطيل طلبات الصداقة
+      queryKey: ['__disabled_friend_requests_incoming__', currentUserId],
     });
     queryClient.invalidateQueries({
-      queryKey: ['/api/friend-requests/outgoing', currentUserId],
+      // تم تعطيل طلبات الصداقة
+      queryKey: ['__disabled_friend_requests_outgoing__', currentUserId],
     });
   }, [currentUserId, queryClient]);
 

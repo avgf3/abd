@@ -115,17 +115,8 @@ export default function ReportsLog({ currentUser, isVisible, onClose }: ReportsL
   };
 
   const onAddFriend = async (user: ChatUser) => {
-    if (!currentUser?.id) return;
-    try {
-      await apiRequest('/api/friend-requests', {
-        method: 'POST',
-        body: { senderId: currentUser.id, receiverId: user.id },
-      });
-    } catch (e) {
-      console.error(e);
-    } finally {
-      closeUserPopup();
-    }
+    // تم تعطيل طلبات الصداقة
+    closeUserPopup();
   };
 
   const onIgnore = async (user: ChatUser) => {

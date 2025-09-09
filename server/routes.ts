@@ -2318,278 +2318,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // إرسال طلب صداقة
+  // إرسال طلب صداقة - تم تعطيل هذه الميزة
   app.post('/api/friend-requests', async (req, res) => {
-    try {
-      const { senderId, receiverId } = req.body;
-
-      if (!senderId || !receiverId) {
-        return res.status(400).json({ error: 'معلومات المرسل والمستقبل مطلوبة' });
-      }
-
-      if (senderId === receiverId) {
-        return res.status(400).json({ error: 'لا يمكنك إرسال طلب صداقة لنفسك' });
-      }
-
-      // التحقق من وجود طلب سابق
-      const existingRequest = await friendService.getFriendRequest(senderId, receiverId);
-      if (existingRequest) {
-        return res.status(400).json({ error: 'طلب الصداقة موجود بالفعل' });
-      }
-
-      // التحقق من الصداقة الموجودة
-      const friendship = await friendService.getFriendship(senderId, receiverId);
-      if (friendship) {
-        return res.status(400).json({ error: 'أنتما أصدقاء بالفعل' });
-      }
-
-      // منع إرسال طلب صداقة إذا كان المستقبل قد تجاهل المرسل
-      try {
-        const ignoredByReceiver: number[] = await storage.getIgnoredUsers(receiverId);
-        if (Array.isArray(ignoredByReceiver) && ignoredByReceiver.includes(senderId)) {
-          return res
-            .status(403)
-            .json({ error: 'لا يمكن إرسال طلب صداقة: هذا المستخدم قام بتجاهلك' });
-        }
-      } catch (e) {
-        console.warn('تحذير: تعذر التحقق من قائمة التجاهل للمستقبل:', e);
-      }
-
-      const request = await friendService.createFriendRequest(senderId, receiverId);
-      // إرسال إشعار عبر WebSocket
-      const sender = await storage.getUser(senderId);
-      getIO().emit('message', {
-        type: 'friendRequestReceived',
-        targetUserId: receiverId,
-        senderName: sender?.username,
-        senderId: senderId,
-      });
-
-      // إنشاء إشعار حقيقي في قاعدة البيانات
-      await notificationService.createFriendRequestNotification(
-        receiverId,
-        sender?.username || 'مستخدم مجهول',
-        senderId
-      );
-
-      res.json({ message: 'تم إرسال طلب الصداقة', request });
-    } catch (error) {
-      console.error('❌ Friend request error:', error);
-      console.error('Stack trace:', (error as Error).stack);
-      res.status(500).json({ error: 'خطأ في الخادم', details: (error as Error).message });
-    }
+    return res.status(403).json({ error: 'تم تعطيل طلبات الصداقة' });
   });
 
-  // إرسال طلب صداقة باستخدام اسم المستخدم
+  // إرسال طلب صداقة باستخدام اسم المستخدم - تم تعطيل هذه الميزة
   app.post('/api/friend-requests/by-username', async (req, res) => {
-    try {
-      const { senderId, targetUsername } = req.body;
-
-      if (!senderId || !targetUsername) {
-        return res.status(400).json({ error: 'معرف المرسل واسم المستخدم المستهدف مطلوبان' });
-      }
-
-      // البحث عن المستخدم المستهدف
-      const targetUser = await storage.getUserByUsername(targetUsername);
-      if (!targetUser) {
-        return res.status(404).json({ error: 'المستخدم غير موجود' });
-      }
-
-      if (senderId === targetUser.id) {
-        return res.status(400).json({ error: 'لا يمكنك إرسال طلب صداقة لنفسك' });
-      }
-
-      // التحقق من وجود طلب سابق
-      const existingRequest = await friendService.getFriendRequest(senderId, targetUser.id);
-      if (existingRequest) {
-        return res.status(400).json({ error: 'طلب الصداقة موجود بالفعل' });
-      }
-
-      // التحقق من الصداقة الموجودة
-      const friendship = await friendService.getFriendship(senderId, targetUser.id);
-      if (friendship) {
-        return res.status(400).json({ error: 'أنتما أصدقاء بالفعل' });
-      }
-
-      // منع إرسال طلب صداقة إذا كان المستهدف قد تجاهل المُرسل
-      try {
-        const ignoredByTarget: number[] = await storage.getIgnoredUsers(targetUser.id);
-        if (Array.isArray(ignoredByTarget) && ignoredByTarget.includes(senderId)) {
-          return res
-            .status(403)
-            .json({ error: 'لا يمكن إرسال طلب صداقة: هذا المستخدم قام بتجاهلك' });
-        }
-      } catch (e) {
-        console.warn('تحذير: تعذر التحقق من قائمة التجاهل للمستخدم المستهدف:', e);
-      }
-
-      const request = await friendService.createFriendRequest(senderId, targetUser.id);
-
-      // إرسال إشعار عبر WebSocket
-      const sender = await storage.getUser(senderId);
-      getIO().emit('message', {
-        type: 'friendRequestReceived',
-        targetUserId: targetUser.id,
-        senderName: sender?.username,
-        senderId: senderId,
-      });
-
-      // إنشاء إشعار حقيقي في قاعدة البيانات
-      await notificationService.createFriendRequestNotification(
-        targetUser.id,
-        sender?.username || 'مستخدم مجهول',
-        senderId
-      );
-
-      res.json({ message: 'تم إرسال طلب الصداقة', request });
-    } catch (error) {
-      console.error('خطأ في إرسال طلب الصداقة:', error);
-      res.status(500).json({ error: 'خطأ في الخادم' });
-    }
+    return res.status(403).json({ error: 'تم تعطيل طلبات الصداقة' });
   });
 
-  // الحصول على جميع طلبات الصداقة للمستخدم (واردة + صادرة)
+  // الحصول على طلبات الصداقة - تم تعطيل هذه الميزة
   app.get('/api/friend-requests/:userId', async (req, res) => {
-    try {
-      const userId = parseEntityId(req.params.userId as any).id as number;
-      const [incoming, outgoing] = await Promise.all([
-        friendService.getIncomingFriendRequests(userId),
-        friendService.getOutgoingFriendRequests(userId),
-      ]);
-      res.json({ incoming, outgoing });
-    } catch (error) {
-      console.error('خطأ في جلب طلبات الصداقة:', error);
-      res.status(500).json({ error: 'خطأ في الخادم' });
-    }
+    return res.status(403).json({ error: 'تم تعطيل طلبات الصداقة' });
   });
 
-  // الحصول على طلبات الصداقة الواردة
+  // الحصول على طلبات الصداقة الواردة - تم تعطيل هذه الميزة
   app.get('/api/friend-requests/incoming/:userId', async (req, res) => {
-    try {
-      const userId = parseEntityId(req.params.userId as any).id as number;
-      const requests = await friendService.getIncomingFriendRequests(userId);
-      res.json({ requests });
-    } catch (error) {
-      res.status(500).json({ error: 'خطأ في الخادم' });
-    }
+    return res.status(403).json({ error: 'تم تعطيل طلبات الصداقة' });
   });
 
-  // الحصول على طلبات الصداقة الصادرة
+  // الحصول على طلبات الصداقة الصادرة - تم تعطيل هذه الميزة
   app.get('/api/friend-requests/outgoing/:userId', async (req, res) => {
-    try {
-      const userId = parseEntityId(req.params.userId as any).id as number;
-      const requests = await friendService.getOutgoingFriendRequests(userId);
-      res.json({ requests });
-    } catch (error) {
-      res.status(500).json({ error: 'خطأ في الخادم' });
-    }
+    return res.status(403).json({ error: 'تم تعطيل طلبات الصداقة' });
   });
 
-  // قبول طلب صداقة
+  // قبول طلب صداقة - تم تعطيل هذه الميزة
   app.post('/api/friend-requests/:requestId/accept', async (req, res) => {
-    try {
-      const requestId = parseInt(req.params.requestId);
-      const { userId } = req.body;
-
-      const request = await friendService.getFriendRequestById(requestId);
-      if (!request || request.friendId !== userId) {
-        return res.status(403).json({ error: 'غير مسموح' });
-      }
-
-      // قبول طلب الصداقة وإضافة الصداقة
-      await friendService.acceptFriendRequest(requestId);
-      await friendService.addFriend(request.userId, request.friendId);
-
-      // الحصول على بيانات المستخدمين
-      const receiver = await storage.getUser(userId);
-      const sender = await storage.getUser(request.userId);
-
-      // إرسال إشعار WebSocket لتحديث قوائم الأصدقاء
-      getIO().emit('message', {
-        type: 'friendAdded',
-        targetUserId: request.userId,
-        friendId: request.friendId,
-        friendName: receiver?.username,
-      });
-
-      getIO().emit('message', {
-        type: 'friendAdded',
-        targetUserId: request.friendId,
-        friendId: request.userId,
-        friendName: sender?.username,
-      });
-      getIO().emit('message', {
-        type: 'friendRequestAccepted',
-        targetUserId: request.userId,
-        senderName: receiver?.username,
-      });
-
-      // إنشاء إشعار حقيقي في قاعدة البيانات
-      await notificationService.createFriendAcceptedNotification(
-        request.userId,
-        receiver?.username || 'مستخدم مجهول',
-        userId
-      );
-
-      res.json({ message: 'تم قبول طلب الصداقة' });
-    } catch (error) {
-      console.error('خطأ في قبول طلب الصداقة:', error);
-      res.status(500).json({ error: 'خطأ في الخادم' });
-    }
+    return res.status(403).json({ error: 'تم تعطيل طلبات الصداقة' });
   });
 
-  // رفض طلب صداقة
+  // رفض طلب صداقة - تم تعطيل هذه الميزة
   app.post('/api/friend-requests/:requestId/decline', async (req, res) => {
-    try {
-      const requestId = parseInt(req.params.requestId);
-      const { userId } = req.body;
-
-      const request = await friendService.getFriendRequestById(requestId);
-      if (!request || request.friendId !== userId) {
-        return res.status(403).json({ error: 'غير مسموح' });
-      }
-
-      await friendService.declineFriendRequest(requestId);
-      res.json({ message: 'تم رفض طلب الصداقة' });
-    } catch (error) {
-      res.status(500).json({ error: 'خطأ في الخادم' });
-    }
+    return res.status(403).json({ error: 'تم تعطيل طلبات الصداقة' });
   });
 
-  // إلغاء طلب صداقة
+  // إلغاء طلب صداقة - تم تعطيل هذه الميزة
   app.post('/api/friend-requests/:requestId/cancel', async (req, res) => {
-    try {
-      const requestId = parseInt(req.params.requestId);
-      const { userId } = req.body;
-
-      const request = await friendService.getFriendRequestById(requestId);
-      if (!request || request.userId !== userId) {
-        return res.status(403).json({ error: 'غير مسموح' });
-      }
-
-      await friendService.deleteFriendRequest(requestId);
-      res.json({ message: 'تم إلغاء طلب الصداقة' });
-    } catch (error) {
-      res.status(500).json({ error: 'خطأ في الخادم' });
-    }
+    return res.status(403).json({ error: 'تم تعطيل طلبات الصداقة' });
   });
 
-  // تجاهل طلب صداقة
+  // تجاهل طلب صداقة - تم تعطيل هذه الميزة
   app.post('/api/friend-requests/:requestId/ignore', async (req, res) => {
-    try {
-      const requestId = parseInt(req.params.requestId);
-      const { userId } = req.body;
-
-      const request = await friendService.getFriendRequestById(requestId);
-      if (!request || request.friendId !== userId) {
-        return res.status(403).json({ error: 'غير مسموح' });
-      }
-
-      await friendService.ignoreFriendRequest(requestId);
-      res.json({ message: 'تم تجاهل طلب الصداقة' });
-    } catch (error) {
-      res.status(500).json({ error: 'خطأ في الخادم' });
-    }
+    return res.status(403).json({ error: 'تم تعطيل طلبات الصداقة' });
   });
 
   // الحصول على قائمة الأصدقاء

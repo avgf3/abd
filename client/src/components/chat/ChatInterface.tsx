@@ -87,7 +87,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   const [showStoryViewer, setShowStoryViewer] = useState<{ show: boolean; userId?: number | null }>({ show: false, userId: null });
   const [showAdminReports, setShowAdminReports] = useState(false);
   const [showStoriesSettings, setShowStoriesSettings] = useState(false);
-  const [activeView, setActiveView] = useState<'hidden' | 'users' | 'walls' | 'rooms' | 'friends'>(
+  const [activeView, setActiveView] = useState<'hidden' | 'users' | 'walls' | 'rooms'>(
     () => (typeof window !== 'undefined' && window.innerWidth < 768 ? 'hidden' : 'users')
   );
   const isMobile = useIsMobile();
@@ -378,20 +378,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
     return () => window.removeEventListener('privateMessageReceived', handler);
   }, [chat.currentUser?.id, queryClient]);
 
-  // Auto-switch to friends tab when friend request is accepted
-  useEffect(() => {
-    const handleFriendRequestAccepted = (event: CustomEvent) => {
-      setActiveView('friends');
-    };
-
-    window.addEventListener('friendRequestAccepted', handleFriendRequestAccepted as EventListener);
-    return () => {
-      window.removeEventListener(
-        'friendRequestAccepted',
-        handleFriendRequestAccepted as EventListener
-      );
-    };
-  }, []);
+  // تعطيل الانتقال لتبويب الأصدقاء لعدم توفره
   const [reportedUser, setReportedUser] = useState<ChatUser | null>(null);
   const [reportedMessage, setReportedMessage] = useState<{ content: string; id: number } | null>(
     null
@@ -914,7 +901,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             className={`${
               isMobile 
                 ? 'fixed top-0 left-0 right-0 bottom-0 z-40 bg-background/95 backdrop-blur-md' 
-                : activeView === 'walls' ? 'w-full sm:w-96' : activeView === 'friends' ? 'w-full sm:w-80' : 'w-full sm:w-64'
+                : activeView === 'walls' ? 'w-full sm:w-96' : 'w-full sm:w-64'
             } max-w-full sm:shrink-0 transition-all duration-300 min-h-0 flex flex-col`}
             style={{ 
               maxHeight: isMobile ? '100dvh' : 'calc(100dvh - var(--app-header-height) - var(--app-footer-height))',
@@ -929,7 +916,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                   {activeView === 'walls' && 'الحائط'}
                   {activeView === 'users' && 'المستخدمون المتصلون'}
                   {activeView === 'rooms' && 'الغرف'}
-                  {activeView === 'friends' && 'الأصدقاء'}
+                  
                 </h2>
                 <Button
                   size="sm"
@@ -1154,34 +1141,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             <span className={isMobile ? 'tab-text-hide' : ''}>الغرف</span>
           </Button>
 
-          {/* الأصدقاء */}
-          <Button
-            size="sm"
-            className={`glass-effect transition-all duration-200 flex items-center gap-1.5 ${
-              isMobile ? 'flex-1 px-2 py-2 text-xs' : 'px-2 py-1.5 text-sm'
-            }${activeView === 'friends' ? ' bg-primary text-primary-foreground' : ' hover:bg-accent'} rounded-lg`}
-            onClick={() => setActiveView((prev) => (prev === 'friends' ? 'hidden' : 'friends'))}
-            title="الأصدقاء"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-label="Friends"
-            >
-              <circle cx="9" cy="7" r="3"></circle>
-              <path d="M2 21c0-3.314 2.686-6 6-6h2c3.314 0 6 2.686 6 6"></path>
-              <path d="M19 8v6"></path>
-              <path d="M16 11h6"></path>
-            </svg>
-            <span className={isMobile ? 'tab-text-hide' : ''}>الأصدقاء</span>
-          </Button>
+          {/* تبويب الأصدقاء محذوف */}
         </div>
       </footer>
 
@@ -1327,7 +1287,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
               closeUserPopup();
               setTimeout(() => handlePrivateMessage(userPopup.user!), 0);
             }}
-            onAddFriend={() => handleAddFriend(userPopup.user!)}
+            onAddFriend={() => {}}
             onIgnore={() => {
               handleIgnoreUser(userPopup.user!);
             }}
