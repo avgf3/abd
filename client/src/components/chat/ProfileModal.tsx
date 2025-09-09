@@ -2386,7 +2386,7 @@ export default function ProfileModal({
                   onClick={() => fileInputRef.current?.click()}
                   disabled={isLoading}
                 >
-                  تغيير الغلاف
+                  🖼️ تغيير الغلاف
                 </button>
                 
                 {/* اسم المستخدم مع الرتبة - في أسفل صورة الغلاف */}
@@ -2736,7 +2736,7 @@ export default function ProfileModal({
                 {localUser?.id === currentUser?.id && (
                   <>
                     <p>
-                      عدد الرسائل: <span>0</span>
+                      💬 عدد الرسائل: <span>0</span>
                     </p>
                     <p>
                       ⭐ مستوى العضو: <span>مستوى {localUser?.level || 1}</span>
@@ -2935,7 +2935,7 @@ export default function ProfileModal({
                                   setIsPlaying(false);
                                   setAudioError(false);
                                   
-                                  toast({ title: 'تم', description: 'تم حذف موسيقى البروفايل' });
+                                  toast({ title: 'تم ✅', description: 'تم حذف موسيقى البروفايل' });
                                 } catch (err: any) {
                                   console.error('خطأ في حذف الموسيقى:', err);
                                   toast({ 
@@ -2958,7 +2958,7 @@ export default function ProfileModal({
                               }}
                               disabled={isLoading}
                             >
-                              {isLoading ? 'جاري الحذف...' : 'حذف'}
+                              {isLoading ? '⏳' : '🗑️'} حذف
                             </button>
                           </div>
                         ) : (
@@ -3059,7 +3059,7 @@ export default function ProfileModal({
                                       }, 500);
                                     }
                                     
-                                    toast({ title: 'تم', description: 'تم تحديث موسيقى البروفايل بنجاح' });
+                                    toast({ title: 'تم ✅', description: 'تم تحديث موسيقى البروفايل بنجاح' });
                                   }
                                 } catch (err: any) {
                                   console.error('خطأ في رفع الموسيقى:', err);
@@ -3248,8 +3248,8 @@ export default function ProfileModal({
               {currentEditType === 'country' && 'تعديل البلد'}
               {currentEditType === 'age' && 'تعديل العمر'}
               {currentEditType === 'socialStatus' && 'تعديل الحالة الاجتماعية'}
-              {currentEditType === 'theme' && 'اختيار لون الملف الشخصي (خلفية الصندوق)'}
-              {currentEditType === 'effects' && 'تعديل التأثيرات الحركية'}
+              {currentEditType === 'theme' && '🎨 اختيار لون الملف الشخصي (خلفية الصندوق)'}
+              {currentEditType === 'effects' && '✨ تعديل التأثيرات الحركية'}
               {currentEditType === 'sendPoints' && 'إرسال النقاط'}
             </h3>
 
@@ -3356,7 +3356,7 @@ export default function ProfileModal({
                         transition: 'all 0.3s ease',
                       }}
                     >
-                      {sendingPoints ? 'جاري...' : ''} إرسال
+                      {sendingPoints ? '⏳' : ''} إرسال
                     </button>
                   </div>
 
