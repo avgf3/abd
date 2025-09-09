@@ -322,6 +322,66 @@ export async function ensureUserProfileMusicColumns(): Promise<void> {
   }
 }
 
+// Ensure user preference columns exist on users table (safety net if migrations didn't run)
+export async function ensureUserPreferencesColumns(): Promise<void> {
+  try {
+    if (!dbAdapter.client) return;
+
+    // Add columns if missing first without NOT NULL to avoid failures
+    await dbAdapter.client.unsafe(`
+      ALTER TABLE IF EXISTS users
+        ADD COLUMN IF NOT EXISTS show_points_to_others BOOLEAN;
+    `);
+    await dbAdapter.client.unsafe(`
+      ALTER TABLE IF EXISTS users
+        ADD COLUMN IF NOT EXISTS show_system_messages BOOLEAN;
+    `);
+    await dbAdapter.client.unsafe(`
+      ALTER TABLE IF EXISTS users
+        ADD COLUMN IF NOT EXISTS global_sound_enabled BOOLEAN;
+    `);
+
+    // Default any NULLs to TRUE
+    await dbAdapter.client.unsafe(`
+      UPDATE users
+      SET
+        show_points_to_others = COALESCE(show_points_to_others, TRUE),
+        show_system_messages = COALESCE(show_system_messages, TRUE),
+        global_sound_enabled = COALESCE(global_sound_enabled, TRUE)
+    `);
+
+    // Set defaults
+    await dbAdapter.client.unsafe(`
+      ALTER TABLE IF EXISTS users
+        ALTER COLUMN show_points_to_others SET DEFAULT TRUE;
+    `);
+    await dbAdapter.client.unsafe(`
+      ALTER TABLE IF EXISTS users
+        ALTER COLUMN show_system_messages SET DEFAULT TRUE;
+    `);
+    await dbAdapter.client.unsafe(`
+      ALTER TABLE IF EXISTS users
+        ALTER COLUMN global_sound_enabled SET DEFAULT TRUE;
+    `);
+
+    // Enforce NOT NULL after data backfill
+    await dbAdapter.client.unsafe(`
+      ALTER TABLE IF EXISTS users
+        ALTER COLUMN show_points_to_others SET NOT NULL;
+    `);
+    await dbAdapter.client.unsafe(`
+      ALTER TABLE IF EXISTS users
+        ALTER COLUMN show_system_messages SET NOT NULL;
+    `);
+    await dbAdapter.client.unsafe(`
+      ALTER TABLE IF EXISTS users
+        ALTER COLUMN global_sound_enabled SET NOT NULL;
+    `);
+  } catch (e) {
+    console.warn('⚠️ تعذر ضمان أعمدة تفضيلات المستخدم:', (e as any)?.message || e);
+  }
+}
+
 // Ensure rooms table has required columns like is_locked
 export async function ensureRoomsColumns(): Promise<void> {
   try {
