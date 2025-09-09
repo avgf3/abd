@@ -53,6 +53,25 @@ async function applyDeploymentFixes() {
     await sql`CREATE INDEX IF NOT EXISTS "idx_rooms_chat_lock_all" ON "rooms" ("chat_lock_all")`;
     await sql`CREATE INDEX IF NOT EXISTS "idx_rooms_chat_lock_visitors" ON "rooms" ("chat_lock_visitors")`;
     
+    // Ensure users.dm_privacy exists and is valid
+    console.log('🔍 التحقق من عمود dm_privacy في users...');
+    const dmCol = await sql`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = 'users' AND column_name = 'dm_privacy'
+    `;
+    
+    if (dmCol.length === 0) {
+      console.log('➕ إضافة عمود dm_privacy...');
+      // Add column first (without constraints) to avoid rewrite issues on some providers
+      await sql`ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "dm_privacy" TEXT`;
+    }
+    
+    console.log('🔄 ضبط القيم الافتراضية والصحيحة لـ dm_privacy...');
+    await sql`UPDATE "users" SET "dm_privacy" = 'all' WHERE "dm_privacy" IS NULL OR "dm_privacy" NOT IN ('all','friends','none')`;
+    await sql`ALTER TABLE "users" ALTER COLUMN "dm_privacy" SET DEFAULT 'all'`;
+    await sql`ALTER TABLE "users" ALTER COLUMN "dm_privacy" SET NOT NULL`;
+    
     // Verify the fix worked
     console.log('✅ التحقق من النتيجة النهائية...');
     const finalResult = await sql`
