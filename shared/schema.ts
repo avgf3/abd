@@ -56,6 +56,10 @@ export const users = pgTable('users', {
   profileMusicVolume: integer('profile_music_volume').default(70),
   // إعداد خصوصية الرسائل الخاصة: all | friends | none
   dmPrivacy: text('dm_privacy').notNull().default('all'),
+  // تفضيلات عامة
+  showPointsToOthers: boolean('show_points_to_others').notNull().default(true),
+  showSystemMessages: boolean('show_system_messages').notNull().default(true),
+  globalSoundEnabled: boolean('global_sound_enabled').notNull().default(true),
 });
 
 export const messages = pgTable(

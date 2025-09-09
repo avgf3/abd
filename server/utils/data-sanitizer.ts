@@ -128,6 +128,13 @@ export function sanitizeUserData(user: any): any {
     usernameColor: sanitizeHexColor(user.usernameColor, '#000000'),
     profileEffect: sanitizeEffect(user.profileEffect),
     dmPrivacy,
+    // تفضيلات عامة (ضمان قيم منطقية افتراضية)
+    showPointsToOthers:
+      typeof user.showPointsToOthers === 'boolean' ? user.showPointsToOthers : true,
+    showSystemMessages:
+      typeof user.showSystemMessages === 'boolean' ? user.showSystemMessages : true,
+    globalSoundEnabled:
+      typeof user.globalSoundEnabled === 'boolean' ? user.globalSoundEnabled : true,
     // موسيقى البروفايل
     profileMusicUrl: safeMusicUrl,
     profileMusicTitle: typeof user.profileMusicTitle === 'string' ? user.profileMusicTitle : undefined,

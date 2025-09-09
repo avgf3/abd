@@ -470,7 +470,11 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
     closeUserPopup();
     try {
       // تشغيل الموسيقى عند كل فتح للبروفايل إن كانت مفعلة ولها رابط صالح
-      if (user?.profileMusicUrl && (user as any).profileMusicEnabled !== false) {
+      if (
+        user?.profileMusicUrl &&
+        (user as any).profileMusicEnabled !== false &&
+        (chat.currentUser as any)?.globalSoundEnabled !== false
+      ) {
         if (!profileAudioRef.current) {
           profileAudioRef.current = new Audio();
         }
@@ -532,7 +536,11 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
       setProfileUser(user);
       setShowProfile(true);
       try {
-        if (user?.profileMusicUrl && (user as any).profileMusicEnabled !== false) {
+        if (
+          user?.profileMusicUrl &&
+          (user as any).profileMusicEnabled !== false &&
+          (chat.currentUser as any)?.globalSoundEnabled !== false
+        ) {
           if (!profileAudioRef.current) profileAudioRef.current = new Audio();
           const audio = profileAudioRef.current;
           audio.src = user.profileMusicUrl;
@@ -1353,7 +1361,11 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
               // تشغيل الموسيقى الخاصة بالمستخدم الحالي لو متاحة
               try {
                 const u = chat.currentUser;
-                if (u?.profileMusicUrl && (u as any).profileMusicEnabled !== false) {
+                if (
+                  u?.profileMusicUrl &&
+                  (u as any).profileMusicEnabled !== false &&
+                  (chat.currentUser as any)?.globalSoundEnabled !== false
+                ) {
                   if (!profileAudioRef.current) profileAudioRef.current = new Audio();
                   const audio = profileAudioRef.current;
                   audio.src = u.profileMusicUrl;

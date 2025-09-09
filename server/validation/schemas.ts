@@ -46,6 +46,13 @@ export const updateProfileSchema = z.object({
     .nullable()
 });
 
+// مخطط تفضيلات المستخدم العامة
+export const userPreferencesSchema = z.object({
+  showPointsToOthers: z.boolean().optional(),
+  showSystemMessages: z.boolean().optional(),
+  globalSoundEnabled: z.boolean().optional(),
+});
+
 // ========== مخططات الرسائل ==========
 export const messageSchema = z.object({
   content: z.string()
