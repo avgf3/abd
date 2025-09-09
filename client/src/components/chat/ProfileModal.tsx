@@ -2475,293 +2475,334 @@ export default function ProfileModal({
             )}
           </div>
 
-          {/* Profile Body - exact match to original */}
+          {/* Profile Body - reorganized into sections */}
           <div className="profile-body">
-            <div className="profile-info">
-              <small
-                onClick={() => localUser?.id === currentUser?.id && openEditModal('status')}
-                style={{ 
-                  cursor: localUser?.id === currentUser?.id ? 'pointer' : 'default', 
-                  display: 'block', 
-                  textAlign: 'center',
-                  width: '100%',
-                  margin: '0 auto'
-                }}
-              >
-                {localUser?.status || (localUser?.id === currentUser?.id ? 'اضغط لإضافة حالة' : '')}
-              </small>
-            </div>
+            {/* Section 1: معلوماتي */}
+            <div style={{ 
+              marginBottom: '16px',
+              padding: '12px',
+              borderRadius: '8px',
+              border: '1px solid rgba(255,255,255,0.08)',
+              background: 'rgba(255,255,255,0.04)'
+            }}>
+              <h4 style={{ 
+                margin: '0 0 12px 0', 
+                fontSize: '14px', 
+                fontWeight: 'bold', 
+                color: '#fff',
+                textAlign: 'center',
+                borderBottom: '1px solid rgba(255,255,255,0.1)',
+                paddingBottom: '8px'
+              }}>📋 معلوماتي</h4>
+              
+              <div className="profile-info">
+                <small
+                  onClick={() => localUser?.id === currentUser?.id && openEditModal('status')}
+                  style={{ 
+                    cursor: localUser?.id === currentUser?.id ? 'pointer' : 'default', 
+                    display: 'block', 
+                    textAlign: 'center',
+                    width: '100%',
+                    margin: '0 auto 12px auto'
+                  }}
+                >
+                  {localUser?.status || (localUser?.id === currentUser?.id ? 'اضغط لإضافة حالة' : '')}
+                </small>
+              </div>
 
-            {localUser?.id !== currentUser?.id && <></>}
-
-            <div className="profile-details">
-              <p
-                onClick={() => localUser?.id === currentUser?.id && openEditModal('gender')}
-                style={{ cursor: localUser?.id === currentUser?.id ? 'pointer' : 'default' }}
-              >
-                🧍‍♀️ الجنس: <span>{localUser?.gender || 'غير محدد'}</span>
-              </p>
-              <p
-                onClick={() => localUser?.id === currentUser?.id && openEditModal('country')}
-                style={{ cursor: localUser?.id === currentUser?.id ? 'pointer' : 'default' }}
-              >
-                🌍 البلد: <span className="inline-flex items-center gap-1">
-                  {localUser?.country || 'غير محدد'}
-                  {localUser?.country && <CountryFlag country={localUser?.country} size={14} />}
-                </span>
-              </p>
-              <p
-                onClick={() => localUser?.id === currentUser?.id && openEditModal('age')}
-                style={{ cursor: localUser?.id === currentUser?.id ? 'pointer' : 'default' }}
-              >
-                🎂 العمر: <span>{localUser?.age ? `${localUser.age} سنة` : 'غير محدد'}</span>
-              </p>
-              <p
-                onClick={() => localUser?.id === currentUser?.id && openEditModal('socialStatus')}
-                style={{ cursor: localUser?.id === currentUser?.id ? 'pointer' : 'default' }}
-              >
-                💍 الحالة الاجتماعية: <span>{localUser?.relation || 'غير محدد'}</span>
-              </p>
-              <p>
-                📅 تاريخ الإنضمام:{' '}
-                <span>
-                  {localUser?.createdAt
-                    ? new Date(localUser.createdAt).toLocaleDateString('ar-SA')
-                    : 'غير محدد'}
-                </span>
-              </p>
-              <p>
-                🎁 نقاط الهدايا: <span>{localUser?.points || 0}</span>
-              </p>
-              {/* إرسال النقاط - يظهر فقط للمستخدمين الآخرين */}
-              {currentUser && currentUser.id !== localUser?.id && (
-                <p onClick={() => setCurrentEditType('sendPoints')} style={{ cursor: 'pointer' }}>
-                  💰 إرسال النقاط: <span>اضغط للإرسال</span>
+              <div className="profile-details">
+                <p
+                  onClick={() => localUser?.id === currentUser?.id && openEditModal('gender')}
+                  style={{ cursor: localUser?.id === currentUser?.id ? 'pointer' : 'default' }}
+                >
+                  🧍‍♀️ الجنس: <span>{localUser?.gender || 'غير محدد'}</span>
                 </p>
-              )}
-              <p>
-                🧾 الحالة: <span>{localUser?.isOnline ? 'متصل' : 'غير متصل'}</span>
-              </p>
-            </div>
-
-            {localUser?.id === currentUser?.id && (
-              <div className="additional-details">
-                <p>
-                  💬 عدد الرسائل: <span>0</span>
+                <p
+                  onClick={() => localUser?.id === currentUser?.id && openEditModal('country')}
+                  style={{ cursor: localUser?.id === currentUser?.id ? 'pointer' : 'default' }}
+                >
+                  🌍 البلد: <span className="inline-flex items-center gap-1">
+                    {localUser?.country || 'غير محدد'}
+                    {localUser?.country && <CountryFlag country={localUser?.country} size={14} />}
+                  </span>
+                </p>
+                <p
+                  onClick={() => localUser?.id === currentUser?.id && openEditModal('age')}
+                  style={{ cursor: localUser?.id === currentUser?.id ? 'pointer' : 'default' }}
+                >
+                  🎂 العمر: <span>{localUser?.age ? `${localUser.age} سنة` : 'غير محدد'}</span>
+                </p>
+                <p
+                  onClick={() => localUser?.id === currentUser?.id && openEditModal('socialStatus')}
+                  style={{ cursor: localUser?.id === currentUser?.id ? 'pointer' : 'default' }}
+                >
+                  💍 الحالة الاجتماعية: <span>{localUser?.relation || 'غير محدد'}</span>
                 </p>
                 <p>
-                  ⭐ مستوى العضو: <span>مستوى {localUser?.level || 1}</span>
+                  📅 تاريخ الإنضمام:{' '}
+                  <span>
+                    {localUser?.createdAt
+                      ? new Date(localUser.createdAt).toLocaleDateString('ar-SA')
+                      : 'غير محدد'}
+                  </span>
                 </p>
-                {currentUser && (
-                  currentUser.userType === 'owner' || 
-                  currentUser.userType === 'admin' || 
-                  currentUser.userType === 'moderator'
-                ) && (
+                <p>
+                  🎁 نقاط الهدايا: <span>{localUser?.points || 0}</span>
+                </p>
+                {/* إرسال النقاط - يظهر فقط للمستخدمين الآخرين */}
+                {currentUser && currentUser.id !== localUser?.id && (
+                  <p onClick={() => setCurrentEditType('sendPoints')} style={{ cursor: 'pointer' }}>
+                    💰 إرسال النقاط: <span>اضغط للإرسال</span>
+                  </p>
+                )}
+                <p>
+                  🧾 الحالة: <span>{localUser?.isOnline ? 'متصل' : 'غير متصل'}</span>
+                </p>
+                
+                {localUser?.id === currentUser?.id && (
                   <>
-                    <p onClick={() => setCurrentEditType('theme')} style={{ cursor: 'pointer' }}>
-                      🎨 لون الملف الشخصي: <span>اضغط للتغيير</span>
+                    <p>
+                      💬 عدد الرسائل: <span>0</span>
                     </p>
-                    <p onClick={() => setCurrentEditType('effects')} style={{ cursor: 'pointer' }}>
-                      ✨ تأثيرات حركية: <span>اضغط للتغيير</span>
+                    <p>
+                      ⭐ مستوى العضو: <span>مستوى {localUser?.level || 1}</span>
                     </p>
                   </>
                 )}
-                {currentUser && (
-                  currentUser.userType === 'owner' || 
-                  currentUser.userType === 'admin' || 
-                  currentUser.userType === 'moderator'
-                ) && (
-                  <div
-                    style={{
-                      marginTop: '8px',
-                      padding: '8px',
-                      borderRadius: '8px',
-                      border: '1px solid rgba(255,255,255,0.08)',
-                      background: 'rgba(255,255,255,0.04)'
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                      <strong>🎵 موسيقى البروفايل</strong>
-                      {localUser?.profileMusicUrl && (
-                        <span style={{ fontSize: '11px', color: '#4caf50' }}>✅ نشط</span>
-                      )}
-                  </div>
+              </div>
+            </div>
 
-                  <div style={{ marginTop: '8px' }}>
-                    {localUser?.profileMusicUrl ? (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <span style={{ fontSize: '12px', color: '#fff', flex: 1 }}>
-                          🎵 {musicTitle || 'موسيقى البروفايل'}
-                        </span>
-                        <button
-                          onClick={async () => {
-                            if (!confirm('هل أنت متأكد من حذف موسيقى البروفايل؟')) return;
-                            
-                            try {
-                              setIsLoading(true);
-                              await apiRequest(`/api/users/${localUser?.id}/profile-music`, { method: 'DELETE' });
-                              
-                              // إيقاف الموسيقى وتنظيف المشغل
-                              if (audioRef.current) { 
-                                audioRef.current.pause(); 
-                                audioRef.current.src = ''; 
-                              }
-                              
-                              // تحديث البيانات المحلية
-                              updateUserData({ 
-                                profileMusicUrl: undefined, 
-                                profileMusicTitle: '', 
-                                profileMusicEnabled: false 
-                              });
-                              
-                              setMusicTitle('');
-                              setMusicEnabled(false);
-                              setIsPlaying(false);
-                              setAudioError(false);
-                              
-                              toast({ title: 'تم ✅', description: 'تم حذف موسيقى البروفايل' });
-                            } catch (err: any) {
-                              console.error('خطأ في حذف الموسيقى:', err);
-                              toast({ 
-                                title: 'خطأ', 
-                                description: err?.message || 'فشل حذف الموسيقى', 
-                                variant: 'destructive' 
-                              });
-                            } finally {
-                              setIsLoading(false);
-                            }
-                          }}
-                          style={{ 
-                            padding: '4px 8px', 
-                            borderRadius: '6px', 
-                            background: '#dc2626', 
-                            color: '#fff',
-                            border: 'none',
-                            fontSize: '11px',
-                            cursor: 'pointer'
-                          }}
-                          disabled={isLoading}
-                        >
-                          {isLoading ? '⏳' : '🗑️'} حذف
-                        </button>
-                      </div>
-                    ) : (
-                      <button
-                        onClick={() => musicFileInputRef.current?.click()}
-                        style={{ 
-                          padding: '8px 12px', 
-                          borderRadius: '8px', 
-                          border: '1px solid rgba(255,255,255,0.2)', 
-                          background: 'rgba(255,255,255,0.08)', 
-                          color: '#fff',
-                          width: '100%',
-                          cursor: 'pointer'
-                        }}
-                      >
-                        📁 اختر ملف صوتي (MP3, WAV, OGG)
-                      </button>
-                    )}
-                  </div>
-                  <input
-                    ref={musicFileInputRef}
-                    type="file"
-                    accept="audio/*"
-                    style={{ display: 'none' }}
-                    onChange={async (e) => {
-                            try {
-                              // التحقق من الصلاحيات
-                              const isAuthorized = currentUser && (
-                                currentUser.userType === 'owner' || 
-                                currentUser.userType === 'admin' || 
-                                currentUser.userType === 'moderator'
-                              );
-                              
-                              if (!isAuthorized) {
-                                toast({
-                                  title: 'غير مسموح',
-                                  description: 'هذه الميزة متاحة للمشرفين فقط',
-                                  variant: 'destructive',
-                                });
-                                return;
-                              }
+            {/* Section 2: خيارات - only for current user */}
+            {localUser?.id === currentUser?.id && (
+              <div style={{ 
+                padding: '12px',
+                borderRadius: '8px',
+                border: '1px solid rgba(255,255,255,0.08)',
+                background: 'rgba(255,255,255,0.04)'
+              }}>
+                <h4 style={{ 
+                  margin: '0 0 12px 0', 
+                  fontSize: '14px', 
+                  fontWeight: 'bold', 
+                  color: '#fff',
+                  textAlign: 'center',
+                  borderBottom: '1px solid rgba(255,255,255,0.1)',
+                  paddingBottom: '8px'
+                }}>⚙️ خيارات</h4>
+                
+                <div className="additional-details">
+                  {currentUser && (
+                    currentUser.userType === 'owner' || 
+                    currentUser.userType === 'admin' || 
+                    currentUser.userType === 'moderator'
+                  ) && (
+                    <>
+                      <p onClick={() => setCurrentEditType('theme')} style={{ cursor: 'pointer' }}>
+                        🎨 لون الملف الشخصي: <span>اضغط للتغيير</span>
+                      </p>
+                      <p onClick={() => setCurrentEditType('effects')} style={{ cursor: 'pointer' }}>
+                        ✨ تأثيرات حركية: <span>اضغط للتغيير</span>
+                      </p>
+                    </>
+                  )}
+                  
+                  {currentUser && (
+                    currentUser.userType === 'owner' || 
+                    currentUser.userType === 'admin' || 
+                    currentUser.userType === 'moderator'
+                  ) && (
+                    <div
+                      style={{
+                        marginTop: '8px',
+                        padding: '8px',
+                        borderRadius: '8px',
+                        border: '1px solid rgba(255,255,255,0.08)',
+                        background: 'rgba(255,255,255,0.04)'
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                        <strong>🎵 موسيقى البروفايل</strong>
+                        {localUser?.profileMusicUrl && (
+                          <span style={{ fontSize: '11px', color: '#4caf50' }}>✅ نشط</span>
+                        )}
+                    </div>
 
-                              const file = e.target.files?.[0];
-                              if (!file) return;
-                              
-                              // التحقق من نوع الملف
-                              const allowedTypes = ['audio/mpeg', 'audio/mp3', 'audio/ogg', 'audio/webm', 'audio/wav', 'audio/m4a', 'audio/aac'];
-                              if (!allowedTypes.some(type => file.type.includes(type.split('/')[1]))) {
-                                toast({
-                                  title: 'نوع ملف غير مدعوم',
-                                  description: 'يرجى اختيار ملف صوتي (MP3, WAV, OGG, M4A)',
-                                  variant: 'destructive',
-                                });
-                                return;
-                              }
-                              
-                              // التحقق من حجم الملف (10 ميجا كحد أقصى)
-                              if (file.size > 10 * 1024 * 1024) {
-                                toast({
-                                  title: 'حجم الملف كبير جداً',
-                                  description: 'الحد الأقصى لحجم الملف هو 10 ميجابايت',
-                                  variant: 'destructive',
-                                });
-                                return;
-                              }
-                              
-                              setIsLoading(true);
-                              const fd = new FormData();
-                              fd.append('music', file);
-                              if (musicTitle) fd.append('title', musicTitle);
-                              
-                              const res = await apiRequest(`/api/upload/profile-music`, { method: 'POST', body: fd });
-                              
-                              if (!(res as any)?.success) {
-                                throw new Error((res as any)?.error || 'فشل رفع الملف');
-                              }
-                              
-                              const url = (res as any)?.url;
-                              const title = (res as any)?.title;
-                              
-                              if (url) {
-                                updateUserData({ profileMusicUrl: url, profileMusicTitle: title, profileMusicEnabled: true });
-                                setMusicEnabled(true);
-                                setAudioError(false);
+                      <div style={{ marginTop: '8px' }}>
+                        {localUser?.profileMusicUrl ? (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <span style={{ fontSize: '12px', color: '#fff', flex: 1 }}>
+                              🎵 {musicTitle || 'موسيقى البروفايل'}
+                            </span>
+                            <button
+                              onClick={async () => {
+                                if (!confirm('هل أنت متأكد من حذف موسيقى البروفايل؟')) return;
                                 
-                                // تحديث مشغل الصوت
-                                if (audioRef.current) {
-                                  audioRef.current.src = url;
-                                  audioRef.current.volume = Math.max(0, Math.min(1, (musicVolume || 70) / 100));
-                                  audioRef.current.load(); // إعادة تحميل الصوت
+                                try {
+                                  setIsLoading(true);
+                                  await apiRequest(`/api/users/${localUser?.id}/profile-music`, { method: 'DELETE' });
                                   
-                                  // محاولة التشغيل بعد التحميل
-                                  setTimeout(async () => {
-                                    try {
-                                      await audioRef.current?.play();
-                                    } catch (playErr) {
-                                      }
-                                  }, 500);
+                                  // إيقاف الموسيقى وتنظيف المشغل
+                                  if (audioRef.current) { 
+                                    audioRef.current.pause(); 
+                                    audioRef.current.src = ''; 
+                                  }
+                                  
+                                  // تحديث البيانات المحلية
+                                  updateUserData({ 
+                                    profileMusicUrl: undefined, 
+                                    profileMusicTitle: '', 
+                                    profileMusicEnabled: false 
+                                  });
+                                  
+                                  setMusicTitle('');
+                                  setMusicEnabled(false);
+                                  setIsPlaying(false);
+                                  setAudioError(false);
+                                  
+                                  toast({ title: 'تم ✅', description: 'تم حذف موسيقى البروفايل' });
+                                } catch (err: any) {
+                                  console.error('خطأ في حذف الموسيقى:', err);
+                                  toast({ 
+                                    title: 'خطأ', 
+                                    description: err?.message || 'فشل حذف الموسيقى', 
+                                    variant: 'destructive' 
+                                  });
+                                } finally {
+                                  setIsLoading(false);
                                 }
-                                
-                                toast({ title: 'تم ✅', description: 'تم تحديث موسيقى البروفايل بنجاح' });
-                              }
-                            } catch (err: any) {
-                              console.error('خطأ في رفع الموسيقى:', err);
-                              toast({ 
-                                title: 'خطأ في رفع الملف', 
-                                description: err?.message || 'فشل رفع الملف الصوتي. تأكد من نوع وحجم الملف.', 
-                                variant: 'destructive' 
-                              });
-                            } finally {
-                              setIsLoading(false);
-                              try { 
-                                if (e.target) (e.target as HTMLInputElement).value = ''; 
-                              } catch {}
-                            }
-                          }}
-                        />
+                              }}
+                              style={{ 
+                                padding: '4px 8px', 
+                                borderRadius: '6px', 
+                                background: '#dc2626', 
+                                color: '#fff',
+                                border: 'none',
+                                fontSize: '11px',
+                                cursor: 'pointer'
+                              }}
+                              disabled={isLoading}
+                            >
+                              {isLoading ? '⏳' : '🗑️'} حذف
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => musicFileInputRef.current?.click()}
+                            style={{ 
+                              padding: '8px 12px', 
+                              borderRadius: '8px', 
+                              border: '1px solid rgba(255,255,255,0.2)', 
+                              background: 'rgba(255,255,255,0.08)', 
+                              color: '#fff',
+                              width: '100%',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            📁 اختر ملف صوتي (MP3, WAV, OGG)
+                          </button>
+                        )}
+                      </div>
+                      <input
+                        ref={musicFileInputRef}
+                        type="file"
+                        accept="audio/*"
+                        style={{ display: 'none' }}
+                        onChange={async (e) => {
+                                try {
+                                  // التحقق من الصلاحيات
+                                  const isAuthorized = currentUser && (
+                                    currentUser.userType === 'owner' || 
+                                    currentUser.userType === 'admin' || 
+                                    currentUser.userType === 'moderator'
+                                  );
+                                  
+                                  if (!isAuthorized) {
+                                    toast({
+                                      title: 'غير مسموح',
+                                      description: 'هذه الميزة متاحة للمشرفين فقط',
+                                      variant: 'destructive',
+                                    });
+                                    return;
+                                  }
+
+                                  const file = e.target.files?.[0];
+                                  if (!file) return;
+                                  
+                                  // التحقق من نوع الملف
+                                  const allowedTypes = ['audio/mpeg', 'audio/mp3', 'audio/ogg', 'audio/webm', 'audio/wav', 'audio/m4a', 'audio/aac'];
+                                  if (!allowedTypes.some(type => file.type.includes(type.split('/')[1]))) {
+                                    toast({
+                                      title: 'نوع ملف غير مدعوم',
+                                      description: 'يرجى اختيار ملف صوتي (MP3, WAV, OGG, M4A)',
+                                      variant: 'destructive',
+                                    });
+                                    return;
+                                  }
+                                  
+                                  // التحقق من حجم الملف (10 ميجا كحد أقصى)
+                                  if (file.size > 10 * 1024 * 1024) {
+                                    toast({
+                                      title: 'حجم الملف كبير جداً',
+                                      description: 'الحد الأقصى لحجم الملف هو 10 ميجابايت',
+                                      variant: 'destructive',
+                                    });
+                                    return;
+                                  }
+                                  
+                                  setIsLoading(true);
+                                  const fd = new FormData();
+                                  fd.append('music', file);
+                                  if (musicTitle) fd.append('title', musicTitle);
+                                  
+                                  const res = await apiRequest(`/api/upload/profile-music`, { method: 'POST', body: fd });
+                                  
+                                  if (!(res as any)?.success) {
+                                    throw new Error((res as any)?.error || 'فشل رفع الملف');
+                                  }
+                                  
+                                  const url = (res as any)?.url;
+                                  const title = (res as any)?.title;
+                                  
+                                  if (url) {
+                                    updateUserData({ profileMusicUrl: url, profileMusicTitle: title, profileMusicEnabled: true });
+                                    setMusicEnabled(true);
+                                    setAudioError(false);
+                                    
+                                    // تحديث مشغل الصوت
+                                    if (audioRef.current) {
+                                      audioRef.current.src = url;
+                                      audioRef.current.volume = Math.max(0, Math.min(1, (musicVolume || 70) / 100));
+                                      audioRef.current.load(); // إعادة تحميل الصوت
+                                      
+                                      // محاولة التشغيل بعد التحميل
+                                      setTimeout(async () => {
+                                        try {
+                                          await audioRef.current?.play();
+                                        } catch (playErr) {
+                                          }
+                                      }, 500);
+                                    }
+                                    
+                                    toast({ title: 'تم ✅', description: 'تم تحديث موسيقى البروفايل بنجاح' });
+                                  }
+                                } catch (err: any) {
+                                  console.error('خطأ في رفع الموسيقى:', err);
+                                  toast({ 
+                                    title: 'خطأ في رفع الملف', 
+                                    description: err?.message || 'فشل رفع الملف الصوتي. تأكد من نوع وحجم الملف.', 
+                                    variant: 'destructive' 
+                                  });
+                                } finally {
+                                  setIsLoading(false);
+                                  try { 
+                                    if (e.target) (e.target as HTMLInputElement).value = ''; 
+                                  } catch {}
+                                }
+                              }}
+                            />
+                    </div>
+                  )}
                 </div>
-                )}
               </div>
             )}
           </div>
