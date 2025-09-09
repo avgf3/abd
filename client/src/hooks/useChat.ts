@@ -56,6 +56,8 @@ interface ChatState {
   isLoading: boolean;
   notifications: Notification[];
   showKickCountdown: boolean;
+  globalSoundEnabled: boolean;
+  showSystemMessages: boolean;
 }
 
 // 🔥 SIMPLIFIED Action types - حذف التضارب
@@ -98,13 +100,26 @@ const initialState: ChatState = {
   isLoading: false,
   notifications: [],
   showKickCountdown: false,
+  globalSoundEnabled: true,
+  showSystemMessages: true,
 };
 
 // 🔥 SIMPLIFIED Reducer function - حذف التعقيدات والتضارب
 function chatReducer(state: ChatState, action: ChatAction): ChatState {
   switch (action.type) {
     case 'SET_CURRENT_USER':
-      return { ...state, currentUser: action.payload };
+      return {
+        ...state,
+        currentUser: action.payload,
+        globalSoundEnabled:
+          typeof (action.payload as any)?.globalSoundEnabled === 'boolean'
+            ? (action.payload as any).globalSoundEnabled
+            : state.globalSoundEnabled,
+        showSystemMessages:
+          typeof (action.payload as any)?.showSystemMessages === 'boolean'
+            ? (action.payload as any).showSystemMessages
+            : state.showSystemMessages,
+      };
 
     case 'SET_ONLINE_USERS': {
       // تحديث الكاش مع قائمة المستخدمين الجديدة
@@ -141,6 +156,11 @@ function chatReducer(state: ChatState, action: ChatAction): ChatState {
 
       if (isDuplicate) {
         return state; // لا نضيف الرسالة المكررة
+      }
+
+      // إخفاء رسائل النظام إذا كان المستخدم يفضل إخفاءها
+      if (message.messageType === 'system' && state.showSystemMessages === false) {
+        return state;
       }
 
       return {
@@ -688,7 +708,8 @@ export const useChat = () => {
               if (
                 !chatMessage.isPrivate &&
                 chatMessage.senderId !== currentUserRef.current?.id &&
-                roomId === currentRoomIdRef.current
+                roomId === currentRoomIdRef.current &&
+                (currentUserRef.current as any)?.globalSoundEnabled !== false
               ) {
                 playNotificationSound();
               }
@@ -1035,7 +1056,9 @@ export const useChat = () => {
 
             // تشغيل صوت الإشعار فقط للرسائل الواردة
             if (chatMessage.senderId !== currentUserRef.current.id) {
-              playNotificationSound();
+              if ((currentUserRef.current as any)?.globalSoundEnabled !== false) {
+                playNotificationSound();
+              }
               // عرض تنبيه مرئي للمُرسل
               try {
                 dispatch({ type: 'SET_NEW_MESSAGE_SENDER', payload: message.sender as any });

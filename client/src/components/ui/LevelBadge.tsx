@@ -93,6 +93,9 @@ export function PointsDisplay({ user, type = 'both' }: PointsDisplayProps) {
   const levelColor = getLevelColor(user.level || 1);
 
   if (type === 'gift') {
+    if ((user as any)?.showPointsToOthers === false) {
+      return <span style={{ color: levelColor }}>مخفية</span>;
+    }
     return <span style={{ color: levelColor }}>{formatPoints(user.points || 0)}</span>;
   }
 
@@ -107,7 +110,7 @@ export function PointsDisplay({ user, type = 'both' }: PointsDisplayProps) {
   return (
     <div className="points-display">
       <div style={{ color: levelColor }}>
-        {levelIcon} {levelInfo.title} - {formatPoints(user.points || 0)} نقطة
+        {levelIcon} {levelInfo.title} - {(user as any)?.showPointsToOthers === false ? 'مخفية' : `${formatPoints(user.points || 0)} نقطة`}
       </div>
     </div>
   );

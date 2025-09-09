@@ -731,8 +731,21 @@ export class VoiceManager extends EventEmitter {
    * تشغيل الأصوات
    */
   private playSound(type: 'join' | 'leave' | 'mute' | 'unmute'): void {
-    // تنفيذ تشغيل الأصوات
-    console.log(`🔊 تشغيل صوت: ${type}`);
+    try {
+      const globalPref = (() => {
+        try {
+          const userStr = localStorage.getItem('user');
+          if (!userStr) return true;
+          const u = JSON.parse(userStr);
+          if (typeof u?.globalSoundEnabled === 'boolean') return u.globalSoundEnabled;
+          return true;
+        } catch {
+          return true;
+        }
+      })();
+      if (!globalPref) return;
+      console.log(`🔊 تشغيل صوت: ${type}`);
+    } catch {}
   }
 
   /**

@@ -1003,6 +1003,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const dmPrivacySchema = z.object({
     dmPrivacy: z.enum(['all', 'friends', 'none']),
   });
+  const userPrefsSchema = z.object({
+    showPointsToOthers: z.boolean().optional(),
+    showSystemMessages: z.boolean().optional(),
+    globalSoundEnabled: z.boolean().optional(),
+  });
   app.post('/api/users/:userId/dm-privacy', protect.ownership, async (req, res) => {
     try {
       const userId = parseEntityId(req.params.userId as any).id as number;
@@ -1027,6 +1032,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true, dmPrivacy: (updated as any).dmPrivacy || 'all' });
     } catch (error: any) {
       console.error('❌ خطأ في تحديث dmPrivacy:', error);
+      res.status(500).json({ error: 'خطأ في الخادم' });
+    }
+  });
+
+  // تحديث تفضيلات المستخدم العامة (عرض النقاط/رسائل النظام/الأصوات)
+  app.post('/api/users/:userId/preferences', protect.ownership, async (req, res) => {
+    try {
+      const userId = parseEntityId(req.params.userId as any).id as number;
+      if (!userId || isNaN(userId)) {
+        return res.status(400).json({ error: 'معرّف المستخدم غير صالح' });
+      }
+
+      const parsed = userPrefsSchema.safeParse(req.body || {});
+      if (!parsed.success) {
+        return res.status(400).json({ error: 'بيانات تفضيلات غير صالحة' });
+      }
+
+      const updates: any = {};
+      if (Object.prototype.hasOwnProperty.call(parsed.data, 'showPointsToOthers')) {
+        updates.showPointsToOthers = Boolean(parsed.data.showPointsToOthers);
+      }
+      if (Object.prototype.hasOwnProperty.call(parsed.data, 'showSystemMessages')) {
+        updates.showSystemMessages = Boolean(parsed.data.showSystemMessages);
+      }
+      if (Object.prototype.hasOwnProperty.call(parsed.data, 'globalSoundEnabled')) {
+        updates.globalSoundEnabled = Boolean(parsed.data.globalSoundEnabled);
+      }
+
+      if (Object.keys(updates).length === 0) {
+        return res.status(400).json({ error: 'لا توجد بيانات للتحديث' });
+      }
+
+      const updated = await storage.updateUser(userId, updates);
+      if (!updated) {
+        return res.status(500).json({ error: 'فشل في تحديث التفضيلات' });
+      }
+
+      try { emitUserUpdatedToUser(userId, updated); } catch {}
+      try { emitUserUpdatedToAll(updated); } catch {}
+
+      res.json({ success: true, preferences: {
+        showPointsToOthers: (updated as any).showPointsToOthers,
+        showSystemMessages: (updated as any).showSystemMessages,
+        globalSoundEnabled: (updated as any).globalSoundEnabled,
+      }});
+    } catch (error) {
+      console.error('❌ خطأ في تحديث تفضيلات المستخدم:', error);
       res.status(500).json({ error: 'خطأ في الخادم' });
     }
   });
@@ -4319,6 +4371,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       country: sanitized.country,
       dmPrivacy: sanitized.dmPrivacy,
       isMuted: sanitized.isMuted,
+      // التفضيلات العامة
+      showPointsToOthers: sanitized.showPointsToOthers,
+      showSystemMessages: sanitized.showSystemMessages,
+      globalSoundEnabled: sanitized.globalSoundEnabled,
       // موسيقى البروفايل
       profileMusicUrl: sanitized.profileMusicUrl,
       profileMusicTitle: sanitized.profileMusicTitle,

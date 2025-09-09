@@ -96,6 +96,7 @@ export default function ProfileModal({
   // تشغيل الموسيقى تلقائياً عند فتح البروفايل (معطّل إذا كانت مُدارة خارجياً)
   useEffect(() => {
     if (externalAudioManaged) return;
+    if ((currentUser as any)?.globalSoundEnabled === false) return;
     if (localUser?.profileMusicUrl && musicEnabled && audioRef.current) {
       let attempts = 0;
       const maxAttempts = 3;
@@ -168,7 +169,7 @@ export default function ProfileModal({
         document.removeEventListener('touchstart', playAudio);
       };
     }
-  }, [localUser?.profileMusicUrl, musicEnabled, musicVolume, externalAudioManaged]);
+  }, [localUser?.profileMusicUrl, musicEnabled, musicVolume, externalAudioManaged, (currentUser as any)?.globalSoundEnabled]);
   
   // معالج أخطاء الصوت
   const handleAudioError = () => {
@@ -328,6 +329,34 @@ export default function ProfileModal({
       toast({ title: 'تم', description: 'تم تحديث إعدادات الخاص' });
     } catch (err: any) {
       toast({ title: 'خطأ', description: err?.message || 'فشل تحديث الإعداد', variant: 'destructive' });
+    }
+  };
+
+  // تحديث تفضيلات المستخدم العامة
+  const updatePreferences = async (prefs: Partial<{ showPointsToOthers: boolean; showSystemMessages: boolean; globalSoundEnabled: boolean }>) => {
+    try {
+      if (!currentUser || currentUser.id !== localUser?.id) return;
+      const body: Record<string, any> = {};
+      if (Object.prototype.hasOwnProperty.call(prefs, 'showPointsToOthers')) {
+        body.showPointsToOthers = !!prefs.showPointsToOthers;
+      }
+      if (Object.prototype.hasOwnProperty.call(prefs, 'showSystemMessages')) {
+        body.showSystemMessages = !!prefs.showSystemMessages;
+      }
+      if (Object.prototype.hasOwnProperty.call(prefs, 'globalSoundEnabled')) {
+        body.globalSoundEnabled = !!prefs.globalSoundEnabled;
+      }
+      if (Object.keys(body).length === 0) return;
+
+      await apiRequest(`/api/users/${currentUser.id}/preferences`, {
+        method: 'POST',
+        body,
+      });
+
+      updateUserData(body as any);
+      toast({ title: 'تم', description: 'تم تحديث التفضيلات' });
+    } catch (err: any) {
+      toast({ title: 'خطأ', description: err?.message || 'فشل تحديث التفضيلات', variant: 'destructive' });
     }
   };
 
@@ -2586,7 +2615,11 @@ export default function ProfileModal({
                   </span>
                 </p>
                 <p>
-                  🎁 نقاط الهدايا: <span>{localUser?.points || 0}</span>
+                  🎁 نقاط الهدايا: <span>
+                    {currentUser && localUser && currentUser.id !== localUser.id && (localUser as any)?.showPointsToOthers === false
+                      ? 'مخفية'
+                      : (localUser?.points || 0)}
+                  </span>
                 </p>
                 {/* إرسال النقاط - يظهر فقط للمستخدمين الآخرين */}
                 {currentUser && currentUser.id !== localUser?.id && (
@@ -2683,43 +2716,67 @@ export default function ProfileModal({
 
                   
 
-                  <div style={{ 
-                    display: 'flex', 
-                    justifyContent: 'space-between', 
+                  {/* عرض نقاطي للآخرين */}
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
                     alignItems: 'center',
                     marginBottom: '8px',
                     padding: '8px',
                     borderRadius: '6px',
                     background: 'rgba(255,255,255,0.04)'
                   }}>
-                    <span style={{ color: '#fff', fontSize: '14px' }}>💰 من يمكنه رؤية نقاطي</span>
-                    <span style={{ color: '#888', fontSize: '12px' }}>قيد التطوير</span>
+                    <span style={{ color: '#fff', fontSize: '14px' }}>🏅 من يمكنه رؤية نقاطي</span>
+                    <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#ddd' }}>
+                      <input
+                        type="checkbox"
+                        checked={(localUser as any)?.showPointsToOthers !== false}
+                        onChange={(e) => updatePreferences({ showPointsToOthers: e.target.checked })}
+                      />
+                      <span style={{ fontSize: '12px' }}>{(localUser as any)?.showPointsToOthers === false ? 'مخفية' : 'مرئية'}</span>
+                    </label>
                   </div>
 
-                  <div style={{ 
-                    display: 'flex', 
-                    justifyContent: 'space-between', 
+                  {/* رسائل النظام في الغرف */}
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
                     alignItems: 'center',
                     marginBottom: '8px',
                     padding: '8px',
                     borderRadius: '6px',
                     background: 'rgba(255,255,255,0.04)'
                   }}>
-                    <span style={{ color: '#fff', fontSize: '14px' }}>📢 ظهور رسائل الانضمام</span>
-                    <span style={{ color: '#888', fontSize: '12px' }}>قيد التطوير</span>
+                    <span style={{ color: '#fff', fontSize: '14px' }}>🧩 إظهار رسائل النظام (انضمام/مغادرة)</span>
+                    <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#ddd' }}>
+                      <input
+                        type="checkbox"
+                        checked={(localUser as any)?.showSystemMessages !== false}
+                        onChange={(e) => updatePreferences({ showSystemMessages: e.target.checked })}
+                      />
+                      <span style={{ fontSize: '12px' }}>{(localUser as any)?.showSystemMessages === false ? 'إخفاء' : 'إظهار'}</span>
+                    </label>
                   </div>
 
-                  <div style={{ 
-                    display: 'flex', 
-                    justifyContent: 'space-between', 
+                  {/* أصوات الموقع */}
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
                     alignItems: 'center',
                     marginBottom: '8px',
                     padding: '8px',
                     borderRadius: '6px',
                     background: 'rgba(255,255,255,0.04)'
                   }}>
-                    <span style={{ color: '#fff', fontSize: '14px' }}>🔊 الأصوات</span>
-                    <span style={{ color: '#888', fontSize: '12px' }}>قيد التطوير</span>
+                    <span style={{ color: '#fff', fontSize: '14px' }}>🔊 الأصوات في الموقع</span>
+                    <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#ddd' }}>
+                      <input
+                        type="checkbox"
+                        checked={(localUser as any)?.globalSoundEnabled !== false}
+                        onChange={(e) => updatePreferences({ globalSoundEnabled: e.target.checked })}
+                      />
+                      <span style={{ fontSize: '12px' }}>{(localUser as any)?.globalSoundEnabled === false ? 'مطفأة' : 'مفعلة'}</span>
+                    </label>
                   </div>
                 </div>
 

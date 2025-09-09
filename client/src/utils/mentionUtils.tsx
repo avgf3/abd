@@ -5,6 +5,14 @@ import type { ChatUser } from '@/types/chat';
 // تشغيل صوت التنبيه للمنشن
 export const playMentionSound = () => {
   try {
+    // احترام إعداد كتم الأصوات للمستخدم الحالي (إن وُجد في localStorage)
+    try {
+      const userStr = localStorage.getItem('user');
+      if (userStr) {
+        const u = JSON.parse(userStr);
+        if (u && u.globalSoundEnabled === false) return;
+      }
+    } catch {}
     // إنشاء صوت تنبيه بسيط باستخدام Web Audio API
     const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
     const oscillator = audioContext.createOscillator();

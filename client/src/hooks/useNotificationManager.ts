@@ -45,6 +45,7 @@ export function useNotificationManager(currentUser: ChatUser | null) {
 
   // Play notification sound
   const playNotificationSound = useCallback(() => {
+    if ((currentUser as any)?.globalSoundEnabled === false) return;
     const tryBeep = () => {
       try {
         const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();

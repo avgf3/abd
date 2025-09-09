@@ -39,6 +39,10 @@ export interface ChatUser {
   profileMusicTitle?: string;
   profileMusicEnabled?: boolean;
   profileMusicVolume?: number; // 0-100
+  // تفضيلات العرض والصوت
+  showPointsToOthers?: boolean; // إظهار نقاطي للآخرين
+  showSystemMessages?: boolean; // إظهار رسائل النظام في الغرف
+  globalSoundEnabled?: boolean; // تفعيل أصوات الموقع
 }
 
 export interface ChatMessage {
