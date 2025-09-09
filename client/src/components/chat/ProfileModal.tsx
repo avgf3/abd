@@ -2614,23 +2614,26 @@ export default function ProfileModal({
               >
                 معلوماتي
               </button>
-              <button
-                onClick={() => setActiveTab('options')}
-                style={{
-                  flex: 1,
-                  padding: '8px',
-                  background: activeTab === 'options' ? 'rgba(255,255,255,0.1)' : 'transparent',
-                  color: '#fff',
-                  border: 'none',
-                  fontSize: '14px',
-                  fontWeight: 'bold',
-                  cursor: 'pointer',
-                  transition: 'background 0.2s ease',
-                  borderRight: '1px solid rgba(255,255,255,0.08)'
-                }}
-              >
-                خيارات
-              </button>
+              {/* إخفاء تبويب "خيارات" للمستخدمين الآخرين لأنه فارغ */}
+              {localUser?.id === currentUser?.id && (
+                <button
+                  onClick={() => setActiveTab('options')}
+                  style={{
+                    flex: 1,
+                    padding: '8px',
+                    background: activeTab === 'options' ? 'rgba(255,255,255,0.1)' : 'transparent',
+                    color: '#fff',
+                    border: 'none',
+                    fontSize: '14px',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    transition: 'background 0.2s ease',
+                    borderRight: '1px solid rgba(255,255,255,0.08)'
+                  }}
+                >
+                  خيارات
+                </button>
+              )}
               <button
                 onClick={() => setActiveTab('other')}
                 style={{
@@ -2669,14 +2672,20 @@ export default function ProfileModal({
               
               <div className="profile-info">
                 <small
+                  onClick={() => localUser?.id === currentUser?.id && openEditModal('status')}
                   style={{ 
                     display: 'block', 
                     textAlign: 'center',
                     width: '100%',
-                    margin: '0 auto 12px auto'
+                    margin: '0 auto 12px auto',
+                    cursor: localUser?.id === currentUser?.id ? 'pointer' : 'default',
+                    color: '#ddd',
+                    fontSize: '13px',
+                    fontStyle: 'italic'
                   }}
+                  title={localUser?.id === currentUser?.id ? 'اضغط لتعديل الحالة' : ''}
                 >
-                  {lastSeenText}
+                  {localUser?.status || ''}
                 </small>
               </div>
 
