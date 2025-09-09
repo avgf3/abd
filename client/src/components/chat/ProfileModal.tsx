@@ -2620,26 +2620,11 @@ export default function ProfileModal({
                 border: '1px solid rgba(255,255,255,0.08)',
                 background: 'rgba(255,255,255,0.04)'
               }}>
-                <h4 style={{ 
-                  margin: '0 0 12px 0', 
-                  fontSize: '14px', 
-                  fontWeight: 'bold', 
-                  color: '#fff',
-                  textAlign: 'center',
-                  borderBottom: '1px solid rgba(255,255,255,0.1)',
-                  paddingBottom: '8px'
-                }}>خيارات</h4>
+                
 
                 {/* إعدادات الرسائل الخاصة */}
                 <div style={{ marginBottom: '16px' }}>
-                  <h5 style={{ 
-                    margin: '0 0 8px 0', 
-                    fontSize: '13px', 
-                    fontWeight: 'bold', 
-                    color: '#fff',
-                    borderBottom: '1px solid rgba(255,255,255,0.1)',
-                    paddingBottom: '4px'
-                  }}>💬 إعدادات الرسائل الخاصة</h5>
+                  
 
                   <div style={{ 
                     display: 'flex', 
@@ -2650,7 +2635,7 @@ export default function ProfileModal({
                     borderRadius: '6px',
                     background: 'rgba(255,255,255,0.04)'
                   }}>
-                    <span style={{ color: '#fff', fontSize: '14px' }}>🔒 إعدادات الخصوصية</span>
+                    <span style={{ color: '#fff', fontSize: '14px' }}>💬 إعدادات الرسائل الخاصة</span>
                     <select 
                       style={{ 
                         background: 'rgba(255,255,255,0.1)', 
