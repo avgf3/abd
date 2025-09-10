@@ -1339,9 +1339,8 @@ export const useChat = () => {
           } catch {}
         });
 
-        // معالج فشل إعادة الاتصال النهائي
+        // معالج فشل إعادة الاتصال
         s.on('reconnect_failed', () => {
-          console.warn('⚠️ فشل في إعادة الاتصال بعد عدة محاولات');
           dispatch({
             type: 'SET_CONNECTION_ERROR',
             payload: 'فقدان الاتصال. يرجى إعادة تحميل الصفحة.',
@@ -1367,18 +1366,16 @@ export const useChat = () => {
     [setupSocketListeners, state.currentRoomId]
   );
 
-  // 🔥 SIMPLIFIED Join room function
+  // دالة انضمام بسيطة
   const joinRoom = useCallback(
     (roomId: string) => {
       if (!roomId || roomId === 'public' || roomId === 'friends') {
-        console.warn('Invalid room ID provided to joinRoom:', roomId);
         return;
       }
       if (state.currentRoomId === roomId) {
         return;
       }
 
-      // Do NOT change local room yet; wait for server ack (roomJoined)
       if (socket.current?.connected && state.currentUser?.id) {
         socket.current.emit('joinRoom', {
           roomId,
@@ -1386,7 +1383,6 @@ export const useChat = () => {
           username: state.currentUser.username,
         });
       } else {
-        // Queue join until we reconnect
         pendingJoinRoomRef.current = roomId;
       }
     },

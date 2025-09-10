@@ -18,8 +18,8 @@ interface PendingUpdate {
 
 class UserListOptimizer {
   private pendingUpdates = new Map<string, PendingUpdate>();
-  private readonly DEBOUNCE_DELAY = 1000; // تأخير 1 ثانية للتجميع
-  private readonly MAX_BATCH_SIZE = 50; // حد أقصى للأحداث في المجموعة الواحدة
+  private readonly DEBOUNCE_DELAY = 300; // تأخير قصير للكفاءة
+  private readonly MAX_BATCH_SIZE = 20; // حجم صغير للسرعة
 
   constructor(private emitCallback: (roomId: string, users: any[]) => Promise<void>) {}
 
@@ -81,12 +81,10 @@ class UserListOptimizer {
     }
   }
 
-  // تحسين الأحداث وإزالة التكرارات
+  // تحسين الأحداث - نسخة مبسطة
   private optimizeEvents(events: UserUpdateEvent[]): UserUpdateEvent[] {
-    // ترتيب الأحداث حسب الوقت
     events.sort((a, b) => a.timestamp - b.timestamp);
     
-    // تجميع الأحداث حسب المستخدم
     const userEvents = new Map<number, UserUpdateEvent[]>();
     for (const event of events) {
       if (!userEvents.has(event.userId)) {
@@ -95,11 +93,10 @@ class UserListOptimizer {
       userEvents.get(event.userId)!.push(event);
     }
     
-    // الاحتفاظ بآخر حدث لكل مستخدم فقط
+    // أخذ آخر حدث لكل مستخدم فقط
     const optimized: UserUpdateEvent[] = [];
     for (const [userId, userEventList] of userEvents) {
-      const lastEvent = userEventList[userEventList.length - 1];
-      optimized.push(lastEvent);
+      optimized.push(userEventList[userEventList.length - 1]);
     }
     
     return optimized;

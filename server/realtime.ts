@@ -187,22 +187,24 @@ export function updateConnectedUserCache(userOrId: any, maybeUser?: any) {
   } catch {}
 }
 
-// بناء قائمة المتصلين بكفاءة اعتماداً على sockets المسجلة
+// بناء قائمة المتصلين - حل بسيط وسريع
 export async function buildOnlineUsersForRoom(roomId: string) {
-
   const userMap = new Map<number, any>();
+  
   for (const [_, entry] of connectedUsers.entries()) {
-    // تحقق سريع عبر sockets دون مسح كامل
-    for (const socketMeta of entry.sockets.values()) {
-      if (
-        socketMeta.room === roomId &&
-        entry.user &&
-        entry.user.id &&
-        entry.user.username &&
-        entry.user.userType
-      ) {
-        userMap.set(entry.user.id, entry.user);
-        break;
+    if (entry.user && entry.user.id && entry.user.username) {
+      // إذا كان المستخدم في الغرفة أو متصل حديثاً (أقل من 30 ثانية)
+      const isRecentlyConnected = Date.now() - entry.lastSeen.getTime() < 30000;
+      
+      for (const socketMeta of entry.sockets.values()) {
+        if (socketMeta.room === roomId || (isRecentlyConnected && !socketMeta.room)) {
+          userMap.set(entry.user.id, entry.user);
+          // إصلاح بسيط: إذا كان متصل حديثاً بدون غرفة، ضعه في الغرفة المطلوبة
+          if (!socketMeta.room) {
+            socketMeta.room = roomId;
+          }
+          break;
+        }
       }
     }
   }
@@ -345,6 +347,7 @@ async function joinRoom(
   // إرسال التأكيد للمستخدم المنضم فقط (القائمة ستُرسل عبر النظام المحسّن)
   const users = await buildOnlineUsersForRoom(roomId);
   socket.emit('message', { type: 'roomJoined', roomId, users });
+
 
   // رسائل حديثة (تجنب التكرار عند الانضمام السريع): لا داعي إذا لم تتغير الغرفة فعلياً
   try {
@@ -625,6 +628,7 @@ export function setupRealtime(httpServer: HttpServer): IOServer<ClientToServerEv
       timestamp: new Date().toISOString(),
     });
 
+
     // Helper to extract bearer token or cookie-based auth token from handshake/headers
     const getTokenFromHeaders = (): string | null => {
       try {
@@ -770,7 +774,7 @@ export function setupRealtime(httpServer: HttpServer): IOServer<ClientToServerEv
             await storage.setUserOnlineStatus(user.id, true);
           } catch {}
 
-          // Track connection - لا نضع المستخدم في أي غرفة تلقائياً
+          // Track connection
           const existing = connectedUsers.get(user.id);
           if (!existing) {
             connectedUsers.set(user.id, {
@@ -784,8 +788,6 @@ export function setupRealtime(httpServer: HttpServer): IOServer<ClientToServerEv
             existing.lastSeen = new Date();
             connectedUsers.set(user.id, existing);
           }
-
-          // لا ننضم تلقائياً لأي غرفة - المستخدم يختار بنفسه
 
           socket.emit('authenticated', { message: 'تم الاتصال بنجاح', user });
         } catch (err) {
@@ -1062,6 +1064,7 @@ export function setupRealtime(httpServer: HttpServer): IOServer<ClientToServerEv
 
   // تحميل البوتات النشطة عند بدء التشغيل
   loadActiveBots();
+
 
   return io;
 }

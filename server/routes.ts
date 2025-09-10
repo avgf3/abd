@@ -3140,6 +3140,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Notifications API
+
   app.get('/api/notifications/:userId', async (req, res) => {
     try {
       // Check database availability
