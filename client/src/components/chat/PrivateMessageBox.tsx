@@ -565,66 +565,80 @@ export default function PrivateMessageBox({
           </div>
 
           <div className="p-4 border-t border-gray-200 bg-white soft-entrance">
-            {/* عرض رسالة الخطأ إن وجدت */}
-            {sendError && (
-              <div className="mb-2 p-2 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm flex items-center justify-between">
-                <span>⚠️ {sendError}</span>
-                <button
-                  onClick={() => setSendError(null)}
-                  className="text-red-500 hover:text-red-700"
-                >
-                  ✕
-                </button>
+            {/* التحقق من إعدادات الخصوصية */}
+            {((user as any)?.dmPrivacy === 'none') ? (
+              <div className="flex items-center justify-center p-6 bg-red-50 border border-red-200 rounded-lg">
+                <div className="text-center">
+                  <div className="text-3xl mb-2">🔒</div>
+                  <p className="text-red-700 font-medium text-sm">
+                    عفواً هذا العضو قامَ بإغلاق الرسائل الخاصة
+                  </p>
+                </div>
               </div>
-            )}
-            <div className="flex gap-3 items-end">
-              <Input
-                ref={inputRef}
-                value={messageText}
-                onChange={(e) => setMessageText(e.target.value)}
-                onKeyDown={handleKeyDown}
-                onPaste={handlePaste}
-                placeholder="اكتب رسالتك هنا..."
-                className={`flex-1 bg-gray-50 border text-foreground placeholder:text-muted-foreground rounded-lg ${
-                  sendError ? 'border-red-300' : 'border-gray-300'
-                }`}
-                disabled={isSending}
-                style={{ color: composerTextColor, fontWeight: composerBold ? 600 : undefined }}
-              />
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={(e) => setImageFile(e.target.files?.[0] || null)}
-                className="hidden"
-              />
-              {/* Removed ComposerPlusMenu (gallery/color/bold) */}
-              <Button
-                onClick={handleSend}
-                disabled={(!messageText.trim() && !imageFile) || isSending}
-                className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-2 rounded-lg font-medium transition-all disabled:opacity-50"
-              >
-                {isSending ? (
-                  <>
-                    <span className="animate-spin">⌛</span> جاري الإرسال...
-                  </>
-                ) : (
-                  <>📤 إرسال</>
+            ) : (
+              <>
+                {/* عرض رسالة الخطأ إن وجدت */}
+                {sendError && (
+                  <div className="mb-2 p-2 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm flex items-center justify-between">
+                    <span>⚠️ {sendError}</span>
+                    <button
+                      onClick={() => setSendError(null)}
+                      className="text-red-500 hover:text-red-700"
+                    >
+                      ✕
+                    </button>
+                  </div>
                 )}
-              </Button>
-            </div>
-            {imageFile && (
-              <div className="mt-2 text-xs text-gray-600 flex items-center gap-2">
-                <span>سيتم إرسال صورة:</span>
-                <span className="font-medium truncate max-w-[200px]">{imageFile.name}</span>
-                <button
-                  className="text-red-600 hover:underline"
-                  onClick={() => setImageFile(null)}
-                  type="button"
-                >
-                  إزالة
-                </button>
-              </div>
+                <div className="flex gap-3 items-end">
+                  <Input
+                    ref={inputRef}
+                    value={messageText}
+                    onChange={(e) => setMessageText(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    onPaste={handlePaste}
+                    placeholder="اكتب رسالتك هنا..."
+                    className={`flex-1 bg-gray-50 border text-foreground placeholder:text-muted-foreground rounded-lg ${
+                      sendError ? 'border-red-300' : 'border-gray-300'
+                    }`}
+                    disabled={isSending}
+                    style={{ color: composerTextColor, fontWeight: composerBold ? 600 : undefined }}
+                  />
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => setImageFile(e.target.files?.[0] || null)}
+                    className="hidden"
+                  />
+                  {/* Removed ComposerPlusMenu (gallery/color/bold) */}
+                  <Button
+                    onClick={handleSend}
+                    disabled={(!messageText.trim() && !imageFile) || isSending}
+                    className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-2 rounded-lg font-medium transition-all disabled:opacity-50"
+                  >
+                    {isSending ? (
+                      <>
+                        <span className="animate-spin">⌛</span> جاري الإرسال...
+                      </>
+                    ) : (
+                      <>📤 إرسال</>
+                    )}
+                  </Button>
+                </div>
+                {imageFile && (
+                  <div className="mt-2 text-xs text-gray-600 flex items-center gap-2">
+                    <span>سيتم إرسال صورة:</span>
+                    <span className="font-medium truncate max-w-[200px]">{imageFile.name}</span>
+                    <button
+                      className="text-red-600 hover:underline"
+                      onClick={() => setImageFile(null)}
+                      type="button"
+                    >
+                      إزالة
+                    </button>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </motion.div>
