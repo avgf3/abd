@@ -1,7 +1,13 @@
 import type { Server as HttpServer } from 'http';
-
-import type { Socket } from 'socket.io';
 import { Server as IOServer } from 'socket.io';
+
+import type { 
+  CustomSocket,
+  ServerToClientEvents,
+  ClientToServerEvents,
+  InterServerEvents,
+  SocketData
+} from './types/socket';
 
 import { moderationSystem } from './moderation';
 import { sanitizeInput, validateMessageContent } from './security';
@@ -14,14 +20,8 @@ import { storage } from './storage';
 import { sanitizeUsersArray } from './utils/data-sanitizer';
 import { getClientIpFromHeaders, getDeviceIdFromHeaders } from './utils/device';
 import { verifyAuthToken } from './utils/auth-token';
-
-interface CustomSocket extends Socket {
-  userId?: number;
-  username?: string;
-  userType?: string;
-  isAuthenticated?: boolean;
-  currentRoom?: string | null;
-}
+import { setupSocketMonitoring, socketPerformanceMonitor } from './utils/socket-performance';
+import { createUserListOptimizer, getUserListOptimizer, optimizedUserJoin, optimizedUserLeave } from './utils/user-list-optimizer';
 
 const GENERAL_ROOM = 'general';
 
@@ -188,7 +188,7 @@ export function updateConnectedUserCache(userOrId: any, maybeUser?: any) {
 }
 
 // بناء قائمة المتصلين بكفاءة اعتماداً على sockets المسجلة
-async function buildOnlineUsersForRoom(roomId: string) {
+export async function buildOnlineUsersForRoom(roomId: string) {
 
   const userMap = new Map<number, any>();
   for (const [_, entry] of connectedUsers.entries()) {
@@ -244,8 +244,27 @@ export async function emitOnlineUsersForRoom(roomId: string): Promise<void> {
   } catch {}
 }
 
+// 🔥 دالة محسّنة لبث قائمة المستخدمين مع debouncing
+async function emitOptimizedOnlineUsers(roomId: string, users: any[]): Promise<void> {
+  try {
+    if (!roomId || !ioInstance) return;
+    
+    console.log(`📤 إرسال قائمة محدثة للغرفة ${roomId}: ${users.length} مستخدم`);
+    
+    ioInstance.to(`room_${roomId}`).emit('message', {
+      type: 'onlineUsers',
+      users,
+      roomId,
+      source: 'optimized_update',
+      timestamp: Date.now(),
+    });
+  } catch (error) {
+    console.error('خطأ في إرسال قائمة المستخدمين المحسّنة:', error);
+  }
+}
+
 async function joinRoom(
-  io: IOServer,
+  io: IOServer<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>,
   socket: CustomSocket,
   userId: number,
   username: string,
@@ -317,13 +336,15 @@ async function joinRoom(
     connectedUsers.set(userId, entry);
   }
 
-  // إبطال cache الغرفة عند انضمام مستخدم جديد
-  // لم نعد نستخدم الكاش
+  // 🔥 استخدام النظام المحسّن لتحديث قائمة المستخدمين
+  const user = entry?.user || (await storage.getUser(userId));
+  if (user) {
+    optimizedUserJoin(roomId, userId, user);
+  }
 
-  // إرسال التأكيد للمستخدم المنضم وبث القائمة المحدثة للجميع
+  // إرسال التأكيد للمستخدم المنضم فقط (القائمة ستُرسل عبر النظام المحسّن)
   const users = await buildOnlineUsersForRoom(roomId);
   socket.emit('message', { type: 'roomJoined', roomId, users });
-  io.to(`room_${roomId}`).emit('message', { type: 'onlineUsers', users, roomId, source: 'join' });
 
   // رسائل حديثة (تجنب التكرار عند الانضمام السريع): لا داعي إذا لم تتغير الغرفة فعلياً
   try {
@@ -361,7 +382,7 @@ async function joinRoom(
 }
 
 async function leaveRoom(
-  io: IOServer,
+  io: IOServer<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>,
   socket: CustomSocket,
   userId: number,
   username: string,
@@ -377,6 +398,10 @@ async function leaveRoom(
   if (socket.currentRoom === roomId) socket.currentRoom = null;
 
   socket.emit('message', { type: 'roomLeft', roomId });
+  
+  // 🔥 استخدام النظام المحسّن لتحديث قائمة المستخدمين
+  optimizedUserLeave(roomId, userId);
+  
   // رسالة نظامية: مغادرة الغرفة الحالية
   try {
     const entry = connectedUsers.get(userId);
@@ -405,21 +430,17 @@ async function leaveRoom(
       },
     });
   } catch {}
-
-  // Push updated online users for the room
-  const users = await buildOnlineUsersForRoom(roomId);
-  io.to(`room_${roomId}`).emit('message', { type: 'onlineUsers', users, roomId, source: 'leave' });
 }
 
-let ioInstance: IOServer | null = null;
+let ioInstance: IOServer<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData> | null = null;
 
-export function getIO(): IOServer {
+export function getIO(): IOServer<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData> {
   if (!ioInstance) throw new Error('Socket.IO is not initialized yet');
   return ioInstance;
 }
 
-export function setupRealtime(httpServer: HttpServer): IOServer {
-  const io = new IOServer(httpServer, {
+export function setupRealtime(httpServer: HttpServer): IOServer<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData> {
+  const io = new IOServer<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>(httpServer, {
     cors: {
       origin: (origin, callback) => {
         // السماح بجميع الأصول من نفس النطاق أو من Render
@@ -435,9 +456,9 @@ export function setupRealtime(httpServer: HttpServer): IOServer {
         
         // السماح بالأصول المحددة في البيئة
         const allowedOrigins = [
-          process.env.RENDER_EXTERNAL_URL,
-          process.env.FRONTEND_URL,
-          process.env.CORS_ORIGIN,
+          process?.env?.RENDER_EXTERNAL_URL,
+          process?.env?.FRONTEND_URL,
+          process?.env?.CORS_ORIGIN,
         ].filter(Boolean);
         
         if (allowedOrigins.some(allowed => origin.startsWith(allowed))) {
@@ -445,7 +466,7 @@ export function setupRealtime(httpServer: HttpServer): IOServer {
         }
         
         // في بيئة التطوير، السماح بكل شيء
-        if (process.env.NODE_ENV === 'development') {
+        if (process?.env?.NODE_ENV === 'development') {
           return callback(null, true);
         }
         
@@ -456,27 +477,37 @@ export function setupRealtime(httpServer: HttpServer): IOServer {
       credentials: true,
     },
     path: '/socket.io',
-    // تفعيل WebSocket حيثما أمكن مع الاحتفاظ بـ polling كاحتياطي
-    transports: process.env.SOCKET_IO_POLLING_ONLY === 'true'
+    // 🔥 تحسين النقل - إعطاء أولوية للـ WebSocket
+    transports: (process?.env?.SOCKET_IO_POLLING_ONLY === 'true')
       ? ['polling']
       : ['websocket', 'polling'],
     allowEIO3: true,
-    pingTimeout: 180000, // زيادة timeout إلى 3 دقائق للإنتاج
-    pingInterval: 45000, // ping كل 45 ثانية
-    upgradeTimeout: 45000, // زيادة timeout للترقية
-    allowUpgrades: process.env.SOCKET_IO_POLLING_ONLY !== 'true',
+    // 🔥 تحسين أوقات الاستجابة - تقليل timeout لتحسين الأداء
+    pingTimeout: (process?.env?.NODE_ENV === 'production') ? 60000 : 30000, // دقيقة واحدة في الإنتاج، 30 ثانية في التطوير
+    pingInterval: (process?.env?.NODE_ENV === 'production') ? 25000 : 15000, // ping كل 25 ثانية في الإنتاج، 15 في التطوير
+    upgradeTimeout: 30000, // تقليل timeout للترقية لتحسين الاستجابة
+    allowUpgrades: (process?.env?.SOCKET_IO_POLLING_ONLY !== 'true'),
     cookie: false,
     serveClient: false,
-    maxHttpBufferSize: 1e7, // زيادة حجم البيانات المسموح به
-    perMessageDeflate: false, // تعطيل الضغط لتحسين الأداء
-    httpCompression: false, // تعطيل ضغط HTTP
+    // 🔥 تحسين حجم البيانات والأداء
+    maxHttpBufferSize: 5e6, // تقليل إلى 5MB لتحسين الذاكرة
+    perMessageDeflate: {
+      // تفعيل الضغط الذكي للرسائل الكبيرة فقط
+      threshold: 1024, // ضغط الرسائل أكبر من 1KB
+      concurrencyLimit: 10, // حد التزامن
+      memLevel: 7, // توفير ذاكرة
+    },
+    httpCompression: true, // تفعيل ضغط HTTP للأداء الأفضل
+    // 🔥 إعدادات جديدة لتحسين الأداء
+    connectTimeout: 45000, // timeout للاتصال الأولي
+    cleanupEmptyChildNamespaces: true, // تنظيف namespaces الفارغة
     allowRequest: (req, callback) => {
       try {
         const originHeader = req.headers.origin || '';
         const hostHeader = req.headers.host || '';
         
         // السماح دائماً في بيئة التطوير
-        if (process.env.NODE_ENV === 'development') {
+        if (process?.env?.NODE_ENV === 'development') {
           return callback(null, true);
         }
         
@@ -486,9 +517,9 @@ export function setupRealtime(httpServer: HttpServer): IOServer {
         }
         
         const envOrigins = [
-          process.env.RENDER_EXTERNAL_URL,
-          process.env.FRONTEND_URL,
-          process.env.CORS_ORIGIN,
+          process?.env?.RENDER_EXTERNAL_URL,
+          process?.env?.FRONTEND_URL,
+          process?.env?.CORS_ORIGIN,
         ].filter(Boolean) as string[];
         const envHosts = envOrigins
           .map((u) => {
@@ -506,7 +537,7 @@ export function setupRealtime(httpServer: HttpServer): IOServer {
             return '';
           }
         })();
-        const isDev = process.env.NODE_ENV !== 'production';
+        const isDev = (process?.env?.NODE_ENV !== 'production');
         // اعتبر نفس المضيف حتى لو اختلف المنفذ
         const isSameHost =
           originHost &&
@@ -548,6 +579,12 @@ export function setupRealtime(httpServer: HttpServer): IOServer {
   });
 
   ioInstance = io;
+
+  // 🔥 تهيئة نظام مراقبة الأداء
+  setupSocketMonitoring(io);
+
+  // 🔥 تهيئة محسن قائمة المستخدمين
+  createUserListOptimizer(emitOptimizedOnlineUsers);
 
   // تهيئة خدمة الصوت مع Socket.IO
   voiceService.initialize(io);
@@ -1034,7 +1071,8 @@ async function loadActiveBots() {
   try {
     const { db } = await import('./database-adapter');
     const { bots } = await import('../shared/schema');
-    const { eq } = await import('drizzle-orm');
+    const drizzleOrm = await import('drizzle-orm');
+    const { eq } = drizzleOrm;
     
     if (!db) return;
     

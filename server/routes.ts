@@ -53,6 +53,8 @@ import { notificationService } from './services/notificationService';
 import { issueAuthToken, getAuthTokenFromRequest, verifyAuthToken } from './utils/auth-token';
 import { setupDownloadRoute } from './download-route';
 import { setupCompleteDownload } from './download-complete';
+import { socketPerformanceMonitor } from './utils/socket-performance';
+import { getUserListOptimizer } from './utils/user-list-optimizer';
 
 // إعداد multer موحد لرفع الصور
 const createMulterConfig = (
@@ -5123,6 +5125,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // 🔥 API لمراقبة أداء Socket.IO (للمطورين فقط)
+  app.get('/api/socket-performance', developmentOnly, (req, res) => {
+    try {
+      const metrics = socketPerformanceMonitor.getMetrics();
+      const connections = socketPerformanceMonitor.getActiveConnections();
+      const transportStats = socketPerformanceMonitor.getTransportStats();
+      const healthStatus = socketPerformanceMonitor.getHealthStatus();
+      
+      // إحصائيات محسن قائمة المستخدمين
+      const userListOptimizer = getUserListOptimizer();
+      const pendingStats = userListOptimizer?.getPendingStats() || {
+        totalPendingRooms: 0,
+        totalPendingEvents: 0,
+        roomDetails: [],
+      };
+      
+      res.json({
+        socketMetrics: metrics,
+        healthStatus,
+        transportStats,
+        activeConnections: connections.length,
+        connectionDetails: connections.slice(0, 10), // أول 10 اتصالات فقط
+        userListOptimizer: pendingStats,
+        timestamp: new Date().toISOString(),
+      });
+    } catch (error) {
+      console.error('خطأ في الحصول على إحصائيات Socket.IO:', error);
+      res.status(500).json({ error: 'فشل في الحصول على الإحصائيات' });
+    }
+  });
+
+  // 🔥 API لتنظيف قائمة المستخدمين يدوياً (للمطورين فقط)
+  app.post('/api/socket-performance/flush-users', developmentOnly, async (req, res) => {
+    try {
+      const { roomId } = req.body;
+      const userListOptimizer = getUserListOptimizer();
+      
+      if (userListOptimizer) {
+        await userListOptimizer.flushUpdates(roomId);
+        res.json({ 
+          success: true, 
+          message: roomId ? `تم تنظيف الغرفة ${roomId}` : 'تم تنظيف جميع الغرف'
+        });
+      } else {
+        res.status(503).json({ error: 'محسن قائمة المستخدمين غير متاح' });
+      }
+    } catch (error) {
+      console.error('خطأ في تنظيف قائمة المستخدمين:', error);
+      res.status(500).json({ error: 'فشل في التنظيف' });
+    }
+  });
 
   return httpServer;
 }

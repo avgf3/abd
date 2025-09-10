@@ -124,28 +124,45 @@ export function getSocket(): Socket {
   })();
 
   const serverUrl = getServerUrl();
+  
+  // 🔥 إعدادات محسّنة للأداء والاستقرار
+  const isDevelopment = (import.meta as any)?.env?.DEV;
+  const isProduction = !isDevelopment;
+  
   socketInstance = io(serverUrl, {
     path: '/socket.io',
-    // استخدم WebSocket كخيار أساسي حيثما أمكن
+    // 🔥 تحسين النقل - إعطاء أولوية للـ WebSocket مع fallback ذكي
     transports: ['websocket', 'polling'],
     upgrade: true,
-    rememberUpgrade: false,
+    rememberUpgrade: true, // تذكر الترقية الناجحة
     autoConnect: false,
     reconnection: true,
-    reconnectionAttempts: Infinity, // محاولات غير محدودة
-    reconnectionDelay: 3000,
-    reconnectionDelayMax: 30000, // زيادة الحد الأقصى
-    randomizationFactor: 0.5,
-    timeout: 30000, // زيادة timeout
-    forceNew: true,
+    // 🔥 تحسين إعادة الاتصال - محاولات محدودة مع تدرج ذكي
+    reconnectionAttempts: isProduction ? 10 : 5, // محاولات محدودة بدلاً من لانهائية
+    reconnectionDelay: isDevelopment ? 1000 : 2000, // تقليل التأخير في التطوير
+    reconnectionDelayMax: isProduction ? 10000 : 5000, // تقليل الحد الأقصى
+    randomizationFactor: 0.3, // تقليل العشوائية لاتصال أسرع
+    // 🔥 تحسين أوقات الاستجابة
+    timeout: isDevelopment ? 15000 : 20000, // timeout أقل لاستجابة أسرع
+    forceNew: false, // إعادة استخدام الاتصالات الموجودة
     withCredentials: true,
     auth: { deviceId },
     extraHeaders: { 'x-device-id': deviceId },
-    // إعدادات إضافية للاستقرار
+    // 🔥 إعدادات محسّنة للاستقرار والأداء
     closeOnBeforeunload: false, // لا تغلق عند إعادة التحميل
+    // 🔥 تحسين إدارة الاتصال
+    multiplex: true, // تمكين multiplexing للأداء الأفضل
+    forceBase64: false, // استخدام binary للأداء الأفضل
+    // 🔥 إعدادات ping مخصصة (هذه الخيارات للخادم فقط، لكن نتركها للتوثيق)
+    // pingTimeout: isProduction ? 60000 : 30000, // مطابق للخادم
+    // pingInterval: isProduction ? 25000 : 15000, // مطابق للخادم
     query: {
       deviceId,
       t: Date.now(), // timestamp لتجنب الكاش
+      // 🔥 إضافة معلومات إضافية للتشخيص
+      userAgent: navigator.userAgent.slice(0, 100), // معلومات المتصفح (محدودة)
+      screen: `${screen.width}x${screen.height}`, // دقة الشاشة
+      connection: (navigator as any).connection?.effectiveType || 'unknown', // نوع الاتصال
     },
   });
 
