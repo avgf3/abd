@@ -2591,6 +2591,137 @@ export default function ProfileModal({
 
           </div>
 
+          {/* Profile Action Buttons - يظهر فقط للمستخدمين الآخرين */}
+          {currentUser && currentUser.id !== localUser?.id && (
+            <div className="profile-buttons" style={{ 
+              display: 'flex', 
+              gap: '8px', 
+              margin: '12px 0', 
+              justifyContent: 'center',
+              flexWrap: 'wrap'
+            }}>
+              <button
+                style={{
+                  flex: '1 1 30%',
+                  background: 'linear-gradient(135deg, #4A90E2, #2E86C1)',
+                  color: 'white',
+                  border: 'none',
+                  padding: '8px 12px',
+                  borderRadius: '8px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  fontSize: '12px',
+                  transition: 'all 0.3s ease',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  backdropFilter: 'blur(10px)'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = '0 6px 20px rgba(0,0,0,0.4)';
+                  e.currentTarget.style.background = 'linear-gradient(135deg, #5DADE2, #4A90E2)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
+                  e.currentTarget.style.background = 'linear-gradient(135deg, #4A90E2, #2E86C1)';
+                }}
+              >
+                ✉️ إرسال رسالة
+              </button>
+
+              <button
+                style={{
+                  flex: '1 1 30%',
+                  background: 'linear-gradient(135deg, #2ECC71, #27AE60)',
+                  color: 'white',
+                  border: 'none',
+                  padding: '8px 12px',
+                  borderRadius: '8px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  fontSize: '12px',
+                  transition: 'all 0.3s ease',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  backdropFilter: 'blur(10px)'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = '0 6px 20px rgba(0,0,0,0.4)';
+                  e.currentTarget.style.background = 'linear-gradient(135deg, #58D68D, #2ECC71)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
+                  e.currentTarget.style.background = 'linear-gradient(135deg, #2ECC71, #27AE60)';
+                }}
+              >
+                👥 إضافة صديق
+              </button>
+
+              <button
+                style={{
+                  flex: '1 1 30%',
+                  background: 'linear-gradient(135deg, #E74C3C, #C0392B)',
+                  color: 'white',
+                  border: 'none',
+                  padding: '8px 12px',
+                  borderRadius: '8px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  fontSize: '12px',
+                  transition: 'all 0.3s ease',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  backdropFilter: 'blur(10px)'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = '0 6px 20px rgba(0,0,0,0.4)';
+                  e.currentTarget.style.background = 'linear-gradient(135deg, #EC7063, #E74C3C)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
+                  e.currentTarget.style.background = 'linear-gradient(135deg, #E74C3C, #C0392B)';
+                }}
+              >
+                🚫 تجاهل
+              </button>
+
+              <button
+                style={{
+                  flex: '1 1 30%',
+                  background: 'linear-gradient(135deg, #F39C12, #E67E22)',
+                  color: 'white',
+                  border: 'none',
+                  padding: '8px 12px',
+                  borderRadius: '8px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  fontSize: '12px',
+                  transition: 'all 0.3s ease',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  backdropFilter: 'blur(10px)'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = '0 6px 20px rgba(0,0,0,0.4)';
+                  e.currentTarget.style.background = 'linear-gradient(135deg, #F7DC6F, #F39C12)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
+                  e.currentTarget.style.background = 'linear-gradient(135deg, #F39C12, #E67E22)';
+                }}
+              >
+                🚩 إبلاغ
+              </button>
+            </div>
+          )}
+
           {/* Profile Body - Tab System */}
           <div className="profile-body">
             {/* Tab Navigation */}
