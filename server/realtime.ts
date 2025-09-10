@@ -441,7 +441,7 @@ export function getIO(): IOServer<ClientToServerEvents, ServerToClientEvents, In
   return ioInstance;
 }
 
-export function setupRealtime(httpServer: HttpServer): IOServer<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData> {
+export async function setupRealtime(httpServer: HttpServer): Promise<IOServer<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>> {
   const io = new IOServer<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>(httpServer, {
     cors: {
       origin: (origin, callback) => {
@@ -491,8 +491,8 @@ export function setupRealtime(httpServer: HttpServer): IOServer<ClientToServerEv
     allowUpgrades: (process?.env?.SOCKET_IO_POLLING_ONLY !== 'true'),
     cookie: false,
     serveClient: false,
-    // 🔥 تحسين حجم البيانات للأحمال الفائقة (6000 متصل)
-    maxHttpBufferSize: 1e6, // تقليل إلى 1MB لتوفير الذاكرة القصوى
+    // 🔥 تحسين حجم البيانات لـ 2500 متصل فعلي
+    maxHttpBufferSize: 2e6, // 2MB متوازن للأداء والذاكرة
     perMessageDeflate: {
       // ضغط عدواني للرسائل
       threshold: 512, // ضغط الرسائل أكبر من 512 bytes
@@ -501,8 +501,8 @@ export function setupRealtime(httpServer: HttpServer): IOServer<ClientToServerEv
       windowBits: 13, // تحسين الضغط
     },
     httpCompression: true, // تفعيل ضغط HTTP للأداء الأفضل
-    // 🔥 إعدادات محسّنة للأحمال الفائقة (6000 متصل)
-    connectTimeout: 20000, // timeout أقل للاتصال السريع
+    // 🔥 إعدادات محسّنة لـ 2500 متصل فعلي
+    connectTimeout: 25000, // timeout متوازن
     cleanupEmptyChildNamespaces: true,
     connectionStateRecovery: {
       maxDisconnectionDuration: 1 * 60 * 1000, // دقيقة واحدة فقط
