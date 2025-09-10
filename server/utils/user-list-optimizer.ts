@@ -18,8 +18,8 @@ interface PendingUpdate {
 
 class UserListOptimizer {
   private pendingUpdates = new Map<string, PendingUpdate>();
-  private readonly DEBOUNCE_DELAY = 1000; // تأخير 1 ثانية للتجميع
-  private readonly MAX_BATCH_SIZE = 50; // حد أقصى للأحداث في المجموعة الواحدة
+  private readonly DEBOUNCE_DELAY = 500; // 🔥 تقليل التأخير إلى 500ms للاستجابة الأسرع
+  private readonly MAX_BATCH_SIZE = 30; // 🔥 تقليل حجم المجموعة للمعالجة الأسرع
 
   constructor(private emitCallback: (roomId: string, users: any[]) => Promise<void>) {}
 
@@ -81,7 +81,7 @@ class UserListOptimizer {
     }
   }
 
-  // تحسين الأحداث وإزالة التكرارات
+  // 🔥 تحسين الأحداث مع منطق ذكي لتجنب فقدان المستخدمين
   private optimizeEvents(events: UserUpdateEvent[]): UserUpdateEvent[] {
     // ترتيب الأحداث حسب الوقت
     events.sort((a, b) => a.timestamp - b.timestamp);
@@ -95,11 +95,29 @@ class UserListOptimizer {
       userEvents.get(event.userId)!.push(event);
     }
     
-    // الاحتفاظ بآخر حدث لكل مستخدم فقط
+    // 🔥 منطق ذكي: إذا كان آخر حدث "leave" لكن هناك "join" حديث، استخدم "join"
     const optimized: UserUpdateEvent[] = [];
     for (const [userId, userEventList] of userEvents) {
       const lastEvent = userEventList[userEventList.length - 1];
-      optimized.push(lastEvent);
+      
+      // إذا كان آخر حدث هو "leave"
+      if (lastEvent.type === 'leave') {
+        // ابحث عن آخر "join" أو "update" في آخر 5 ثوان
+        const recentThreshold = Date.now() - 5000; // 5 ثوان
+        const recentJoinOrUpdate = userEventList
+          .filter(e => e.timestamp > recentThreshold && (e.type === 'join' || e.type === 'update'))
+          .pop();
+        
+        // إذا وُجد join/update حديث، استخدمه بدلاً من leave
+        if (recentJoinOrUpdate) {
+          console.log(`🔄 تجاهل leave قديم للمستخدم ${userId}، استخدام ${recentJoinOrUpdate.type} حديث`);
+          optimized.push(recentJoinOrUpdate);
+        } else {
+          optimized.push(lastEvent);
+        }
+      } else {
+        optimized.push(lastEvent);
+      }
     }
     
     return optimized;
