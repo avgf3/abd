@@ -20,8 +20,7 @@ import { storage } from './storage';
 import { sanitizeUsersArray } from './utils/data-sanitizer';
 import { getClientIpFromHeaders, getDeviceIdFromHeaders } from './utils/device';
 import { verifyAuthToken } from './utils/auth-token';
-import { setupSocketMonitoring, socketPerformanceMonitor } from './utils/socket-performance';
-import { createUserListOptimizer, getUserListOptimizer, optimizedUserJoin, optimizedUserLeave } from './utils/user-list-optimizer';
+import { createUserListOptimizer, optimizedUserJoin, optimizedUserLeave } from './utils/user-list-optimizer';
 
 const GENERAL_ROOM = 'general';
 
@@ -439,7 +438,7 @@ export function getIO(): IOServer<ClientToServerEvents, ServerToClientEvents, In
   return ioInstance;
 }
 
-export function setupRealtime(httpServer: HttpServer): IOServer<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData> {
+export async function setupRealtime(httpServer: HttpServer): Promise<IOServer<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>> {
   const io = new IOServer<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>(httpServer, {
     cors: {
       origin: (origin, callback) => {
@@ -482,25 +481,19 @@ export function setupRealtime(httpServer: HttpServer): IOServer<ClientToServerEv
       ? ['polling']
       : ['websocket', 'polling'],
     allowEIO3: true,
-    // 🔥 تحسين أوقات الاستجابة - تقليل timeout لتحسين الأداء
-    pingTimeout: (process?.env?.NODE_ENV === 'production') ? 60000 : 30000, // دقيقة واحدة في الإنتاج، 30 ثانية في التطوير
-    pingInterval: (process?.env?.NODE_ENV === 'production') ? 20000 : 15000, // ping كل 20 ثانية في الإنتاج، 15 في التطوير
-    upgradeTimeout: 30000, // تقليل timeout للترقية لتحسين الاستجابة
-    allowUpgrades: (process?.env?.SOCKET_IO_POLLING_ONLY !== 'true'),
+    pingTimeout: 30000,
+    pingInterval: 15000,
+    upgradeTimeout: 20000,
+    allowUpgrades: true,
     cookie: false,
     serveClient: false,
-    // 🔥 تحسين حجم البيانات والأداء
-    maxHttpBufferSize: 5e6, // تقليل إلى 5MB لتحسين الذاكرة
+    maxHttpBufferSize: 1e6,
     perMessageDeflate: {
-      // تفعيل الضغط الذكي للرسائل الكبيرة فقط
-      threshold: 1024, // ضغط الرسائل أكبر من 1KB
-      concurrencyLimit: 10, // حد التزامن
-      memLevel: 7, // توفير ذاكرة
+      threshold: 1024,
+      concurrencyLimit: 15,
+      memLevel: 7,
     },
-    httpCompression: true, // تفعيل ضغط HTTP للأداء الأفضل
-    // 🔥 إعدادات جديدة لتحسين الأداء
-    connectTimeout: 45000, // timeout للاتصال الأولي
-    cleanupEmptyChildNamespaces: true, // تنظيف namespaces الفارغة
+    httpCompression: true,
     allowRequest: (req, callback) => {
       try {
         const originHeader = req.headers.origin || '';
@@ -580,10 +573,7 @@ export function setupRealtime(httpServer: HttpServer): IOServer<ClientToServerEv
 
   ioInstance = io;
 
-  // 🔥 تهيئة نظام مراقبة الأداء
-  setupSocketMonitoring(io);
-
-  // 🔥 تهيئة محسن قائمة المستخدمين
+  // تهيئة محسن قائمة المستخدمين
   createUserListOptimizer(emitOptimizedOnlineUsers);
 
   // تهيئة خدمة الصوت مع Socket.IO

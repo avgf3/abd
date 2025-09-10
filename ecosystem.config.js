@@ -2,14 +2,14 @@ module.exports = {
   apps: [{
     name: 'chat-app',
     script: './dist/index.js',
-    instances: 1, // تشغيل عملية واحدة لضمان توحيد الحالة
-    exec_mode: 'fork', // وضع فردي بدون Cluster
-    node_args: '--expose-gc --max-old-space-size=400',
+    instances: 'max', // استخدام جميع المعالجات المتاحة
+    exec_mode: 'cluster', // وضع Cluster للتوسع الأفقي
+    node_args: '--expose-gc --max-old-space-size=6144',
     env: {
       NODE_ENV: 'production',
       PORT: 10000
     },
-    max_memory_restart: '400M',
+    max_memory_restart: '6144M',
     error_file: './logs/err.log',
     out_file: './logs/out.log',
     log_file: './logs/combined.log',

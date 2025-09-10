@@ -1624,6 +1624,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+
   const httpServer = createServer(app);
   
   // تحسين مهلات HTTP للأداء العالي تحت الضغط
@@ -1650,7 +1651,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // إعداد Socket.IO من خلال وحدة realtime الموحدة
   const { setupRealtime } = await import('./realtime');
-  const io = setupRealtime(httpServer);
+  const io = await setupRealtime(httpServer);
 
   // تطبيق فحص الأمان على جميع الطلبات
   app.use(checkIPSecurity);
