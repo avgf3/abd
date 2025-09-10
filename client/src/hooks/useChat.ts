@@ -447,34 +447,20 @@ export const useChat = () => {
     });
 
     // بعد المصادقة الناجحة من الخادم، انضم للغرفة المطلوبة إن وُجدت
-    socketInstance.on('authenticated', (data: any) => {
+    socketInstance.on('authenticated', () => {
       try {
-        // 🔥 إصلاح سباق الزمن: إعطاء أولوية للانضمام التلقائي من الخادم
-        const autoJoinRoom = data?.autoJoinRoom;
         const desired = pendingJoinRoomRef.current || (() => {
           try { return getSession()?.roomId as string | undefined; } catch { return undefined; }
         })();
-
-        // إذا كان هناك انضمام تلقائي من الخادم، استخدمه
-        const targetRoom = autoJoinRoom || desired;
-        
-        if (targetRoom && targetRoom !== 'public' && targetRoom !== 'friends' && currentUserRef.current) {
-          // تأخير قصير للتأكد من استقرار الاتصال قبل الانضمام
-          setTimeout(() => {
-            if (socketInstance.connected) {
-              console.log(`🔄 محاولة الانضمام للغرفة: ${targetRoom}${autoJoinRoom ? ' (تلقائي)' : ''}`);
-              socketInstance.emit('joinRoom', {
-                roomId: targetRoom,
-                userId: currentUserRef.current!.id,
-                username: currentUserRef.current!.username,
-              });
-              pendingJoinRoomRef.current = null;
-            }
-          }, autoJoinRoom ? 100 : 300); // تأخير أقل للانضمام التلقائي
+        if (desired && desired !== 'public' && desired !== 'friends' && currentUserRef.current) {
+          socketInstance.emit('joinRoom', {
+            roomId: desired,
+            userId: currentUserRef.current.id,
+            username: currentUserRef.current.username,
+          });
+          pendingJoinRoomRef.current = null;
         }
-      } catch (error) {
-        console.warn('خطأ في معالجة authenticated event:', error);
-      }
+      } catch {}
     });
 
     // لم نعد نستخدم polling لقائمة المتصلين؛ السيرفر يبث التحديثات مباشرة
@@ -800,29 +786,10 @@ export const useChat = () => {
             }
             if (Array.isArray(envelope.users)) {
               const rawUsers = envelope.users as ChatUser[];
-              // 🔥 فلترة محسّنة مع معالجة البيانات الناقصة
-              const filtered = rawUsers.filter((u) => {
-                // التحقق الأساسي
-                if (!u || !u.id || ignoredUsersRef.current.has(u.id)) {
-                  return false;
-                }
-                
-                // إذا كانت البيانات ناقصة، حاول استكمالها من الكاش
-                if (!u.username || !u.userType) {
-                  const cached = userCache.getUser(u.id);
-                  if (cached && cached.username && cached.userType) {
-                    // تحديث البيانات الناقصة
-                    u.username = u.username || cached.username;
-                    u.userType = u.userType || cached.userType;
-                    u.profileImage = u.profileImage || cached.profileImage;
-                    console.log(`🔄 استكمال بيانات المستخدم ${u.username} من الكاش`);
-                  }
-                }
-                
-                // التحقق النهائي
-                return !!(u.username && u.userType);
-              });
-              
+              // فلترة صارمة + إزالة المتجاهلين + إزالة التكرارات
+              const filtered = rawUsers.filter(
+                (u) => u && u.id && u.username && u.userType && !ignoredUsersRef.current.has(u.id)
+              );
               const dedup = new Map<number, ChatUser>();
               for (const u of filtered) {
                 if (!dedup.has(u.id)) dedup.set(u.id, u);

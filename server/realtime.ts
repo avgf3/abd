@@ -187,63 +187,22 @@ export function updateConnectedUserCache(userOrId: any, maybeUser?: any) {
   } catch {}
 }
 
-// 🔥 بناء قائمة المتصلين المحسّنة مع معالجة أفضل للحالات الغامضة
+// بناء قائمة المتصلين بكفاءة اعتماداً على sockets المسجلة
 export async function buildOnlineUsersForRoom(roomId: string) {
 
   const userMap = new Map<number, any>();
   for (const [_, entry] of connectedUsers.entries()) {
     // تحقق سريع عبر sockets دون مسح كامل
-    let userInRoom = false;
-    let hasValidSocket = false;
-    
     for (const socketMeta of entry.sockets.values()) {
-      hasValidSocket = true;
-      
-      // 🔥 إصلاح: قبول المستخدمين مع room=null إذا كانوا متصلين حديثاً (آخر 10 ثوان)
-      const recentlyConnected = entry.lastSeen && (Date.now() - entry.lastSeen.getTime() < 10000);
-      
-      if (socketMeta.room === roomId || (recentlyConnected && socketMeta.room === null)) {
-        userInRoom = true;
+      if (
+        socketMeta.room === roomId &&
+        entry.user &&
+        entry.user.id &&
+        entry.user.username &&
+        entry.user.userType
+      ) {
+        userMap.set(entry.user.id, entry.user);
         break;
-      }
-    }
-    
-    // 🔥 فلترة محسّنة مع معالجة البيانات المؤقتة الناقصة
-    if (userInRoom && hasValidSocket && entry.user && entry.user.id) {
-      let validUser = entry.user;
-      
-      // إذا كانت البيانات ناقصة، حاول استكمالها من قاعدة البيانات
-      if (!entry.user.username || !entry.user.userType) {
-        try {
-          const fullUser = await storage.getUser(entry.user.id);
-          if (fullUser && fullUser.username && fullUser.userType) {
-            // تحديث البيانات في الكاش
-            validUser = { ...entry.user, ...fullUser };
-            entry.user = validUser;
-            connectedUsers.set(entry.user.id, entry);
-            console.log(`🔄 استكمال بيانات المستخدم ${validUser.username} من قاعدة البيانات`);
-          }
-        } catch (error) {
-          console.warn(`⚠️ فشل في جلب بيانات المستخدم ${entry.user.id}:`, error);
-        }
-      }
-      
-      // التحقق النهائي من صحة البيانات
-      if (validUser.username && validUser.userType) {
-        // 🔥 إصلاح: للمستخدمين مع room=null، حدّث غرفتهم تلقائياً
-        if (entry.sockets.has(roomId) === false) {
-          for (const [socketId, socketMeta] of entry.sockets.entries()) {
-            if (socketMeta.room === null) {
-              socketMeta.room = roomId;
-              console.log(`🔄 تحديث غرفة المستخدم ${validUser.username} تلقائياً إلى ${roomId}`);
-              break;
-            }
-          }
-        }
-        
-        userMap.set(validUser.id, validUser);
-      } else {
-        console.warn(`⚠️ تجاهل المستخدم ${entry.user.id} بسبب بيانات ناقصة`);
       }
     }
   }
@@ -828,38 +787,7 @@ export function setupRealtime(httpServer: HttpServer): IOServer<ClientToServerEv
             connectedUsers.set(user.id, existing);
           }
 
-          // 🔥 إصلاح سباق الزمن: للمستخدمين المعاودين، حاول الانضمام للغرفة السابقة تلقائياً
-          let autoJoinRoom: string | null = null;
-          if (payload.reconnect === true && existing) {
-            // البحث عن آخر غرفة كان فيها هذا المستخدم
-            for (const socketMeta of existing.sockets.values()) {
-              if (socketMeta.room && socketMeta.room !== 'null') {
-                autoJoinRoom = socketMeta.room;
-                break;
-              }
-            }
-          }
-
-          socket.emit('authenticated', { 
-            message: 'تم الاتصال بنجاح', 
-            user,
-            autoJoinRoom // إرسال الغرفة للانضمام التلقائي
-          });
-
-
-          // 🔥 الانضمام التلقائي للغرفة السابقة عند إعادة الاتصال
-          if (autoJoinRoom && payload.reconnect === true) {
-            try {
-              setTimeout(async () => {
-                try {
-                  await joinRoom(io, socket, user.id, user.username, autoJoinRoom);
-                  console.log(`🔄 انضمام تلقائي للمستخدم ${user.username} للغرفة ${autoJoinRoom} بعد إعادة الاتصال`);
-                } catch (error) {
-                  console.warn(`⚠️ فشل الانضمام التلقائي للغرفة ${autoJoinRoom}:`, error);
-                }
-              }, 500); // تأخير قصير للتأكد من استقرار الاتصال
-            } catch {}
-          }
+          socket.emit('authenticated', { message: 'تم الاتصال بنجاح', user });
         } catch (err) {
           socket.emit('error', { message: 'خطأ في المصادقة' });
         }
@@ -1135,51 +1063,6 @@ export function setupRealtime(httpServer: HttpServer): IOServer<ClientToServerEv
   // تحميل البوتات النشطة عند بدء التشغيل
   loadActiveBots();
 
-  // 🔥 تنظيف دوري للمستخدمين المنقطعين لتجنب عدم التزامن
-  setInterval(() => {
-    try {
-      const now = Date.now();
-      const CLEANUP_THRESHOLD = 30000; // 30 ثانية
-      const usersToCleanup: number[] = [];
-      
-      for (const [userId, entry] of connectedUsers.entries()) {
-        // إزالة المستخدمين الذين لم يُحدثوا منذ فترة طويلة
-        if (entry.lastSeen && (now - entry.lastSeen.getTime() > CLEANUP_THRESHOLD)) {
-          // التحقق من أن جميع sockets منقطعة فعلاً
-          let hasActiveSockets = false;
-          for (const [socketId, socketMeta] of entry.sockets.entries()) {
-            const socket = io.sockets.sockets.get(socketId);
-            if (socket && socket.connected) {
-              hasActiveSockets = true;
-              // تحديث lastSeen إذا كان هناك socket متصل
-              socketMeta.lastSeen = new Date();
-              entry.lastSeen = new Date();
-              break;
-            }
-          }
-          
-          if (!hasActiveSockets) {
-            usersToCleanup.push(userId);
-          }
-        }
-      }
-      
-      // تنظيف المستخدمين المنقطعين
-      for (const userId of usersToCleanup) {
-        connectedUsers.delete(userId);
-        console.log(`🧹 تنظيف المستخدم المنقطع: ${userId}`);
-        
-        // تحديث حالة الاتصال في قاعدة البيانات
-        storage.setUserOnlineStatus(userId, false).catch(() => {});
-      }
-      
-      if (usersToCleanup.length > 0) {
-        console.log(`🧹 تم تنظيف ${usersToCleanup.length} مستخدم منقطع`);
-      }
-    } catch (error) {
-      console.error('خطأ في تنظيف المستخدمين:', error);
-    }
-  }, 15000); // كل 15 ثانية
 
   return io;
 }

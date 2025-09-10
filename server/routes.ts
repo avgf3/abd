@@ -3140,31 +3140,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Notifications API
-  // 🔍 Endpoint مراقبة الاتصالات (للمطورين فقط)
-  app.get('/api/admin/connection-monitor', developmentOnly, async (req, res) => {
-    try {
-      const stats = connectionMonitor.getStats();
-      const users = connectionMonitor.getUserConnections();
-      const issues = connectionMonitor.diagnoseIssues();
-      const report = connectionMonitor.generateReport();
-
-      res.json({
-        success: true,
-        stats,
-        activeUsers: users.length,
-        users: users.slice(0, 20), // أول 20 مستخدم
-        issues,
-        report,
-        timestamp: new Date().toISOString(),
-      });
-    } catch (error) {
-      console.error('خطأ في endpoint مراقبة الاتصالات:', error);
-      res.status(500).json({
-        success: false,
-        error: 'خطأ في جلب بيانات المراقبة',
-      });
-    }
-  });
 
   app.get('/api/notifications/:userId', async (req, res) => {
     try {
