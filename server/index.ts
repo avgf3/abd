@@ -63,23 +63,14 @@ app.use((req, res, next) => {
   next();
 });
 
-// Early, lightweight health endpoint (no DB/session/compression)
-// يتم تعريف هذا المسار مبكراً قبل أي middleware ثقيل
+// Early, ultra-lightweight health endpoint (no DB/session/compression)
+// يعيد نصاً بسيطاً لتقليل الحمل أثناء اختبارات الضغط العالية
 app.get('/health', (_req, res) => {
   try {
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
-    res.setHeader('X-Response-Time', '0ms'); // مؤشر سرعة الاستجابة
+    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
   } catch {}
-  res.status(200).json({
-    status: 'ok',
-    timestamp: new Date().toISOString(),
-    uptime: Math.floor(process.uptime()),
-    pid: process.pid,
-    memory: {
-      rss: Math.round(process.memoryUsage().rss / 1024 / 1024), // MB
-      heapUsed: Math.round(process.memoryUsage().heapUsed / 1024 / 1024) // MB
-    }
-  });
+  res.status(200).end('ok');
 });
 
 // Deduplicate query params under /api to mitigate HTTP Parameter Pollution
