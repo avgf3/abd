@@ -14,6 +14,8 @@ import { storage } from './storage';
 import { sanitizeUsersArray } from './utils/data-sanitizer';
 import { getClientIpFromHeaders, getDeviceIdFromHeaders } from './utils/device';
 import { verifyAuthToken } from './utils/auth-token';
+import { setupSocketMonitoring, socketPerformanceMonitor } from './utils/socket-performance';
+import { createUserListOptimizer, getUserListOptimizer, optimizedUserJoin, optimizedUserLeave } from './utils/user-list-optimizer';
 
 interface CustomSocket extends Socket {
   userId?: number;
@@ -244,6 +246,25 @@ export async function emitOnlineUsersForRoom(roomId: string): Promise<void> {
   } catch {}
 }
 
+// 🔥 دالة محسّنة لبث قائمة المستخدمين مع debouncing
+async function emitOptimizedOnlineUsers(roomId: string, users: any[]): Promise<void> {
+  try {
+    if (!roomId || !ioInstance) return;
+    
+    console.log(`📤 إرسال قائمة محدثة للغرفة ${roomId}: ${users.length} مستخدم`);
+    
+    ioInstance.to(`room_${roomId}`).emit('message', {
+      type: 'onlineUsers',
+      users,
+      roomId,
+      source: 'optimized_update',
+      timestamp: Date.now(),
+    });
+  } catch (error) {
+    console.error('خطأ في إرسال قائمة المستخدمين المحسّنة:', error);
+  }
+}
+
 async function joinRoom(
   io: IOServer,
   socket: CustomSocket,
@@ -317,13 +338,15 @@ async function joinRoom(
     connectedUsers.set(userId, entry);
   }
 
-  // إبطال cache الغرفة عند انضمام مستخدم جديد
-  // لم نعد نستخدم الكاش
+  // 🔥 استخدام النظام المحسّن لتحديث قائمة المستخدمين
+  const user = entry?.user || (await storage.getUser(userId));
+  if (user) {
+    optimizedUserJoin(roomId, userId, user);
+  }
 
-  // إرسال التأكيد للمستخدم المنضم وبث القائمة المحدثة للجميع
+  // إرسال التأكيد للمستخدم المنضم فقط (القائمة ستُرسل عبر النظام المحسّن)
   const users = await buildOnlineUsersForRoom(roomId);
   socket.emit('message', { type: 'roomJoined', roomId, users });
-  io.to(`room_${roomId}`).emit('message', { type: 'onlineUsers', users, roomId, source: 'join' });
 
   // رسائل حديثة (تجنب التكرار عند الانضمام السريع): لا داعي إذا لم تتغير الغرفة فعلياً
   try {
@@ -377,6 +400,10 @@ async function leaveRoom(
   if (socket.currentRoom === roomId) socket.currentRoom = null;
 
   socket.emit('message', { type: 'roomLeft', roomId });
+  
+  // 🔥 استخدام النظام المحسّن لتحديث قائمة المستخدمين
+  optimizedUserLeave(roomId, userId);
+  
   // رسالة نظامية: مغادرة الغرفة الحالية
   try {
     const entry = connectedUsers.get(userId);
@@ -405,10 +432,6 @@ async function leaveRoom(
       },
     });
   } catch {}
-
-  // Push updated online users for the room
-  const users = await buildOnlineUsersForRoom(roomId);
-  io.to(`room_${roomId}`).emit('message', { type: 'onlineUsers', users, roomId, source: 'leave' });
 }
 
 let ioInstance: IOServer | null = null;
@@ -456,20 +479,30 @@ export function setupRealtime(httpServer: HttpServer): IOServer {
       credentials: true,
     },
     path: '/socket.io',
-    // تفعيل WebSocket حيثما أمكن مع الاحتفاظ بـ polling كاحتياطي
+    // 🔥 تحسين النقل - إعطاء أولوية للـ WebSocket
     transports: process.env.SOCKET_IO_POLLING_ONLY === 'true'
       ? ['polling']
       : ['websocket', 'polling'],
     allowEIO3: true,
-    pingTimeout: 180000, // زيادة timeout إلى 3 دقائق للإنتاج
-    pingInterval: 45000, // ping كل 45 ثانية
-    upgradeTimeout: 45000, // زيادة timeout للترقية
+    // 🔥 تحسين أوقات الاستجابة - تقليل timeout لتحسين الأداء
+    pingTimeout: process.env.NODE_ENV === 'production' ? 60000 : 30000, // دقيقة واحدة في الإنتاج، 30 ثانية في التطوير
+    pingInterval: process.env.NODE_ENV === 'production' ? 25000 : 15000, // ping كل 25 ثانية في الإنتاج، 15 في التطوير
+    upgradeTimeout: 30000, // تقليل timeout للترقية لتحسين الاستجابة
     allowUpgrades: process.env.SOCKET_IO_POLLING_ONLY !== 'true',
     cookie: false,
     serveClient: false,
-    maxHttpBufferSize: 1e7, // زيادة حجم البيانات المسموح به
-    perMessageDeflate: false, // تعطيل الضغط لتحسين الأداء
-    httpCompression: false, // تعطيل ضغط HTTP
+    // 🔥 تحسين حجم البيانات والأداء
+    maxHttpBufferSize: 5e6, // تقليل إلى 5MB لتحسين الذاكرة
+    perMessageDeflate: {
+      // تفعيل الضغط الذكي للرسائل الكبيرة فقط
+      threshold: 1024, // ضغط الرسائل أكبر من 1KB
+      concurrencyLimit: 10, // حد التزامن
+      memLevel: 7, // توفير ذاكرة
+    },
+    httpCompression: true, // تفعيل ضغط HTTP للأداء الأفضل
+    // 🔥 إعدادات جديدة لتحسين الأداء
+    connectTimeout: 45000, // timeout للاتصال الأولي
+    cleanupEmptyChildNamespaces: true, // تنظيف namespaces الفارغة
     allowRequest: (req, callback) => {
       try {
         const originHeader = req.headers.origin || '';
@@ -548,6 +581,12 @@ export function setupRealtime(httpServer: HttpServer): IOServer {
   });
 
   ioInstance = io;
+
+  // 🔥 تهيئة نظام مراقبة الأداء
+  setupSocketMonitoring(io);
+
+  // 🔥 تهيئة محسن قائمة المستخدمين
+  createUserListOptimizer(emitOptimizedOnlineUsers);
 
   // تهيئة خدمة الصوت مع Socket.IO
   voiceService.initialize(io);

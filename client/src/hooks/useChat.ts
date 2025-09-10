@@ -421,17 +421,30 @@ export const useChat = () => {
 
   // 🔥 SIMPLIFIED Socket event handling - حذف التضارب
   const setupSocketListeners = useCallback((socketInstance: Socket) => {
-    // حافظ على الاتصال عبر ping/pong مخصص عند السكون
+    // 🔥 حافظ على الاتصال عبر ping/pong محسّن مع قياس الكمون
     if (pingIntervalRef.current) {
       clearInterval(pingIntervalRef.current);
     }
+    
+    let lastPingTime = 0;
     const pingId = window.setInterval(() => {
       if (socketInstance.connected) {
+        lastPingTime = Date.now();
         socketInstance.emit('client_ping');
       }
     }, 20000);
     pingIntervalRef.current = pingId;
-    socketInstance.on('client_pong', () => {});
+    
+    // 🔥 قياس الكمون وتسجيل حالة الاتصال
+    socketInstance.on('client_pong', (data: any) => {
+      if (lastPingTime > 0) {
+        const latency = Date.now() - lastPingTime;
+        // تسجيل الكمون للتشخيص (في بيئة التطوير فقط)
+        if ((import.meta as any)?.env?.DEV && latency > 1000) {
+          console.warn(`⚠️ كمون عالي: ${latency}ms`);
+        }
+      }
+    });
 
     // بعد المصادقة الناجحة من الخادم، انضم للغرفة المطلوبة إن وُجدت
     socketInstance.on('authenticated', () => {
