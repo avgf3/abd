@@ -443,35 +443,35 @@ export function setupRealtime(httpServer: HttpServer): IOServer<ClientToServerEv
   const io = new IOServer<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>(httpServer, {
     cors: {
       origin: (origin, callback) => {
-        // السماح بجميع الأصول من نفس النطاق أو من Render
-        if (!origin) {
-          // السماح بالطلبات بدون origin (same-site)
-          return callback(null, true);
+        try {
+          // السماح بالطلبات بدون Origin (same-site أو بعض ترقيات WS)
+          if (!origin) return callback(null, true);
+
+          // السماح الكامل في بيئة التطوير
+          if (process?.env?.NODE_ENV !== 'production') return callback(null, true);
+
+          // السماح بنطاقات Render الافتراضية
+          if (origin.includes('.onrender.com')) return callback(null, true);
+
+          // السماح فقط للأصول المعرفة في البيئة في الإنتاج
+          const allowedOrigins = [
+            process?.env?.RENDER_EXTERNAL_URL,
+            process?.env?.FRONTEND_URL,
+            process?.env?.CORS_ORIGIN,
+          ].filter(Boolean) as string[];
+
+          const normalize = (u: string): string => {
+            try { return new URL(u).origin; } catch { return u; }
+          };
+
+          if (allowedOrigins.some((allowed) => origin === normalize(allowed) || origin.startsWith(allowed))) {
+            return callback(null, true);
+          }
+
+          return callback(null, false);
+        } catch {
+          return callback(null, false);
         }
-        
-        // السماح بجميع نطاقات Render
-        if (origin.includes('.onrender.com')) {
-          return callback(null, true);
-        }
-        
-        // السماح بالأصول المحددة في البيئة
-        const allowedOrigins = [
-          process?.env?.RENDER_EXTERNAL_URL,
-          process?.env?.FRONTEND_URL,
-          process?.env?.CORS_ORIGIN,
-        ].filter(Boolean);
-        
-        if (allowedOrigins.some(allowed => origin.startsWith(allowed))) {
-          return callback(null, true);
-        }
-        
-        // في بيئة التطوير، السماح بكل شيء
-        if (process?.env?.NODE_ENV === 'development') {
-          return callback(null, true);
-        }
-        
-        // السماح بنفس المضيف
-        callback(null, true);
       },
       methods: ['GET', 'POST'],
       credentials: true,
@@ -484,7 +484,7 @@ export function setupRealtime(httpServer: HttpServer): IOServer<ClientToServerEv
     allowEIO3: true,
     // 🔥 تحسين أوقات الاستجابة - تقليل timeout لتحسين الأداء
     pingTimeout: (process?.env?.NODE_ENV === 'production') ? 60000 : 30000, // دقيقة واحدة في الإنتاج، 30 ثانية في التطوير
-    pingInterval: (process?.env?.NODE_ENV === 'production') ? 25000 : 15000, // ping كل 25 ثانية في الإنتاج، 15 في التطوير
+    pingInterval: (process?.env?.NODE_ENV === 'production') ? 20000 : 15000, // ping كل 20 ثانية في الإنتاج، 15 في التطوير
     upgradeTimeout: 30000, // تقليل timeout للترقية لتحسين الاستجابة
     allowUpgrades: (process?.env?.SOCKET_IO_POLLING_ONLY !== 'true'),
     cookie: false,
