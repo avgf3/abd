@@ -2770,7 +2770,7 @@ export default function ProfileModal({
                     borderRadius: '6px',
                     background: 'rgba(255,255,255,0.04)'
                   }}>
-                    <span style={{ color: '#fff', fontSize: '14px' }}>💬 إعدادات الرسائل الخاصة</span>
+                    <span style={{ color: '#fff', fontSize: '14px' }}>إعدادات الرسائل الخاصة</span>
                     <select 
                       style={{ 
                         background: 'rgba(255,255,255,0.1)', 
@@ -2782,7 +2782,7 @@ export default function ProfileModal({
                       }}
                       onChange={(e) => updateDmPrivacy(e.target.value)}
                     >
-                      <option value="all">🌐 السماح للجميع</option>
+                      <option value="all">السماح للجميع</option>
                       <option value="friends">👥 السماح للأصدقاء فقط</option>
                       <option value="none">🚫 قفل الخاص (لا أحد)</option>
                     </select>
@@ -2798,7 +2798,7 @@ export default function ProfileModal({
                     color: '#fff',
                     borderBottom: '1px solid rgba(255,255,255,0.1)',
                     paddingBottom: '4px'
-                  }}>🛡️ خيارات الخصوصية</h5>
+                  }}>خيارات الخصوصية</h5>
 
 
 
@@ -2811,7 +2811,7 @@ export default function ProfileModal({
                     borderRadius: '6px',
                     background: 'rgba(255,255,255,0.04)'
                   }}>
-                    <span style={{ color: '#fff', fontSize: '14px' }}>👥 طلبات الصداقة</span>
+                    <span style={{ color: '#fff', fontSize: '14px' }}>طلبات الصداقة</span>
                   </div>
 
 
@@ -2827,7 +2827,7 @@ export default function ProfileModal({
                     borderRadius: '6px',
                     background: 'rgba(255,255,255,0.04)'
                   }}>
-                    <span style={{ color: '#fff', fontSize: '14px' }}>🏅 من يمكنه رؤية نقاطي</span>
+                    <span style={{ color: '#fff', fontSize: '14px' }}>من يمكنه رؤية نقاطي</span>
                     <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#ddd' }}>
                       <input
                         type="checkbox"
@@ -2848,7 +2848,7 @@ export default function ProfileModal({
                     borderRadius: '6px',
                     background: 'rgba(255,255,255,0.04)'
                   }}>
-                    <span style={{ color: '#fff', fontSize: '14px' }}>🧩 إظهار رسائل النظام (انضمام/مغادرة)</span>
+                    <span style={{ color: '#fff', fontSize: '14px' }}>إظهار رسائل النظام (انضمام/مغادرة)</span>
                     <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#ddd' }}>
                       <input
                         type="checkbox"
@@ -2869,7 +2869,7 @@ export default function ProfileModal({
                     borderRadius: '6px',
                     background: 'rgba(255,255,255,0.04)'
                   }}>
-                    <span style={{ color: '#fff', fontSize: '14px' }}>🔊 الأصوات في الموقع</span>
+                    <span style={{ color: '#fff', fontSize: '14px' }}>الأصوات في الموقع</span>
                     <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#ddd' }}>
                       <input
                         type="checkbox"
