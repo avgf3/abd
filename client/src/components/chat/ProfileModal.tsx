@@ -19,8 +19,9 @@ import { getCountryFlag } from '@/utils';
 import { getUserLevelIcon } from '@/components/chat/UserRoleBadge';
 import CountryFlag from '@/components/ui/CountryFlag';
 import ProfileImage from './ProfileImage';
-import { useStories } from '@/hooks/useStories';
 import { useRoomManager } from '@/hooks/useRoomManager';
+import ReportModal from './ReportModal';
+import { useStories } from '@/hooks/useStories';
 
 interface ProfileModalProps {
   user: ChatUser | null;
@@ -92,6 +93,9 @@ export default function ProfileModal({
   
   // حالة التبويبات
   const [activeTab, setActiveTab] = useState<'info' | 'options' | 'other'>('info');
+
+  // حالة نافذة التبليغ
+  const [showReportModal, setShowReportModal] = useState(false);
 
   // ===== آخر تواجد + اسم الغرفة =====
   const { rooms, fetchRooms } = useRoomManager({ autoRefresh: false });
@@ -1272,6 +1276,42 @@ export default function ProfileModal({
     } finally {
       setSendingPoints(false);
     }
+  };
+
+  // ===== أزرار الإجراءات أعلى التبويبات =====
+  const handleOpenPrivateMessage = () => {
+    if (!localUser?.id) return;
+    try {
+      window.location.hash = `#pm${localUser.id}`;
+    } catch {}
+    onClose();
+  };
+
+  const handleAddFriendRequest = async () => {
+    try {
+      if (!currentUser?.id || !localUser?.id || currentUser.id === localUser.id) return;
+      await apiRequest('/api/friend-requests', {
+        method: 'POST',
+        body: { senderId: currentUser.id, receiverId: localUser.id },
+      });
+      toast({ title: 'تم الإرسال', description: `تم إرسال طلب صداقة إلى ${localUser.username}` });
+    } catch (error: any) {
+      toast({ title: 'خطأ', description: error?.message || 'تعذر إرسال طلب الصداقة', variant: 'destructive' });
+    }
+  };
+
+  const handleIgnoreUser = async () => {
+    try {
+      if (!currentUser?.id || !localUser?.id || currentUser.id === localUser.id) return;
+      await apiRequest(`/api/users/${currentUser.id}/ignore/${localUser.id}`, { method: 'POST' });
+      toast({ title: 'تم التجاهل', description: `لن تظهر رسائل ${localUser.username}` });
+    } catch (error: any) {
+      toast({ title: 'خطأ', description: error?.message || 'تعذر تجاهل المستخدم', variant: 'destructive' });
+    }
+  };
+
+  const handleOpenReport = () => {
+    setShowReportModal(true);
   };
 
   return (
@@ -2591,6 +2631,16 @@ export default function ProfileModal({
 
           </div>
 
+          {/* شريط أزرار الإجراءات - بين الغلاف والتبويبات */}
+          {localUser?.id && currentUser?.id && localUser.id !== currentUser.id && (
+            <div className="profile-buttons" style={{ marginTop: '8px' }}>
+              <button onClick={handleOpenPrivateMessage}>✉️ إرسال رسالة</button>
+              <button onClick={handleAddFriendRequest}>👥 إضافة صديق</button>
+              <button onClick={handleIgnoreUser}>🚫 تجاهل</button>
+              <button onClick={handleOpenReport}>⚠️ إبلاغ</button>
+            </div>
+          )}
+
           {/* Profile Body - Tab System */}
           <div className="profile-body">
             {/* Tab Navigation */}
@@ -3527,6 +3577,16 @@ export default function ProfileModal({
         recipientName={pointsSentNotification.recipientName}
         onClose={() => setPointsSentNotification({ show: false, points: 0, recipientName: '' })}
       />
+
+      {/* نافذة التبليغ */}
+      {showReportModal && (
+        <ReportModal
+          isOpen={showReportModal}
+          onClose={() => setShowReportModal(false)}
+          reportedUser={localUser}
+          currentUser={currentUser}
+        />
+      )}
     </>
   );
 }
