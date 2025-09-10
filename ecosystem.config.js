@@ -4,12 +4,12 @@ module.exports = {
     script: './dist/index.js',
     instances: 'max', // استخدام جميع المعالجات المتاحة
     exec_mode: 'cluster', // وضع Cluster للتوسع الأفقي
-    node_args: '--expose-gc --max-old-space-size=2048',
+    node_args: '--expose-gc --max-old-space-size=6144',
     env: {
       NODE_ENV: 'production',
       PORT: 10000
     },
-    max_memory_restart: '2048M',
+    max_memory_restart: '6144M',
     error_file: './logs/err.log',
     out_file: './logs/out.log',
     log_file: './logs/combined.log',

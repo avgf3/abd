@@ -481,13 +481,19 @@ export async function setupRealtime(httpServer: HttpServer): Promise<IOServer<Cl
       ? ['polling']
       : ['websocket', 'polling'],
     allowEIO3: true,
-    pingTimeout: 60000,
-    pingInterval: 25000,
-    upgradeTimeout: 30000,
+    pingTimeout: 30000,
+    pingInterval: 15000,
+    upgradeTimeout: 20000,
     allowUpgrades: true,
     cookie: false,
     serveClient: false,
     maxHttpBufferSize: 1e6,
+    perMessageDeflate: {
+      threshold: 1024,
+      concurrencyLimit: 15,
+      memLevel: 7,
+    },
+    httpCompression: true,
     allowRequest: (req, callback) => {
       try {
         const originHeader = req.headers.origin || '';
