@@ -772,7 +772,7 @@ export function setupRealtime(httpServer: HttpServer): IOServer<ClientToServerEv
             await storage.setUserOnlineStatus(user.id, true);
           } catch {}
 
-          // Track connection - لا نضع المستخدم في أي غرفة تلقائياً
+          // Track connection
           const existing = connectedUsers.get(user.id);
           if (!existing) {
             connectedUsers.set(user.id, {
