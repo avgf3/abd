@@ -20,10 +20,7 @@ import { storage } from './storage';
 import { sanitizeUsersArray } from './utils/data-sanitizer';
 import { getClientIpFromHeaders, getDeviceIdFromHeaders } from './utils/device';
 import { verifyAuthToken } from './utils/auth-token';
-import { setupSocketMonitoring, socketPerformanceMonitor } from './utils/socket-performance';
-import { createUserListOptimizer, getUserListOptimizer, optimizedUserJoin, optimizedUserLeave } from './utils/user-list-optimizer';
-import { setupSocketRedisAdapter } from './utils/socketRedisAdapter';
-import { setupConnectionLimiter, connectionLimiter } from './utils/connection-limiter';
+import { createUserListOptimizer, optimizedUserJoin, optimizedUserLeave } from './utils/user-list-optimizer';
 
 const GENERAL_ROOM = 'general';
 
@@ -484,33 +481,13 @@ export async function setupRealtime(httpServer: HttpServer): Promise<IOServer<Cl
       ? ['polling']
       : ['websocket', 'polling'],
     allowEIO3: true,
-    // 🔥 تحسين أوقات الاستجابة للأحمال العالية
-    pingTimeout: (process?.env?.NODE_ENV === 'production') ? 30000 : 20000, // تقليل timeout للاستجابة السريعة
-    pingInterval: (process?.env?.NODE_ENV === 'production') ? 15000 : 10000, // ping متكرر للكشف السريع عن انقطاع الاتصال
-    upgradeTimeout: 20000, // تقليل timeout للترقية
-    allowUpgrades: (process?.env?.SOCKET_IO_POLLING_ONLY !== 'true'),
+    pingTimeout: 60000,
+    pingInterval: 25000,
+    upgradeTimeout: 30000,
+    allowUpgrades: true,
     cookie: false,
     serveClient: false,
-    // 🔥 تحسين حجم البيانات لـ 2500 متصل فعلي
-    maxHttpBufferSize: 2e6, // 2MB متوازن للأداء والذاكرة
-    perMessageDeflate: {
-      // ضغط عدواني للرسائل
-      threshold: 512, // ضغط الرسائل أكبر من 512 bytes
-      concurrencyLimit: 20, // زيادة حد التزامن
-      memLevel: 6, // توفير ذاكرة أكبر
-      windowBits: 13, // تحسين الضغط
-    },
-    httpCompression: true, // تفعيل ضغط HTTP للأداء الأفضل
-    // 🔥 إعدادات محسّنة لـ 2500 متصل فعلي
-    connectTimeout: 25000, // timeout متوازن
-    cleanupEmptyChildNamespaces: true,
-    connectionStateRecovery: {
-      maxDisconnectionDuration: 1 * 60 * 1000, // دقيقة واحدة فقط
-      skipMiddlewares: true,
-    },
-    // تحسينات إضافية للأداء الفائق
-    destroyUpgrade: 5000, // تدمير الترقيات الفاشلة بسرعة
-    destroyUpgradeTimeout: 1000,
+    maxHttpBufferSize: 1e6,
     allowRequest: (req, callback) => {
       try {
         const originHeader = req.headers.origin || '';
@@ -590,16 +567,7 @@ export async function setupRealtime(httpServer: HttpServer): Promise<IOServer<Cl
 
   ioInstance = io;
 
-  // 🔥 تهيئة Redis Adapter للتوسع الأفقي (إذا كان متاحاً)
-  try {
-    await setupSocketRedisAdapter(io);
-    console.log('✅ تم تفعيل Redis Adapter للتوسع الأفقي');
-  } catch (error) {
-    console.warn('⚠️ لم يتم تفعيل Redis Adapter:', error);
-  }
-
-
-  // 🔥 تهيئة محسن قائمة المستخدمين
+  // تهيئة محسن قائمة المستخدمين
   createUserListOptimizer(emitOptimizedOnlineUsers);
 
   // تهيئة خدمة الصوت مع Socket.IO
