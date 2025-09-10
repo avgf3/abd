@@ -93,6 +93,13 @@ export default function ProfileModal({
   // حالة التبويبات
   const [activeTab, setActiveTab] = useState<'info' | 'options' | 'other'>('info');
 
+  // إذا كان المستخدم يعرض ملفه الشخصي، أخفِ تبويب الأصدقاء وحوّل تلقائياً لعلامة معلوماتي
+  useEffect(() => {
+    if (localUser?.id === currentUser?.id && activeTab === 'other') {
+      setActiveTab('info');
+    }
+  }, [localUser?.id, currentUser?.id, activeTab]);
+
   // ===== آخر تواجد + اسم الغرفة =====
   const { rooms, fetchRooms } = useRoomManager({ autoRefresh: false });
   useEffect(() => {
@@ -2639,22 +2646,24 @@ export default function ProfileModal({
                   خيارات
                 </button>
               )}
-              <button
-                onClick={() => setActiveTab('other')}
-                style={{
-                  flex: 1,
-                  padding: '8px',
-                  background: activeTab === 'other' ? 'rgba(255,255,255,0.1)' : 'transparent',
-                  color: '#fff',
-                  border: 'none',
-                  fontSize: '14px',
-                  fontWeight: 'bold',
-                  cursor: 'pointer',
-                  transition: 'background 0.2s ease'
-                }}
-              >
-                الأصدقاء
-              </button>
+              {localUser?.id !== currentUser?.id && (
+                <button
+                  onClick={() => setActiveTab('other')}
+                  style={{
+                    flex: 1,
+                    padding: '8px',
+                    background: activeTab === 'other' ? 'rgba(255,255,255,0.1)' : 'transparent',
+                    color: '#fff',
+                    border: 'none',
+                    fontSize: '14px',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    transition: 'background 0.2s ease'
+                  }}
+                >
+                  الأصدقاء
+                </button>
+              )}
             </div>
 
             {/* Tab Content */}
@@ -3130,8 +3139,8 @@ export default function ProfileModal({
           </div>
         )}
 
-        {/* Tab Content - Other (Under Development or Friends) */}
-        {activeTab === 'other' && (
+        {/* Tab Content - Other (Friends) - hidden for own profile */}
+        {activeTab === 'other' && localUser?.id !== currentUser?.id && (
           <div style={{ 
             padding: '12px',
             borderRadius: '8px',
