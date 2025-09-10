@@ -2298,7 +2298,7 @@ export default function ProfileModal({
           }
           
           .profile-body {
-            padding: 50px 12px 12px;
+            padding: 58px 12px 10px;
           }
           
           .profile-info h3 {
@@ -2655,7 +2655,7 @@ export default function ProfileModal({
             {/* Tab Content */}
             {activeTab === 'info' && (
               <div style={{ 
-                padding: '12px',
+                padding: '10px',
                 borderRadius: '8px',
                 border: '1px solid rgba(255,255,255,0.08)',
                 background: 'rgba(255,255,255,0.04)'
@@ -2750,7 +2750,7 @@ export default function ProfileModal({
             {/* Tab Content - Options */}
             {activeTab === 'options' && localUser?.id === currentUser?.id && (
               <div style={{ 
-                padding: '12px',
+                padding: '10px',
                 borderRadius: '8px',
                 border: '1px solid rgba(255,255,255,0.08)',
                 background: 'rgba(255,255,255,0.04)'
