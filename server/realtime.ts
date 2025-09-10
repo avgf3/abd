@@ -1,7 +1,13 @@
 import type { Server as HttpServer } from 'http';
-
-import type { Socket } from 'socket.io';
 import { Server as IOServer } from 'socket.io';
+
+import type { 
+  CustomSocket,
+  ServerToClientEvents,
+  ClientToServerEvents,
+  InterServerEvents,
+  SocketData
+} from './types/socket';
 
 import { moderationSystem } from './moderation';
 import { sanitizeInput, validateMessageContent } from './security';
@@ -16,14 +22,6 @@ import { getClientIpFromHeaders, getDeviceIdFromHeaders } from './utils/device';
 import { verifyAuthToken } from './utils/auth-token';
 import { setupSocketMonitoring, socketPerformanceMonitor } from './utils/socket-performance';
 import { createUserListOptimizer, getUserListOptimizer, optimizedUserJoin, optimizedUserLeave } from './utils/user-list-optimizer';
-
-interface CustomSocket extends Socket {
-  userId?: number;
-  username?: string;
-  userType?: string;
-  isAuthenticated?: boolean;
-  currentRoom?: string | null;
-}
 
 const GENERAL_ROOM = 'general';
 
@@ -266,7 +264,7 @@ async function emitOptimizedOnlineUsers(roomId: string, users: any[]): Promise<v
 }
 
 async function joinRoom(
-  io: IOServer,
+  io: IOServer<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>,
   socket: CustomSocket,
   userId: number,
   username: string,
@@ -384,7 +382,7 @@ async function joinRoom(
 }
 
 async function leaveRoom(
-  io: IOServer,
+  io: IOServer<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>,
   socket: CustomSocket,
   userId: number,
   username: string,
@@ -434,15 +432,15 @@ async function leaveRoom(
   } catch {}
 }
 
-let ioInstance: IOServer | null = null;
+let ioInstance: IOServer<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData> | null = null;
 
-export function getIO(): IOServer {
+export function getIO(): IOServer<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData> {
   if (!ioInstance) throw new Error('Socket.IO is not initialized yet');
   return ioInstance;
 }
 
-export function setupRealtime(httpServer: HttpServer): IOServer {
-  const io = new IOServer(httpServer, {
+export function setupRealtime(httpServer: HttpServer): IOServer<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData> {
+  const io = new IOServer<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>(httpServer, {
     cors: {
       origin: (origin, callback) => {
         // السماح بجميع الأصول من نفس النطاق أو من Render
@@ -458,9 +456,9 @@ export function setupRealtime(httpServer: HttpServer): IOServer {
         
         // السماح بالأصول المحددة في البيئة
         const allowedOrigins = [
-          process.env.RENDER_EXTERNAL_URL,
-          process.env.FRONTEND_URL,
-          process.env.CORS_ORIGIN,
+          process?.env?.RENDER_EXTERNAL_URL,
+          process?.env?.FRONTEND_URL,
+          process?.env?.CORS_ORIGIN,
         ].filter(Boolean);
         
         if (allowedOrigins.some(allowed => origin.startsWith(allowed))) {
@@ -468,7 +466,7 @@ export function setupRealtime(httpServer: HttpServer): IOServer {
         }
         
         // في بيئة التطوير، السماح بكل شيء
-        if (process.env.NODE_ENV === 'development') {
+        if (process?.env?.NODE_ENV === 'development') {
           return callback(null, true);
         }
         
@@ -480,15 +478,15 @@ export function setupRealtime(httpServer: HttpServer): IOServer {
     },
     path: '/socket.io',
     // 🔥 تحسين النقل - إعطاء أولوية للـ WebSocket
-    transports: process.env.SOCKET_IO_POLLING_ONLY === 'true'
+    transports: (process?.env?.SOCKET_IO_POLLING_ONLY === 'true')
       ? ['polling']
       : ['websocket', 'polling'],
     allowEIO3: true,
     // 🔥 تحسين أوقات الاستجابة - تقليل timeout لتحسين الأداء
-    pingTimeout: process.env.NODE_ENV === 'production' ? 60000 : 30000, // دقيقة واحدة في الإنتاج، 30 ثانية في التطوير
-    pingInterval: process.env.NODE_ENV === 'production' ? 25000 : 15000, // ping كل 25 ثانية في الإنتاج، 15 في التطوير
+    pingTimeout: (process?.env?.NODE_ENV === 'production') ? 60000 : 30000, // دقيقة واحدة في الإنتاج، 30 ثانية في التطوير
+    pingInterval: (process?.env?.NODE_ENV === 'production') ? 25000 : 15000, // ping كل 25 ثانية في الإنتاج، 15 في التطوير
     upgradeTimeout: 30000, // تقليل timeout للترقية لتحسين الاستجابة
-    allowUpgrades: process.env.SOCKET_IO_POLLING_ONLY !== 'true',
+    allowUpgrades: (process?.env?.SOCKET_IO_POLLING_ONLY !== 'true'),
     cookie: false,
     serveClient: false,
     // 🔥 تحسين حجم البيانات والأداء
@@ -509,7 +507,7 @@ export function setupRealtime(httpServer: HttpServer): IOServer {
         const hostHeader = req.headers.host || '';
         
         // السماح دائماً في بيئة التطوير
-        if (process.env.NODE_ENV === 'development') {
+        if (process?.env?.NODE_ENV === 'development') {
           return callback(null, true);
         }
         
@@ -519,9 +517,9 @@ export function setupRealtime(httpServer: HttpServer): IOServer {
         }
         
         const envOrigins = [
-          process.env.RENDER_EXTERNAL_URL,
-          process.env.FRONTEND_URL,
-          process.env.CORS_ORIGIN,
+          process?.env?.RENDER_EXTERNAL_URL,
+          process?.env?.FRONTEND_URL,
+          process?.env?.CORS_ORIGIN,
         ].filter(Boolean) as string[];
         const envHosts = envOrigins
           .map((u) => {
@@ -539,7 +537,7 @@ export function setupRealtime(httpServer: HttpServer): IOServer {
             return '';
           }
         })();
-        const isDev = process.env.NODE_ENV !== 'production';
+        const isDev = (process?.env?.NODE_ENV !== 'production');
         // اعتبر نفس المضيف حتى لو اختلف المنفذ
         const isSameHost =
           originHost &&
@@ -1073,7 +1071,8 @@ async function loadActiveBots() {
   try {
     const { db } = await import('./database-adapter');
     const { bots } = await import('../shared/schema');
-    const { eq } = await import('drizzle-orm');
+    const drizzleOrm = await import('drizzle-orm');
+    const { eq } = drizzleOrm;
     
     if (!db) return;
     

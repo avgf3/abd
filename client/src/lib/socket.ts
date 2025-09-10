@@ -153,9 +153,9 @@ export function getSocket(): Socket {
     // 🔥 تحسين إدارة الاتصال
     multiplex: true, // تمكين multiplexing للأداء الأفضل
     forceBase64: false, // استخدام binary للأداء الأفضل
-    // 🔥 إعدادات ping مخصصة
-    pingTimeout: isProduction ? 60000 : 30000, // مطابق للخادم
-    pingInterval: isProduction ? 25000 : 15000, // مطابق للخادم
+    // 🔥 إعدادات ping مخصصة (هذه الخيارات للخادم فقط، لكن نتركها للتوثيق)
+    // pingTimeout: isProduction ? 60000 : 30000, // مطابق للخادم
+    // pingInterval: isProduction ? 25000 : 15000, // مطابق للخادم
     query: {
       deviceId,
       t: Date.now(), // timestamp لتجنب الكاش
