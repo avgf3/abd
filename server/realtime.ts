@@ -598,11 +598,6 @@ export async function setupRealtime(httpServer: HttpServer): Promise<IOServer<Cl
     console.warn('⚠️ لم يتم تفعيل Redis Adapter:', error);
   }
 
-  // 🔥 تهيئة نظام مراقبة الأداء
-  setupSocketMonitoring(io);
-
-  // 🔥 تهيئة نظام إدارة الاتصالات للأحمال العالية
-  setupConnectionLimiter(io);
 
   // 🔥 تهيئة محسن قائمة المستخدمين
   createUserListOptimizer(emitOptimizedOnlineUsers);
