@@ -187,22 +187,24 @@ export function updateConnectedUserCache(userOrId: any, maybeUser?: any) {
   } catch {}
 }
 
-// بناء قائمة المتصلين بكفاءة اعتماداً على sockets المسجلة
+// بناء قائمة المتصلين - حل بسيط وسريع
 export async function buildOnlineUsersForRoom(roomId: string) {
-
   const userMap = new Map<number, any>();
+  
   for (const [_, entry] of connectedUsers.entries()) {
-    // تحقق سريع عبر sockets دون مسح كامل
-    for (const socketMeta of entry.sockets.values()) {
-      if (
-        socketMeta.room === roomId &&
-        entry.user &&
-        entry.user.id &&
-        entry.user.username &&
-        entry.user.userType
-      ) {
-        userMap.set(entry.user.id, entry.user);
-        break;
+    if (entry.user && entry.user.id && entry.user.username) {
+      // إذا كان المستخدم في الغرفة أو متصل حديثاً (أقل من 30 ثانية)
+      const isRecentlyConnected = Date.now() - entry.lastSeen.getTime() < 30000;
+      
+      for (const socketMeta of entry.sockets.values()) {
+        if (socketMeta.room === roomId || (isRecentlyConnected && !socketMeta.room)) {
+          userMap.set(entry.user.id, entry.user);
+          // إصلاح بسيط: إذا كان متصل حديثاً بدون غرفة، ضعه في الغرفة المطلوبة
+          if (!socketMeta.room) {
+            socketMeta.room = roomId;
+          }
+          break;
+        }
       }
     }
   }

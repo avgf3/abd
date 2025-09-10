@@ -18,8 +18,8 @@ interface PendingUpdate {
 
 class UserListOptimizer {
   private pendingUpdates = new Map<string, PendingUpdate>();
-  private readonly DEBOUNCE_DELAY = 500; // 🔥 تقليل التأخير إلى 500ms للاستجابة الأسرع
-  private readonly MAX_BATCH_SIZE = 30; // 🔥 تقليل حجم المجموعة للمعالجة الأسرع
+  private readonly DEBOUNCE_DELAY = 300; // تأخير قصير للكفاءة
+  private readonly MAX_BATCH_SIZE = 20; // حجم صغير للسرعة
 
   constructor(private emitCallback: (roomId: string, users: any[]) => Promise<void>) {}
 
@@ -81,12 +81,10 @@ class UserListOptimizer {
     }
   }
 
-  // 🔥 تحسين الأحداث مع منطق ذكي لتجنب فقدان المستخدمين
+  // تحسين الأحداث - نسخة مبسطة
   private optimizeEvents(events: UserUpdateEvent[]): UserUpdateEvent[] {
-    // ترتيب الأحداث حسب الوقت
     events.sort((a, b) => a.timestamp - b.timestamp);
     
-    // تجميع الأحداث حسب المستخدم
     const userEvents = new Map<number, UserUpdateEvent[]>();
     for (const event of events) {
       if (!userEvents.has(event.userId)) {
@@ -95,29 +93,10 @@ class UserListOptimizer {
       userEvents.get(event.userId)!.push(event);
     }
     
-    // 🔥 منطق ذكي: إذا كان آخر حدث "leave" لكن هناك "join" حديث، استخدم "join"
+    // أخذ آخر حدث لكل مستخدم فقط
     const optimized: UserUpdateEvent[] = [];
     for (const [userId, userEventList] of userEvents) {
-      const lastEvent = userEventList[userEventList.length - 1];
-      
-      // إذا كان آخر حدث هو "leave"
-      if (lastEvent.type === 'leave') {
-        // ابحث عن آخر "join" أو "update" في آخر 5 ثوان
-        const recentThreshold = Date.now() - 5000; // 5 ثوان
-        const recentJoinOrUpdate = userEventList
-          .filter(e => e.timestamp > recentThreshold && (e.type === 'join' || e.type === 'update'))
-          .pop();
-        
-        // إذا وُجد join/update حديث، استخدمه بدلاً من leave
-        if (recentJoinOrUpdate) {
-          console.log(`🔄 تجاهل leave قديم للمستخدم ${userId}، استخدام ${recentJoinOrUpdate.type} حديث`);
-          optimized.push(recentJoinOrUpdate);
-        } else {
-          optimized.push(lastEvent);
-        }
-      } else {
-        optimized.push(lastEvent);
-      }
+      optimized.push(userEventList[userEventList.length - 1]);
     }
     
     return optimized;

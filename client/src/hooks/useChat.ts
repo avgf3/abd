@@ -1329,43 +1329,12 @@ export const useChat = () => {
           } catch {}
         });
 
-        // 🔥 آلية استرداد محسّنة لفشل إعادة الاتصال
+        // معالج فشل إعادة الاتصال
         s.on('reconnect_failed', () => {
-          console.warn('⚠️ فشل في إعادة الاتصال بعد عدة محاولات');
           dispatch({
             type: 'SET_CONNECTION_ERROR',
-            payload: 'فقدان الاتصال. جاري المحاولة...',
+            payload: 'فقدان الاتصال. يرجى إعادة تحميل الصفحة.',
           });
-          
-          // محاولة استرداد يدوية بعد فترة
-          setTimeout(() => {
-            if (currentUserRef.current && !s.connected) {
-              console.log('🔄 محاولة استرداد يدوية للاتصال');
-              try {
-                s.connect();
-                
-                // إذا نجح الاتصال، أعد المصادقة والانضمام
-                s.once('connect', () => {
-                  console.log('✅ نجح الاسترداد اليدوي');
-                  dispatch({ type: 'SET_CONNECTION_ERROR', payload: null });
-                  
-                  // إعادة المصادقة
-                  s.emit('auth', {
-                    userId: currentUserRef.current!.id,
-                    username: currentUserRef.current!.username,
-                    userType: currentUserRef.current!.userType,
-                    reconnect: true,
-                  });
-                });
-              } catch (error) {
-                console.error('فشل في الاسترداد اليدوي:', error);
-                dispatch({
-                  type: 'SET_CONNECTION_ERROR',
-                  payload: 'فقدان الاتصال. يرجى إعادة تحميل الصفحة.',
-                });
-              }
-            }
-          }, 5000); // محاولة بعد 5 ثوان
         });
 
         // تحديث حالة الاتصال عند الانفصال
@@ -1387,62 +1356,24 @@ export const useChat = () => {
     [setupSocketListeners, state.currentRoomId]
   );
 
-  // 🔥 دالة انضمام محسّنة مع مراقبة النجاح
+  // دالة انضمام بسيطة
   const joinRoom = useCallback(
     (roomId: string) => {
       if (!roomId || roomId === 'public' || roomId === 'friends') {
-        console.warn('Invalid room ID provided to joinRoom:', roomId);
         return;
       }
       if (state.currentRoomId === roomId) {
         return;
       }
 
-      // Do NOT change local room yet; wait for server ack (roomJoined)
       if (socket.current?.connected && state.currentUser?.id) {
-        console.log(`🚪 محاولة الانضمام للغرفة: ${roomId}`);
-        
         socket.current.emit('joinRoom', {
           roomId,
           userId: state.currentUser.id,
           username: state.currentUser.username,
         });
-
-        // 🔥 مراقبة نجاح الانضمام مع timeout
-        const joinTimeout = setTimeout(() => {
-          if (currentRoomIdRef.current !== roomId) {
-            console.warn(`⚠️ انتهت مهلة الانضمام للغرفة ${roomId}، محاولة أخرى...`);
-            
-            // محاولة أخرى إذا لم ينجح الانضمام
-            if (socket.current?.connected) {
-              socket.current.emit('joinRoom', {
-                roomId,
-                userId: state.currentUser!.id,
-                username: state.currentUser!.username,
-              });
-            }
-          }
-        }, 3000); // 3 ثوان timeout
-
-        // تنظيف timeout عند نجاح الانضمام
-        const cleanupTimeout = () => {
-          clearTimeout(joinTimeout);
-        };
-        
-        socket.current.once('message', (data: any) => {
-          if (data.type === 'roomJoined' && data.roomId === roomId) {
-            console.log(`✅ نجح الانضمام للغرفة: ${roomId}`);
-            cleanupTimeout();
-          } else if (data.type === 'error' && data.message?.includes('غرفة')) {
-            console.error(`❌ فشل الانضمام للغرفة ${roomId}: ${data.message}`);
-            cleanupTimeout();
-          }
-        });
-        
       } else {
-        // Queue join until we reconnect
         pendingJoinRoomRef.current = roomId;
-        console.log(`📝 تأجيل الانضمام للغرفة ${roomId} حتى الاتصال`);
       }
     },
     [state.currentRoomId, state.currentUser]
