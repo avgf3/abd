@@ -449,9 +449,14 @@ export const useChat = () => {
     // بعد المصادقة الناجحة من الخادم، انضم للغرفة المطلوبة إن وُجدت
     socketInstance.on('authenticated', () => {
       try {
-        const desired = pendingJoinRoomRef.current || (() => {
-          try { return getSession()?.roomId as string | undefined; } catch { return undefined; }
-        })();
+        const desired = (
+          pendingJoinRoomRef.current ||
+          (() => {
+            try { return getSession()?.roomId as string | undefined; } catch { return undefined; }
+          })() ||
+          // fallback إلى الغرفة الحالية في الحالة إن وُجدت
+          currentRoomIdRef.current
+        );
         if (desired && desired !== 'public' && desired !== 'friends' && currentUserRef.current) {
           socketInstance.emit('joinRoom', {
             roomId: desired,
@@ -482,9 +487,14 @@ export const useChat = () => {
         // تأكيد المصادقة من الخادم: بعده فقط نرسل joinRoom المؤجل أو المحفوظ
         if (envelope.type === 'authenticated') {
           try {
-            const desired = pendingJoinRoomRef.current || (() => {
-              try { return getSession()?.roomId as string | undefined; } catch { return undefined; }
-            })();
+            const desired = (
+              pendingJoinRoomRef.current ||
+              (() => {
+                try { return getSession()?.roomId as string | undefined; } catch { return undefined; }
+              })() ||
+              // fallback إلى الغرفة الحالية في الحالة إن وُجدت
+              currentRoomIdRef.current
+            );
             if (desired && desired !== 'public' && desired !== 'friends' && currentUserRef.current) {
               socket.current?.emit('joinRoom', {
                 roomId: desired,
