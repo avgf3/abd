@@ -344,6 +344,7 @@ async function startServer() {
     // Start the server with retry mechanism
     const PORT = Number(process.env.PORT) || 5000;
     const HOST = '0.0.0.0';
+    const BACKLOG = Number(process.env.BACKLOG) || 8192;
     
     const startListening = () => {
       return new Promise<void>((resolve, reject) => {
@@ -362,7 +363,7 @@ async function startServer() {
 
         server.once('error', errorHandler);
         
-        server.listen(PORT, HOST, () => {
+        server.listen(PORT, HOST, BACKLOG, () => {
           server.removeListener('error', errorHandler);
           const mode = process.env.NODE_ENV;
           if (mode === 'development') {
