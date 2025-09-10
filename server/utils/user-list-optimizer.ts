@@ -13,7 +13,7 @@ interface UserUpdateEvent {
 interface PendingUpdate {
   roomId: string;
   events: UserUpdateEvent[];
-  timeoutId: NodeJS.Timeout;
+  timeoutId: any; // Timer ID
 }
 
 class UserListOptimizer {

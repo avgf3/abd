@@ -190,7 +190,7 @@ export function updateConnectedUserCache(userOrId: any, maybeUser?: any) {
 }
 
 // بناء قائمة المتصلين بكفاءة اعتماداً على sockets المسجلة
-async function buildOnlineUsersForRoom(roomId: string) {
+export async function buildOnlineUsersForRoom(roomId: string) {
 
   const userMap = new Map<number, any>();
   for (const [_, entry] of connectedUsers.entries()) {
