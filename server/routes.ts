@@ -1650,7 +1650,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // إعداد Socket.IO من خلال وحدة realtime الموحدة
   const { setupRealtime } = await import('./realtime');
-  const { connectionMonitor } = await import('./utils/connection-monitor');
   const io = setupRealtime(httpServer);
 
   // تطبيق فحص الأمان على جميع الطلبات

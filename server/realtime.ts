@@ -22,7 +22,6 @@ import { getClientIpFromHeaders, getDeviceIdFromHeaders } from './utils/device';
 import { verifyAuthToken } from './utils/auth-token';
 import { setupSocketMonitoring, socketPerformanceMonitor } from './utils/socket-performance';
 import { createUserListOptimizer, getUserListOptimizer, optimizedUserJoin, optimizedUserLeave } from './utils/user-list-optimizer';
-import { connectionMonitor } from './utils/connection-monitor';
 
 const GENERAL_ROOM = 'general';
 
@@ -388,8 +387,6 @@ async function joinRoom(
   const users = await buildOnlineUsersForRoom(roomId);
   socket.emit('message', { type: 'roomJoined', roomId, users });
 
-  // 🔍 تسجيل نجاح الانضمام
-  connectionMonitor.logRoomJoin(userId, roomId, true);
 
   // رسائل حديثة (تجنب التكرار عند الانضمام السريع): لا داعي إذا لم تتغير الغرفة فعلياً
   try {
@@ -670,9 +667,6 @@ export function setupRealtime(httpServer: HttpServer): IOServer<ClientToServerEv
       timestamp: new Date().toISOString(),
     });
 
-    // 🔍 تسجيل الاتصال في نظام المراقبة
-    const tempUserId = Math.random(); // مؤقت حتى المصادقة
-    connectionMonitor.logConnection(tempUserId, 'غير مصادق', false);
 
     // Helper to extract bearer token or cookie-based auth token from handshake/headers
     const getTokenFromHeaders = (): string | null => {
@@ -852,9 +846,6 @@ export function setupRealtime(httpServer: HttpServer): IOServer<ClientToServerEv
             autoJoinRoom // إرسال الغرفة للانضمام التلقائي
           });
 
-          // 🔍 تسجيل المصادقة الناجحة
-          connectionMonitor.logAuthentication(user.id);
-          connectionMonitor.logConnection(user.id, user.username, payload.reconnect === true);
 
           // 🔥 الانضمام التلقائي للغرفة السابقة عند إعادة الاتصال
           if (autoJoinRoom && payload.reconnect === true) {
