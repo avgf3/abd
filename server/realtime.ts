@@ -491,23 +491,26 @@ export function setupRealtime(httpServer: HttpServer): IOServer<ClientToServerEv
     allowUpgrades: (process?.env?.SOCKET_IO_POLLING_ONLY !== 'true'),
     cookie: false,
     serveClient: false,
-    // 🔥 تحسين حجم البيانات للأحمال العالية
-    maxHttpBufferSize: 2e6, // تقليل إلى 2MB لتوفير الذاكرة مع 3000 متصل
+    // 🔥 تحسين حجم البيانات للأحمال الفائقة (6000 متصل)
+    maxHttpBufferSize: 1e6, // تقليل إلى 1MB لتوفير الذاكرة القصوى
     perMessageDeflate: {
-      // تفعيل الضغط الذكي للرسائل الكبيرة فقط
-      threshold: 1024, // ضغط الرسائل أكبر من 1KB
-      concurrencyLimit: 10, // حد التزامن
-      memLevel: 7, // توفير ذاكرة
+      // ضغط عدواني للرسائل
+      threshold: 512, // ضغط الرسائل أكبر من 512 bytes
+      concurrencyLimit: 20, // زيادة حد التزامن
+      memLevel: 6, // توفير ذاكرة أكبر
+      windowBits: 13, // تحسين الضغط
     },
     httpCompression: true, // تفعيل ضغط HTTP للأداء الأفضل
-    // 🔥 إعدادات محسّنة للأحمال العالية (3000 متصل)
-    connectTimeout: 30000, // timeout أقل للاتصال الأولي
-    cleanupEmptyChildNamespaces: true, // تنظيف namespaces الفارغة
-    // حد الاتصالات المتزامنة لكل IP (منع الإفراط)
+    // 🔥 إعدادات محسّنة للأحمال الفائقة (6000 متصل)
+    connectTimeout: 20000, // timeout أقل للاتصال السريع
+    cleanupEmptyChildNamespaces: true,
     connectionStateRecovery: {
-      maxDisconnectionDuration: 2 * 60 * 1000, // دقيقتان
+      maxDisconnectionDuration: 1 * 60 * 1000, // دقيقة واحدة فقط
       skipMiddlewares: true,
     },
+    // تحسينات إضافية للأداء الفائق
+    destroyUpgrade: 5000, // تدمير الترقيات الفاشلة بسرعة
+    destroyUpgradeTimeout: 1000,
     allowRequest: (req, callback) => {
       try {
         const originHeader = req.headers.origin || '';

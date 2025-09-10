@@ -200,8 +200,8 @@ class ConnectionLimiter {
 
 // إنشاء instance واحد للاستخدام العام
 export const connectionLimiter = new ConnectionLimiter(
-  parseInt(process.env.MAX_CONCURRENT_CONNECTIONS || '3000'),
-  parseInt(process.env.MAX_CONNECTIONS_PER_IP || '50')
+  parseInt(process.env.MAX_CONCURRENT_CONNECTIONS || '6000'),
+  parseInt(process.env.MAX_CONNECTIONS_PER_IP || '100')
 );
 
 /**
