@@ -2547,32 +2547,6 @@ export default function ProfileModal({
                     <bdi>{localUser?.username || 'اسم المستخدم'}</bdi>
                   </h3>
                 </div>
-                <div className="profile-actions">
-                  <button
-                    className="action-btn btn-chat"
-                    onClick={() => localUser && onPrivateMessage?.(localUser)}
-                  >
-                    💬 محادثة
-                  </button>
-                  <button
-                    className="action-btn btn-send"
-                    onClick={() => localUser && onPrivateMessage?.(localUser)}
-                  >
-                    ✉️ إرسال رسالة
-                  </button>
-                  <button
-                    className="action-btn btn-add"
-                    onClick={() => localUser && onAddFriend?.(localUser)}
-                  >
-                    👥 إضافة صديق
-                  </button>
-                  <button
-                    className="action-btn btn-ignore"
-                    onClick={() => localUser?.id && onIgnoreUser?.(localUser.id)}
-                  >
-                    🚫 تجاهل
-                  </button>
-                </div>
               </>
             )}
 
@@ -3190,161 +3164,189 @@ export default function ProfileModal({
                 </div>
               </div>
             )}
-        </div>
-        )}
 
-        {/* مؤشر التحميل */}
-        {isLoading && (
-          <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-xl z-30">
-            <div className="bg-white/90 backdrop-blur-md rounded-lg p-4 flex flex-col items-center gap-3">
-              <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-              <span className="text-gray-700 font-medium">جاري الحفظ...</span>
-            </div>
-          </div>
-        )}
+            {/* شريط أزرار الإجراءات - تحت الغلاف وأسفل تبويبات معلوماتي/خيارات */}
+            {localUser?.id !== currentUser?.id && (
+              <div style={{
+                display: 'flex',
+                gap: '8px',
+                padding: '10px 8px',
+                borderRadius: '8px',
+                border: '1px solid rgba(255,255,255,0.08)',
+                background: 'rgba(255,255,255,0.04)',
+                marginTop: '8px',
+                marginBottom: '8px',
+                justifyContent: 'center'
+              }}>
+                <button
+                  className="action-btn btn-chat"
+                  onClick={() => localUser && onPrivateMessage?.(localUser)}
+                >
+                  💬 محادثة
+                </button>
+                <button
+                  className="action-btn btn-send"
+                  onClick={() => localUser && onPrivateMessage?.(localUser)}
+                >
+                  ✉️ إرسال رسالة
+                </button>
+                <button
+                  className="action-btn btn-add"
+                  onClick={() => localUser && onAddFriend?.(localUser)}
+                >
+                  👥 إضافة صديق
+                </button>
+                <button
+                  className="action-btn btn-ignore"
+                  onClick={() => localUser?.id && onIgnoreUser?.(localUser.id)}
+                >
+                  🚫 تجاهل
+                </button>
+              </div>
+            )}
 
-        {/* Tab Content - Other (Friends) - فقط للمستخدمين الآخرين */}
-        {activeTab === 'other' && localUser?.id !== currentUser?.id && (
-          <div style={{ 
-            padding: '12px',
-            borderRadius: '8px',
-            border: '1px solid rgba(255,255,255,0.08)',
-            background: 'rgba(255,255,255,0.04)'
-          }}>
-            <h4 style={{ 
-              margin: '0 0 12px 0', 
-              fontSize: '14px', 
-              fontWeight: 'bold', 
-              color: '#fff',
-              textAlign: 'center',
-              borderBottom: '1px solid rgba(255,255,255,0.1)',
-              paddingBottom: '8px'
-            }}>
-              الأصدقاء
-            </h4>
-            
-            {localUser?.id === currentUser?.id ? (
-              <div>
-                {loadingFriends ? (
-                  <div style={{ textAlign: 'center', color: '#888', fontSize: '14px' }}>
-                    جاري تحميل الأصدقاء...
-                  </div>
-                ) : friends.length === 0 ? (
-                  <div style={{ textAlign: 'center', color: '#888', fontSize: '14px' }}>
-                    لا يوجد أصدقاء بعد
+            {/* Tab Content */}
+            {activeTab === 'other' && localUser?.id !== currentUser?.id && (
+              <div style={{ 
+                padding: '12px',
+                borderRadius: '8px',
+                border: '1px solid rgba(255,255,255,0.08)',
+                background: 'rgba(255,255,255,0.04)'
+              }}>
+                <h4 style={{ 
+                  margin: '0 0 12px 0', 
+                  fontSize: '14px', 
+                  fontWeight: 'bold', 
+                  color: '#fff',
+                  textAlign: 'center',
+                  borderBottom: '1px solid rgba(255,255,255,0.1)',
+                  paddingBottom: '8px'
+                }}>
+                  الأصدقاء
+                </h4>
+                
+                {localUser?.id === currentUser?.id ? (
+                  <div>
+                    {loadingFriends ? (
+                      <div style={{ textAlign: 'center', color: '#888', fontSize: '14px' }}>
+                        جاري تحميل الأصدقاء...
+                      </div>
+                    ) : friends.length === 0 ? (
+                      <div style={{ textAlign: 'center', color: '#888', fontSize: '14px' }}>
+                        لا يوجد أصدقاء بعد
+                      </div>
+                    ) : (
+                      <div>
+                        {friends.map(friend => (
+                          <div key={friend.id} className="compact-vertical" style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            marginBottom: '8px',
+                            padding: '8px',
+                            borderRadius: '6px',
+                            background: 'rgba(255,255,255,0.04)'
+                          }}>
+                            <img 
+                              src={friend.profileImage || '/default-avatar.png'} 
+                              alt={friend.username}
+                              style={{ width: '32px', height: '32px', borderRadius: '50%' }}
+                            />
+                            <span style={{ color: '#fff', fontSize: '14px' }}>{friend.username}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div>
-                    {friends.map(friend => (
-                      <div key={friend.id} className="compact-vertical" style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        marginBottom: '8px',
-                        padding: '8px',
-                        borderRadius: '6px',
-                        background: 'rgba(255,255,255,0.04)'
+                    {loadingFriends ? (
+                      <div style={{ textAlign: 'center', color: '#888', fontSize: '14px' }}>
+                        جاري تحميل الأصدقاء...
+                      </div>
+                    ) : friends.length === 0 ? (
+                      <div style={{ textAlign: 'center', color: '#888', fontSize: '14px' }}>
+                        لا يوجد أصدقاء بعد
+                      </div>
+                    ) : (
+                      <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))',
+                        gap: '12px',
+                        maxHeight: '300px',
+                        overflowY: 'auto'
                       }}>
-                        <img 
-                          src={friend.profileImage || '/default-avatar.png'} 
-                          alt={friend.username}
-                          style={{ width: '32px', height: '32px', borderRadius: '50%' }}
-                        />
-                        <span style={{ color: '#fff', fontSize: '14px' }}>{friend.username}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div>
-                {loadingFriends ? (
-                  <div style={{ textAlign: 'center', color: '#888', fontSize: '14px' }}>
-                    جاري تحميل الأصدقاء...
-                  </div>
-                ) : friends.length === 0 ? (
-                  <div style={{ textAlign: 'center', color: '#888', fontSize: '14px' }}>
-                    لا يوجد أصدقاء بعد
-                  </div>
-                ) : (
-                  <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))',
-                    gap: '12px',
-                    maxHeight: '300px',
-                    overflowY: 'auto'
-                  }}>
-                    {friends.map((friend) => (
-                      <div
-                        key={friend.id}
-                        onClick={() => onUserClick?.(friend)}
-                        className="compact-vertical"
-                        style={{
-                          display: 'flex',
-                          flexDirection: 'column',
-                          alignItems: 'center',
-                          padding: '8px',
-                          borderRadius: '8px',
-                          background: 'rgba(255,255,255,0.05)',
-                          border: '1px solid rgba(255,255,255,0.08)',
-                          cursor: 'pointer',
-                          transition: 'all 0.2s ease',
-                          ':hover': {
-                            background: 'rgba(255,255,255,0.1)'
-                          }
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
-                        }}
-                      >
-                        <div style={{
-                          width: '50px',
-                          height: '50px',
-                          borderRadius: '50%',
-                          overflow: 'hidden',
-                          marginBottom: '6px',
-                          border: '2px solid rgba(255,255,255,0.2)'
-                        }}>
-                          <img
-                            src={getProfileImageSrc(friend.profileImage, friend.gender)}
-                            alt={friend.username}
+                        {friends.map((friend) => (
+                          <div
+                            key={friend.id}
+                            onClick={() => onUserClick?.(friend)}
+                            className="compact-vertical"
                             style={{
-                              width: '100%',
-                              height: '100%',
-                              objectFit: 'cover'
+                              display: 'flex',
+                              flexDirection: 'column',
+                              alignItems: 'center',
+                              padding: '8px',
+                              borderRadius: '8px',
+                              background: 'rgba(255,255,255,0.05)',
+                              border: '1px solid rgba(255,255,255,0.08)',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s ease',
+                              ':hover': {
+                                background: 'rgba(255,255,255,0.1)'
+                              }
                             }}
-                          />
-                        </div>
-                        <span style={{
-                          fontSize: '12px',
-                          color: friend.usernameColor || '#fff',
-                          fontWeight: 'bold',
-                          textAlign: 'center',
-                          wordBreak: 'break-word',
-                          lineHeight: '1.2'
-                        }}>
-                          {friend.username}
-                        </span>
-                        {friend.isOnline && (
-                          <div style={{
-                            width: '8px',
-                            height: '8px',
-                            borderRadius: '50%',
-                            background: '#4ade80',
-                            marginTop: '2px'
-                          }} />
-                        )}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+                            }}
+                          >
+                            <div style={{
+                              width: '50px',
+                              height: '50px',
+                              borderRadius: '50%',
+                              overflow: 'hidden',
+                              marginBottom: '6px',
+                              border: '2px solid rgba(255,255,255,0.2)'
+                            }}>
+                              <img
+                                src={getProfileImageSrc(friend.profileImage, friend.gender)}
+                                alt={friend.username}
+                                style={{
+                                  width: '100%',
+                                  height: '100%',
+                                  objectFit: 'cover'
+                                }}
+                              />
+                            </div>
+                            <span style={{
+                              fontSize: '12px',
+                              color: friend.usernameColor || '#fff',
+                              fontWeight: 'bold',
+                              textAlign: 'center',
+                              wordBreak: 'break-word',
+                              lineHeight: '1.2'
+                            }}>
+                              {friend.username}
+                            </span>
+                            {friend.isOnline && (
+                              <div style={{
+                                width: '8px',
+                                height: '8px',
+                                borderRadius: '50%',
+                                background: '#4ade80',
+                                marginTop: '2px'
+                              }} />
+                            )}
+                          </div>
+                        ))}
                       </div>
-                    ))}
+                    )}
                   </div>
                 )}
               </div>
             )}
-          </div>
-        )}
           </div>
 
           {/* Hidden File Inputs */}
