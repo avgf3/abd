@@ -57,6 +57,7 @@ export default function PrivateMessageBox({
   const inputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { textColor: composerTextColor, bold: composerBold } = useComposerStyle();
+  const isDmClosed = (user as any)?.dmPrivacy === 'none';
 
   const handleViewProfileClick = useCallback(() => {
     try {
@@ -577,54 +578,62 @@ export default function PrivateMessageBox({
                 </button>
               </div>
             )}
-            <div className="flex gap-3 items-end">
-              <Input
-                ref={inputRef}
-                value={messageText}
-                onChange={(e) => setMessageText(e.target.value)}
-                onKeyDown={handleKeyDown}
-                onPaste={handlePaste}
-                placeholder="اكتب رسالتك هنا..."
-                className={`flex-1 bg-gray-50 border text-foreground placeholder:text-muted-foreground rounded-lg ${
-                  sendError ? 'border-red-300' : 'border-gray-300'
-                }`}
-                disabled={isSending}
-                style={{ color: composerTextColor, fontWeight: composerBold ? 600 : undefined }}
-              />
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={(e) => setImageFile(e.target.files?.[0] || null)}
-                className="hidden"
-              />
-              {/* Removed ComposerPlusMenu (gallery/color/bold) */}
-              <Button
-                onClick={handleSend}
-                disabled={(!messageText.trim() && !imageFile) || isSending}
-                className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-2 rounded-lg font-medium transition-all disabled:opacity-50"
-              >
-                {isSending ? (
-                  <>
-                    <span className="animate-spin">⌛</span> جاري الإرسال...
-                  </>
-                ) : (
-                  <>📤 إرسال</>
-                )}
-              </Button>
-            </div>
-            {imageFile && (
-              <div className="mt-2 text-xs text-gray-600 flex items-center gap-2">
-                <span>سيتم إرسال صورة:</span>
-                <span className="font-medium truncate max-w-[200px]">{imageFile.name}</span>
-                <button
-                  className="text-red-600 hover:underline"
-                  onClick={() => setImageFile(null)}
-                  type="button"
-                >
-                  إزالة
-                </button>
+            {isDmClosed ? (
+              <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg text-center text-sm text-gray-600">
+                عفواً هذا العضو قامَ بإغلاق الرسائل الخاصة
               </div>
+            ) : (
+              <>
+                <div className="flex gap-3 items-end">
+                  <Input
+                    ref={inputRef}
+                    value={messageText}
+                    onChange={(e) => setMessageText(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    onPaste={handlePaste}
+                    placeholder="اكتب رسالتك هنا..."
+                    className={`flex-1 bg-gray-50 border text-foreground placeholder:text-muted-foreground rounded-lg ${
+                      sendError ? 'border-red-300' : 'border-gray-300'
+                    }`}
+                    disabled={isSending}
+                    style={{ color: composerTextColor, fontWeight: composerBold ? 600 : undefined }}
+                  />
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => setImageFile(e.target.files?.[0] || null)}
+                    className="hidden"
+                  />
+                  {/* Removed ComposerPlusMenu (gallery/color/bold) */}
+                  <Button
+                    onClick={handleSend}
+                    disabled={(!messageText.trim() && !imageFile) || isSending}
+                    className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-2 rounded-lg font-medium transition-all disabled:opacity-50"
+                  >
+                    {isSending ? (
+                      <>
+                        <span className="animate-spin">⌛</span> جاري الإرسال...
+                      </>
+                    ) : (
+                      <>📤 إرسال</>
+                    )}
+                  </Button>
+                </div>
+                {imageFile && (
+                  <div className="mt-2 text-xs text-gray-600 flex items-center gap-2">
+                    <span>سيتم إرسال صورة:</span>
+                    <span className="font-medium truncate max-w-[200px]">{imageFile.name}</span>
+                    <button
+                      className="text-red-600 hover:underline"
+                      onClick={() => setImageFile(null)}
+                      type="button"
+                    >
+                      إزالة
+                    </button>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </motion.div>
