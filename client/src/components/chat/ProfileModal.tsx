@@ -1698,7 +1698,7 @@ export default function ProfileModal({
         }
 
         .profile-body {
-          padding: 20px 20px 10px;
+          padding: 8px 20px 10px;
         }
 
         .profile-info {
@@ -2298,7 +2298,7 @@ export default function ProfileModal({
           }
           
           .profile-body {
-            padding: 58px 12px 10px;
+            padding: 35px 12px 10px;
           }
           
           .profile-info h3 {
