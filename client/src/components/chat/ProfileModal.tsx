@@ -2591,7 +2591,7 @@ export default function ProfileModal({
             {/* Tab Navigation */}
             <div style={{
               display: 'flex',
-              marginBottom: '16px',
+              marginBottom: '0px',
               borderRadius: '8px',
               background: 'rgba(255,255,255,0.04)',
               border: '1px solid rgba(255,255,255,0.08)',
