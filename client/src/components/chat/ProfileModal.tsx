@@ -30,6 +30,10 @@ interface ProfileModalProps {
   onUserClick?: (user: ChatUser) => void;
   // عند التفعيل: يتم إدارة الصوت خارجياً من ChatInterface
   externalAudioManaged?: boolean;
+  // أزرار الإجراءات: محادثة/رسالة/إضافة صديق/تجاهل
+  onPrivateMessage?: (user: ChatUser) => void;
+  onAddFriend?: (user: ChatUser) => void;
+  onIgnoreUser?: (userId: number) => void;
 }
 
 export default function ProfileModal({
@@ -39,6 +43,9 @@ export default function ProfileModal({
   onUpdate,
   onUserClick,
   externalAudioManaged,
+  onPrivateMessage,
+  onAddFriend,
+  onIgnoreUser,
 }: ProfileModalProps) {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -1639,9 +1646,45 @@ export default function ProfileModal({
           background: rgba(0,0,0,0.9);
         }
 
-        /* تم حذف أنماط الأزرار المحذوفة */
+        /* أزرار الإجراءات على الغلاف (محادثة / إرسال / إضافة / تجاهل) */
+        .profile-actions {
+          position: absolute;
+          bottom: 12px;
+          left: 12px;
+          right: 170px; /* مساحة للصورة الشخصية على اليمين */
+          display: flex;
+          gap: 8px;
+          align-items: center;
+          flex-wrap: wrap;
+          z-index: 11;
+        }
 
-        /* تم حذف أنماط الأزرار المحذوفة */
+        .action-btn {
+          border: none;
+          padding: 6px 10px;
+          border-radius: 8px;
+          font-weight: bold;
+          font-size: 12px;
+          cursor: pointer;
+          color: #fff;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+          transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+          white-space: nowrap;
+          background: rgba(255,255,255,0.1);
+          border: 1px solid rgba(255,255,255,0.08);
+          backdrop-filter: blur(6px);
+        }
+
+        .action-btn:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+          filter: brightness(1.05);
+        }
+
+        .btn-chat { background: linear-gradient(135deg, #3490dc, #2779bd); }
+        .btn-send { background: linear-gradient(135deg, #6b7280, #374151); }
+        .btn-add { background: linear-gradient(135deg, #38a169, #2f855a); }
+        .btn-ignore { background: linear-gradient(135deg, #ef4444, #dc2626); }
 
         .profile-avatar {
           width: 130px;
@@ -2482,6 +2525,7 @@ export default function ProfileModal({
                       </span>
                     </div>
                   )}
+                  {/* الاسم */}
                   <h3 style={{
                     margin: 0,
                     fontSize: '18px',
@@ -2502,6 +2546,32 @@ export default function ProfileModal({
                   >
                     <bdi>{localUser?.username || 'اسم المستخدم'}</bdi>
                   </h3>
+                </div>
+                <div className="profile-actions">
+                  <button
+                    className="action-btn btn-chat"
+                    onClick={() => localUser && onPrivateMessage?.(localUser)}
+                  >
+                    💬 محادثة
+                  </button>
+                  <button
+                    className="action-btn btn-send"
+                    onClick={() => localUser && onPrivateMessage?.(localUser)}
+                  >
+                    ✉️ إرسال رسالة
+                  </button>
+                  <button
+                    className="action-btn btn-add"
+                    onClick={() => localUser && onAddFriend?.(localUser)}
+                  >
+                    👥 إضافة صديق
+                  </button>
+                  <button
+                    className="action-btn btn-ignore"
+                    onClick={() => localUser?.id && onIgnoreUser?.(localUser.id)}
+                  >
+                    🚫 تجاهل
+                  </button>
                 </div>
               </>
             )}

@@ -1217,6 +1217,12 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                     });
                   }
                 }}
+                onPrivateMessage={(u) => handlePrivateMessage(u)}
+                onAddFriend={(u) => handleAddFriend(u)}
+                onIgnoreUser={(id) => {
+                  const u = chat.onlineUsers.find((x) => x.id === id) || profileUser;
+                  if (u) handleIgnoreUser(u as any);
+                }}
               />
             ) : (
               <ProfileModal
@@ -1237,6 +1243,12 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                       profileBackgroundColor: updatedUser.profileBackgroundColor,
                     });
                   }
+                }}
+                onPrivateMessage={(u) => handlePrivateMessage(u)}
+                onAddFriend={(u) => handleAddFriend(u)}
+                onIgnoreUser={(id) => {
+                  const u = chat.onlineUsers.find((x) => x.id === id) || profileUser || chat.currentUser;
+                  if (u) handleIgnoreUser(u as any);
                 }}
               />
             )}
