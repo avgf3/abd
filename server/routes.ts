@@ -1624,6 +1624,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // 🔥 API مراقبة الاتصالات للأحمال العالية
+  app.get('/api/connections/stats', protect.admin, async (req, res) => {
+    try {
+      const { connectionLimiter } = await import('./utils/connection-limiter');
+      const stats = connectionLimiter.getStats();
+      const health = connectionLimiter.getHealthReport();
+      
+      res.json({
+        success: true,
+        data: {
+          connections: stats,
+          health,
+          timestamp: new Date().toISOString(),
+        },
+      });
+    } catch (error) {
+      console.error('خطأ في جلب إحصائيات الاتصالات:', error);
+      res.status(500).json({ error: 'خطأ في الخادم' });
+    }
+  });
+
+  // API تفصيلي لإحصائيات الأداء والاتصالات
+  app.get('/api/performance/detailed', protect.admin, async (req, res) => {
+    try {
+      const { connectionLimiter } = await import('./utils/connection-limiter');
+      const { socketPerformanceMonitor } = await import('./utils/socket-performance');
+      
+      const connectionStats = connectionLimiter.getStats();
+      const connectionHealth = connectionLimiter.getHealthReport();
+      const socketMetrics = socketPerformanceMonitor.getMetrics();
+      const socketHealth = socketPerformanceMonitor.getHealthStatus();
+      
+      // معلومات النظام
+      const systemInfo = {
+        memory: {
+          used: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
+          total: Math.round(process.memoryUsage().heapTotal / 1024 / 1024),
+          external: Math.round(process.memoryUsage().external / 1024 / 1024),
+        },
+        uptime: Math.floor(process.uptime()),
+        pid: process.pid,
+        nodeVersion: process.version,
+        platform: process.platform,
+      };
+      
+      res.json({
+        success: true,
+        data: {
+          connections: {
+            stats: connectionStats,
+            health: connectionHealth,
+          },
+          sockets: {
+            metrics: socketMetrics,
+            health: socketHealth,
+          },
+          system: systemInfo,
+          timestamp: new Date().toISOString(),
+        },
+      });
+    } catch (error) {
+      console.error('خطأ في جلب إحصائيات الأداء التفصيلية:', error);
+      res.status(500).json({ error: 'خطأ في الخادم' });
+    }
+  });
+
   const httpServer = createServer(app);
   
   // تحسين مهلات HTTP للأداء العالي تحت الضغط

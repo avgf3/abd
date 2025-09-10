@@ -22,6 +22,8 @@ import { getClientIpFromHeaders, getDeviceIdFromHeaders } from './utils/device';
 import { verifyAuthToken } from './utils/auth-token';
 import { setupSocketMonitoring, socketPerformanceMonitor } from './utils/socket-performance';
 import { createUserListOptimizer, getUserListOptimizer, optimizedUserJoin, optimizedUserLeave } from './utils/user-list-optimizer';
+import { setupSocketRedisAdapter } from './utils/socketRedisAdapter';
+import { setupConnectionLimiter, connectionLimiter } from './utils/connection-limiter';
 
 const GENERAL_ROOM = 'general';
 
@@ -482,15 +484,15 @@ export function setupRealtime(httpServer: HttpServer): IOServer<ClientToServerEv
       ? ['polling']
       : ['websocket', 'polling'],
     allowEIO3: true,
-    // 🔥 تحسين أوقات الاستجابة - تقليل timeout لتحسين الأداء
-    pingTimeout: (process?.env?.NODE_ENV === 'production') ? 60000 : 30000, // دقيقة واحدة في الإنتاج، 30 ثانية في التطوير
-    pingInterval: (process?.env?.NODE_ENV === 'production') ? 20000 : 15000, // ping كل 20 ثانية في الإنتاج، 15 في التطوير
-    upgradeTimeout: 30000, // تقليل timeout للترقية لتحسين الاستجابة
+    // 🔥 تحسين أوقات الاستجابة للأحمال العالية
+    pingTimeout: (process?.env?.NODE_ENV === 'production') ? 30000 : 20000, // تقليل timeout للاستجابة السريعة
+    pingInterval: (process?.env?.NODE_ENV === 'production') ? 15000 : 10000, // ping متكرر للكشف السريع عن انقطاع الاتصال
+    upgradeTimeout: 20000, // تقليل timeout للترقية
     allowUpgrades: (process?.env?.SOCKET_IO_POLLING_ONLY !== 'true'),
     cookie: false,
     serveClient: false,
-    // 🔥 تحسين حجم البيانات والأداء
-    maxHttpBufferSize: 5e6, // تقليل إلى 5MB لتحسين الذاكرة
+    // 🔥 تحسين حجم البيانات للأحمال العالية
+    maxHttpBufferSize: 2e6, // تقليل إلى 2MB لتوفير الذاكرة مع 3000 متصل
     perMessageDeflate: {
       // تفعيل الضغط الذكي للرسائل الكبيرة فقط
       threshold: 1024, // ضغط الرسائل أكبر من 1KB
@@ -498,9 +500,14 @@ export function setupRealtime(httpServer: HttpServer): IOServer<ClientToServerEv
       memLevel: 7, // توفير ذاكرة
     },
     httpCompression: true, // تفعيل ضغط HTTP للأداء الأفضل
-    // 🔥 إعدادات جديدة لتحسين الأداء
-    connectTimeout: 45000, // timeout للاتصال الأولي
+    // 🔥 إعدادات محسّنة للأحمال العالية (3000 متصل)
+    connectTimeout: 30000, // timeout أقل للاتصال الأولي
     cleanupEmptyChildNamespaces: true, // تنظيف namespaces الفارغة
+    // حد الاتصالات المتزامنة لكل IP (منع الإفراط)
+    connectionStateRecovery: {
+      maxDisconnectionDuration: 2 * 60 * 1000, // دقيقتان
+      skipMiddlewares: true,
+    },
     allowRequest: (req, callback) => {
       try {
         const originHeader = req.headers.origin || '';
@@ -580,8 +587,19 @@ export function setupRealtime(httpServer: HttpServer): IOServer<ClientToServerEv
 
   ioInstance = io;
 
+  // 🔥 تهيئة Redis Adapter للتوسع الأفقي (إذا كان متاحاً)
+  try {
+    await setupSocketRedisAdapter(io);
+    console.log('✅ تم تفعيل Redis Adapter للتوسع الأفقي');
+  } catch (error) {
+    console.warn('⚠️ لم يتم تفعيل Redis Adapter:', error);
+  }
+
   // 🔥 تهيئة نظام مراقبة الأداء
   setupSocketMonitoring(io);
+
+  // 🔥 تهيئة نظام إدارة الاتصالات للأحمال العالية
+  setupConnectionLimiter(io);
 
   // 🔥 تهيئة محسن قائمة المستخدمين
   createUserListOptimizer(emitOptimizedOnlineUsers);
