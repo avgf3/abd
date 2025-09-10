@@ -1698,7 +1698,7 @@ export default function ProfileModal({
         }
 
         .profile-body {
-          padding: 20px 20px 10px;
+          padding: 28px 20px 10px;
         }
 
         .profile-info {
@@ -2766,7 +2766,7 @@ export default function ProfileModal({
                     justifyContent: 'space-between', 
                     alignItems: 'center',
                     marginBottom: '8px',
-                    padding: '8px',
+                    padding: '6px 8px',
                     borderRadius: '6px',
                     background: 'rgba(255,255,255,0.04)'
                   }}>
@@ -2807,7 +2807,7 @@ export default function ProfileModal({
                     justifyContent: 'space-between', 
                     alignItems: 'center',
                     marginBottom: '8px',
-                    padding: '8px',
+                    padding: '6px 8px',
                     borderRadius: '6px',
                     background: 'rgba(255,255,255,0.04)'
                   }}>
@@ -2823,7 +2823,7 @@ export default function ProfileModal({
                     justifyContent: 'space-between',
                     alignItems: 'center',
                     marginBottom: '8px',
-                    padding: '8px',
+                    padding: '6px 8px',
                     borderRadius: '6px',
                     background: 'rgba(255,255,255,0.04)'
                   }}>
@@ -2844,7 +2844,7 @@ export default function ProfileModal({
                     justifyContent: 'space-between',
                     alignItems: 'center',
                     marginBottom: '8px',
-                    padding: '8px',
+                    padding: '6px 8px',
                     borderRadius: '6px',
                     background: 'rgba(255,255,255,0.04)'
                   }}>
@@ -2920,7 +2920,7 @@ export default function ProfileModal({
                     <div
                       style={{
                         marginTop: '8px',
-                        padding: '8px',
+                        padding: '6px 8px',
                         borderRadius: '8px',
                         border: '1px solid rgba(255,255,255,0.08)',
                         background: 'rgba(255,255,255,0.04)'
@@ -3162,7 +3162,7 @@ export default function ProfileModal({
                         alignItems: 'center',
                         gap: '8px',
                         marginBottom: '8px',
-                        padding: '8px',
+                        padding: '6px 8px',
                         borderRadius: '6px',
                         background: 'rgba(255,255,255,0.04)'
                       }}>
@@ -3203,7 +3203,7 @@ export default function ProfileModal({
                           display: 'flex',
                           flexDirection: 'column',
                           alignItems: 'center',
-                          padding: '8px',
+                          padding: '6px 8px',
                           borderRadius: '8px',
                           background: 'rgba(255,255,255,0.05)',
                           border: '1px solid rgba(255,255,255,0.08)',
