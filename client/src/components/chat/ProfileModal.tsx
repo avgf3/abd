@@ -2639,7 +2639,7 @@ export default function ProfileModal({
                   خيارات
                 </button>
               )}
-              {/* إخفاء تبويب "الأصدقاء" للمستخدم نفسه - إظهاره فقط للمستخدمين الآخرين */}
+              {/* إخفاء تبويب "الأصدقاء" للمستخدم نفسه فقط */}
               {localUser?.id !== currentUser?.id && (
                 <button
                   onClick={() => setActiveTab('other')}
