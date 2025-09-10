@@ -172,9 +172,21 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   );
 
   // تحديث آخر ظهور
-  const updateLastSeen = useCallback(() => {
+  const updateLastSeen = useCallback(async () => {
+    if (!state.currentUser?.id) return;
+    
+    // تحديث محلي فوري
     dispatch({ type: 'UPDATE_LAST_SEEN' });
-  }, []);
+    
+    // تحديث على الخادم
+    try {
+      await api.post(`/api/users/${state.currentUser.id}/last-seen`, {
+        lastSeen: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('فشل في تحديث آخر ظهور على الخادم:', error);
+    }
+  }, [state.currentUser?.id]);
 
   // التحقق من الصلاحيات
   const hasPermission = useCallback(
@@ -207,14 +219,17 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
   // تحديث آخر ظهور تلقائياً كل دقيقة
   useEffect(() => {
-    if (!state.isAuthenticated) return;
+    if (!state.isAuthenticated || !state.currentUser?.id) return;
+
+    // تحديث فوري عند التحميل
+    updateLastSeen();
 
     const interval = setInterval(() => {
       updateLastSeen();
     }, 60000); // كل دقيقة
 
     return () => clearInterval(interval);
-  }, [state.isAuthenticated, updateLastSeen]);
+  }, [state.isAuthenticated, state.currentUser?.id, updateLastSeen]);
 
   // قيمة المحتوى
   const contextValue: UserContextType = {
