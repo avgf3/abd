@@ -1698,7 +1698,12 @@ export default function ProfileModal({
         }
 
         .profile-body {
-          padding: 20px 20px 10px;
+          padding: 28px 20px 10px;
+        }
+
+        /* Reduce vertical padding on desktop only */
+        @media (min-width: 481px) {
+          .compact-vertical { padding: 6px 8px !important; }
         }
 
         .profile-info {
@@ -2761,7 +2766,7 @@ export default function ProfileModal({
                 <div style={{ marginBottom: '16px' }}>
                   
 
-                  <div style={{ 
+                  <div className="compact-vertical" style={{ 
                     display: 'flex', 
                     justifyContent: 'space-between', 
                     alignItems: 'center',
@@ -2802,7 +2807,7 @@ export default function ProfileModal({
 
 
 
-                  <div style={{ 
+                  <div className="compact-vertical" style={{ 
                     display: 'flex', 
                     justifyContent: 'space-between', 
                     alignItems: 'center',
@@ -2818,7 +2823,7 @@ export default function ProfileModal({
                   
 
                   {/* عرض نقاطي للآخرين */}
-                  <div style={{
+                  <div className="compact-vertical" style={{
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
@@ -2839,7 +2844,7 @@ export default function ProfileModal({
                   </div>
 
                   {/* رسائل النظام في الغرف */}
-                  <div style={{
+                  <div className="compact-vertical" style={{
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
@@ -2918,6 +2923,7 @@ export default function ProfileModal({
                     currentUser.userType === 'moderator'
                   ) && (
                     <div
+                      className="compact-vertical"
                       style={{
                         marginTop: '8px',
                         padding: '8px',
@@ -3157,7 +3163,7 @@ export default function ProfileModal({
                 ) : (
                   <div>
                     {friends.map(friend => (
-                      <div key={friend.id} style={{
+                      <div key={friend.id} className="compact-vertical" style={{
                         display: 'flex',
                         alignItems: 'center',
                         gap: '8px',
@@ -3199,6 +3205,7 @@ export default function ProfileModal({
                       <div
                         key={friend.id}
                         onClick={() => onUserClick?.(friend)}
+                        className="compact-vertical"
                         style={{
                           display: 'flex',
                           flexDirection: 'column',
