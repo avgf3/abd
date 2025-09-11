@@ -677,6 +677,7 @@ export const storage: LegacyStorage = {
   },
 
   async setUserOnlineStatus(id: number, isOnline: boolean) {
+    // تحديث lastSeen دائماً - سواء متصل أو مش متصل
     await databaseService.updateUser(id, { isOnline, lastSeen: new Date() });
   },
 
