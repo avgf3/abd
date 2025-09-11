@@ -327,7 +327,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
     return () => { 
       cancelled = true; 
     };
-  }, [showIgnoredUsers, chat.currentUser?.id, chat.ignoredUsers, chat.onlineUsers]);
+  }, [showIgnoredUsers, chat.currentUser?.id]);
   const [newMessageAlert, setNewMessageAlert] = useState<{
     show: boolean;
     sender: ChatUser | null;
@@ -1704,9 +1704,9 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                 const ignoredUserData = ignoredUsersData.get(id);
                 const onlineUser = chat.onlineUsers.find((u) => u.id === id);
                 
-                // تحديد الاسم المعروض
-                const displayName = ignoredUserData?.username || onlineUser?.username || `مستخدم ${id}`;
-                const hasValidData = ignoredUserData || onlineUser;
+                // تحديد الاسم المعروض - أولوية للبيانات المجلبة من API
+                const displayName = ignoredUserData?.username || onlineUser?.username;
+                const hasValidData = !!displayName;
                 
                 return (
                   <div key={id} className="flex items-center justify-between p-2 border rounded">
