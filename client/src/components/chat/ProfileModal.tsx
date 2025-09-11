@@ -121,9 +121,16 @@ export default function ProfileModal({
   
   // دالة تنسيق آخر تواجد
   const formatLastSeenWithRoom = (lastSeen?: string | Date | null, roomName?: string): string => {
-    // الشخص المتصل (موجود في قائمة المستخدمين) = متصل الآن
+    // الشخص المتصل (موجود في قائمة المستخدمين) = الوقت الحالي
     if (localUser?.isOnline) {
-      return 'متصل الآن';
+      const now = new Date();
+      const timeString = now.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+      });
+      const finalRoomName = roomName || resolvedRoomName;
+      return `${timeString} / غرفة║${finalRoomName}`;
     }
     
     // الشخص غير المتصل (غادر الموقع) = اعرض آخر ظهور
