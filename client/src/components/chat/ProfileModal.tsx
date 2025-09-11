@@ -163,6 +163,8 @@ export default function ProfileModal({
   
   const lastSeenText = `آخر تواجد\n${formatLastSeenWithRoom(localUser?.lastSeen, resolvedRoomName)}`;
   
+  // (تمت إزالة مؤقّت إعادة التصيير الداخلي بناءً على طلب المستخدم للرجوع للوضع السابق)
+  
   // ضبط مستوى الصوت عند تحميل الصوت
   useEffect(() => {
     if (audioRef.current && localUser?.profileMusicUrl) {
