@@ -163,16 +163,7 @@ export default function ProfileModal({
   
   const lastSeenText = `آخر تواجد\n${formatLastSeenWithRoom(localUser?.lastSeen, resolvedRoomName)}`;
   
-  // مؤقّت داخلي لإعادة التصيير كل دقيقة لضمان تحديث عرض الوقت (دون تعديل lastSeen)
-  useEffect(() => {
-    const id = setInterval(() => {
-      try {
-        // إجبار React على إعادة التصيير عبر تغيير حالة غير مؤثرة وظيفياً (العنوان يبنى كل render)
-        setEditValue((prev) => prev);
-      } catch {}
-    }, 60000);
-    return () => clearInterval(id);
-  }, []);
+  // (تمت إزالة مؤقّت إعادة التصيير الداخلي بناءً على طلب المستخدم للرجوع للوضع السابق)
   
   // ضبط مستوى الصوت عند تحميل الصوت
   useEffect(() => {

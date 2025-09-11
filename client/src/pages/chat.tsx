@@ -67,9 +67,7 @@ export default function ChatPage() {
           setSelectedRoomId(roomId);
           chat.joinRoom(roomId);
         } else {
-          // لا توجد غرفة محفوظة: انضم تلقائياً إلى general لضمان الظهور بقائمة المتصلين
-          setSelectedRoomId('general');
-          chat.joinRoom('general');
+          setSelectedRoomId(null);
         }
       };
 
