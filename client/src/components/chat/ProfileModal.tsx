@@ -121,6 +121,12 @@ export default function ProfileModal({
   
   // دالة تنسيق آخر تواجد
   const formatLastSeenWithRoom = (lastSeen?: string | Date | null, roomName?: string): string => {
+    // الشخص المتصل (موجود في قائمة المستخدمين) = متصل الآن
+    if (localUser?.isOnline) {
+      return 'متصل الآن';
+    }
+    
+    // الشخص غير المتصل (غادر الموقع) = اعرض آخر ظهور
     if (!lastSeen) return 'غير معروف';
     
     try {
