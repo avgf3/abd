@@ -2744,9 +2744,6 @@ export default function ProfileModal({
                 {localUser?.id === currentUser?.id && (
                   <>
                     <p>
-                      💬 عدد الرسائل: <span>0</span>
-                    </p>
-                    <p>
                       ⭐ مستوى العضو: <span>مستوى {localUser?.level || 1}</span>
                     </p>
                   </>
