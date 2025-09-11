@@ -2,6 +2,7 @@ import { X } from 'lucide-react';
 import React, { useState, useRef, useEffect } from 'react';
 
 import { Button } from '@/components/ui/button';
+import { useChat } from '@/hooks/useChat';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import PointsSentNotification from '@/components/ui/PointsSentNotification';
@@ -47,9 +48,16 @@ export default function ProfileModal({
   const [isLoading, setIsLoading] = useState(false);
   const [currentEditType, setCurrentEditType] = useState<string | null>(null);
   const [editValue, setEditValue] = useState('');
+  
+  // 🔥 الحصول على قائمة المستخدمين المتصلين
+  const chat = useChat();
 
   // حالة محلية للمستخدم للتحديث الفوري
   const [localUser, setLocalUser] = useState<ChatUser | null>(user);
+  
+  // 🔥 التحقق من حالة الاتصال الحقيقية من قائمة المستخدمين المتصلين
+  const onlineUserData = chat.onlineUsers.find(u => u.id === user?.id);
+  const isUserActuallyOnline = !!onlineUserData;
   const [selectedTheme, setSelectedTheme] = useState(user?.profileBackgroundColor || '');
   const [selectedEffect, setSelectedEffect] = useState(user?.profileEffect || 'none');
 
@@ -121,15 +129,19 @@ export default function ProfileModal({
   
   // دالة تنسيق آخر تواجد
   const formatLastSeenWithRoom = (lastSeen?: string | Date | null, roomName?: string): string => {
-    // الشخص المتصل (موجود في قائمة المستخدمين) = الوقت الحالي
-    if (localUser?.isOnline) {
+    // 🔥 التحقق من حالة الاتصال الحقيقية من قائمة المستخدمين المتصلين
+    if (isUserActuallyOnline) {
+      // الشخص المتصل (موجود في قائمة المستخدمين) = الوقت الحالي
       const now = new Date();
       const timeString = now.toLocaleTimeString('en-US', {
         hour: 'numeric',
         minute: '2-digit',
         hour12: true
       });
-      const finalRoomName = roomName || resolvedRoomName;
+      // استخدم الغرفة من البيانات المتصلة إذا متوفرة
+      const currentRoomName = onlineUserData?.currentRoom || roomName || resolvedRoomName;
+      const finalRoomName = currentRoomName === 'general' ? 'الدردشة العامة' : 
+        (rooms.find(r => r.id === currentRoomName)?.name || currentRoomName);
       return `${timeString} / غرفة║${finalRoomName}`;
     }
     
@@ -175,6 +187,44 @@ export default function ProfileModal({
   };
   
   const lastSeenText = `آخر تواجد\n${formatLastSeenWithRoom(localUser?.lastSeen, resolvedRoomName)}`;
+  
+  // 🔥 تحديث البيانات المحلية عند تغيير البيانات المتصلة
+  useEffect(() => {
+    if (onlineUserData && isUserActuallyOnline) {
+      // إذا المستخدم متصل، استخدم البيانات المحدثة من قائمة المتصلين
+      setLocalUser(prevUser => ({
+        ...prevUser,
+        ...onlineUserData,
+        isOnline: true,
+        // تحديث lastSeen للوقت الحالي للمستخدمين المتصلين
+        lastSeen: new Date()
+      }));
+    } else if (user) {
+      // إذا غير متصل، استخدم البيانات الأصلية
+      setLocalUser(prevUser => ({
+        ...prevUser,
+        ...user,
+        isOnline: false
+      }));
+    }
+  }, [onlineUserData, isUserActuallyOnline, user]);
+  
+  // 🔥 تحديث الوقت كل ثانية للمستخدمين المتصلين فقط
+  useEffect(() => {
+    if (!isUserActuallyOnline) return;
+    
+    const interval = setInterval(() => {
+      setLocalUser(prevUser => {
+        if (!prevUser || !isUserActuallyOnline) return prevUser;
+        return {
+          ...prevUser,
+          lastSeen: new Date()
+        };
+      });
+    }, 1000); // كل ثانية
+    
+    return () => clearInterval(interval);
+  }, [isUserActuallyOnline]);
   
   // ضبط مستوى الصوت عند تحميل الصوت
   useEffect(() => {
