@@ -278,41 +278,31 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   const [showIgnoredUsers, setShowIgnoredUsers] = useState(false);
   const [showThemeSelector, setShowThemeSelector] = useState(false);
   const [showUsernameColorPicker, setShowUsernameColorPicker] = useState(false);
-  // تفاصيل المستخدمين المتجاهلين غير المتصلين (بدون كاش عام)
-  const [ignoredUsersData, setIgnoredUsersData] = useState<Map<number, ChatUser>>(new Map());
+  // تفاصيل المستخدمين المتجاهلين (اسم دائمًا)
+  const [ignoredUsersData, setIgnoredUsersData] = useState<Map<number, { id: number; username: string }>>(new Map());
 
-  // عند فتح نافذة المتجاهلين: اجلب تفاصيلهم مباشرة من API بدون أي كاش
+  // عند فتح نافذة المتجاهلين: اجلب قائمة المتجاهلين بأسمائهم مباشرة (بدون كاش)
   useEffect(() => {
     if (!showIgnoredUsers) return;
     try {
-      const ids = Array.from<number>(chat.ignoredUsers as Set<number>);
-      const offlineIds = ids.filter((id) => !chat.onlineUsers.some((u) => u.id === id));
-      if (offlineIds.length === 0) {
-        setIgnoredUsersData(new Map());
-        return;
-      }
       let cancelled = false;
       (async () => {
         try {
-          const results = await Promise.all(
-            offlineIds.map(async (id) => {
-              try {
-                const data = await apiRequest(`/api/users/${id}`);
-                return { id, user: (data && (data as any).id ? (data as ChatUser) : null) };
-              } catch {
-                return { id, user: null };
-              }
-            })
-          );
+          const currentUserId = chat.currentUser?.id;
+          if (!currentUserId) return;
+          const data = await apiRequest(`/api/users/${currentUserId}/ignored?detailed=true`);
           if (cancelled) return;
-          const map = new Map<number, ChatUser>();
-          results.forEach((r) => { if (r.user) map.set(r.id, r.user); });
+          const map = new Map<number, { id: number; username: string }>();
+          const list: Array<{ id: number; username: string }> = Array.isArray((data as any)?.users)
+            ? (data as any).users
+            : [];
+          list.forEach((u) => { if (u && typeof u.id === 'number' && u.username) map.set(u.id, u); });
           setIgnoredUsersData(map);
         } catch {}
       })();
       return () => { cancelled = true; };
     } catch {}
-  }, [showIgnoredUsers, chat.ignoredUsers, chat.onlineUsers]);
+  }, [showIgnoredUsers, chat.currentUser?.id]);
   const [newMessageAlert, setNewMessageAlert] = useState<{
     show: boolean;
     sender: ChatUser | null;

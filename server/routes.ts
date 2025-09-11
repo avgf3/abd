@@ -3062,9 +3062,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/users/:userId/ignored', async (req, res) => {
     try {
       const userId = parseEntityId(req.params.userId as any).id as number;
+      const detailed = String(req.query.detailed || '').toLowerCase() === 'true';
+      if (detailed) {
+        const users = await storage.getIgnoredUsersDetailed(userId);
+        return res.json({ users });
+      }
       const ignoredUsers = await storage.getIgnoredUsers(userId);
-
-      res.json({ ignoredUsers });
+      return res.json({ ignoredUsers });
     } catch (error) {
       console.error('خطأ في جلب المستخدمين المتجاهلين:', error);
       res.status(500).json({ error: 'فشل في جلب المستخدمين المتجاهلين' });

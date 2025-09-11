@@ -204,6 +204,28 @@ export class UserService {
       return [];
     }
   }
+
+  // الحصول على تفاصيل المستخدمين المتجاهلين (للعرض)
+  async getIgnoredUsersDetailed(userId: number): Promise<Array<{ id: number; username: string }>> {
+    try {
+      const ids = await this.getIgnoredUsers(userId);
+      if (!Array.isArray(ids) || ids.length === 0) return [];
+
+      const result: Array<{ id: number; username: string }> = [];
+      for (const id of ids) {
+        try {
+          const u = await this.getUserById(id);
+          if (u && (u as any).id && (u as any).username) {
+            result.push({ id: (u as any).id, username: (u as any).username });
+          }
+        } catch {}
+      }
+      return result;
+    } catch (error) {
+      console.error('خطأ في الحصول على تفاصيل المستخدمين المتجاهلين:', error);
+      return [];
+    }
+  }
 }
 
 // إنشاء مثيل واحد من الخدمة
