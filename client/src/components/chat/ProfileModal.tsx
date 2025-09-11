@@ -2591,149 +2591,12 @@ export default function ProfileModal({
 
           </div>
 
-          {/* Profile Action Buttons */}
           {localUser?.id !== currentUser?.id && (
             <div className="profile-buttons">
-              <button
-                onClick={() => {
-                  // إرسال رسالة خاصة - نفس منطق UserPopup القديم
-                  if (localUser?.dmPrivacy === 'none') {
-                    toast({
-                      title: 'غير مسموح',
-                      description: 'هذا المستخدم أغلق الرسائل الخاصة',
-                      variant: 'destructive',
-                    });
-                    return;
-                  }
-                  // استخدام نفس منطق handlePrivateMessage من ChatInterface
-                  onClose();
-                  // يمكن تمرير callback للوالد لفتح الرسائل الخاصة
-                  if (window.location.hash !== `#pm${localUser?.id}`) {
-                    window.location.hash = `#pm${localUser?.id}`;
-                  }
-                }}
-              >
-                ✉️ ارسال رسالة
-              </button>
-
-              <button
-                onClick={async () => {
-                  // إضافة صديق - نفس منطق handleAddFriend من ChatInterface
-                  if (!currentUser) {
-                    toast({
-                      title: 'خطأ',
-                      description: 'يرجى تسجيل الدخول أولاً',
-                      variant: 'destructive',
-                    });
-                    return;
-                  }
-
-                  try {
-                    await apiRequest('/api/friend-requests', {
-                      method: 'POST',
-                      body: {
-                        senderId: currentUser.id,
-                        receiverId: localUser?.id,
-                      },
-                    });
-
-                    toast({
-                      title: 'تم الإرسال ✅',
-                      description: `تم إرسال طلب صداقة إلى ${localUser?.username}`,
-                    });
-                  } catch (error: any) {
-                    toast({
-                      title: 'خطأ',
-                      description: error?.message || 'فشل في إرسال طلب الصداقة',
-                      variant: 'destructive',
-                    });
-                  }
-                }}
-              >
-                👥 إضافة صديق
-              </button>
-
-              <button
-                onClick={() => {
-                  // تجاهل المستخدم - نفس منطق handleIgnoreUser من ChatInterface
-                  if (!currentUser) {
-                    toast({
-                      title: 'خطأ',
-                      description: 'يرجى تسجيل الدخول أولاً',
-                      variant: 'destructive',
-                    });
-                    return;
-                  }
-
-                  // بث حدث عام للتجاهل كما في الكود القديم
-                  try {
-                    const ev = new CustomEvent('ignoreUser', { detail: { userId: localUser?.id } });
-                    window.dispatchEvent(ev);
-                  } catch (e) {
-                    console.warn('فشل في بث حدث التجاهل:', e);
-                  }
-
-                  toast({
-                    title: 'تم التجاهل 🚫',
-                    description: `تم تجاهل ${localUser?.username}. لن ترى رسائله العامة أو الخاصة ولن يستطيع إرسال طلب صداقة لك.`,
-                  });
-                  
-                  onClose();
-                }}
-              >
-                🚫 تجاهل
-              </button>
-
-              <button
-                onClick={() => {
-                  // إبلاغ عن المستخدم - نفس منطق handleReportUser من ChatInterface
-                  if (!currentUser) {
-                    toast({
-                      title: 'خطأ',
-                      description: 'يرجى تسجيل الدخول أولاً',
-                      variant: 'destructive',
-                    });
-                    return;
-                  }
-                  
-                  if (currentUser.userType === 'guest') {
-                    toast({
-                      title: 'غير مسموح',
-                      description: 'التبليغ متاح للأعضاء فقط. سجل كعضو أولاً',
-                      variant: 'destructive',
-                    });
-                    return;
-                  }
-
-                  // منع التبليغ على المشرفين والمالكين
-                  if (localUser?.userType === 'admin' || localUser?.userType === 'owner') {
-                    toast({
-                      title: 'غير مسموح',
-                      description: 'لا يمكن الإبلاغ عن المشرفين أو المالكين',
-                      variant: 'destructive',
-                    });
-                    return;
-                  }
-
-                  // بث حدث عام لفتح نافذة الإبلاغ
-                  try {
-                    const ev = new CustomEvent('reportUser', { 
-                      detail: { 
-                        user: localUser,
-                        messageContent: undefined,
-                        messageId: undefined
-                      } 
-                    });
-                    window.dispatchEvent(ev);
-                  } catch (e) {
-                    console.warn('فشل في بث حدث الإبلاغ:', e);
-                  }
-
-                  onClose();
-                }}
-              >
-                📢 إبلاغ
-              </button>
+              <button onClick={() => { if (localUser?.dmPrivacy === 'none') { toast({ title: 'غير مسموح', description: 'هذا المستخدم أغلق الرسائل الخاصة', variant: 'destructive' }); return; } onClose(); if (window.location.hash !== `#pm${localUser?.id}`) { window.location.hash = `#pm${localUser?.id}`; } }}>✉️ ارسال رسالة</button>
+              <button onClick={async () => { if (!currentUser) { toast({ title: 'خطأ', description: 'يرجى تسجيل الدخول أولاً', variant: 'destructive' }); return; } try { await apiRequest('/api/friend-requests', { method: 'POST', body: { senderId: currentUser.id, receiverId: localUser?.id } }); toast({ title: 'تم الإرسال ✅', description: `تم إرسال طلب صداقة إلى ${localUser?.username}` }); } catch (error: any) { toast({ title: 'خطأ', description: error?.message || 'فشل في إرسال طلب الصداقة', variant: 'destructive' }); } }}>👥 إضافة صديق</button>
+              <button onClick={() => { if (!currentUser) { toast({ title: 'خطأ', description: 'يرجى تسجيل الدخول أولاً', variant: 'destructive' }); return; } try { const ev = new CustomEvent('ignoreUser', { detail: { userId: localUser?.id } }); window.dispatchEvent(ev); } catch (e) { console.warn('فشل في بث حدث التجاهل:', e); } toast({ title: 'تم التجاهل 🚫', description: `تم تجاهل ${localUser?.username}. لن ترى رسائله العامة أو الخاصة ولن يستطيع إرسال طلب صداقة لك.` }); onClose(); }}>🚫 تجاهل</button>
+              <button onClick={() => { if (!currentUser) { toast({ title: 'خطأ', description: 'يرجى تسجيل الدخول أولاً', variant: 'destructive' }); return; } if (currentUser.userType === 'guest') { toast({ title: 'غير مسموح', description: 'التبليغ متاح للأعضاء فقط. سجل كعضو أولاً', variant: 'destructive' }); return; } if (localUser?.userType === 'admin' || localUser?.userType === 'owner') { toast({ title: 'غير مسموح', description: 'لا يمكن الإبلاغ عن المشرفين أو المالكين', variant: 'destructive' }); return; } try { const ev = new CustomEvent('reportUser', { detail: { user: localUser, messageContent: undefined, messageId: undefined } }); window.dispatchEvent(ev); } catch (e) { console.warn('فشل في بث حدث الإبلاغ:', e); } onClose(); }}>📢 إبلاغ</button>
             </div>
           )}
 
