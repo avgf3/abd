@@ -439,9 +439,11 @@ export const useChat = () => {
         const desired = pendingJoinRoomRef.current || (() => {
           try { return getSession()?.roomId as string | undefined; } catch { return undefined; }
         })();
-        if (desired && desired !== 'public' && desired !== 'friends' && currentUserRef.current) {
+        // انضم فوراً للغرفة المطلوبة، وإن لم تكن محددة ادخل العامة general لتجنب بقاء المستخدم خارج القوائم
+        const targetRoom = desired && desired !== 'public' && desired !== 'friends' ? desired : 'general';
+        if (currentUserRef.current && targetRoom) {
           socketInstance.emit('joinRoom', {
-            roomId: desired,
+            roomId: targetRoom,
             userId: currentUserRef.current.id,
             username: currentUserRef.current.username,
           });
@@ -1270,6 +1272,7 @@ export const useChat = () => {
             userId: user.id,
             username: user.username,
             userType: user.userType,
+            token: (getSession() as any)?.token,
           });
         }
 
@@ -1285,6 +1288,7 @@ export const useChat = () => {
               userId: user.id,
               username: user.username,
               userType: user.userType,
+              token: (getSession() as any)?.token,
             });
           } catch {}
 
@@ -1410,7 +1414,19 @@ export const useChat = () => {
           },
         }).catch(() => {});
       } else {
-        socket.current.emit('publicMessage', messageData);
+        // منع الإرسال قبل الانضمام المؤكد لغرفة
+        const targetRoom = messageData.roomId || currentRoomIdRef.current;
+        if (!targetRoom) {
+          console.warn('لا يوجد غرفة نشطة، سيتم الانضمام إلى العامة وإعادة المحاولة');
+          pendingJoinRoomRef.current = 'general';
+          socket.current.emit('joinRoom', {
+            roomId: 'general',
+            userId: state.currentUser.id,
+            username: state.currentUser.username,
+          });
+          return;
+        }
+        socket.current.emit('publicMessage', { ...messageData, roomId: targetRoom });
       }
     },
     [state.currentUser, state.currentRoomId]

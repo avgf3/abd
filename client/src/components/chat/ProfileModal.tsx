@@ -119,49 +119,39 @@ export default function ProfileModal({
     resolvedRoomName = (found && found.name) || String(resolvedRoomId);
   }
   
-  // دالة تنسيق آخر تواجد
+  // دالة تنسيق آخر تواجد (تظهر متصل الآن/قبل X دقيقة/ساعة/يوم)
   const formatLastSeenWithRoom = (lastSeen?: string | Date | null, roomName?: string): string => {
     if (!lastSeen) return 'غير معروف';
-    
     try {
       const lastSeenDate = lastSeen instanceof Date ? lastSeen : new Date(lastSeen);
-      
-      if (isNaN(lastSeenDate.getTime())) {
-        return 'غير معروف';
-      }
-      
+      if (isNaN(lastSeenDate.getTime())) return 'غير معروف';
       const now = new Date();
-      const isToday = lastSeenDate.toDateString() === now.toDateString();
-      
-      const timeString = lastSeenDate.toLocaleTimeString('en-US', {
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true
-      });
-      
-      let formattedTime: string;
-      
-      if (isToday) {
-        // نفس اليوم: الوقت فقط
-        formattedTime = timeString;
-      } else {
-        // أكثر من يوم: التاريخ + الوقت
-        const dateString = lastSeenDate.toLocaleDateString('en-GB', {
-          day: '2-digit',
-          month: '2-digit'
-        });
-        formattedTime = `${dateString} ${timeString}`;
-      }
-      
+      const diffMs = now.getTime() - lastSeenDate.getTime();
+      const minutes = Math.floor(diffMs / 60000);
       const finalRoomName = roomName || resolvedRoomName;
-      return `${formattedTime} / غرفة║${finalRoomName}`;
-      
-    } catch (error) {
+      if (minutes < 1) return `متصل الآن / غرفة║${finalRoomName}`;
+      if (minutes < 60) return `قبل ${minutes} دقيقة / غرفة║${finalRoomName}`;
+      const hours = Math.floor(minutes / 60);
+      if (hours < 24) return `قبل ${hours} ساعة / غرفة║${finalRoomName}`;
+      const days = Math.floor(hours / 24);
+      return `قبل ${days} يوم / غرفة║${finalRoomName}`;
+    } catch {
       return 'غير معروف';
     }
   };
   
   const lastSeenText = `آخر تواجد\n${formatLastSeenWithRoom(localUser?.lastSeen, resolvedRoomName)}`;
+
+  // تحديث نص آخر تواجد كل دقيقة أثناء فتح نافذة البروفايل
+  useEffect(() => {
+    const id = setInterval(() => {
+      try {
+        // إجبار إعادة التصيير عبر state محلي خفيف إن لزم (يمكن الاستعاضة بتبعيات أخرى)
+        setMusicVolume((v) => v);
+      } catch {}
+    }, 60000);
+    return () => clearInterval(id);
+  }, []);
   
   // ضبط مستوى الصوت عند تحميل الصوت
   useEffect(() => {

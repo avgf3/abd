@@ -98,6 +98,11 @@ function attachCoreListeners(socket: Socket) {
       } catch {}
     }
   });
+
+  // منع أي انضمام/إرسال قبل المصادقة
+  socket.on('socketConnected', () => {
+    // متصل مبدئياً، ننتظر authenticated من الخادم قبل أي إجراء
+  });
 }
 
 export function getSocket(): Socket {

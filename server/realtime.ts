@@ -4,6 +4,7 @@ import type { Socket } from 'socket.io';
 import { Server as IOServer } from 'socket.io';
 
 import { moderationSystem } from './moderation';
+import { logger } from './utils/logger';
 import { sanitizeInput, validateMessageContent } from './security';
 import { pointsService } from './services/pointsService';
 import { roomMessageService } from './services/roomMessageService';
@@ -34,6 +35,9 @@ const connectedUsers = new Map<
     lastSeen: Date;
   }
 >();
+
+// Track last DB update timestamp for presence per user to avoid heavy writes
+const lastPresenceDbUpdate = new Map<number, number>();
 
 // Utility: get online user counts per room based on active sockets
 export function getOnlineUserCountsForRooms(roomIds: string[]): Record<string, number> {
@@ -322,8 +326,10 @@ async function joinRoom(
 
   // إرسال التأكيد للمستخدم المنضم وبث القائمة المحدثة للجميع
   const users = await buildOnlineUsersForRoom(roomId);
+  // إرسال تأكيد الانضمام أولاً إلى المستخدم لتسريع UI
   socket.emit('message', { type: 'roomJoined', roomId, users });
-  io.to(`room_${roomId}`).emit('message', { type: 'onlineUsers', users, roomId, source: 'join' });
+  // ثم بث القائمة لباقي الغرفة
+  socket.to(`room_${roomId}`).emit('message', { type: 'onlineUsers', users, roomId, source: 'join' });
 
   // رسائل حديثة (تجنب التكرار عند الانضمام السريع): لا داعي إذا لم تتغير الغرفة فعلياً
   try {
@@ -408,7 +414,8 @@ async function leaveRoom(
 
   // Push updated online users for the room
   const users = await buildOnlineUsersForRoom(roomId);
-  io.to(`room_${roomId}`).emit('message', { type: 'onlineUsers', users, roomId, source: 'leave' });
+  // بث للمجموعة دون إعادة إرسال للعميل الذي غادر للتقليل من التكرار
+  socket.to(`room_${roomId}`).emit('message', { type: 'onlineUsers', users, roomId, source: 'leave' });
 }
 
 let ioInstance: IOServer | null = null;
@@ -555,9 +562,49 @@ export function setupRealtime(httpServer: HttpServer): IOServer {
   io.on('connection', (rawSocket) => {
     const socket = rawSocket as CustomSocket;
 
-    // Basic ping/pong to keep alive
-    socket.on('client_ping', () => {
-      socket.emit('client_pong', { t: Date.now() });
+    // Basic ping/pong to keep alive + update presence timestamps
+    socket.on('client_ping', async () => {
+      try {
+        socket.emit('client_pong', { t: Date.now() });
+        const uid = socket.userId;
+        if (uid) {
+          const entry = connectedUsers.get(uid);
+          const now = new Date();
+          if (entry) {
+            entry.lastSeen = now;
+            const prev = entry.sockets.get(socket.id);
+            entry.sockets.set(socket.id, { room: prev?.room || (socket.currentRoom || null as any), lastSeen: now });
+            // keep cached user lastSeen fresh for UI lists
+            try {
+              if (entry.user) {
+                (entry.user as any).lastSeen = now;
+              }
+            } catch {}
+            connectedUsers.set(uid, entry);
+          }
+
+          // Broadcast lightweight presence tick to current room only (reduces fanout)
+          if (socket.currentRoom) {
+            io.to(`room_${socket.currentRoom}`).emit('message', {
+              type: 'presence',
+              userId: uid,
+              lastSeen: now.toISOString(),
+              roomId: socket.currentRoom,
+              isOnline: true,
+            });
+          }
+
+          // Persist lastSeen at most once per minute per user
+          const last = lastPresenceDbUpdate.get(uid) || 0;
+          const nowTs = now.getTime();
+          if (nowTs - last > 60000) {
+            try {
+              await storage.updateUser(uid, { lastSeen: now });
+            } catch {}
+            lastPresenceDbUpdate.set(uid, nowTs);
+          }
+        }
+      } catch {}
     });
 
     // Pre-connection checks
@@ -751,6 +798,7 @@ export function setupRealtime(httpServer: HttpServer): IOServer {
           // لا ننضم تلقائياً لأي غرفة - المستخدم يختار بنفسه
 
           socket.emit('authenticated', { message: 'تم الاتصال بنجاح', user });
+          logger.debug('User authenticated', { uid: user.id, socketId: socket.id });
         } catch (err) {
           socket.emit('error', { message: 'خطأ في المصادقة' });
         }
@@ -816,6 +864,12 @@ export function setupRealtime(httpServer: HttpServer): IOServer {
         // المستخدم يجب أن يكون في غرفة لإرسال رسالة
         if (!roomId) {
           socket.emit('message', { type: 'error', message: 'يجب الانضمام لغرفة أولاً' });
+          return;
+        }
+
+        // Gate sending to authenticated-only
+        if (!socket.isAuthenticated) {
+          socket.emit('message', { type: 'error', message: 'يرجى الانتظار حتى اكتمال الاتصال' });
           return;
         }
 
@@ -1004,6 +1058,11 @@ export function setupRealtime(httpServer: HttpServer): IOServer {
             try {
               await storage.setUserOnlineStatus(userId, false);
             } catch {}
+            // force update of presence DB timestamp on full disconnect
+            try {
+              await storage.updateUser(userId, { lastSeen: new Date() });
+            } catch {}
+            logger.debug('User fully disconnected', { uid: userId });
             // Update any room the user was in last (best effort)
             const lastRoom = socket.currentRoom;
             if (lastRoom) {
@@ -1025,6 +1084,26 @@ export function setupRealtime(httpServer: HttpServer): IOServer {
 
   // تحميل البوتات النشطة عند بدء التشغيل
   loadActiveBots();
+
+  // Background presence sweeper to persist lastSeen every minute (best effort)
+  try {
+    setInterval(() => {
+      try {
+        const nowTs = Date.now();
+        for (const [uid, entry] of connectedUsers.entries()) {
+          // Skip bot pseudo-IDs (bots are handled separately)
+          try {
+            if ((entry?.user as any)?.userType === 'bot') continue;
+          } catch {}
+          const last = lastPresenceDbUpdate.get(uid) || 0;
+          if (nowTs - last > 60000) {
+            lastPresenceDbUpdate.set(uid, nowTs);
+            storage.updateUser(uid, { lastSeen: new Date(nowTs) }).catch(() => {});
+          }
+        }
+      } catch {}
+    }, 60000);
+  } catch {}
 
   return io;
 }
@@ -1078,3 +1157,32 @@ async function loadActiveBots() {
     console.error('خطأ في تحميل البوتات:', error);
   }
 }
+
+// Presence ticker للبوتات: يحدث آخر تواجد ويبث presence كل دقيقة
+try {
+  setInterval(() => {
+    try {
+      const now = new Date();
+      for (const [userId, entry] of connectedUsers.entries()) {
+        const user = entry.user;
+        if (!user || (user as any).userType !== 'bot') continue;
+        entry.lastSeen = now;
+        try { (entry.user as any).lastSeen = now; } catch {}
+        // تحديث meta لكل سوكيت اصطناعي للبوت وبث presence للغرفة الحالية
+        for (const [, meta] of entry.sockets.entries()) {
+          meta.lastSeen = now;
+          if (meta.room && ioInstance) {
+            ioInstance.to(`room_${meta.room}`).emit('message', {
+              type: 'presence',
+              userId,
+              lastSeen: now.toISOString(),
+              roomId: meta.room,
+              isOnline: true,
+            });
+          }
+        }
+        connectedUsers.set(userId, entry);
+      }
+    } catch {}
+  }, 60000);
+} catch {}
