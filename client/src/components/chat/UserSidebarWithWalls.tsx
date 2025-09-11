@@ -178,14 +178,14 @@ export default function UnifiedSidebar({
     (user: ChatUser) => <CountryFlag country={user.country} size={14} />, []
   );
 
-  // 🚀 تحسين: دالة formatLastSeen محسنة
+  // 🚀 تحسين: دالة formatLastSeen محسنة بدون "غير معروف"
   const formatLastSeen = useCallback((lastSeen?: string | Date) => {
-    if (!lastSeen) return 'غير معروف';
+    if (!lastSeen) return '';
 
     const lastSeenDate = lastSeen instanceof Date ? lastSeen : new Date(lastSeen);
 
     if (isNaN(lastSeenDate.getTime())) {
-      return 'غير معروف';
+      return '';
     }
 
     const now = new Date();

@@ -155,7 +155,7 @@ export default function ReportsLog({ currentUser, isVisible, onClose }: ReportsL
       case 'dismissed':
         return <Badge variant="secondary">مرفوض</Badge>;
       default:
-        return <Badge variant="outline">غير معروف</Badge>;
+        return <Badge variant="outline">—</Badge>;
     }
   };
 

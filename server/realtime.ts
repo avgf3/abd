@@ -211,6 +211,7 @@ export async function buildOnlineUsersForRoom(roomId: string) {
   const users = sanitized.map((u: any) => {
     try {
       const versionTag = (u as any).avatarHash || (u as any).avatarVersion;
+      let next = u as any;
       if (
         u?.profileImage &&
         typeof u.profileImage === 'string' &&
@@ -218,10 +219,14 @@ export async function buildOnlineUsersForRoom(roomId: string) {
         versionTag &&
         !String(u.profileImage).includes('?v=')
       ) {
-        return { ...u, profileImage: `${u.profileImage}?v=${versionTag}` };
+        next = { ...next, profileImage: `${u.profileImage}?v=${versionTag}` };
       }
+      // تأكيد وجود حقول الحالة والزمن بشكل متناسق
+      next.isOnline = true;
+      next.lastSeen = (u as any).lastSeen || (u as any).createdAt || new Date();
+      return next;
     } catch {}
-    return u;
+    return { ...u, isOnline: true, lastSeen: (u as any).lastSeen || (u as any).createdAt || new Date() };
   });
 
   return users;

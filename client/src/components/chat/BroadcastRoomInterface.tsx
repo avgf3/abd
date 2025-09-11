@@ -859,7 +859,7 @@ export default function BroadcastRoomInterface({
             <span className="font-medium">المضيف:</span>
             {broadcastInfo?.hostId != null && (
               <Badge variant="secondary" className="flex items-center gap-1">
-                {getUserById(broadcastInfo.hostId!)?.username || 'غير معروف'}
+                {getUserById(broadcastInfo.hostId!)?.username || ''}
               </Badge>
             )}
           </div>

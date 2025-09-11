@@ -100,9 +100,9 @@ export default function ProfileModal({
   }, [fetchRooms]);
 
   const formatAmPmTime = (date?: Date | string): string => {
-    if (!date) return 'غير معروف';
+    if (!date) return '';
     const d = date instanceof Date ? date : new Date(date);
-    if (isNaN(d.getTime())) return 'غير معروف';
+    if (isNaN(d.getTime())) return '';
     let hours = d.getHours();
     const minutes = d.getMinutes().toString().padStart(2, '0');
     const ampm = hours >= 12 ? 'PM' : 'AM';
@@ -121,13 +121,13 @@ export default function ProfileModal({
   
   // دالة تنسيق آخر تواجد
   const formatLastSeenWithRoom = (lastSeen?: string | Date | null, roomName?: string): string => {
-    if (!lastSeen) return 'غير معروف';
+    if (!lastSeen) return '';
     
     try {
       const lastSeenDate = lastSeen instanceof Date ? lastSeen : new Date(lastSeen);
       
       if (isNaN(lastSeenDate.getTime())) {
-        return 'غير معروف';
+        return '';
       }
       
       const now = new Date();
@@ -157,7 +157,7 @@ export default function ProfileModal({
       return `${formattedTime} / غرفة║${finalRoomName}`;
       
     } catch (error) {
-      return 'غير معروف';
+      return '';
     }
   };
   
