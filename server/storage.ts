@@ -1255,6 +1255,10 @@ export const storage: LegacyStorage = {
     return await userService.getIgnoredUsers(userId);
   },
 
+  async getIgnoredUsersDetailed(userId: number) {
+    return await userService.getIgnoredUsersDetailed(userId);
+  },
+
   // ========= Notifications helpers =========
   async getUnreadNotificationCount(userId: number) {
     return await notificationService.getUnreadNotificationCount(userId);

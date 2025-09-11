@@ -278,6 +278,31 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   const [showIgnoredUsers, setShowIgnoredUsers] = useState(false);
   const [showThemeSelector, setShowThemeSelector] = useState(false);
   const [showUsernameColorPicker, setShowUsernameColorPicker] = useState(false);
+  // تفاصيل المستخدمين المتجاهلين (اسم دائمًا)
+  const [ignoredUsersData, setIgnoredUsersData] = useState<Map<number, { id: number; username: string }>>(new Map());
+
+  // عند فتح نافذة المتجاهلين: اجلب قائمة المتجاهلين بأسمائهم مباشرة (بدون كاش)
+  useEffect(() => {
+    if (!showIgnoredUsers) return;
+    try {
+      let cancelled = false;
+      (async () => {
+        try {
+          const currentUserId = chat.currentUser?.id;
+          if (!currentUserId) return;
+          const data = await apiRequest(`/api/users/${currentUserId}/ignored?detailed=true`);
+          if (cancelled) return;
+          const map = new Map<number, { id: number; username: string }>();
+          const list: Array<{ id: number; username: string }> = Array.isArray((data as any)?.users)
+            ? (data as any).users
+            : [];
+          list.forEach((u) => { if (u && typeof u.id === 'number' && u.username) map.set(u.id, u); });
+          setIgnoredUsersData(map);
+        } catch {}
+      })();
+      return () => { cancelled = true; };
+    } catch {}
+  }, [showIgnoredUsers, chat.currentUser?.id]);
   const [newMessageAlert, setNewMessageAlert] = useState<{
     show: boolean;
     sender: ChatUser | null;
@@ -1656,7 +1681,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                         </div>
                       )}
                       <span className="font-medium">
-                        {u ? u.username : `مستخدم غير متصل #${id}`}
+                        {u ? u.username : (ignoredUsersData.get(id)?.username || 'جارٍ التحميل...')}
                       </span>
                     </div>
                     <Button size="sm" variant="outline" onClick={() => chat.unignoreUser?.(id)}>
