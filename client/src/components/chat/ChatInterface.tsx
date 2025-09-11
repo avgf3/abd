@@ -66,7 +66,7 @@ import { useNotificationManager } from '@/hooks/useNotificationManager';
 import { useRoomManager } from '@/hooks/useRoomManager';
 import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser, ChatRoom } from '@/types/chat';
-import { setCachedUser, getCachedUsername, getCachedUser } from '@/utils/userCacheManager';
+import { setCachedUser } from '@/utils/userCacheManager';
 import { getPmLastOpened } from '@/utils/messageUtils';
 
 interface ChatInterfaceProps {
@@ -278,30 +278,39 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   const [showIgnoredUsers, setShowIgnoredUsers] = useState(false);
   const [showThemeSelector, setShowThemeSelector] = useState(false);
   const [showUsernameColorPicker, setShowUsernameColorPicker] = useState(false);
+  // تفاصيل المستخدمين المتجاهلين غير المتصلين (بدون كاش عام)
+  const [ignoredUsersData, setIgnoredUsersData] = useState<Map<number, ChatUser>>(new Map());
 
-  // عند فتح نافذة المتجاهلين: اجلب أسماء غير المتصلين وضعها في الكاش لعرض الاسم الحقيقي
+  // عند فتح نافذة المتجاهلين: اجلب تفاصيلهم مباشرة من API بدون أي كاش
   useEffect(() => {
     if (!showIgnoredUsers) return;
     try {
-      const ids = Array.from(chat.ignoredUsers || []);
-      const toFetch = ids.filter((id) => {
-        if (chat.onlineUsers.some((u) => u.id === id)) return false;
-        const cached = getCachedUser(id);
-        return !cached || !cached.username;
-      });
-      if (toFetch.length === 0) return;
+      const ids = Array.from<number>(chat.ignoredUsers as Set<number>);
+      const offlineIds = ids.filter((id) => !chat.onlineUsers.some((u) => u.id === id));
+      if (offlineIds.length === 0) {
+        setIgnoredUsersData(new Map());
+        return;
+      }
+      let cancelled = false;
       (async () => {
-        await Promise.all(
-          toFetch.map(async (id) => {
-            try {
-              const data = await apiRequest(`/api/users/${id}`);
-              if (data && (data as any).id) {
-                setCachedUser(data as any);
+        try {
+          const results = await Promise.all(
+            offlineIds.map(async (id) => {
+              try {
+                const data = await apiRequest(`/api/users/${id}`);
+                return { id, user: (data && (data as any).id ? (data as ChatUser) : null) };
+              } catch {
+                return { id, user: null };
               }
-            } catch {}
-          })
-        );
+            })
+          );
+          if (cancelled) return;
+          const map = new Map<number, ChatUser>();
+          results.forEach((r) => { if (r.user) map.set(r.id, r.user); });
+          setIgnoredUsersData(map);
+        } catch {}
       })();
+      return () => { cancelled = true; };
     } catch {}
   }, [showIgnoredUsers, chat.ignoredUsers, chat.onlineUsers]);
   const [newMessageAlert, setNewMessageAlert] = useState<{
@@ -1682,7 +1691,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                         </div>
                       )}
                       <span className="font-medium">
-                        {u ? u.username : (getCachedUser(id)?.username || 'جارٍ التحميل...')}
+                        {u ? u.username : (ignoredUsersData.get(id)?.username || 'جارٍ التحميل...')}
                       </span>
                     </div>
                     <Button size="sm" variant="outline" onClick={() => chat.unignoreUser?.(id)}>
