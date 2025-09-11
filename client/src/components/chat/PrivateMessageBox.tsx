@@ -1,5 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
+import { Send, Image as ImageIcon } from 'lucide-react';
 import { Virtuoso, type VirtuosoHandle } from 'react-virtuoso';
 import { toast } from 'sonner';
 
@@ -213,6 +214,7 @@ export default function PrivateMessageBox({
     const hasImage = !!imageFile;
     if (!hasText && !hasImage) return;
 
+    // لا نحجب الواجهة أثناء الإرسال لتحسين الشعور بالاستجابة
     setIsSending(true);
     setSendError(null);
     clearTimeout(retryTimeoutRef.current);
@@ -245,8 +247,9 @@ export default function PrivateMessageBox({
     } catch (error) {
       console.error('خطأ في إرسال الرسالة:', error);
       const errorMessage = error instanceof Error ? error.message : 'فشل إرسال الرسالة';
-      setSendError(errorMessage);
-      toast.error(errorMessage);
+      // إخفاء رسائل الأخطاء من الواجهة الخاصة بناءً على رغبتك
+      setSendError(null);
+      console.error(errorMessage);
 
       // إعادة تعيين حالة الخطأ بعد 5 ثوان
       retryTimeoutRef.current = setTimeout(() => setSendError(null), 5000);
@@ -566,18 +569,6 @@ export default function PrivateMessageBox({
           </div>
 
           <div className="p-4 border-t border-gray-200 bg-white soft-entrance">
-            {/* عرض رسالة الخطأ إن وجدت */}
-            {sendError && (
-              <div className="mb-2 p-2 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm flex items-center justify-between">
-                <span>⚠️ {sendError}</span>
-                <button
-                  onClick={() => setSendError(null)}
-                  className="text-red-500 hover:text-red-700"
-                >
-                  ✕
-                </button>
-              </div>
-            )}
             {isDmClosed ? (
               <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg text-center text-sm text-gray-600">
                 عفواً هذا العضو قامَ بإغلاق الرسائل الخاصة
@@ -585,19 +576,7 @@ export default function PrivateMessageBox({
             ) : (
               <>
                 <div className="flex gap-3 items-end">
-                  <Input
-                    ref={inputRef}
-                    value={messageText}
-                    onChange={(e) => setMessageText(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    onPaste={handlePaste}
-                    placeholder="اكتب رسالتك هنا..."
-                    className={`flex-1 bg-gray-50 border text-foreground placeholder:text-muted-foreground rounded-lg ${
-                      sendError ? 'border-red-300' : 'border-gray-300'
-                    }`}
-                    disabled={isSending}
-                    style={{ color: composerTextColor, fontWeight: composerBold ? 600 : undefined }}
-                  />
+                  {/* زر اختيار الصورة */}
                   <input
                     ref={fileInputRef}
                     type="file"
@@ -605,19 +584,36 @@ export default function PrivateMessageBox({
                     onChange={(e) => setImageFile(e.target.files?.[0] || null)}
                     className="hidden"
                   />
-                  {/* Removed ComposerPlusMenu (gallery/color/bold) */}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="aspect-square mobile-touch-button min-w-[40px] min-h-[40px]"
+                    disabled={false}
+                    title="إرسال صورة"
+                  >
+                    <ImageIcon className="w-4 h-4" />
+                  </Button>
+                  <Input
+                    ref={inputRef}
+                    value={messageText}
+                    onChange={(e) => setMessageText(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    onPaste={handlePaste}
+                    placeholder="اكتب رسالتك هنا..."
+                    className={`flex-1 bg-gray-50 border text-foreground placeholder:text-muted-foreground rounded-lg border-gray-300`}
+                    disabled={false}
+                    style={{ color: composerTextColor, fontWeight: composerBold ? 600 : undefined }}
+                  />
+                  {/* زر الإرسال بشكل أيقونة مثل غرف الدردشة */}
                   <Button
                     onClick={handleSend}
-                    disabled={(!messageText.trim() && !imageFile) || isSending}
-                    className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-2 rounded-lg font-medium transition-all disabled:opacity-50"
+                    disabled={!messageText.trim() && !imageFile}
+                    className="aspect-square bg-primary hover:bg-primary/90 mobile-touch-button min-w-[40px] min-h-[40px]"
+                    title="إرسال"
                   >
-                    {isSending ? (
-                      <>
-                        <span className="animate-spin">⌛</span> جاري الإرسال...
-                      </>
-                    ) : (
-                      <>📤 إرسال</>
-                    )}
+                    <Send className="w-4 h-4" />
                   </Button>
                 </div>
                 {imageFile && (

@@ -107,17 +107,7 @@ export default function WallPostList({
                   </div>
                   <div className="text-xs text-muted-foreground flex items-center gap-1">
                     <span>{formatTimeAgo(post.timestamp)}</span>
-                    {post.userRole && post.userRole !== 'member' && (
-                      <span className="px-2 py-0.5 bg-primary/10 text-primary text-xs rounded-full">
-                        {post.userRole === 'admin'
-                          ? 'مدير'
-                          : post.userRole === 'owner'
-                            ? 'مالك'
-                            : post.userRole === 'moderator'
-                              ? 'مراقب'
-                              : post.userRole}
-                      </span>
-                    )}
+                    {/* حذف أي شعار/شارة بجانب الاسم في الحائط */}
                   </div>
                 </div>
               </div>
