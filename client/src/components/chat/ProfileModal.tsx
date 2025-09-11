@@ -2593,16 +2593,10 @@ export default function ProfileModal({
 
           {/* Profile Action Buttons */}
           {localUser?.id !== currentUser?.id && (
-            <div style={{
-              display: 'flex',
-              gap: '8px',
-              padding: '12px 20px 0px',
-              justifyContent: 'center',
-              flexWrap: 'wrap'
-            }}>
+            <div className="profile-buttons">
               <button
                 onClick={() => {
-                  // إرسال رسالة خاصة
+                  // إرسال رسالة خاصة - نفس منطق UserPopup القديم
                   if (localUser?.dmPrivacy === 'none') {
                     toast({
                       title: 'غير مسموح',
@@ -2611,45 +2605,20 @@ export default function ProfileModal({
                     });
                     return;
                   }
-                  // يمكن إضافة منطق إرسال الرسالة هنا
-                  toast({
-                    title: 'قريباً',
-                    description: 'ميزة الرسائل الخاصة قيد التطوير',
-                  });
-                }}
-                style={{
-                  flex: '1 1 45%',
-                  minWidth: '120px',
-                  padding: '10px 16px',
-                  background: 'linear-gradient(135deg, #4CAF50, #45a049)',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '8px',
-                  fontSize: '13px',
-                  fontWeight: 'bold',
-                  cursor: 'pointer',
-                  transition: 'all 0.3s ease',
-                  boxShadow: '0 4px 12px rgba(76, 175, 80, 0.3)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '6px'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                  e.currentTarget.style.boxShadow = '0 6px 20px rgba(76, 175, 80, 0.4)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(76, 175, 80, 0.3)';
+                  // استخدام نفس منطق handlePrivateMessage من ChatInterface
+                  onClose();
+                  // يمكن تمرير callback للوالد لفتح الرسائل الخاصة
+                  if (window.location.hash !== `#pm${localUser?.id}`) {
+                    window.location.hash = `#pm${localUser?.id}`;
+                  }
                 }}
               >
-                💬 إرسال رسالة
+                ✉️ ارسال رسالة
               </button>
 
               <button
-                onClick={() => {
-                  // إضافة صديق
+                onClick={async () => {
+                  // إضافة صديق - نفس منطق handleAddFriend من ChatInterface
                   if (!currentUser) {
                     toast({
                       title: 'خطأ',
@@ -2658,37 +2627,27 @@ export default function ProfileModal({
                     });
                     return;
                   }
-                  // يمكن إضافة منطق إضافة صديق هنا
-                  toast({
-                    title: 'تم الإرسال',
-                    description: `تم إرسال طلب صداقة إلى ${localUser?.username}`,
-                  });
-                }}
-                style={{
-                  flex: '1 1 45%',
-                  minWidth: '120px',
-                  padding: '10px 16px',
-                  background: 'linear-gradient(135deg, #2196F3, #1976D2)',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '8px',
-                  fontSize: '13px',
-                  fontWeight: 'bold',
-                  cursor: 'pointer',
-                  transition: 'all 0.3s ease',
-                  boxShadow: '0 4px 12px rgba(33, 150, 243, 0.3)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '6px'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                  e.currentTarget.style.boxShadow = '0 6px 20px rgba(33, 150, 243, 0.4)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(33, 150, 243, 0.3)';
+
+                  try {
+                    await apiRequest('/api/friend-requests', {
+                      method: 'POST',
+                      body: {
+                        senderId: currentUser.id,
+                        receiverId: localUser?.id,
+                      },
+                    });
+
+                    toast({
+                      title: 'تم الإرسال ✅',
+                      description: `تم إرسال طلب صداقة إلى ${localUser?.username}`,
+                    });
+                  } catch (error: any) {
+                    toast({
+                      title: 'خطأ',
+                      description: error?.message || 'فشل في إرسال طلب الصداقة',
+                      variant: 'destructive',
+                    });
+                  }
                 }}
               >
                 👥 إضافة صديق
@@ -2696,7 +2655,7 @@ export default function ProfileModal({
 
               <button
                 onClick={() => {
-                  // تجاهل المستخدم
+                  // تجاهل المستخدم - نفس منطق handleIgnoreUser من ChatInterface
                   if (!currentUser) {
                     toast({
                       title: 'خطأ',
@@ -2705,37 +2664,21 @@ export default function ProfileModal({
                     });
                     return;
                   }
-                  // يمكن إضافة منطق التجاهل هنا
+
+                  // بث حدث عام للتجاهل كما في الكود القديم
+                  try {
+                    const ev = new CustomEvent('ignoreUser', { detail: { userId: localUser?.id } });
+                    window.dispatchEvent(ev);
+                  } catch (e) {
+                    console.warn('فشل في بث حدث التجاهل:', e);
+                  }
+
                   toast({
-                    title: 'تم التجاهل',
-                    description: `تم تجاهل ${localUser?.username}`,
+                    title: 'تم التجاهل 🚫',
+                    description: `تم تجاهل ${localUser?.username}. لن ترى رسائله العامة أو الخاصة ولن يستطيع إرسال طلب صداقة لك.`,
                   });
-                }}
-                style={{
-                  flex: '1 1 45%',
-                  minWidth: '120px',
-                  padding: '10px 16px',
-                  background: 'linear-gradient(135deg, #FF9800, #F57C00)',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '8px',
-                  fontSize: '13px',
-                  fontWeight: 'bold',
-                  cursor: 'pointer',
-                  transition: 'all 0.3s ease',
-                  boxShadow: '0 4px 12px rgba(255, 152, 0, 0.3)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '6px'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                  e.currentTarget.style.boxShadow = '0 6px 20px rgba(255, 152, 0, 0.4)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 152, 0, 0.3)';
+                  
+                  onClose();
                 }}
               >
                 🚫 تجاهل
@@ -2743,7 +2686,7 @@ export default function ProfileModal({
 
               <button
                 onClick={() => {
-                  // إبلاغ عن المستخدم
+                  // إبلاغ عن المستخدم - نفس منطق handleReportUser من ChatInterface
                   if (!currentUser) {
                     toast({
                       title: 'خطأ',
@@ -2752,45 +2695,41 @@ export default function ProfileModal({
                     });
                     return;
                   }
+                  
                   if (currentUser.userType === 'guest') {
                     toast({
                       title: 'غير مسموح',
-                      description: 'التبليغ متاح للأعضاء فقط',
+                      description: 'التبليغ متاح للأعضاء فقط. سجل كعضو أولاً',
                       variant: 'destructive',
                     });
                     return;
                   }
-                  // يمكن إضافة منطق الإبلاغ هنا
-                  toast({
-                    title: 'تم الإرسال',
-                    description: `تم إرسال التبليغ عن ${localUser?.username}`,
-                  });
-                }}
-                style={{
-                  flex: '1 1 45%',
-                  minWidth: '120px',
-                  padding: '10px 16px',
-                  background: 'linear-gradient(135deg, #f44336, #d32f2f)',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '8px',
-                  fontSize: '13px',
-                  fontWeight: 'bold',
-                  cursor: 'pointer',
-                  transition: 'all 0.3s ease',
-                  boxShadow: '0 4px 12px rgba(244, 67, 54, 0.3)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '6px'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                  e.currentTarget.style.boxShadow = '0 6px 20px rgba(244, 67, 54, 0.4)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(244, 67, 54, 0.3)';
+
+                  // منع التبليغ على المشرفين والمالكين
+                  if (localUser?.userType === 'admin' || localUser?.userType === 'owner') {
+                    toast({
+                      title: 'غير مسموح',
+                      description: 'لا يمكن الإبلاغ عن المشرفين أو المالكين',
+                      variant: 'destructive',
+                    });
+                    return;
+                  }
+
+                  // بث حدث عام لفتح نافذة الإبلاغ
+                  try {
+                    const ev = new CustomEvent('reportUser', { 
+                      detail: { 
+                        user: localUser,
+                        messageContent: undefined,
+                        messageId: undefined
+                      } 
+                    });
+                    window.dispatchEvent(ev);
+                  } catch (e) {
+                    console.warn('فشل في بث حدث الإبلاغ:', e);
+                  }
+
+                  onClose();
                 }}
               >
                 📢 إبلاغ
