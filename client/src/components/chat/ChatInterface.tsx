@@ -66,7 +66,7 @@ import { useNotificationManager } from '@/hooks/useNotificationManager';
 import { useRoomManager } from '@/hooks/useRoomManager';
 import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser, ChatRoom } from '@/types/chat';
-import { setCachedUser } from '@/utils/userCacheManager';
+import { setCachedUser, getCachedUsername, getCachedUser } from '@/utils/userCacheManager';
 import { getPmLastOpened } from '@/utils/messageUtils';
 
 interface ChatInterfaceProps {
@@ -278,6 +278,32 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   const [showIgnoredUsers, setShowIgnoredUsers] = useState(false);
   const [showThemeSelector, setShowThemeSelector] = useState(false);
   const [showUsernameColorPicker, setShowUsernameColorPicker] = useState(false);
+
+  // عند فتح نافذة المتجاهلين: اجلب أسماء غير المتصلين وضعها في الكاش لعرض الاسم الحقيقي
+  useEffect(() => {
+    if (!showIgnoredUsers) return;
+    try {
+      const ids = Array.from(chat.ignoredUsers || []);
+      const toFetch = ids.filter((id) => {
+        if (chat.onlineUsers.some((u) => u.id === id)) return false;
+        const cached = getCachedUser(id);
+        return !cached || !cached.username;
+      });
+      if (toFetch.length === 0) return;
+      (async () => {
+        await Promise.all(
+          toFetch.map(async (id) => {
+            try {
+              const data = await apiRequest(`/api/users/${id}`);
+              if (data && (data as any).id) {
+                setCachedUser(data as any);
+              }
+            } catch {}
+          })
+        );
+      })();
+    } catch {}
+  }, [showIgnoredUsers, chat.ignoredUsers, chat.onlineUsers]);
   const [newMessageAlert, setNewMessageAlert] = useState<{
     show: boolean;
     sender: ChatUser | null;
@@ -1656,7 +1682,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                         </div>
                       )}
                       <span className="font-medium">
-                        {u ? u.username : `مستخدم غير متصل #${id}`}
+                        {u ? u.username : getCachedUsername(id)}
                       </span>
                     </div>
                     <Button size="sm" variant="outline" onClick={() => chat.unignoreUser?.(id)}>
