@@ -1682,7 +1682,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                         </div>
                       )}
                       <span className="font-medium">
-                        {u ? u.username : getCachedUsername(id)}
+                        {u ? u.username : (getCachedUser(id)?.username || 'جارٍ التحميل...')}
                       </span>
                     </div>
                     <Button size="sm" variant="outline" onClick={() => chat.unignoreUser?.(id)}>
