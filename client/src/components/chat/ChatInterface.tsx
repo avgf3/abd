@@ -284,24 +284,49 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   // عند فتح نافذة المتجاهلين: اجلب قائمة المتجاهلين بأسمائهم مباشرة (بدون كاش)
   useEffect(() => {
     if (!showIgnoredUsers) return;
-    try {
-      let cancelled = false;
-      (async () => {
-        try {
-          const currentUserId = chat.currentUser?.id;
-          if (!currentUserId) return;
-          const data = await apiRequest(`/api/users/${currentUserId}/ignored?detailed=true`);
-          if (cancelled) return;
-          const map = new Map<number, { id: number; username: string }>();
-          const list: Array<{ id: number; username: string }> = Array.isArray((data as any)?.users)
-            ? (data as any).users
-            : [];
-          list.forEach((u) => { if (u && typeof u.id === 'number' && u.username) map.set(u.id, u); });
-          setIgnoredUsersData(map);
-        } catch {}
-      })();
-      return () => { cancelled = true; };
-    } catch {}
+    
+    let cancelled = false;
+    
+    const fetchIgnoredUsersData = async () => {
+      try {
+        const currentUserId = chat.currentUser?.id;
+        if (!currentUserId) return;
+        
+        const data = await apiRequest(`/api/users/${currentUserId}/ignored?detailed=true`);
+        
+        if (cancelled) return;
+        
+        const map = new Map<number, { id: number; username: string }>();
+        const list: Array<{ id: number; username: string }> = Array.isArray((data as any)?.users)
+          ? (data as any).users
+          : [];
+        
+        list.forEach((u) => { 
+          if (u && typeof u.id === 'number' && u.username) {
+            map.set(u.id, u); 
+          }
+        });
+        
+        setIgnoredUsersData(map);
+      } catch (error) {
+        console.error('❌ خطأ في جلب بيانات المستخدمين المتجاهلين:', error);
+        // في حالة الخطأ، نحاول استخدام البيانات المتاحة من المستخدمين المتصلين
+        const fallbackMap = new Map<number, { id: number; username: string }>();
+        Array.from(chat.ignoredUsers || []).forEach(id => {
+          const onlineUser = chat.onlineUsers.find(u => u.id === id);
+          if (onlineUser) {
+            fallbackMap.set(id, { id: onlineUser.id, username: onlineUser.username });
+          }
+        });
+        setIgnoredUsersData(fallbackMap);
+      }
+    };
+    
+    fetchIgnoredUsersData();
+    
+    return () => { 
+      cancelled = true; 
+    };
   }, [showIgnoredUsers, chat.currentUser?.id]);
   const [newMessageAlert, setNewMessageAlert] = useState<{
     show: boolean;
@@ -1668,20 +1693,29 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
               </button>
             </div>
             <div className="space-y-2 max-h-[60vh] overflow-y-auto">
-              {Array.from(chat.ignoredUsers || []).map((id) => {
-                const u = chat.onlineUsers.find((u) => u.id === id);
+              {(!chat.ignoredUsers || chat.ignoredUsers.size === 0) ? (
+                <div className="text-center py-8 text-gray-500">
+                  <div className="mb-3">✅</div>
+                  <p className="text-sm">لا توجد مستخدمين متجاهلين</p>
+                </div>
+              ) : (
+                Array.from(chat.ignoredUsers || []).map((id) => {
+                const ignoredUser = ignoredUsersData.get(id);
+                const onlineUser = chat.onlineUsers.find((u) => u.id === id);
+                const user = ignoredUser || onlineUser;
+                
                 return (
                   <div key={id} className="flex items-center justify-between p-2 border rounded">
                     <div className="flex items-center gap-2">
-                      {u ? (
-                        <ProfileImage user={u} size="small" />
+                      {user ? (
+                        <ProfileImage user={user} size="small" />
                       ) : (
                         <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-500">
-                          ?
+                          👤
                         </div>
                       )}
                       <span className="font-medium">
-                        {u ? u.username : (ignoredUsersData.get(id)?.username || 'جارٍ التحميل...')}
+                        {user?.username}
                       </span>
                     </div>
                     <Button size="sm" variant="outline" onClick={() => chat.unignoreUser?.(id)}>
@@ -1689,7 +1723,8 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                     </Button>
                   </div>
                 );
-              })}
+              })
+              )}
             </div>
           </div>
         </div>
