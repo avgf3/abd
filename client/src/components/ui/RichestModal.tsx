@@ -74,11 +74,20 @@ export default function RichestModal({ isOpen, onClose, currentUser, onUserClick
 
     // Prefill from cache to avoid loading flash
     try {
+      // جلب من localStorage أولاً لتجربة تحميل فوري
+      const lsVip = localStorage.getItem('vip_cache');
+      if (lsVip && !ignore) {
+        try { setVipUsers(normalizeUsers(JSON.parse(lsVip))); } catch {}
+      }
       const cachedVip = queryClient.getQueryData<{ users: ChatUser[] }>(['/api/vip']);
       if (cachedVip?.users && !ignore) {
         setVipUsers(normalizeUsers(cachedVip.users));
       }
       if (canManage) {
+        const lsCand = localStorage.getItem('vip_candidates_cache');
+        if (lsCand && !ignore) {
+          try { setCandidates(normalizeUsers(JSON.parse(lsCand))); } catch {}
+        }
         const cachedCand = queryClient.getQueryData<{ users: ChatUser[] }>(['/api/vip/candidates']);
         if (cachedCand?.users && !ignore) {
           setCandidates(normalizeUsers(cachedCand.users));
@@ -95,6 +104,7 @@ export default function RichestModal({ isOpen, onClose, currentUser, onUserClick
           const normalized = normalizeUsers(res.users || []);
           setVipUsers(normalized);
           queryClient.setQueryData(['/api/vip'], { users: normalized });
+          try { localStorage.setItem('vip_cache', JSON.stringify(normalized)); } catch {}
         }
         if (canManage) {
           try {
@@ -103,6 +113,7 @@ export default function RichestModal({ isOpen, onClose, currentUser, onUserClick
               const normalizedCand = normalizeUsers(cand.users || []);
               setCandidates(normalizedCand);
               queryClient.setQueryData(['/api/vip/candidates'], { users: normalizedCand });
+              try { localStorage.setItem('vip_candidates_cache', JSON.stringify(normalizedCand)); } catch {}
             }
           } catch {}
         }
@@ -120,6 +131,7 @@ export default function RichestModal({ isOpen, onClose, currentUser, onUserClick
         const normalized = normalizeUsers(payload.users || []);
         setVipUsers(normalized);
         try { queryClient.setQueryData(['/api/vip'], { users: normalized }); } catch {}
+        try { localStorage.setItem('vip_cache', JSON.stringify(normalized)); } catch {}
       }
     };
 
@@ -225,13 +237,12 @@ export default function RichestModal({ isOpen, onClose, currentUser, onUserClick
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2">
                           {/* رتبة رقمية مثبتة على يمين الحاوية */}
-                          <Badge
-                            variant="secondary"
-                            className="text-[11px] min-w-[22px] h-5 px-2 flex items-center justify-center"
+                          <span
+                            className="inline-flex items-center justify-center text-[11px] min-w-[22px] h-5 px-2 rounded bg-secondary text-secondary-foreground"
                             title={`الترتيب ${idx + 1}`}
                           >
                             {idx + 1}
-                          </Badge>
+                          </span>
                           {/* ميدالية لأعلى 3 فقط (اختياري) */}
                           {idx < 3 && (
                             <span className="text-base" aria-label="rank-medal">

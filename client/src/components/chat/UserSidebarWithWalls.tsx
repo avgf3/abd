@@ -739,11 +739,7 @@ export default function UnifiedSidebar({
                               >
                                 {post.username}
                               </span>
-                              {/* 🏅 شارة الرتبة الموحدة */}
-                              <UserRoleBadge
-                                user={{ userType: post.userRole } as ChatUser}
-                                size={16}
-                              />
+                              {/* تمت إزالة الشارات بجانب الاسم وفق المطلوب */}
                             </div>
                             <p className="text-xs text-gray-500">
                               {formatTimeAgo(post.timestamp.toString())}
@@ -856,11 +852,7 @@ export default function UnifiedSidebar({
                               >
                                 {post.username}
                               </span>
-                              {/* 🏅 شارة الرتبة الموحدة */}
-                              <UserRoleBadge
-                                user={{ userType: post.userRole } as ChatUser}
-                                size={16}
-                              />
+                              {/* تمت إزالة الشارات بجانب الاسم وفق المطلوب */}
                             </div>
                             <p className="text-xs text-gray-500">
                               {formatTimeAgo(post.timestamp.toString())}
