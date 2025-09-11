@@ -179,7 +179,10 @@ export default function UnifiedSidebar({
   );
 
   // 🚀 تحسين: دالة formatLastSeen محسنة
-  const formatLastSeen = useCallback((lastSeen?: string | Date) => {
+  const formatLastSeen = useCallback((lastSeen?: string | Date, isOnline?: boolean) => {
+    // إذا كان المستخدم متصل حالياً، أظهر "متصل الآن"
+    if (isOnline) return 'متصل الآن';
+    
     if (!lastSeen) return 'غير معروف';
 
     const lastSeenDate = lastSeen instanceof Date ? lastSeen : new Date(lastSeen);

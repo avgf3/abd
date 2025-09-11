@@ -211,6 +211,8 @@ export async function buildOnlineUsersForRoom(roomId: string) {
   const users = sanitized.map((u: any) => {
     try {
       const versionTag = (u as any).avatarHash || (u as any).avatarVersion;
+      let updatedUser = { ...u, isOnline: true }; // ✅ تأكد أن المستخدم متصل
+      
       if (
         u?.profileImage &&
         typeof u.profileImage === 'string' &&
@@ -218,10 +220,11 @@ export async function buildOnlineUsersForRoom(roomId: string) {
         versionTag &&
         !String(u.profileImage).includes('?v=')
       ) {
-        return { ...u, profileImage: `${u.profileImage}?v=${versionTag}` };
+        updatedUser.profileImage = `${u.profileImage}?v=${versionTag}`;
       }
+      return updatedUser;
     } catch {}
-    return u;
+    return { ...u, isOnline: true }; // ✅ تأكد أن المستخدم متصل
   });
 
   return users;
