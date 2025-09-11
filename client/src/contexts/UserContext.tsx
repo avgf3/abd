@@ -205,16 +205,16 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     [state.currentUser?.id]
   );
 
-  // تحديث آخر ظهور تلقائياً كل دقيقة
+  // مؤقّت دقيق لإجبار إعادة التصيير كل دقيقة دون لمس lastSeen
   useEffect(() => {
     if (!state.isAuthenticated) return;
 
     const interval = setInterval(() => {
-      updateLastSeen();
-    }, 60000); // كل دقيقة
+      dispatch({ type: 'UPDATE_TIMESTAMP' });
+    }, 60000);
 
     return () => clearInterval(interval);
-  }, [state.isAuthenticated, updateLastSeen]);
+  }, [state.isAuthenticated]);
 
   // قيمة المحتوى
   const contextValue: UserContextType = {
