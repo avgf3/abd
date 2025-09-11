@@ -121,6 +121,12 @@ export default function ProfileModal({
   
   // دالة تنسيق آخر تواجد
   const formatLastSeenWithRoom = (lastSeen?: string | Date | null, roomName?: string): string => {
+    // إذا المستخدم متصل الآن، اعرض "متصل الآن"
+    if (localUser?.isOnline) {
+      return 'متصل الآن';
+    }
+    
+    // إذا مش متصل، اعرض آخر ظهور
     if (!lastSeen) return 'غير معروف';
     
     try {

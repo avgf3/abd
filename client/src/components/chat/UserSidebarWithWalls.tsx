@@ -183,12 +183,12 @@ export default function UnifiedSidebar({
     // إذا كان المستخدم متصل حالياً، أظهر "متصل الآن"
     if (isOnline) return 'متصل الآن';
     
-    if (!lastSeen) return 'لم يتصل من قبل';
+    if (!lastSeen) return 'غير معروف';
 
     const lastSeenDate = lastSeen instanceof Date ? lastSeen : new Date(lastSeen);
 
     if (isNaN(lastSeenDate.getTime())) {
-      return 'لم يتصل من قبل';
+      return 'غير معروف';
     }
 
     const now = new Date();
