@@ -125,7 +125,9 @@ export function sanitizeUserData(user: any): any {
   return {
     ...user,
     profileBackgroundColor: sanitizeProfileBackgroundColor(user.profileBackgroundColor),
-    usernameColor: sanitizeHexColor(user.usernameColor, '#000000'),
+    // لا نفرض لوناً افتراضياً للاسم من الخادم.
+    // نتركه فارغاً ليتولى العميل تطبيق لون افتراضي حسب نوع المستخدم.
+    usernameColor: sanitizeHexColor(user.usernameColor, ''),
     profileEffect: sanitizeEffect(user.profileEffect),
     dmPrivacy,
     // تفضيلات عامة (ضمان قيم منطقية افتراضية)

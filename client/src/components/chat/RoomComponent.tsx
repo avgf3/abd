@@ -1,4 +1,4 @@
-import { X, Plus, Users, Mic, RefreshCw, MessageCircle, Search, Settings, Lock, Unlock, Phone, PhoneOff } from 'lucide-react';
+import { X, Plus, Users, Mic, RefreshCw, MessageCircle, Search, Settings, Lock, Unlock, Phone, PhoneOff, MicOff } from 'lucide-react';
 import React, { useState, useCallback, useMemo, useRef } from 'react';
 import { Virtuoso } from 'react-virtuoso';
 
@@ -637,7 +637,6 @@ export default function RoomComponent({
                     const room = filteredRooms[index];
                     return (
                       <RoomListItem
-                        key={room.id}
                         room={room}
                         isActive={currentRoomId === room.id}
                         currentUser={currentUser}
@@ -652,6 +651,9 @@ export default function RoomComponent({
                       />
                     );
                   }}
+                  computeItemKey={(index) => filteredRooms[index]?.id || index}
+                  increaseViewportBy={{ top: 200, bottom: 400 }}
+                  overscan={200}
                 />
               )}
             </div>

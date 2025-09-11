@@ -588,8 +588,11 @@ export default function UnifiedSidebar({
                   totalCount={filteredUsers.length}
                   itemContent={(index) => {
                     const user = filteredUsers[index];
-                    return <UserListItem key={user.id} user={user} />;
+                    return <UserListItem user={user} />;
                   }}
+                  computeItemKey={(index) => filteredUsers[index]?.id ?? index}
+                  increaseViewportBy={{ top: 200, bottom: 400 }}
+                  overscan={200}
                 />
               </div>
             )}

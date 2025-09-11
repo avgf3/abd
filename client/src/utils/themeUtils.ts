@@ -151,6 +151,8 @@ export const getFinalUsernameColor = (user: any): string => {
         return '#2ECC71'; // أخضر للعضو
       case 'guest':
         return '#95A5A6'; // رمادي للزائر
+      case 'bot':
+        return '#00AA88'; // لون مميز للبوت
       default:
         return '#000000';
     }
