@@ -35,6 +35,37 @@ const connectedUsers = new Map<
   }
 >();
 
+// Heartbeat timer to persist lastSeen every minute for connected real users
+let lastSeenHeartbeatTimer: ReturnType<typeof setInterval> | null = null;
+
+function startLastSeenHeartbeat() {
+  try {
+    if (lastSeenHeartbeatTimer) return;
+    lastSeenHeartbeatTimer = setInterval(async () => {
+      try {
+        const now = new Date();
+        const ids: number[] = [];
+        for (const [userId, entry] of connectedUsers.entries()) {
+          try {
+            const userType = (entry?.user as any)?.userType;
+            if (userType === 'bot') continue; // skip bots
+            ids.push(userId);
+          } catch {}
+        }
+        if (ids.length === 0) return;
+
+        const CHUNK_SIZE = 50;
+        for (let i = 0; i < ids.length; i += CHUNK_SIZE) {
+          const chunk = ids.slice(i, i + CHUNK_SIZE);
+          await Promise.all(
+            chunk.map((id) => storage.updateUser(id, { lastSeen: now, isOnline: true } as any))
+          );
+        }
+      } catch {}
+    }, 60 * 1000);
+  } catch {}
+}
+
 // Utility: get online user counts per room based on active sockets
 export function getOnlineUserCountsForRooms(roomIds: string[]): Record<string, number> {
   try {
@@ -588,6 +619,9 @@ export function setupRealtime(httpServer: HttpServer): IOServer<ClientToServerEv
 
   // تهيئة خدمة الصوت مع Socket.IO
   voiceService.initialize(io);
+
+  // ابدأ نبضات تحديث آخر ظهور كل دقيقة
+  startLastSeenHeartbeat();
 
   io.on('connection', (rawSocket) => {
     const socket = rawSocket as CustomSocket;
