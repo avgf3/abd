@@ -1700,32 +1700,23 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                 </div>
               ) : (
                 Array.from(chat.ignoredUsers || []).map((id) => {
-                // أولوية للبيانات المجلبة من API، ثم المستخدمين المتصلين
-                const ignoredUserData = ignoredUsersData.get(id);
+                const ignoredUser = ignoredUsersData.get(id);
                 const onlineUser = chat.onlineUsers.find((u) => u.id === id);
-                
-                // تحديد الاسم المعروض - أولوية للبيانات المجلبة من API
-                const displayName = ignoredUserData?.username || onlineUser?.username;
-                const hasValidData = !!displayName;
+                const user = ignoredUser || onlineUser;
                 
                 return (
                   <div key={id} className="flex items-center justify-between p-2 border rounded">
                     <div className="flex items-center gap-2">
-                      {onlineUser ? (
-                        <ProfileImage user={onlineUser} size="small" />
+                      {user ? (
+                        <ProfileImage user={user} size="small" />
                       ) : (
                         <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-500">
-                          {hasValidData ? '👤' : '?'}
+                          👤
                         </div>
                       )}
-                      <span className="font-medium" title={hasValidData ? displayName : 'لا توجد بيانات متاحة'}>
-                        {displayName}
+                      <span className="font-medium">
+                        {user?.username || 'مستخدم محذوف'}
                       </span>
-                      {!hasValidData && (
-                        <span className="text-xs text-yellow-600 bg-yellow-100 px-2 py-1 rounded">
-                          غير متاح
-                        </span>
-                      )}
                     </div>
                     <Button size="sm" variant="outline" onClick={() => chat.unignoreUser?.(id)}>
                       إلغاء التجاهل
