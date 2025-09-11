@@ -2,7 +2,7 @@
 
 export function formatTimeAgo(input: string | Date): string {
   const date = input instanceof Date ? input : new Date(input);
-  if (isNaN(date.getTime())) return 'غير معروف';
+  if (isNaN(date.getTime())) return 'لم يتصل من قبل';
 
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();

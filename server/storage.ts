@@ -677,7 +677,12 @@ export const storage: LegacyStorage = {
   },
 
   async setUserOnlineStatus(id: number, isOnline: boolean) {
-    await databaseService.updateUser(id, { isOnline, lastSeen: new Date() });
+    // تحديث lastSeen فقط عند قطع الاتصال، وليس عند الاتصال
+    const updates: any = { isOnline };
+    if (!isOnline) {
+      updates.lastSeen = new Date();
+    }
+    await databaseService.updateUser(id, updates);
   },
 
   async createMessage(message: any) {
