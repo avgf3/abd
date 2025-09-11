@@ -44,22 +44,53 @@ function startLastSeenHeartbeat() {
     lastSeenHeartbeatTimer = setInterval(async () => {
       try {
         const now = new Date();
-        const ids: number[] = [];
+        const userIds: number[] = [];
+        const botIds: number[] = [];
         for (const [userId, entry] of connectedUsers.entries()) {
           try {
             const userType = (entry?.user as any)?.userType;
-            if (userType === 'bot') continue; // skip bots
-            ids.push(userId);
+            if (userType === 'bot') {
+              botIds.push(userId);
+            } else {
+              userIds.push(userId);
+            }
           } catch {}
         }
-        if (ids.length === 0) return;
+        if (userIds.length === 0 && botIds.length === 0) return;
 
         const CHUNK_SIZE = 50;
-        for (let i = 0; i < ids.length; i += CHUNK_SIZE) {
-          const chunk = ids.slice(i, i + CHUNK_SIZE);
-          await Promise.all(
-            chunk.map((id) => storage.updateUser(id, { lastSeen: now, isOnline: true } as any))
-          );
+
+        // Update regular users' lastSeen
+        if (userIds.length > 0) {
+          for (let i = 0; i < userIds.length; i += CHUNK_SIZE) {
+            const chunk = userIds.slice(i, i + CHUNK_SIZE);
+            await Promise.all(
+              chunk.map((id) => storage.updateUser(id, { lastSeen: now, isOnline: true } as any))
+            );
+          }
+        }
+
+        // Update bots' lastActivity
+        if (botIds.length > 0) {
+          try {
+            const { db, dbType } = await import('./database-adapter');
+            if (db && dbType === 'postgresql') {
+              const { bots } = await import('../shared/schema');
+              const drizzleOrm = await import('drizzle-orm');
+              const { eq } = drizzleOrm;
+              for (let i = 0; i < botIds.length; i += CHUNK_SIZE) {
+                const chunk = botIds.slice(i, i + CHUNK_SIZE);
+                await Promise.all(
+                  chunk.map((id) =>
+                    (db as any)
+                      .update(bots as any)
+                      .set({ lastActivity: now, isOnline: true } as any)
+                      .where(eq((bots as any).id, id as any))
+                  )
+                );
+              }
+            }
+          } catch {}
         }
       } catch {}
     }, 60 * 1000);
