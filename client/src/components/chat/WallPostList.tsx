@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import ImageLightbox from '@/components/ui/ImageLightbox';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import type { WallPost, ChatUser } from '@/types/chat';
-import { getImageSrc } from '@/utils/imageUtils';
 import { formatTimeAgo } from '@/utils/timeUtils';
  
 
@@ -65,21 +64,7 @@ export default function WallPostList({
           <CardHeader className="pb-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="relative">
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center ring-2 ring-primary/10">
-                    {post.userProfileImage ? (
-                      <img
-                        src={getImageSrc(post.userProfileImage)}
-                        alt={post.username}
-                        className="w-12 h-12 rounded-full object-cover"
-                      />
-                    ) : (
-                      <span className="text-lg font-bold text-primary">
-                        {post.username.charAt(0)}
-                      </span>
-                    )}
-                  </div>
-                </div>
+                {/* avatar removed for wall posts */}
                 <div>
                   <div className="flex items-center gap-2">
                     <div
