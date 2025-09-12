@@ -263,7 +263,7 @@ export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
 
       {/* Guest Name Modal */}
       <Dialog open={showGuestModal} onOpenChange={setShowGuestModal}>
-        <DialogContent className="modern-card glass-effect border-0 animate-fade-in shadow-2xl">
+        <DialogContent className="glass-effect border border-border animate-fade-in shadow-2xl">
           <DialogHeader>
             <DialogTitle className="text-center text-3xl font-bold gradient-text flex items-center justify-center gap-3 mb-2">
               <span className="text-4xl">📝</span>
