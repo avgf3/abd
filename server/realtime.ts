@@ -223,10 +223,12 @@ export async function buildOnlineUsersForRoom(roomId: string) {
       }
       // تأكيد وجود حقول الحالة والزمن بشكل متناسق
       next.isOnline = true;
-      next.lastSeen = (u as any).lastSeen || (u as any).createdAt || new Date();
+      // أثناء الاتصال، لا نعتبر آخر تواجد حدث الآن حتى لا نخرب الدلالة
+      // نعرض null أو القيمة المخزنة إن وُجدت (القيمة من آخر انفصال)
+      next.lastSeen = (u as any).isOnline ? null : ((u as any).lastSeen || null);
       return next;
     } catch {}
-    return { ...u, isOnline: true, lastSeen: (u as any).lastSeen || (u as any).createdAt || new Date() };
+    return { ...u, isOnline: true, lastSeen: (u as any).isOnline ? null : ((u as any).lastSeen || null) };
   });
 
   return users;

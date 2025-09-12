@@ -677,7 +677,14 @@ export const storage: LegacyStorage = {
   },
 
   async setUserOnlineStatus(id: number, isOnline: boolean) {
-    await databaseService.updateUser(id, { isOnline, lastSeen: new Date() });
+    try {
+      const updates: Partial<User> = { isOnline } as any;
+      // لا نحدّث lastSeen إلا عند التحول إلى غير متصل
+      if (!isOnline) (updates as any).lastSeen = new Date();
+      await databaseService.updateUser(id, updates);
+    } catch (error) {
+      console.error('Error setting user online status:', error);
+    }
   },
 
   async createMessage(message: any) {

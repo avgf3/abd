@@ -1972,6 +1972,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         gender: user.gender,
         points: user.points || 0,
         createdAt: user.createdAt,
+        // lastActive يعرض آخر نشاط تاريخي؛ لا نملؤه الآن بمجرّد الاتصال
         lastActive: user.lastSeen || user.createdAt,
         profileBackgroundColor: user.profileBackgroundColor,
         profileEffect: user.profileEffect,

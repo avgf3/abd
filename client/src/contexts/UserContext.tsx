@@ -21,7 +21,6 @@ type UserAction =
   | { type: 'SET_ERROR'; payload: string | null }
   | { type: 'SET_AUTHENTICATED'; payload: boolean }
   | { type: 'CLEAR_USER' }
-  | { type: 'UPDATE_LAST_SEEN' }
   | { type: 'UPDATE_TIMESTAMP' };
 
 // الحالة الأولية
@@ -68,15 +67,9 @@ function userReducer(state: UserState, action: UserAction): UserState {
         lastUpdated: Date.now(),
       };
 
-    case 'UPDATE_LAST_SEEN':
-      if (!state.currentUser) return state;
-      return {
-        ...state,
-        currentUser: {
-          ...state.currentUser,
-          lastSeen: new Date(),
-        },
-      };
+    // تمت إزالة تحديث lastSeen محلياً؛ هذه القيمة يضبطها الخادم عند الخروج
+    // case 'UPDATE_LAST_SEEN':
+    //   return state;
 
     case 'UPDATE_TIMESTAMP':
       return { ...state, lastUpdated: Date.now() };
@@ -173,7 +166,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
   // تحديث آخر ظهور
   const updateLastSeen = useCallback(() => {
-    dispatch({ type: 'UPDATE_LAST_SEEN' });
+    // لم يعد يتم تحديث آخر تواجد محلياً
   }, []);
 
   // التحقق من الصلاحيات
@@ -205,16 +198,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     [state.currentUser?.id]
   );
 
-  // تحديث آخر ظهور تلقائياً كل دقيقة
-  useEffect(() => {
-    if (!state.isAuthenticated) return;
-
-    const interval = setInterval(() => {
-      updateLastSeen();
-    }, 60000); // كل دقيقة
-
-    return () => clearInterval(interval);
-  }, [state.isAuthenticated, updateLastSeen]);
+  // تم إلغاء مؤقت تحديث آخر تواجد محلياً
 
   // قيمة المحتوى
   const contextValue: UserContextType = {

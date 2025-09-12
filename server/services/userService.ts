@@ -80,13 +80,9 @@ export class UserService {
   // تعيين حالة الاتصال
   async setUserOnlineStatus(id: number, isOnline: boolean): Promise<void> {
     try {
-      await db
-        .update(users)
-        .set({
-          isOnline,
-          lastSeen: isOnline ? undefined : new Date(),
-        } as any)
-        .where(eq(users.id, id));
+      const updates: any = { isOnline };
+      if (!isOnline) updates.lastSeen = new Date();
+      await db.update(users).set(updates).where(eq(users.id, id));
     } catch (error) {
       console.error('خطأ في تعيين حالة الاتصال:', error);
     }

@@ -1385,41 +1385,25 @@ export const useChat = () => {
           userId: state.currentUser.id,
           username: state.currentUser.username,
         });
-        // تحديث فوري محلياً لتجنب القفز إلى الدردشة العامة وكتحديث آخر ظهور
+        // تحديث فوري محلياً لتجنب القفز إلى الدردشة العامة فقط (بدون تعديل آخر تواجد)
         try { saveSession({ roomId }); } catch {}
         try {
           dispatch({ type: 'SET_CURRENT_ROOM', payload: roomId });
-          if (state.currentUser) {
-            dispatch({ type: 'SET_CURRENT_USER', payload: { ...state.currentUser, lastSeen: new Date().toISOString() } as any });
-          }
         } catch {}
       } else {
         // Queue join until we reconnect
         pendingJoinRoomRef.current = roomId;
-        // تحديث فوري محلياً لواجهة المستخدم حتى قبل الاتصال
+        // تحديث فوري محلياً لواجهة المستخدم حتى قبل الاتصال (بدون تعديل آخر تواجد)
         try { saveSession({ roomId }); } catch {}
         try {
           dispatch({ type: 'SET_CURRENT_ROOM', payload: roomId });
-          if (state.currentUser) {
-            dispatch({ type: 'SET_CURRENT_USER', payload: { ...state.currentUser, lastSeen: new Date().toISOString() } as any });
-          }
         } catch {}
       }
     },
     [state.currentRoomId, state.currentUser]
   );
 
-  // تحديث آخر ظهور كل دقيقة محلياً (لعرض دقيق في الملف الشخصي)
-  useEffect(() => {
-    const id = window.setInterval(() => {
-      try {
-        if (state.currentUser) {
-          dispatch({ type: 'SET_CURRENT_USER', payload: { ...state.currentUser, lastSeen: new Date().toISOString() } as any });
-        }
-      } catch {}
-    }, 60000);
-    return () => { try { window.clearInterval(id); } catch {} };
-  }, [state.currentUser?.id]);
+  // إزالة التحديث المحلي لآخر تواجد؛ القيمة تُدار من الخادم عند الخروج فقط
 
   // 🔥 SIMPLIFIED Send message function
   const sendMessage = useCallback(
