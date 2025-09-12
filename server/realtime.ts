@@ -1068,6 +1068,9 @@ export function setupRealtime(httpServer: HttpServer): IOServer<ClientToServerEv
   // تحميل البوتات النشطة عند بدء التشغيل
   loadActiveBots();
 
+  // بدء نظام التحديث الدوري لـ lastSeen
+  startLastSeenUpdater();
+
   return io;
 }
 
@@ -1119,5 +1122,52 @@ async function loadActiveBots() {
     
     } catch (error) {
     console.error('خطأ في تحميل البوتات:', error);
+  }
+}
+
+// ===== نظام تحديث دوري لـ lastSeen =====
+let lastSeenUpdateInterval: NodeJS.Timeout | null = null;
+
+// دالة تحديث lastSeen للمستخدمين المتصلين
+async function updateLastSeenForConnectedUsers() {
+  try {
+    const now = new Date();
+    const updatePromises: Promise<void>[] = [];
+    
+    // تحديث lastSeen لجميع المستخدمين المتصلين
+    for (const [userId, entry] of connectedUsers.entries()) {
+      if (entry.sockets.size > 0) { // المستخدم متصل
+        updatePromises.push(
+          storage.updateUser(userId, { lastSeen: now }).catch((error) => {
+            console.error(`خطأ في تحديث lastSeen للمستخدم ${userId}:`, error);
+          })
+        );
+      }
+    }
+    
+    await Promise.all(updatePromises);
+    console.log(`تم تحديث lastSeen لـ ${updatePromises.length} مستخدم متصل`);
+  } catch (error) {
+    console.error('خطأ في تحديث lastSeen للمستخدمين المتصلين:', error);
+  }
+}
+
+// بدء نظام التحديث الدوري
+export function startLastSeenUpdater() {
+  if (lastSeenUpdateInterval) {
+    clearInterval(lastSeenUpdateInterval);
+  }
+  
+  // تحديث كل دقيقة (60000 ms)
+  lastSeenUpdateInterval = setInterval(updateLastSeenForConnectedUsers, 60000);
+  console.log('تم بدء نظام التحديث الدوري لـ lastSeen كل دقيقة');
+}
+
+// إيقاف نظام التحديث الدوري
+export function stopLastSeenUpdater() {
+  if (lastSeenUpdateInterval) {
+    clearInterval(lastSeenUpdateInterval);
+    lastSeenUpdateInterval = null;
+    console.log('تم إيقاف نظام التحديث الدوري لـ lastSeen');
   }
 }

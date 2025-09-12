@@ -156,12 +156,12 @@ export default function ProfileModal({
   };
   
   const formattedLastSeen = formatLastSeenWithRoom(localUser?.lastSeen, resolvedRoomName);
-  // تحديث حي لنص "آخر تواجد" كل 60 ثانية لتحديث عبارة "اليوم/الوقت" بدون إعادة تحميل
+  // تحديث حي لنص "آخر تواجد" كل 30 ثانية لعرض أكثر دقة
   const [, forceRerenderTick] = useState(0);
   useEffect(() => {
     const intervalId = window.setInterval(() => {
       forceRerenderTick((t) => (t + 1) % 1000);
-    }, 60000);
+    }, 30000); // تحديث كل 30 ثانية بدلاً من 60 ثانية
     return () => clearInterval(intervalId);
   }, []);
 
