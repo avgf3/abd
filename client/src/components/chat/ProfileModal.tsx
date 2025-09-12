@@ -21,6 +21,7 @@ import CountryFlag from '@/components/ui/CountryFlag';
 import ProfileImage from './ProfileImage';
 import { useStories } from '@/hooks/useStories';
 import { useRoomManager } from '@/hooks/useRoomManager';
+import { getSocket } from '@/lib/socket';
 
 interface ProfileModalProps {
   user: ChatUser | null;
@@ -163,6 +164,35 @@ export default function ProfileModal({
     }, 60000);
     return () => clearInterval(intervalId);
   }, []);
+
+  // الاشتراك في أحداث السوكِت لتحديث آخر تواجد للمستخدمين الآخرين أيضاً
+  useEffect(() => {
+    const socket = getSocket();
+    const handleUserConnected = (payload: any) => {
+      const incoming = payload?.user || payload;
+      if (!incoming?.id || incoming.id !== localUser?.id) return;
+      setLocalUser((prev) => {
+        if (!prev) return prev;
+        const next: any = { ...prev, isOnline: true };
+        if (incoming.currentRoom) next.currentRoom = incoming.currentRoom;
+        return next;
+      });
+    };
+    const handleUserDisconnected = (payload: any) => {
+      const uid = payload?.userId || payload?.id;
+      if (!uid || uid !== localUser?.id) return;
+      setLocalUser((prev) => (prev ? ({ ...prev, isOnline: false } as any) : prev));
+      // جلب من السيرفر للحصول على lastSeen المحدث بعد الانفصال
+      fetchAndUpdateUser(uid).catch(() => {});
+    };
+
+    socket.on('userConnected', handleUserConnected);
+    socket.on('userDisconnected', handleUserDisconnected);
+    return () => {
+      socket.off('userConnected', handleUserConnected);
+      socket.off('userDisconnected', handleUserDisconnected);
+    };
+  }, [localUser?.id]);
   const canShowLastSeen = (((localUser as any)?.privacy?.showLastSeen ?? (localUser as any)?.showLastSeen) ?? true) !== false;
   
   // ضبط مستوى الصوت عند تحميل الصوت
