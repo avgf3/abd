@@ -21,6 +21,7 @@ import CountryFlag from '@/components/ui/CountryFlag';
 import ProfileImage from './ProfileImage';
 import { useStories } from '@/hooks/useStories';
 import { useRoomManager } from '@/hooks/useRoomManager';
+import { getSocket } from '@/lib/socket';
 
 interface ProfileModalProps {
   user: ChatUser | null;
@@ -50,6 +51,10 @@ export default function ProfileModal({
 
   // حالة محلية للمستخدم للتحديث الفوري
   const [localUser, setLocalUser] = useState<ChatUser | null>(user);
+  // مزامنة حالة المستخدم المحلي عند تغيّر الخصائص القادمة من الأعلى
+  useEffect(() => {
+    setLocalUser(user);
+  }, [user]);
   const [selectedTheme, setSelectedTheme] = useState(user?.profileBackgroundColor || '');
   const [selectedEffect, setSelectedEffect] = useState(user?.profileEffect || 'none');
 
@@ -97,26 +102,15 @@ export default function ProfileModal({
   const { rooms, fetchRooms } = useRoomManager({ autoRefresh: false });
   useEffect(() => {
     fetchRooms(false).catch(() => {});
-  }, [fetchRooms]);
+  }, [fetchRooms, (localUser as any)?.currentRoom]);
 
-  const formatAmPmTime = (date?: Date | string): string => {
-    if (!date) return '';
-    const d = date instanceof Date ? date : new Date(date);
-    if (isNaN(d.getTime())) return '';
-    let hours = d.getHours();
-    const minutes = d.getMinutes().toString().padStart(2, '0');
-    const ampm = hours >= 12 ? 'PM' : 'AM';
-    hours = hours % 12;
-    if (hours === 0) hours = 12;
-    const hh = hours.toString().padStart(2, '0');
-    return `${hh}:${minutes} ${ampm}`;
-  };
+  // تم حذف formatAmPmTime لأنها غير مستخدمة
 
   const resolvedRoomId = (localUser as any)?.currentRoom || localUser?.roomId || 'general';
   let resolvedRoomName = 'الدردشة العامة';
   if (resolvedRoomId && resolvedRoomId !== 'general') {
-    const found = rooms.find((r) => r.id === resolvedRoomId);
-    resolvedRoomName = (found && found.name) || String(resolvedRoomId);
+    const found = rooms.find((r) => String((r as any).id) === String(resolvedRoomId));
+    resolvedRoomName = (found && (found as any).name) || String(resolvedRoomId);
   }
   
   // دالة تنسيق آخر تواجد
@@ -161,7 +155,45 @@ export default function ProfileModal({
     }
   };
   
-  const lastSeenText = `آخر تواجد\n${formatLastSeenWithRoom(localUser?.lastSeen, resolvedRoomName)}`;
+  const formattedLastSeen = formatLastSeenWithRoom(localUser?.lastSeen, resolvedRoomName);
+  // تحديث حي لنص "آخر تواجد" كل 60 ثانية لتحديث عبارة "اليوم/الوقت" بدون إعادة تحميل
+  const [, forceRerenderTick] = useState(0);
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      forceRerenderTick((t) => (t + 1) % 1000);
+    }, 60000);
+    return () => clearInterval(intervalId);
+  }, []);
+
+  // الاشتراك في أحداث السوكِت لتحديث آخر تواجد للمستخدمين الآخرين أيضاً
+  useEffect(() => {
+    const socket = getSocket();
+    const handleUserConnected = (payload: any) => {
+      const incoming = payload?.user || payload;
+      if (!incoming?.id || incoming.id !== localUser?.id) return;
+      setLocalUser((prev) => {
+        if (!prev) return prev;
+        const next: any = { ...prev, isOnline: true };
+        if (incoming.currentRoom) next.currentRoom = incoming.currentRoom;
+        return next;
+      });
+    };
+    const handleUserDisconnected = (payload: any) => {
+      const uid = payload?.userId || payload?.id;
+      if (!uid || uid !== localUser?.id) return;
+      setLocalUser((prev) => (prev ? ({ ...prev, isOnline: false } as any) : prev));
+      // جلب من السيرفر للحصول على lastSeen المحدث بعد الانفصال
+      fetchAndUpdateUser(uid).catch(() => {});
+    };
+
+    socket.on('userConnected', handleUserConnected);
+    socket.on('userDisconnected', handleUserDisconnected);
+    return () => {
+      socket.off('userConnected', handleUserConnected);
+      socket.off('userDisconnected', handleUserDisconnected);
+    };
+  }, [localUser?.id]);
+  const canShowLastSeen = (((localUser as any)?.privacy?.showLastSeen ?? (localUser as any)?.showLastSeen) ?? true) !== false;
   
   // ضبط مستوى الصوت عند تحميل الصوت
   useEffect(() => {
@@ -371,11 +403,7 @@ export default function ProfileModal({
   };
 
   // معالجة محسنة للحالات الفارغة
-  if (!localUser || !user) {
-    // إغلاق المودال إذا لم يكن هناك مستخدم
-    onClose();
-    return null;
-  }
+  // تم إلغاء الإرجاع المبكر بناءً على الطلب لضمان استمرار العرض حتى مع غياب الكائن
 
   // دالة موحدة لجلب بيانات المستخدم من السيرفر وتحديث الحالة المحلية - محسّنة
   const fetchAndUpdateUser = async (userId: number) => {
@@ -2737,9 +2765,13 @@ export default function ProfileModal({
                     إرسال النقاط: <span>اضغط للإرسال</span>
                   </p>
                 )}
-                <p>
-                  <span>{lastSeenText}</span>
-                </p>
+                {canShowLastSeen && (
+                  <p>
+                    <span style={{ color: '#fff' }}>{`آخر تواجد`}</span>
+                    <br />
+                    <span>{formattedLastSeen}</span>
+                  </p>
+                )}
                 
                 {localUser?.id === currentUser?.id && (
                   <>
