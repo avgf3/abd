@@ -1,4 +1,5 @@
 import { User, Home, Moon, Shield, LogOut, Settings, Palette, Brush, Camera } from 'lucide-react';
+import { useEffect, useRef } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -27,14 +28,59 @@ export default function SettingsMenu({
   onOpenStories,
   currentUser,
 }: SettingsMenuProps) {
+  const cardRef = useRef<HTMLDivElement>(null);
+
   const handleLogout = () => {
     if (confirm('🤔 هل أنت متأكد من تسجيل الخروج؟')) {
       onLogout();
     }
   };
 
+  // تحسين موضع القائمة عند الظهور
+  useEffect(() => {
+    const card = cardRef.current;
+    if (!card) return;
+
+    const rect = card.getBoundingClientRect();
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+
+    // إذا كانت القائمة خارج حدود الشاشة من اليمين
+    if (rect.right > viewportWidth) {
+      card.style.right = '1rem';
+      card.style.left = 'auto';
+    }
+
+    // إذا كانت القائمة خارج حدود الشاشة من الأسفل
+    if (rect.bottom > viewportHeight) {
+      card.style.top = 'auto';
+      card.style.bottom = '1rem';
+    }
+  }, []);
+
+  // إغلاق القائمة عند النقر خارجها
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (cardRef.current && !cardRef.current.contains(event.target as Node)) {
+        onClose();
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [onClose]);
+
   return (
-    <Card className="fixed top-20 right-4 z-50 shadow-2xl animate-fade-in w-56 bg-card/95 backdrop-blur-md border-accent">
+    <Card 
+      ref={cardRef}
+      className="fixed top-20 z-50 shadow-2xl animate-fade-in w-56 bg-card/95 backdrop-blur-md border-accent" 
+      style={{
+        right: 'max(1rem, min(1rem, calc(100vw - 15rem)))',
+        maxHeight: 'calc(100vh - 6rem)',
+        overflowY: 'auto'
+      }}>
       <CardContent className="p-0">
         {currentUser && (
           <div className="p-3 border-b border-border" style={getUserListItemStyles(currentUser)}>

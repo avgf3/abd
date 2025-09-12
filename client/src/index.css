@@ -1847,6 +1847,32 @@ li > * > div.effect-crystal {
   opacity: 1;
 }
 
+/* ========== DROPDOWN MENU POSITIONING FIXES ========== */
+
+/* إصلاح موضع القوائم المنسدلة لمنع ظهورها خارج الشاشة */
+.dropdown-menu-content,
+[data-radix-dropdown-menu-content],
+[data-radix-context-menu-content],
+[data-radix-popover-content] {
+  max-width: calc(100vw - 2rem) !important;
+  max-height: calc(100vh - 2rem) !important;
+  overflow-y: auto !important;
+}
+
+/* تحسين موضع القوائم المنسدلة على الشاشات الصغيرة */
+@media (max-width: 768px) {
+  .dropdown-menu-content,
+  [data-radix-dropdown-menu-content],
+  [data-radix-context-menu-content],
+  [data-radix-popover-content] {
+    max-width: calc(100vw - 1rem) !important;
+    max-height: calc(100vh - 1rem) !important;
+    left: 0.5rem !important;
+    right: 0.5rem !important;
+    transform: none !important;
+  }
+}
+
 /* ========== FINAL MODERN ENHANCEMENTS ========== */
 
 /* Modern Message Input Area */
