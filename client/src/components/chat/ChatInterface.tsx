@@ -243,6 +243,14 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
               }
               break;
             }
+            case 'userUpdated': {
+              const u = envelope.user;
+              // إذا كانت نافذة البروفايل مفتوحة لذات المستخدم، حدّث العرض فوراً لضمان مزامنة lastSeen/الغرفة
+              if (showProfile && u && profileUser && u.id === profileUser.id) {
+                setProfileUser((prev) => (prev ? ({ ...prev, ...u } as any) : prev));
+              }
+              break;
+            }
             case 'roomJoined': {
               const roomId = envelope.roomId;
               if (typeof roomId === 'string' && Array.isArray(envelope.users)) {
@@ -518,6 +526,10 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
     setProfileUser(user);
     setShowProfile(true);
     closeUserPopup();
+    // إذا كان بروفايل المستخدم المفتوح هو المستخدم الحالي، حافظ على مزامنة بياناته الحية
+    if (chat.currentUser && user.id === chat.currentUser.id) {
+      setProfileUser(chat.currentUser);
+    }
     try {
       // تشغيل الموسيقى عند كل فتح للبروفايل إن كانت مفعلة ولها رابط صالح
       if (
@@ -623,7 +635,13 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
       const pmMatch = hash.match(/#pm(\d+)/);
       if (profileMatch) {
         const userId = parseInt(profileMatch[1]);
-        handleProfileLink(userId);
+        // إذا كان الرابط يشير إلى المستخدم الحالي، افتح ببيانات حية مباشرة
+        if (chat.currentUser && chat.currentUser.id === userId) {
+          setProfileUser(chat.currentUser);
+          setShowProfile(true);
+        } else {
+          handleProfileLink(userId);
+        }
         window.history.replaceState(null, '', window.location.pathname);
       } else if (pmMatch) {
         const userId = parseInt(pmMatch[1]);
@@ -1284,7 +1302,8 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
               />
             ) : (
               <ProfileModal
-                user={profileUser || chat.currentUser}
+                // مرّر نسخة حية دومًا لمستخدمك الحالي عند فتح بروفايلك
+                user={chat.currentUser || profileUser}
                 currentUser={chat.currentUser}
                 externalAudioManaged
                 onClose={() => {
