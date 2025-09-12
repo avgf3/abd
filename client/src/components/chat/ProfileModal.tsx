@@ -403,11 +403,7 @@ export default function ProfileModal({
   };
 
   // معالجة محسنة للحالات الفارغة
-  if (!localUser || !user) {
-    // إغلاق المودال إذا لم يكن هناك مستخدم
-    onClose();
-    return null;
-  }
+  // تم إلغاء الإرجاع المبكر بناءً على الطلب لضمان استمرار العرض حتى مع غياب الكائن
 
   // دالة موحدة لجلب بيانات المستخدم من السيرفر وتحديث الحالة المحلية - محسّنة
   const fetchAndUpdateUser = async (userId: number) => {
