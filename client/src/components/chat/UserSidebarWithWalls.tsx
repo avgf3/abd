@@ -178,27 +178,52 @@ export default function UnifiedSidebar({
     (user: ChatUser) => <CountryFlag country={user.country} size={14} />, []
   );
 
-  // 🚀 تحسين: دالة formatLastSeen محسنة بدون "غير معروف"
-  const formatLastSeen = useCallback((lastSeen?: string | Date) => {
-    if (!lastSeen) return '';
+  // 🚀 تحسين: دالة formatLastSeen مع عرض الوقت والغرفة
+  const [currentTime, setCurrentTime] = useState(new Date());
 
-    const lastSeenDate = lastSeen instanceof Date ? lastSeen : new Date(lastSeen);
+  // تحديث الوقت كل دقيقة
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 60000); // تحديث كل دقيقة
+
+    return () => clearInterval(interval);
+  }, []);
+
+  const formatLastSeen = useCallback((user: ChatUser) => {
+    // للمستخدمين المتصلين، نعرض الوقت الحالي والغرفة
+    if (user.isOnline) {
+      const currentTimeString = new Date().toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+      });
+      const roomName = user.currentRoom || 'الدردشة العامة';
+      return `آخر تواجد ${currentTimeString} / غرفة║${roomName}`;
+    }
+
+    // للمستخدمين المنقطعين، نعرض آخر وقت تواجد
+    if (!user.lastSeen) return '';
+
+    const lastSeenDate = user.lastSeen instanceof Date ? user.lastSeen : new Date(user.lastSeen);
 
     if (isNaN(lastSeenDate.getTime())) {
       return '';
     }
 
-    const now = new Date();
-    const diff = now.getTime() - lastSeenDate.getTime();
-    const minutes = Math.floor(diff / 60000);
+    // تنسيق الوقت بصيغة AM/PM
+    const timeString = lastSeenDate.toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    });
 
-    if (minutes < 1) return 'متصل الآن';
-    if (minutes < 60) return `قبل ${minutes} دقيقة`;
-    const hours = Math.floor(minutes / 60);
-    if (hours < 24) return `قبل ${hours} ساعة`;
-    const days = Math.floor(hours / 24);
-    return `قبل ${days} يوم`;
-  }, []);
+    // الحصول على اسم الغرفة (إذا كان متوفر)
+    const roomName = user.currentRoom || 'الدردشة العامة';
+
+    // عرض آخر تواجد مع الغرفة
+    return `آخر تواجد ${timeString} / غرفة║${roomName}`;
+  }, [currentTime]);
 
   // معالج النقر مع إيقاف انتشار الحدث
   const handleUserClick = useCallback(
@@ -503,17 +528,24 @@ export default function UnifiedSidebar({
                 <ProfileImage user={user} size="small" className="" hideRoleBadgeOverlay={true} />
                 <div className="flex-1">
                   <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <span
-                        className="text-base font-medium transition-colors duration-300"
-                        style={{
-                          color: getFinalUsernameColor(user),
-                        }}
-                        title={user.username}
-                      >
-                        {user.username}
-                      </span>
-                      {user.isMuted && <span className="text-yellow-400 text-xs">🔇</span>}
+                    <div className="flex flex-col gap-0">
+                      <div className="flex items-center gap-2">
+                        <span
+                          className="text-base font-medium transition-colors duration-300"
+                          style={{
+                            color: getFinalUsernameColor(user),
+                          }}
+                          title={user.username}
+                        >
+                          {user.username}
+                        </span>
+                        {user.isMuted && <span className="text-yellow-400 text-xs">🔇</span>}
+                      </div>
+                      {formatLastSeen(user) && (
+                        <span className="text-xs text-muted-foreground mt-0.5">
+                          {formatLastSeen(user)}
+                        </span>
+                      )}
                     </div>
                     <div className="flex items-center gap-1">
                       {renderUserBadge(user)}
