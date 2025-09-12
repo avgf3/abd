@@ -84,7 +84,7 @@ export class UserService {
         .update(users)
         .set({
           isOnline,
-          lastSeen: isOnline ? undefined : new Date(),
+          lastSeen: new Date(), // تحديث lastSeen دائماً سواء كان متصل أو غير متصل
         } as any)
         .where(eq(users.id, id));
     } catch (error) {
