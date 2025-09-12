@@ -541,298 +541,290 @@ export default function MessageArea({
       <div
         className={`relative flex-1 ${isMobile ? 'p-2' : 'p-4'} bg-gradient-to-b from-gray-50 to-white`}
       >
-        {validMessages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-gray-500">
-            <div className="text-6xl mb-4">💬</div>
-            <p className="text-lg font-medium">أهلاً وسهلاً في {currentRoomName}</p>
-            <p className="text-sm">ابدأ المحادثة بكتابة رسالتك الأولى</p>
-          </div>
-        ) : (
-          <Virtuoso
-            ref={virtuosoRef}
-            data={validMessages}
-            className="!h-full"
-            style={{ paddingBottom: '24px' }}
-            followOutput={'smooth'}
-            atBottomThreshold={64}
-            atBottomStateChange={handleAtBottomChange}
-            increaseViewportBy={{ top: 400, bottom: 400 }}
-            itemContent={(index, message) => (
-              <div
-                key={message.id}
-                className={`flex ${isMobile ? 'items-start' : 'items-center'} gap-2 p-2 rounded-lg border-r-4 bg-white shadow-sm hover:shadow-md transition-all duration-300 room-message-pulse soft-entrance`}
-                style={{ borderRightColor: getDynamicBorderColor(message.sender) }}
-              >
-                {/* System message: one-line red without avatar/badge */}
-                {message.messageType === 'system' ? (
-                  <>
-                    {message.sender && (
-                      <div className="flex-shrink-0">
-                        <ProfileImage
-                          user={message.sender}
-                          size="small"
-                          className="w-7 h-7 cursor-pointer hover:scale-110 transition-transform duration-200"
-                          onClick={(e) => onUserClick && onUserClick(e, message.sender!)}
-                        />
-                      </div>
+        <Virtuoso
+          ref={virtuosoRef}
+          data={validMessages}
+          className="!h-full"
+          style={{ paddingBottom: '24px' }}
+          followOutput={'smooth'}
+          atBottomThreshold={64}
+          atBottomStateChange={handleAtBottomChange}
+          increaseViewportBy={{ top: 400, bottom: 400 }}
+          itemContent={(index, message) => (
+            <div
+              key={message.id}
+              className={`flex ${isMobile ? 'items-start' : 'items-center'} gap-2 p-2 rounded-lg border-r-4 bg-white shadow-sm hover:shadow-md transition-all duration-300 room-message-pulse soft-entrance`}
+              style={{ borderRightColor: getDynamicBorderColor(message.sender) }}
+            >
+              {/* System message: one-line red without avatar/badge */}
+              {message.messageType === 'system' ? (
+                <>
+                  {message.sender && (
+                    <div className="flex-shrink-0">
+                      <ProfileImage
+                        user={message.sender}
+                        size="small"
+                        className="w-7 h-7 cursor-pointer hover:scale-110 transition-transform duration-200"
+                        onClick={(e) => onUserClick && onUserClick(e, message.sender!)}
+                      />
+                    </div>
+                  )}
+                  <div className={`flex-1 min-w-0 flex ${isMobile ? 'flex-wrap items-start' : 'items-center'} gap-2`}>
+                    {message.sender && message.sender.userType !== 'bot' && (
+                      <UserRoleBadge user={message.sender} showOnlyIcon={true} hideGuestAndGender={true} size={16} />
                     )}
-                    <div className={`flex-1 min-w-0 flex ${isMobile ? 'flex-wrap items-start' : 'items-center'} gap-2`}>
-                      {message.sender && message.sender.userType !== 'bot' && (
-                        <UserRoleBadge user={message.sender} showOnlyIcon={true} hideGuestAndGender={true} size={16} />
-                      )}
-                      <button
-                        onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
-                        className="font-semibold hover:underline transition-colors duration-200 truncate"
-                        style={{ color: getFinalUsernameColor(message.sender) }}
-                      >
-                        {message.sender?.username}
-                      </button>
-                      <div className={`text-red-600 break-words flex-1 min-w-0 message-content-fix ${isMobile && !isMessageExpanded(message.id) ? 'line-clamp-2' : !isMobile ? 'truncate' : ''}`}>
-                        <span dir="auto" className={`${isMobile && !isMessageExpanded(message.id) ? 'line-clamp-2' : !isMobile ? 'truncate' : ''}`}>
-                          {message.content}
-                        </span>
-                      </div>
-                      <span className="text-xs text-red-500 whitespace-nowrap ml-2">
-                        {formatTime(message.timestamp)}
+                    <button
+                      onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
+                      className="font-semibold hover:underline transition-colors duration-200 truncate"
+                      style={{ color: getFinalUsernameColor(message.sender) }}
+                    >
+                      {message.sender?.username}
+                    </button>
+                    <div className={`text-red-600 break-words flex-1 min-w-0 message-content-fix ${isMobile && !isMessageExpanded(message.id) ? 'line-clamp-2' : !isMobile ? 'truncate' : ''}`}>
+                      <span dir="auto" className={`${isMobile && !isMessageExpanded(message.id) ? 'line-clamp-2' : !isMobile ? 'truncate' : ''}`}>
+                        {message.content}
                       </span>
                     </div>
-                  </>
-                ) : (
-                  <>
-                    {/* Profile Image */}
-                    {message.sender && (
-                      <div className="flex-shrink-0">
-                        <ProfileImage
-                          user={message.sender}
-                          size="small"
-                          className="w-7 h-7 cursor-pointer hover:scale-110 transition-transform duration-200"
-                          onClick={(e) => onUserClick && onUserClick(e, message.sender!)}
-                        />
-                      </div>
+                    <span className="text-xs text-red-500 whitespace-nowrap ml-2">
+                      {formatTime(message.timestamp)}
+                    </span>
+                  </div>
+                </>
+              ) : (
+                <>
+                  {/* Profile Image */}
+                  {message.sender && (
+                    <div className="flex-shrink-0">
+                      <ProfileImage
+                        user={message.sender}
+                        size="small"
+                        className="w-7 h-7 cursor-pointer hover:scale-110 transition-transform duration-200"
+                        onClick={(e) => onUserClick && onUserClick(e, message.sender!)}
+                      />
+                    </div>
+                  )}
+
+                  {/* Inline row: badge, name, content */}
+                  <div className={`flex-1 min-w-0 flex ${isMobile ? 'flex-wrap items-start' : 'items-center'} gap-2`}>
+                    {message.sender && message.sender.userType !== 'bot' && (
+                      <UserRoleBadge user={message.sender} showOnlyIcon={true} hideGuestAndGender={true} size={16} />
                     )}
+                    <button
+                      onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
+                      className="font-semibold hover:underline transition-colors duration-200 truncate"
+                      style={{ color: getFinalUsernameColor(message.sender) }}
+                    >
+                      {message.sender?.username}
+                    </button>
 
-                    {/* Inline row: badge, name, content */}
-                    <div className={`flex-1 min-w-0 flex ${isMobile ? 'flex-wrap items-start' : 'items-center'} gap-2`}>
-                      {message.sender && message.sender.userType !== 'bot' && (
-                        <UserRoleBadge user={message.sender} showOnlyIcon={true} hideGuestAndGender={true} size={16} />
-                      )}
-                      <button
-                        onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
-                        className="font-semibold hover:underline transition-colors duration-200 truncate"
-                        style={{ color: getFinalUsernameColor(message.sender) }}
-                      >
-                        {message.sender?.username}
-                      </button>
-
-                      <div className={`text-gray-800 break-words flex-1 min-w-0 message-content-fix ${isMobile && !isMessageExpanded(message.id) ? 'line-clamp-2' : !isMobile ? 'truncate' : ''}`}>
-                        {message.messageType === 'image' ? (
-                          <img
-                            src={message.content}
-                            alt="صورة"
-                            className="max-h-7 rounded cursor-pointer"
-                            loading="lazy"
-                            onLoad={() => {
-                              if (isAtBottom) {
-                                scrollToBottom('auto');
-                              }
-                            }}
-                            onClick={() => setImageLightbox({ open: true, src: message.content })}
-                          />
-                        ) : (
-                          (() => {
-                            const { cleaned, ids } = parseYouTubeFromText(message.content);
-                            if (ids.length > 0) {
-                              const firstId = ids[0];
-                              return (
-                                <span dir="auto" className={`${isMobile && !isMessageExpanded(message.id) ? 'line-clamp-2' : !isMobile ? 'truncate' : ''} text-breathe flex items-center gap-2`} onClick={() => isMobile && toggleMessageExpanded(message.id)}>
-                                  {cleaned ? (
-                                    <span
-                                      className={`${isMobile && !isMessageExpanded(message.id) ? 'line-clamp-2' : !isMobile ? 'truncate' : ''}`}
-                                      style={
-                                        currentUser && message.senderId === currentUser.id
-                                          ? { color: composerTextColor, fontWeight: composerBold ? 600 : undefined }
-                                          : undefined
-                                      }
-                                    >
-                                      {renderMessageWithAnimatedEmojis(
-                                        cleaned,
-                                        (text) => renderMessageWithMentions(text, currentUser, onlineUsers)
-                                      )}
-                                    </span>
-                                  ) : null}
-                                  <button
-                                    onClick={() => setYoutubeModal({ open: true, videoId: firstId })}
-                                    className="flex items-center justify-center w-8 h-6 rounded bg-red-600 hover:bg-red-700 transition-colors"
-                                    title="فتح فيديو YouTube"
-                                  >
-                                    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-                                      <path fill="#fff" d="M10 15l5.19-3L10 9v6z"></path>
-                                    </svg>
-                                  </button>
-                                </span>
-                              );
+                    <div className={`text-gray-800 break-words flex-1 min-w-0 message-content-fix ${isMobile && !isMessageExpanded(message.id) ? 'line-clamp-2' : !isMobile ? 'truncate' : ''}`}>
+                      {message.messageType === 'image' ? (
+                        <img
+                          src={message.content}
+                          alt="صورة"
+                          className="max-h-7 rounded cursor-pointer"
+                          loading="lazy"
+                          onLoad={() => {
+                            if (isAtBottom) {
+                              scrollToBottom('auto');
                             }
+                          }}
+                          onClick={() => setImageLightbox({ open: true, src: message.content })}
+                        />
+                      ) : (
+                        (() => {
+                          const { cleaned, ids } = parseYouTubeFromText(message.content);
+                          if (ids.length > 0) {
+                            const firstId = ids[0];
                             return (
-                              <span
-                                dir="auto"
-                                className={`${isMobile && !isMessageExpanded(message.id) ? 'line-clamp-2' : !isMobile ? 'truncate' : ''} text-breathe`}
-                                onClick={() => isMobile && toggleMessageExpanded(message.id)}
-                                style={
-                                  currentUser && message.senderId === currentUser.id
-                                    ? { color: composerTextColor, fontWeight: composerBold ? 600 : undefined }
-                                    : undefined
-                                }
-                              >
-                                {renderMessageWithAnimatedEmojis(
-                                  message.content, 
-                                  (text) => renderMessageWithMentions(text, currentUser, onlineUsers)
-                                )}
+                              <span dir="auto" className={`${isMobile && !isMessageExpanded(message.id) ? 'line-clamp-2' : !isMobile ? 'truncate' : ''} text-breathe flex items-center gap-2`} onClick={() => isMobile && toggleMessageExpanded(message.id)}>
+                                {cleaned ? (
+                                  <span
+                                    className={`${isMobile && !isMessageExpanded(message.id) ? 'line-clamp-2' : !isMobile ? 'truncate' : ''}`}
+                                    style={
+                                      currentUser && message.senderId === currentUser.id
+                                        ? { color: composerTextColor, fontWeight: composerBold ? 600 : undefined }
+                                        : undefined
+                                    }
+                                  >
+                                    {renderMessageWithAnimatedEmojis(
+                                      cleaned,
+                                      (text) => renderMessageWithMentions(text, currentUser, onlineUsers)
+                                    )}
+                                  </span>
+                                ) : null}
+                                <button
+                                  onClick={() => setYoutubeModal({ open: true, videoId: firstId })}
+                                  className="flex items-center justify-center w-8 h-6 rounded bg-red-600 hover:bg-red-700 transition-colors"
+                                  title="فتح فيديو YouTube"
+                                >
+                                  <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                                    <path fill="#fff" d="M10 15l5.19-3L10 9v6z"></path>
+                                  </svg>
+                                </button>
                               </span>
                             );
-                          })()
-                        )}
-                      </div>
+                          }
+                          return (
+                            <span
+                              dir="auto"
+                              className={`${isMobile && !isMessageExpanded(message.id) ? 'line-clamp-2' : !isMobile ? 'truncate' : ''} text-breathe`}
+                              onClick={() => isMobile && toggleMessageExpanded(message.id)}
+                              style={
+                                currentUser && message.senderId === currentUser.id
+                                  ? { color: composerTextColor, fontWeight: composerBold ? 600 : undefined }
+                                  : undefined
+                              }
+                            >
+                              {renderMessageWithAnimatedEmojis(
+                                message.content, 
+                                (text) => renderMessageWithMentions(text, currentUser, onlineUsers)
+                              )}
+                            </span>
+                          );
+                        })()
+                      )}
+                    </div>
 
-                      {/* Right side: time and report flag */}
-                      <span className="text-xs text-gray-500 whitespace-nowrap ml-2">
-                        {formatTime(message.timestamp)}
-                      </span>
+                    {/* Right side: time and report flag */}
+                    <span className="text-xs text-gray-500 whitespace-nowrap ml-2">
+                      {formatTime(message.timestamp)}
+                    </span>
 
-                      {onReportMessage &&
-                        message.sender &&
-                        currentUser &&
-                        message.sender.id !== currentUser.id && (
+                    {onReportMessage &&
+                      message.sender &&
+                      currentUser &&
+                      message.sender.id !== currentUser.id && (
+                        <button
+                          onClick={() =>
+                            onReportMessage(message.sender!, message.content, message.id)
+                          }
+                          className="text-sm hover:opacity-80"
+                          title="تبليغ"
+                        >
+                          🚩
+                        </button>
+                      )}
+
+                    {currentUser &&
+                      message.sender &&
+                      (() => {
+                        const isOwner = currentUser.userType === 'owner';
+                        const isAdmin = currentUser.userType === 'admin';
+                        const isSender = currentUser.id === message.sender.id;
+                        const canDelete = isSender || isOwner || isAdmin;
+                        if (!canDelete) return null;
+                        const handleDelete = async () => {
+                          try {
+                            await apiRequest(`/api/messages/${message.id}`, {
+                              method: 'DELETE',
+                              body: {
+                                userId: currentUser.id,
+                                roomId: message.roomId || 'general',
+                              },
+                            });
+                          } catch (e) {
+                            console.error('خطأ في حذف الرسالة', e);
+                          }
+                        };
+                        return (
                           <button
-                            onClick={() =>
-                              onReportMessage(message.sender!, message.content, message.id)
-                            }
-                            className="text-sm hover:opacity-80"
-                            title="تبليغ"
+                            onClick={handleDelete}
+                            className="text-xs text-gray-500 hover:text-gray-700 transition-colors duration-200"
+                            title="حذف الرسالة"
                           >
-                            🚩
+                            🗑️
                           </button>
-                        )}
-
-                      {currentUser &&
-                        message.sender &&
-                        (() => {
-                          const isOwner = currentUser.userType === 'owner';
-                          const isAdmin = currentUser.userType === 'admin';
-                          const isSender = currentUser.id === message.sender.id;
-                          const canDelete = isSender || isOwner || isAdmin;
-                          if (!canDelete) return null;
-                          const handleDelete = async () => {
+                        );
+                      })()}
+                    {/* Reactions (like/dislike/heart) */}
+                    {currentUser && !message.isPrivate && !isMobile && (
+                      <div className="flex items-center gap-1 ml-2">
+                        {(['like', 'dislike', 'heart'] as const).map((r) => {
+                          const isMine = message.myReaction === r;
+                          const count = message.reactions?.[r] ?? 0;
+                          const label = r === 'like' ? '👍' : r === 'dislike' ? '👎' : '❤️';
+                          const toggle = async () => {
                             try {
-                              await apiRequest(`/api/messages/${message.id}`, {
-                                method: 'DELETE',
-                                body: {
-                                  userId: currentUser.id,
-                                  roomId: message.roomId || 'general',
-                                },
-                              });
+                              if (isMine) {
+                                await apiRequest(
+                                  `/api/messages/${message.id}/reactions`,
+                                  {
+                                    method: 'DELETE',
+                                  }
+                                );
+                              } else {
+                                await apiRequest(
+                                  `/api/messages/${message.id}/reactions`,
+                                  {
+                                    method: 'POST',
+                                    body: { type: r },
+                                  }
+                                );
+                              }
                             } catch (e) {
-                              console.error('خطأ في حذف الرسالة', e);
+                              console.error('reaction error', e);
                             }
                           };
                           return (
                             <button
-                              onClick={handleDelete}
-                              className="text-xs text-gray-500 hover:text-gray-700 transition-colors duration-200"
-                              title="حذف الرسالة"
+                              key={r}
+                              onClick={toggle}
+                              className={`text-xs px-1 py-0.5 rounded ${isMine ? 'bg-primary/10 text-primary' : 'text-gray-600 hover:text-gray-800'}`}
+                              title={r}
                             >
-                              🗑️
+                              <span className="mr-0.5">{label}</span>
+                              <span>{count}</span>
                             </button>
                           );
-                        })()}
-                      {/* Reactions (like/dislike/heart) */}
-                      {currentUser && !message.isPrivate && !isMobile && (
-                        <div className="flex items-center gap-1 ml-2">
+                        })}
+                      </div>
+                    )}
+
+                    {/* Mobile: reactions in a three-dots menu */}
+                    {currentUser && !message.isPrivate && isMobile && (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button
+                            className="h-6 w-6 p-0 text-gray-600 hover:text-gray-900"
+                            title="المزيد"
+                            aria-label="المزيد"
+                          >
+                            <MoreVertical className="w-4 h-4" />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start" sideOffset={6} className="min-w-[160px]">
                           {(['like', 'dislike', 'heart'] as const).map((r) => {
                             const isMine = message.myReaction === r;
                             const count = message.reactions?.[r] ?? 0;
-                            const label = r === 'like' ? '👍' : r === 'dislike' ? '👎' : '❤️';
+                            const label = r === 'like' ? '👍 إعجاب' : r === 'dislike' ? '👎 عدم إعجاب' : '❤️ قلب';
                             const toggle = async () => {
                               try {
                                 if (isMine) {
-                                  await apiRequest(
-                                    `/api/messages/${message.id}/reactions`,
-                                    {
-                                      method: 'DELETE',
-                                    }
-                                  );
+                                  await apiRequest(`/api/messages/${message.id}/reactions`, { method: 'DELETE' });
                                 } else {
-                                  await apiRequest(
-                                    `/api/messages/${message.id}/reactions`,
-                                    {
-                                      method: 'POST',
-                                      body: { type: r },
-                                    }
-                                  );
+                                  await apiRequest(`/api/messages/${message.id}/reactions`, { method: 'POST', body: { type: r } });
                                 }
                               } catch (e) {
                                 console.error('reaction error', e);
                               }
                             };
                             return (
-                              <button
-                                key={r}
-                                onClick={toggle}
-                                className={`text-xs px-1 py-0.5 rounded ${isMine ? 'bg-primary/10 text-primary' : 'text-gray-600 hover:text-gray-800'}`}
-                                title={r}
-                              >
-                                <span className="mr-0.5">{label}</span>
-                                <span>{count}</span>
-                              </button>
+                              <DropdownMenuItem key={r} onClick={toggle} className={`flex items-center justify-between gap-2 ${isMine ? 'text-primary' : ''}`}>
+                                <span>{label}</span>
+                                <span className="text-xs text-gray-500">{count}</span>
+                              </DropdownMenuItem>
                             );
                           })}
-                        </div>
-                      )}
-
-                      {/* Mobile: reactions in a three-dots menu */}
-                      {currentUser && !message.isPrivate && isMobile && (
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <button
-                              className="h-6 w-6 p-0 text-gray-600 hover:text-gray-900"
-                              title="المزيد"
-                              aria-label="المزيد"
-                            >
-                              <MoreVertical className="w-4 h-4" />
-                            </button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="start" sideOffset={6} className="min-w-[160px]">
-                            {(['like', 'dislike', 'heart'] as const).map((r) => {
-                              const isMine = message.myReaction === r;
-                              const count = message.reactions?.[r] ?? 0;
-                              const label = r === 'like' ? '👍 إعجاب' : r === 'dislike' ? '👎 عدم إعجاب' : '❤️ قلب';
-                              const toggle = async () => {
-                                try {
-                                  if (isMine) {
-                                    await apiRequest(`/api/messages/${message.id}/reactions`, { method: 'DELETE' });
-                                  } else {
-                                    await apiRequest(`/api/messages/${message.id}/reactions`, { method: 'POST', body: { type: r } });
-                                  }
-                                } catch (e) {
-                                  console.error('reaction error', e);
-                                }
-                              };
-                              return (
-                                <DropdownMenuItem key={r} onClick={toggle} className={`flex items-center justify-between gap-2 ${isMine ? 'text-primary' : ''}`}>
-                                  <span>{label}</span>
-                                  <span className="text-xs text-gray-500">{count}</span>
-                                </DropdownMenuItem>
-                              );
-                            })}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      )}
-                    </div>
-                  </>
-                )}
-              </div>
-            )}
-          />
-        )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+        />
         {showScrollToBottom && (
           <button
             onClick={handleScrollDownClick}
