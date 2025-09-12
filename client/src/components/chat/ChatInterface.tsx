@@ -1038,7 +1038,14 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
               // إذا كانت الغرفة من نوع broadcast، استخدم BroadcastRoomInterface
               if (currentRoom?.isBroadcast) {
                 return (
-                  <Suspense fallback={<div className="p-4 text-center">...جاري التحميل</div>}>
+                  <Suspense fallback={
+                    <div className="flex-1 flex items-center justify-center bg-background">
+                      <div className="text-center">
+                        <div className="animate-spin rounded-full h-6 w-6 border-2 border-primary border-t-transparent mx-auto mb-2"></div>
+                        <div className="text-sm">جاري التحميل...</div>
+                      </div>
+                    </div>
+                  }>
                     <BroadcastRoomInterface
                       currentUser={chat.currentUser}
                       room={currentRoom}
@@ -1099,7 +1106,14 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                     minHeight: isMobile ? 'var(--app-body-height)' : 'auto'
                   }}
                 >
-                  <Suspense fallback={<div className="p-4 space-y-3"><SkeletonBlock className="h-6 w-1/3" /><SkeletonBlock className="h-40 w-full" /></div>}>
+                  <Suspense fallback={
+                    <div className="flex-1 flex items-center justify-center bg-background">
+                      <div className="text-center">
+                        <div className="animate-spin rounded-full h-6 w-6 border-2 border-primary border-t-transparent mx-auto mb-2"></div>
+                        <div className="text-sm">جاري التحميل...</div>
+                      </div>
+                    </div>
+                  }>
                     <MessageArea
                       messages={chat.publicMessages}
                       currentUser={chat.currentUser}
