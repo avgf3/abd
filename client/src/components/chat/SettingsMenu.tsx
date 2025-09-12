@@ -1,4 +1,4 @@
-import { User, Home, Moon, Shield, LogOut, Settings, Palette, Brush, Camera } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -39,7 +39,6 @@ export default function SettingsMenu({
         {currentUser && (
           <div className="p-3 border-b border-border" style={getUserListItemStyles(currentUser)}>
             <div className="flex items-center gap-2">
-              <User className="w-4 h-4" style={{ color: getFinalUsernameColor(currentUser) }} />
               <span className="font-semibold" style={{ color: getFinalUsernameColor(currentUser) }}>
                 {currentUser.username}
               </span>
@@ -54,7 +53,6 @@ export default function SettingsMenu({
             size="sm"
             className="w-full justify-start gap-3 h-9 hover:bg-accent/50 text-foreground"
           >
-            <User className="w-4 h-4 text-primary" />
             الملف الشخصي
           </Button>
         </div>
@@ -66,7 +64,6 @@ export default function SettingsMenu({
             size="sm"
             className="w-full justify-start gap-3 h-9 hover:bg-accent/50 text-foreground"
           >
-            <Home className="w-4 h-4 text-primary" />
             الغرف
           </Button>
 
@@ -77,7 +74,6 @@ export default function SettingsMenu({
               size="sm"
               className="w-full justify-start gap-3 h-9 hover:bg-accent/50 text-foreground"
             >
-              <Palette className="w-4 h-4 text-primary" />
               اختيار الثيم
             </Button>
           )}
@@ -89,7 +85,6 @@ export default function SettingsMenu({
               size="sm"
               className="w-full justify-start gap-3 h-9 hover:bg-accent/50 text-foreground"
             >
-              <Brush className="w-4 h-4 text-primary" />
               لون الاسم
             </Button>
           )}
@@ -101,7 +96,6 @@ export default function SettingsMenu({
               size="sm"
               className="w-full justify-start gap-3 h-9 hover:bg-accent/50 text-foreground"
             >
-              <Camera className="w-4 h-4 text-primary" />
               الحالات
             </Button>
           )}
@@ -112,7 +106,6 @@ export default function SettingsMenu({
             size="sm"
             className="w-full justify-start gap-3 h-9 hover:bg-accent/50 text-foreground"
           >
-            <Shield className="w-4 h-4 text-primary" />
             قائمة المتجاهلين
           </Button>
         </div>
@@ -126,7 +119,6 @@ export default function SettingsMenu({
               size="sm"
               className="w-full justify-start gap-3 h-9 hover:bg-accent/50 text-foreground"
             >
-              <Shield className="w-4 h-4 text-primary" />
               إدارة التبليغات
             </Button>
           </div>
