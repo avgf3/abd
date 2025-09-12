@@ -261,11 +261,9 @@ export default function MessageArea({
     
     // Handle room change or first load - always scroll to bottom
     if (prevLen === 0 && currLen > 0) {
-      setTimeout(() => {
-        scrollToBottom('auto');
-        setIsAtBottom(true);
-        setUnreadCount(0);
-      }, 150);
+      scrollToBottom('auto');
+      setIsAtBottom(true);
+      setUnreadCount(0);
       prevMessagesLenRef.current = currLen;
       return;
     }
@@ -291,11 +289,8 @@ export default function MessageArea({
     prevMessagesLenRef.current = validMessages.length;
     // Always scroll to bottom on first mount, even if no messages yet
     // This ensures proper positioning when entering a room
-    const t = setTimeout(() => {
-      scrollToBottom('auto');
-      setIsAtBottom(true);
-    }, 100);
-    return () => clearTimeout(t);
+    scrollToBottom('auto');
+    setIsAtBottom(true);
   }, [scrollToBottom]);
 
   // تشغيل صوت التنبيه عند استقبال منشن - محسن
@@ -351,9 +346,7 @@ export default function MessageArea({
       setMessageText('');
 
       // Focus back to input
-      setTimeout(() => {
-        inputRef.current?.focus();
-      }, 100);
+      inputRef.current?.focus();
     }
   }, [messageText, currentUser, onSendMessage]);
 
@@ -542,11 +535,7 @@ export default function MessageArea({
         className={`relative flex-1 ${isMobile ? 'p-2' : 'p-4'} bg-gradient-to-b from-gray-50 to-white`}
       >
         {validMessages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-gray-500">
-            <div className="text-6xl mb-4">💬</div>
-            <p className="text-lg font-medium">أهلاً وسهلاً في {currentRoomName}</p>
-            <p className="text-sm">ابدأ المحادثة بكتابة رسالتك الأولى</p>
-          </div>
+          <div className="h-full"></div>
         ) : (
           <Virtuoso
             ref={virtuosoRef}
