@@ -24,7 +24,7 @@ import { useGrabScroll } from '@/hooks/useGrabScroll';
 import { apiRequest } from '@/lib/queryClient';
 import { getSocket, saveSession } from '@/lib/socket';
 import type { WallPost, CreateWallPostData, ChatUser } from '@/types/chat';
-import { getImageSrc } from '@/utils/imageUtils';
+ 
 import UserPopup from '@/components/chat/UserPopup';
 
 interface WallPanelProps {
@@ -419,19 +419,7 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
                 <Card className="mb-6 border-0 shadow-lg bg-background/80 backdrop-blur-sm">
                   <CardContent className="p-6">
                     <div className="flex items-center gap-3 mb-4">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
-                        {currentUser.profileImage ? (
-                          <img
-                            src={getImageSrc(currentUser.profileImage)}
-                            alt={currentUser.username}
-                            className="w-10 h-10 rounded-full object-cover"
-                          />
-                        ) : (
-                          <span className="text-sm font-bold text-primary">
-                            {currentUser.username.charAt(0)}
-                          </span>
-                        )}
-                      </div>
+                      {/* avatar removed in wall composer */}
                       <div className="flex-1">
                         <div
                           className="text-sm font-semibold"

@@ -31,7 +31,6 @@ import { useGrabScroll } from '@/hooks/useGrabScroll';
 import { apiRequest } from '@/lib/queryClient';
 import { getSocket, saveSession } from '@/lib/socket';
 import type { ChatUser, WallPost, CreateWallPostData, ChatRoom } from '@/types/chat';
-import { getImageSrc } from '@/utils/imageUtils';
 import CountryFlag from '@/components/ui/CountryFlag';
 import {
   getUserEffectStyles,
@@ -707,17 +706,7 @@ export default function UnifiedSidebar({
                     <Card key={post.id} className="border border-border bg-card">
                       <CardHeader className="pb-3">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
-                            {post.userProfileImage ? (
-                              <img
-                                src={getImageSrc(post.userProfileImage)}
-                                alt={post.username}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <span className="text-xs">{post.username.charAt(0)}</span>
-                            )}
-                          </div>
+                          {/* avatar removed in wall posts */}
                           <div className="flex-1">
                             <div className="flex items-center gap-2">
                               <span
@@ -820,17 +809,7 @@ export default function UnifiedSidebar({
                     <Card key={post.id} className="border border-border bg-card">
                       <CardHeader className="pb-3">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
-                            {post.userProfileImage ? (
-                              <img
-                                src={getImageSrc(post.userProfileImage)}
-                                alt={post.username}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <span className="text-xs">{post.username.charAt(0)}</span>
-                            )}
-                          </div>
+                          {/* avatar removed in wall posts */}
                           <div className="flex-1">
                             <div className="flex items-center gap-2">
                               <span
