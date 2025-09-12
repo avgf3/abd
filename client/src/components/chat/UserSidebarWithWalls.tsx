@@ -191,10 +191,18 @@ export default function UnifiedSidebar({
   }, []);
 
   const formatLastSeen = useCallback((user: ChatUser) => {
-    // إذا كان المستخدم متصل الآن، لا نعرض أي شيء
-    if (user.isOnline) return '';
+    // للمستخدمين المتصلين، نعرض الوقت الحالي والغرفة
+    if (user.isOnline) {
+      const currentTimeString = new Date().toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+      });
+      const roomName = user.currentRoom || 'الدردشة العامة';
+      return `آخر تواجد ${currentTimeString} / غرفة║${roomName}`;
+    }
 
-    // إذا لم يكن هناك وقت آخر ظهور، لا نعرض شيء
+    // للمستخدمين المنقطعين، نعرض آخر وقت تواجد
     if (!user.lastSeen) return '';
 
     const lastSeenDate = user.lastSeen instanceof Date ? user.lastSeen : new Date(user.lastSeen);
