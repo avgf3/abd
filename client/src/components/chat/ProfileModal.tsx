@@ -186,11 +186,29 @@ export default function ProfileModal({
       fetchAndUpdateUser(uid).catch(() => {});
     };
 
+    // الاستماع لتحديثات userUpdated لتحديث lastSeen و currentRoom فورياً في نافذة البروفايل
+    const handleUserUpdated = (payload: any) => {
+      try {
+        const u = payload?.user || payload;
+        if (!u?.id || u.id !== localUser?.id) return;
+        setLocalUser((prev) => {
+          if (!prev) return prev;
+          const next: any = { ...prev };
+          if (u.lastSeen) next.lastSeen = u.lastSeen;
+          if (typeof u.currentRoom !== 'undefined') next.currentRoom = u.currentRoom;
+          if (typeof u.isOnline !== 'undefined') next.isOnline = u.isOnline;
+          return next;
+        });
+      } catch {}
+    };
+
     socket.on('userConnected', handleUserConnected);
     socket.on('userDisconnected', handleUserDisconnected);
+    socket.on('message', handleUserUpdated);
     return () => {
       socket.off('userConnected', handleUserConnected);
       socket.off('userDisconnected', handleUserDisconnected);
+      socket.off('message', handleUserUpdated);
     };
   }, [localUser?.id]);
   const canShowLastSeen = (((localUser as any)?.privacy?.showLastSeen ?? (localUser as any)?.showLastSeen) ?? true) !== false;

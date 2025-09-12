@@ -224,6 +224,8 @@ export async function buildOnlineUsersForRoom(roomId: string) {
       // تأكيد وجود حقول الحالة والزمن بشكل متناسق
       next.isOnline = true;
       next.lastSeen = (u as any).lastSeen || (u as any).createdAt || new Date();
+      // تضمين الغرفة الحالية لتمكين تحديث نافذة البروفايل فوراً
+      (next as any).currentRoom = roomId;
       return next;
     } catch {}
     return { ...u, isOnline: true, lastSeen: (u as any).lastSeen || (u as any).createdAt || new Date() };
@@ -351,6 +353,15 @@ async function joinRoom(
   const users = await buildOnlineUsersForRoom(roomId);
   socket.emit('message', { type: 'roomJoined', roomId, users });
 
+  // بث userUpdated للمستخدم نفسه وللغرفة لتحديث currentRoom و lastSeen فوراً على الواجهة
+  try {
+    const updatedUser = { ...user, currentRoom: roomId, lastSeen: new Date() } as any;
+    // حدث موجه للمستخدم ذاته بجميع أجهزته
+    io.to(userId.toString()).emit('message', { type: 'userUpdated', user: updatedUser });
+    // حدث عام داخل الغرفة الحالية ليراها الآخرون في نافذة البروفايل
+    io.to(`room_${roomId}`).emit('message', { type: 'userUpdated', user: updatedUser });
+  } catch {}
+
   // رسائل حديثة (تجنب التكرار عند الانضمام السريع): لا داعي إذا لم تتغير الغرفة فعلياً
   try {
     const recentMessages = await roomMessageService.getLatestRoomMessages(roomId, 10);
@@ -406,6 +417,17 @@ async function leaveRoom(
   
   // 🔥 استخدام النظام المحسّن لتحديث قائمة المستخدمين
   optimizedUserLeave(roomId, userId);
+
+  // بث userUpdated بتفريغ currentRoom وتحديث lastSeen ليظهر فوراً في الواجهة
+  try {
+    const entry = connectedUsers.get(userId);
+    const baseUser = entry?.user || (await storage.getUser(userId));
+    if (baseUser) {
+      const updatedUser = { ...baseUser, currentRoom: null, lastSeen: new Date() } as any;
+      io.to(userId.toString()).emit('message', { type: 'userUpdated', user: updatedUser });
+      io.to(`room_${roomId}`).emit('message', { type: 'userUpdated', user: updatedUser });
+    }
+  } catch {}
   
   // رسالة نظامية: مغادرة الغرفة الحالية
   try {
@@ -1056,6 +1078,12 @@ export function setupRealtime(httpServer: HttpServer): IOServer<ClientToServerEv
                 roomId: lastRoom,
                 source: 'disconnect',
               });
+              // بث تحديث آخر تواجد للمستخدم المنفصل للواجهة فوراً
+              try {
+                const updatedUser = { ...(entry.user || {}), lastSeen: new Date(), currentRoom: null } as any;
+                io.to(`room_${lastRoom}`).emit('message', { type: 'userUpdated', user: updatedUser });
+                io.to(userId.toString()).emit('message', { type: 'userUpdated', user: updatedUser });
+              } catch {}
             }
           } else {
             connectedUsers.set(userId, entry);
@@ -1147,6 +1175,28 @@ async function updateLastSeenForConnectedUsers() {
     
     await Promise.all(updatePromises);
     console.log(`تم تحديث lastSeen لـ ${updatePromises.length} مستخدم متصل`);
+
+    // بث userUpdated بشكل خفيف لإبلاغ الواجهة بالتحديث الدوري لـ lastSeen
+    try {
+      if (ioInstance) {
+        for (const [userId, entry] of connectedUsers.entries()) {
+          if (entry.sockets.size === 0) continue;
+          try {
+            const updatedUser = { ...(entry.user || {}), id: userId, lastSeen: now, isOnline: true } as any;
+            // إرسال للمستخدم ذاته (كل أجهزته)
+            ioInstance.to(userId.toString()).emit('message', { type: 'userUpdated', user: updatedUser });
+            // إرسال لكل الغرف التي يشارك فيها حالياً
+            const roomSet = new Set<string>();
+            for (const meta of entry.sockets.values()) {
+              if (meta.room) roomSet.add(meta.room);
+            }
+            for (const roomId of roomSet) {
+              ioInstance.to(`room_${roomId}`).emit('message', { type: 'userUpdated', user: { ...updatedUser, currentRoom: roomId } });
+            }
+          } catch {}
+        }
+      }
+    } catch {}
   } catch (error) {
     console.error('خطأ في تحديث lastSeen للمستخدمين المتصلين:', error);
   }
