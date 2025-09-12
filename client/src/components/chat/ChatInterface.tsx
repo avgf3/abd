@@ -1004,11 +1004,16 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             )}
             <Suspense
               fallback={
-                <div className="p-4 space-y-2">
-                  <SkeletonBlock className="h-6 w-1/2" />
-                  <SkeletonBlock className="h-10 w-full" />
-                  <SkeletonBlock className="h-10 w-full" />
-                  <SkeletonBlock className="h-10 w-3/4" />
+                <div className="flex-1 flex flex-col bg-card/50">
+                  <div className="p-4 border-b">
+                    <div className="animate-pulse h-6 bg-muted rounded w-1/2"></div>
+                  </div>
+                  <div className="flex-1 p-4 space-y-3">
+                    <div className="animate-pulse h-10 bg-muted rounded"></div>
+                    <div className="animate-pulse h-10 bg-muted rounded"></div>
+                    <div className="animate-pulse h-10 bg-muted rounded w-3/4"></div>
+                    <div className="animate-pulse h-10 bg-muted rounded w-1/2"></div>
+                  </div>
                 </div>
               }
             >
@@ -1038,7 +1043,14 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
               // إذا كانت الغرفة من نوع broadcast، استخدم BroadcastRoomInterface
               if (currentRoom?.isBroadcast) {
                 return (
-                  <Suspense fallback={<div className="p-4 text-center">...جاري التحميل</div>}>
+                  <Suspense fallback={
+                    <div className="flex-1 flex items-center justify-center bg-background">
+                      <div className="text-center space-y-3">
+                        <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent mx-auto"></div>
+                        <div className="text-sm font-medium">جاري تحميل غرفة البث...</div>
+                      </div>
+                    </div>
+                  }>
                     <BroadcastRoomInterface
                       currentUser={chat.currentUser}
                       room={currentRoom}
@@ -1099,7 +1111,16 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                     minHeight: isMobile ? 'var(--app-body-height)' : 'auto'
                   }}
                 >
-                  <Suspense fallback={<div className="p-4 space-y-3"><SkeletonBlock className="h-6 w-1/3" /><SkeletonBlock className="h-40 w-full" /></div>}>
+                  <Suspense fallback={
+                    <div className="flex-1 flex flex-col bg-background">
+                      <div className="flex-1 flex items-center justify-center">
+                        <div className="text-center space-y-3">
+                          <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent mx-auto"></div>
+                          <div className="text-sm font-medium">جاري تحميل الرسائل...</div>
+                        </div>
+                      </div>
+                    </div>
+                  }>
                     <MessageArea
                       messages={chat.publicMessages}
                       currentUser={chat.currentUser}

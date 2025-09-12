@@ -535,7 +535,13 @@ export default function MessageArea({
         className={`relative flex-1 ${isMobile ? 'p-2' : 'p-4'} bg-gradient-to-b from-gray-50 to-white`}
       >
         {validMessages.length === 0 ? (
-          <div className="h-full"></div>
+          <div className="h-full flex items-center justify-center">
+            <div className="text-center space-y-3 text-muted-foreground">
+              <div className="text-6xl">💬</div>
+              <div className="text-lg font-medium">مرحباً بك في {currentRoomName}</div>
+              <div className="text-sm">ابدأ المحادثة بكتابة رسالتك الأولى</div>
+            </div>
+          </div>
         ) : (
           <Virtuoso
             ref={virtuosoRef}

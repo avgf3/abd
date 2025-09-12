@@ -49,6 +49,7 @@ export default function ChatPage() {
     return roomId && roomId !== 'public' && roomId !== 'friends' ? roomId : null;
   });
   const [isRestoring, setIsRestoring] = useState<boolean>(hasSavedUser);
+  const [isJoiningRoom, setIsJoiningRoom] = useState<boolean>(false);
   const chat = useChat();
 
   // استرجاع الجلسة والغرفة بعد إعادة التحميل
@@ -64,8 +65,13 @@ export default function ChatPage() {
           ? session.roomId
           : null;
         if (roomId) {
+          setIsJoiningRoom(true);
           setSelectedRoomId(roomId);
           chat.joinRoom(roomId);
+          // إزالة حالة التحميل بعد فترة قصيرة
+          setTimeout(() => {
+            setIsJoiningRoom(false);
+          }, 1200);
         } else {
           setSelectedRoomId(null);
         }
@@ -103,8 +109,14 @@ export default function ChatPage() {
   };
 
   const handleSelectRoom = (roomId: string) => {
+    setIsJoiningRoom(true);
     setSelectedRoomId(roomId);
     chat.joinRoom(roomId);
+    
+    // إزالة حالة التحميل بعد فترة قصيرة للسماح للمكونات بالتحميل
+    setTimeout(() => {
+      setIsJoiningRoom(false);
+    }, 1000);
   };
 
   const handleLogout = async () => {
@@ -124,11 +136,33 @@ export default function ChatPage() {
 
   return (
     <div className="min-h-[100dvh] bg-background text-foreground font-['Cairo'] overflow-hidden" dir="rtl" style={{ minHeight: '100dvh' }}>
-      <Suspense fallback={<div className="p-6 text-center">...جاري التحميل</div>}>
+      <Suspense fallback={
+        <div className="min-h-[100dvh] bg-background text-foreground flex items-center justify-center">
+          <div className="text-center space-y-4">
+            <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent mx-auto"></div>
+            <div className="text-lg font-medium">جاري تحميل الدردشة...</div>
+            <div className="text-sm text-muted-foreground">يرجى الانتظار قليلاً</div>
+          </div>
+        </div>
+      }>
         {isRestoring ? (
-          <div className="p-6 text-center">...جاري استعادة الجلسة</div>
+          <div className="min-h-[100dvh] bg-background text-foreground flex items-center justify-center">
+            <div className="text-center space-y-4">
+              <div className="animate-pulse rounded-full h-12 w-12 bg-primary/20 mx-auto"></div>
+              <div className="text-lg font-medium">جاري استعادة الجلسة...</div>
+              <div className="text-sm text-muted-foreground">استرجاع بياناتك السابقة</div>
+            </div>
+          </div>
         ) : showWelcome ? (
           <WelcomeScreen onUserLogin={handleUserLogin} />
+        ) : isJoiningRoom ? (
+          <div className="min-h-[100dvh] bg-background text-foreground flex items-center justify-center">
+            <div className="text-center space-y-4">
+              <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent mx-auto"></div>
+              <div className="text-lg font-medium">جاري الدخول إلى الغرفة...</div>
+              <div className="text-sm text-muted-foreground">تحضير الدردشة</div>
+            </div>
+          </div>
         ) : selectedRoomId ? (
           <ChatInterface chat={chat} onLogout={handleLogout} />
         ) : (
