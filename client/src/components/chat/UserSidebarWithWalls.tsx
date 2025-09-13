@@ -703,7 +703,7 @@ export default function UnifiedSidebar({
                 ) : postsByTab.public.length === 0 ? (
                   <div className="text-center py-8 text-gray-500">لا توجد منشورات حتى الآن</div>
                 ) : (
-                  postsByTab.public.filter(post => post !== null).map((post) => (
+                  postsByTab.public.map((post) => (
                     <Card key={post.id} className="border border-border bg-card">
                       <CardHeader className="pb-3">
                         <div className="flex items-center gap-3">
@@ -816,7 +816,7 @@ export default function UnifiedSidebar({
                 ) : postsByTab.friends.length === 0 ? (
                   <div className="text-center py-8 text-gray-500">لا توجد منشورات حتى الآن</div>
                 ) : (
-                  postsByTab.friends.filter(post => post !== null).map((post) => (
+                  postsByTab.friends.map((post) => (
                     <Card key={post.id} className="border border-border bg-card">
                       <CardHeader className="pb-3">
                         <div className="flex items-center gap-3">
