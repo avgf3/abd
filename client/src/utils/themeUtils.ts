@@ -237,9 +237,10 @@ export const getUserListItemClasses = (user: any): string => {
     return '';
   }
 
-  // إضافة كلاس التأثير إذا وجد (للمشرفين فقط)
+  // إضافة كلاس التأثير إذا وجد (للمشرفين فقط) - لكن بدون الأنيميشن
   if (user?.profileEffect && user.profileEffect !== 'none') {
-    classes.push(user.profileEffect);
+    // إضافة كلاس خاص للقائمة بدلاً من التأثير المباشر لتجنب الاهتزاز
+    classes.push(`user-list-${user.profileEffect}`);
   }
 
   // إضافة كلاس خاص إذا كان هناك لون خلفية (للمشرفين فقط)
