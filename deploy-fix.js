@@ -151,6 +151,25 @@ async function applyDeploymentFixes() {
       AND column_name IN ('user_gender', 'user_level')
     `;
     console.log('🧱 أعمدة wall_posts:', wpFinal.map(r => r.column_name));
+
+    // Seed a welcome post if wall_posts is empty
+    try {
+      const [{ count }] = await sql`SELECT COUNT(*)::int AS count FROM "wall_posts"`;
+      if ((count ?? 0) === 0) {
+        console.log('🧪 لا توجد منشورات في wall_posts، سيتم إضافة منشور ترحيبي...');
+        const userRows = await sql`SELECT id, username, role, gender, level, profile_image, username_color FROM "users" ORDER BY id ASC LIMIT 1`;
+        const u = userRows[0] || { id: 0, username: 'System', role: 'owner', gender: 'غير محدد', level: 1, profile_image: null, username_color: '#FFFFFF' };
+        await sql`
+          INSERT INTO "wall_posts"
+            (user_id, username, user_role, user_gender, user_level, content, type, timestamp, user_profile_image, username_color)
+          VALUES
+            (${u.id}, ${u.username}, ${u.role || 'owner'}, ${u.gender || 'غير محدد'}, ${u.level || 1}, 'مرحباً بكم في الحائط! 🎉', 'public', NOW(), ${u.profile_image}, ${u.username_color || '#FFFFFF'})
+        `;
+        console.log('✅ تم إضافة منشور ترحيبي إلى wall_posts');
+      }
+    } catch (seedErr) {
+      console.warn('⚠️ تعذر إضافة منشور ترحيبي (غير حرج):', seedErr?.message || seedErr);
+    }
     
   } catch (error) {
     console.error('❌ خطأ في إصلاح قاعدة البيانات:', error);
