@@ -15,6 +15,171 @@ export interface CountryChat {
 
 export const countryChats: CountryChat[] = [
   {
+    id: 'watan',
+    nameAr: 'دردشه الوطن',
+    nameEn: 'Watan Chat',
+    path: '/watan',
+    title: 'دردشه الوطن - دردشة عربية عامة',
+    metaDescription: 'دردشه الوطن: بوابة روابط الدردشة العربية العامة. تصفح روابط الدردشة الفرعية للوطن العربي.',
+    keywords: ['دردشه', 'الوطن', 'شات عربي', 'غرف دردشة'],
+    chatLinks: [
+      { name: 'دردشه امامير' },
+      { name: 'دردشه فلسطيني' },
+      { name: 'شات فلسطيني' },
+      { name: 'دردشه صبايا' },
+      { name: 'شات اردني' },
+      { name: 'دردشتي' },
+      { name: 'دردشه مزز' },
+      { name: 'دردشه اونلاين' },
+      { name: 'دردشة احلا لمة' },
+      { name: 'دردشه الحلوين' },
+      { name: 'شات بدون تسجيل' }
+    ]
+  },
+  {
+    id: 'emamir',
+    nameAr: 'دردشه امامير',
+    nameEn: 'Emamir Chat',
+    path: '/emamir',
+    title: 'دردشه امامير - دردشة عربية',
+    metaDescription: 'دردشه امامير: غرفة دردشة عربية للتعارف والمحادثة.',
+    keywords: ['دردشه امامير', 'شات', 'غرف دردشة'],
+    chatLinks: [
+      { name: 'شات امامير' },
+      { name: 'امامير جوال' }
+    ]
+  },
+  {
+    id: 'falastini',
+    nameAr: 'دردشه فلسطيني',
+    nameEn: 'Falastini Chat',
+    path: '/falastini',
+    title: 'دردشه فلسطيني - دردشة عربية',
+    metaDescription: 'دردشه فلسطيني: دردشة عربية للتعارف بين الشباب والبنات.',
+    keywords: ['دردشه فلسطيني', 'شات فلسطيني'],
+    chatLinks: [
+      { name: 'شات القدس' },
+      { name: 'شات غزة' }
+    ]
+  },
+  {
+    id: 'palestinian',
+    nameAr: 'شات فلسطيني',
+    nameEn: 'Palestinian Chat',
+    path: '/palestinian',
+    title: 'شات فلسطيني - دردشة عربية',
+    metaDescription: 'شات فلسطيني: دردشة عربية للتعارف ومشاركة اليوميات.',
+    keywords: ['شات فلسطيني', 'دردشة فلسطينية'],
+    chatLinks: [
+      { name: 'شات رام الله' },
+      { name: 'شات نابلس' }
+    ]
+  },
+  {
+    id: 'sabaya',
+    nameAr: 'دردشه صبايا',
+    nameEn: 'Sabaya Chat',
+    path: '/sabaya',
+    title: 'دردشه صبايا - دردشة عربية',
+    metaDescription: 'دردشه صبايا: مساحة دردشة عربية عامة.',
+    keywords: ['دردشه صبايا', 'شات'],
+    chatLinks: [
+      { name: 'شات الصبايا' },
+      { name: 'دردشة راقية' }
+    ]
+  },
+  {
+    id: 'jordan-chat',
+    nameAr: 'شات اردني',
+    nameEn: 'Jordan Chat (Alias)',
+    path: '/jordan-chat',
+    title: 'شات اردني - دردشة أردنية',
+    metaDescription: 'شات اردني: دردشة أردنية عامة للتعارف.',
+    keywords: ['شات اردني', 'دردشة أردنية'],
+    chatLinks: [
+      { name: 'شات عمان' },
+      { name: 'شات الزرقاء' }
+    ]
+  },
+  {
+    id: 'dardashti',
+    nameAr: 'دردشتي',
+    nameEn: 'Dardashti Chat',
+    path: '/dardashti',
+    title: 'دردشتي - دردشة عربية',
+    metaDescription: 'دردشتي: دردشة عربية عامة.',
+    keywords: ['دردشتي', 'شات'],
+    chatLinks: [
+      { name: 'دردشتي العام' },
+      { name: 'أصدقاء دردشتي' }
+    ]
+  },
+  {
+    id: 'mezz',
+    nameAr: 'دردشه مزز',
+    nameEn: 'Mezz Chat',
+    path: '/mezz',
+    title: 'دردشه مزز - دردشة عربية',
+    metaDescription: 'دردشه مزز: دردشة عربية عامة.',
+    keywords: ['مزز', 'شات'],
+    chatLinks: [
+      { name: 'مزز العام' },
+      { name: 'مزز جوال' }
+    ]
+  },
+  {
+    id: 'online-chat',
+    nameAr: 'دردشه اونلاين',
+    nameEn: 'Online Chat',
+    path: '/online-chat',
+    title: 'دردشه اونلاين - دردشة عربية',
+    metaDescription: 'دردشه اونلاين: دردشة عربية عبر الإنترنت.',
+    keywords: ['دردشه اونلاين', 'شات اونلاين'],
+    chatLinks: [
+      { name: 'شات مباشر' },
+      { name: 'شات فوري' }
+    ]
+  },
+  {
+    id: 'ahla-lamma',
+    nameAr: 'دردشة احلا لمة',
+    nameEn: 'Ahla Lamma Chat',
+    path: '/ahla-lamma',
+    title: 'دردشة احلا لمة - دردشة عربية',
+    metaDescription: 'دردشة احلا لمة: دردشة عربية عامة.',
+    keywords: ['احلا لمة', 'شات'],
+    chatLinks: [
+      { name: 'لمة الأصدقاء' },
+      { name: 'لمة عربية' }
+    ]
+  },
+  {
+    id: 'beautiful-chat',
+    nameAr: 'دردشه الحلوين',
+    nameEn: 'Beautiful Chat',
+    path: '/beautiful-chat',
+    title: 'دردشه الحلوين - دردشة عربية',
+    metaDescription: 'دردشه الحلوين: دردشة عربية عامة.',
+    keywords: ['الحلوين', 'شات'],
+    chatLinks: [
+      { name: 'شات الحلوين' },
+      { name: 'أحلى دردشة' }
+    ]
+  },
+  {
+    id: 'no-signup',
+    nameAr: 'شات بدون تسجيل',
+    nameEn: 'No Signup Chat',
+    path: '/no-signup',
+    title: 'شات بدون تسجيل - دردشة عربية',
+    metaDescription: 'شات بدون تسجيل: دردشة عربية فورية بدون إنشاء حساب.',
+    keywords: ['شات بدون تسجيل', 'دردشة فورية'],
+    chatLinks: [
+      { name: 'دردشة سريعة' },
+      { name: 'دخول فوري' }
+    ]
+  },
+  {
     id: 'oman',
     nameAr: 'شات عمان',
     nameEn: 'Oman Chat',

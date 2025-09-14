@@ -21,6 +21,18 @@ function Router() {
       <Route path="/terms" component={TermsOfService} />
       <Route path="/arabic" component={ArabicChat} />
       {/* Country-specific routes */}
+      <Route path="/watan" component={CountryChat} />
+      <Route path="/emamir" component={CountryChat} />
+      <Route path="/falastini" component={CountryChat} />
+      <Route path="/palestinian" component={CountryChat} />
+      <Route path="/sabaya" component={CountryChat} />
+      <Route path="/jordan-chat" component={CountryChat} />
+      <Route path="/dardashti" component={CountryChat} />
+      <Route path="/mezz" component={CountryChat} />
+      <Route path="/online-chat" component={CountryChat} />
+      <Route path="/ahla-lamma" component={CountryChat} />
+      <Route path="/beautiful-chat" component={CountryChat} />
+      <Route path="/no-signup" component={CountryChat} />
       <Route path="/oman" component={CountryChat} />
       <Route path="/egypt" component={CountryChat} />
       <Route path="/saudi" component={CountryChat} />
