@@ -4658,27 +4658,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .where(eq(bots.id, botId))
         .returning();
 
-      // رسالة نظامية لمغادرة الغرفة القديمة
-      try {
-        const leaveContent = formatRoomEventMessage('leave', {
-          username: updatedBot.username,
-          userType: 'bot',
-          level: updatedBot.level as any,
-        });
-        const leaveMsg = await storage.createMessage({
-          senderId: botId,
-          roomId: oldRoom,
-          content: leaveContent,
-          messageType: 'system',
-          isPrivate: false,
-        });
-        const sender = await storage.getUser(botId);
-        getIO().to(`room_${oldRoom}`).emit('message', {
-          type: 'newMessage',
-          message: { ...leaveMsg, sender, roomId: oldRoom, reactions: { like: 0, dislike: 0, heart: 0 }, myReaction: null },
-        });
-      } catch {}
-
       // إشعار بدخول الغرفة الجديدة - تضمين الحقول التعريفية للبوت
       const botUser = {
         id: updatedBot.id,
@@ -4700,6 +4679,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         currentRoom: roomId,
       };
 
+      // تحديث cache المستخدمين المتصلين أولاً قبل إرسال الرسائل
+      updateConnectedUserCache(updatedBot.id, botUser);
+
+      // رسالة نظامية لمغادرة الغرفة القديمة
+      try {
+        const leaveContent = formatRoomEventMessage('leave', {
+          username: updatedBot.username,
+          userType: 'bot',
+          level: updatedBot.level as any,
+        });
+        const leaveMsg = await storage.createMessage({
+          senderId: botId,
+          roomId: oldRoom,
+          content: leaveContent,
+          messageType: 'system',
+          isPrivate: false,
+        });
+        const sender = await storage.getUser(botId);
+        getIO().to(`room_${oldRoom}`).emit('message', {
+          type: 'newMessage',
+          message: { ...leaveMsg, sender, roomId: oldRoom, reactions: { like: 0, dislike: 0, heart: 0 }, myReaction: null },
+        });
+      } catch {}
+
+      // رسالة واحدة فقط للانضمام - مع تأخير قصير لتجنب التداخل
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       try {
         const joinContent = formatRoomEventMessage('join', {
           username: updatedBot.username,
@@ -4720,9 +4726,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       } catch {}
 
-      // تحديث cache المستخدمين المتصلين بالبيانات الجديدة
-      updateConnectedUserCache(updatedBot.id, botUser);
-
       // تنظيف cache الرسائل للغرف المتأثرة لضمان عرض البيانات الصحيحة
       try {
         const { roomMessageService } = await import('./services/roomMessageService');
@@ -4732,7 +4735,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error('خطأ في تنظيف cache الرسائل:', e);
       }
 
-      // إرسال تحديث قائمة المستخدمين للغرف المتأثرة (قائمة كاملة لتفادي عدم التزامن)
+      // إرسال تحديث قائمة المستخدمين للغرف المتأثرة (بدون إرسال رسائل إضافية)
       try {
         await emitOnlineUsersForRoom(oldRoom);
         await emitOnlineUsersForRoom(roomId);

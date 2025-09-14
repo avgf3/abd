@@ -104,7 +104,7 @@ export function updateConnectedUserCache(userOrId: any, maybeUser?: any) {
       if (existing) {
         existing.user = { ...existing.user, ...userObj };
         existing.lastSeen = new Date();
-        // إذا كان بوتاً ولديه socket اصطناعي، حدّث الغرفة
+        // إذا كان بوتاً ولديه socket اصطناعي، حدّث الغرفة بصمت (بدون إرسال رسائل)
         if (userObj.userType === 'bot') {
           for (const [socketId, socketMeta] of existing.sockets.entries()) {
             if (socketId.startsWith('bot:')) {
@@ -236,11 +236,23 @@ export async function buildOnlineUsersForRoom(roomId: string) {
 
 // أزيلت دالة إبطال الكاش
 
+// تتبع آخر تحديث لكل غرفة لمنع الإرسال المتكرر
+const lastRoomUpdate = new Map<string, number>();
+
 // بث قائمة المتصلين لغرفة معينة (لاستخدامه من المسارات الخارجية كبوتات)
 export async function emitOnlineUsersForRoom(roomId: string): Promise<void> {
   try {
     if (!roomId) return;
     if (!ioInstance) return;
+    
+    // منع الإرسال المتكرر خلال فترة قصيرة (200ms)
+    const now = Date.now();
+    const lastUpdate = lastRoomUpdate.get(roomId) || 0;
+    if (now - lastUpdate < 200) {
+      return;
+    }
+    lastRoomUpdate.set(roomId, now);
+    
     const users = await buildOnlineUsersForRoom(roomId);
     ioInstance.to(`room_${roomId}`).emit('message', {
       type: 'onlineUsers',
