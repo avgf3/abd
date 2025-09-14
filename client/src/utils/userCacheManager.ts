@@ -16,6 +16,8 @@ interface CachedUser {
   profileBackgroundColor?: string;
   profileEffect?: string;
   isOnline?: boolean;
+  lastSeen?: string | Date | null;
+  currentRoom?: string | null;
   lastUpdated: number;
 }
 
@@ -104,6 +106,8 @@ class UserCacheManager {
       profileBackgroundColor: 'profileBackgroundColor' in user ? user.profileBackgroundColor : existing?.profileBackgroundColor,
       profileEffect: 'profileEffect' in user ? user.profileEffect : existing?.profileEffect,
       isOnline: 'isOnline' in user ? user.isOnline : existing?.isOnline,
+      lastSeen: 'lastSeen' in user ? (user as any).lastSeen : existing?.lastSeen,
+      currentRoom: 'currentRoom' in user ? (user as any).currentRoom : existing?.currentRoom,
       lastUpdated: Date.now(),
     };
 
@@ -178,6 +182,8 @@ class UserCacheManager {
       profileBackgroundColor: partialData?.profileBackgroundColor || base.profileBackgroundColor,
       profileEffect: partialData?.profileEffect || base.profileEffect,
       isOnline: partialData?.isOnline ?? base.isOnline ?? false,
+      lastSeen: (partialData as any)?.lastSeen ?? (base as any)?.lastSeen ?? null,
+      currentRoom: (partialData as any)?.currentRoom ?? (base as any)?.currentRoom ?? null,
     } as ChatUser;
 
     // تحديث الكاش بالبيانات المدمجة

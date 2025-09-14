@@ -19,6 +19,7 @@ import { getCountryFlag } from '@/utils';
 import { getUserLevelIcon } from '@/components/chat/UserRoleBadge';
 import CountryFlag from '@/components/ui/CountryFlag';
 import ProfileImage from './ProfileImage';
+import { getCachedUserWithMerge, setCachedUser } from '@/utils/userCacheManager';
 import { useStories } from '@/hooks/useStories';
 import { useRoomManager } from '@/hooks/useRoomManager';
 import { getSocket } from '@/lib/socket';
@@ -50,10 +51,22 @@ export default function ProfileModal({
   const [editValue, setEditValue] = useState('');
 
   // حالة محلية للمستخدم للتحديث الفوري
-  const [localUser, setLocalUser] = useState<ChatUser | null>(user);
+  const [localUser, setLocalUser] = useState<ChatUser | null>(() => {
+    if (user?.id) {
+      // تهيئة فورية من الكاش لعرض فوري دون فراغات
+      const cached = getCachedUserWithMerge(user.id, user || undefined);
+      return cached as any;
+    }
+    return user;
+  });
   // مزامنة حالة المستخدم المحلي عند تغيّر الخصائص القادمة من الأعلى
   useEffect(() => {
-    setLocalUser(user);
+    if (user?.id) {
+      const cached = getCachedUserWithMerge(user.id, user || undefined);
+      setLocalUser(cached as any);
+    } else {
+      setLocalUser(user);
+    }
   }, [user]);
   const [selectedTheme, setSelectedTheme] = useState(user?.profileBackgroundColor || '');
   const [selectedEffect, setSelectedEffect] = useState(user?.profileEffect || 'none');
@@ -100,9 +113,19 @@ export default function ProfileModal({
 
   // ===== آخر تواجد + اسم الغرفة =====
   const { rooms, fetchRooms } = useRoomManager({ autoRefresh: false });
+  // جلب أسماء الغرف فقط عند فتح النافذة لأول مرة أو تغيّر الغرفة المعروضة
   useEffect(() => {
-    fetchRooms(false).catch(() => {});
-  }, [fetchRooms, (localUser as any)?.currentRoom]);
+    let didFetch = false;
+    if (!didFetch) {
+      fetchRooms(false).catch(() => {});
+      didFetch = true;
+    }
+  }, [fetchRooms]);
+  useEffect(() => {
+    if ((localUser as any)?.currentRoom) {
+      fetchRooms(false).catch(() => {});
+    }
+  }, [(localUser as any)?.currentRoom, fetchRooms]);
 
   // تم حذف formatAmPmTime لأنها غير مستخدمة
 
@@ -155,7 +178,7 @@ export default function ProfileModal({
     }
   };
   
-  const formattedLastSeen = formatLastSeenWithRoom(localUser?.lastSeen, resolvedRoomName);
+  const formattedLastSeen = formatLastSeenWithRoom(localUser?.lastSeen as any, resolvedRoomName);
   // تحديث حي لنص "آخر تواجد" كل 30 ثانية لعرض أكثر دقة
   const [, forceRerenderTick] = useState(0);
   useEffect(() => {
@@ -175,6 +198,8 @@ export default function ProfileModal({
         if (!prev) return prev;
         const next: any = { ...prev, isOnline: true };
         if (incoming.currentRoom) next.currentRoom = incoming.currentRoom;
+        // تحديث الكاش فوراً
+        setCachedUser({ id: next.id, username: next.username, isOnline: true, currentRoom: next.currentRoom });
         return next;
       });
     };
@@ -182,6 +207,7 @@ export default function ProfileModal({
       const uid = payload?.userId || payload?.id;
       if (!uid || uid !== localUser?.id) return;
       setLocalUser((prev) => (prev ? ({ ...prev, isOnline: false } as any) : prev));
+      setCachedUser({ id: uid, username: localUser?.username || `مستخدم #${uid}`, isOnline: false });
       // جلب من السيرفر للحصول على lastSeen المحدث بعد الانفصال
       fetchAndUpdateUser(uid).catch(() => {});
     };
@@ -197,6 +223,13 @@ export default function ProfileModal({
           if (u.lastSeen) next.lastSeen = u.lastSeen;
           if (typeof u.currentRoom !== 'undefined') next.currentRoom = u.currentRoom;
           if (typeof u.isOnline !== 'undefined') next.isOnline = u.isOnline;
+          setCachedUser({
+            id: next.id,
+            username: next.username,
+            isOnline: next.isOnline,
+            currentRoom: next.currentRoom,
+            lastSeen: next.lastSeen,
+          } as any);
           return next;
         });
       } catch {}
@@ -437,6 +470,23 @@ export default function ProfileModal({
       if (userData.profileEffect) {
         setSelectedEffect(userData.profileEffect);
       }
+      // حفظ في الكاش لضمان تحميل فوري لاحقاً
+      try {
+        setCachedUser({
+          id: userData.id,
+          username: userData.username,
+          userType: userData.userType,
+          role: userData.role,
+          profileImage: userData.profileImage,
+          avatarHash: (userData as any).avatarHash,
+          usernameColor: userData.usernameColor,
+          profileBackgroundColor: userData.profileBackgroundColor,
+          profileEffect: userData.profileEffect,
+          isOnline: userData.isOnline,
+          lastSeen: userData.lastSeen,
+          currentRoom: (userData as any).currentRoom ?? (userData as any).roomId ?? null,
+        } as any);
+      } catch {}
     } catch (err: any) {
       console.error('❌ خطأ في جلب بيانات المستخدم:', err);
       toast({
@@ -446,6 +496,14 @@ export default function ProfileModal({
       });
     }
   };
+
+  // جلب فوري عند فتح النافذة لضمان عدم الفراغ، مع حماية من التكرار
+  useEffect(() => {
+    if (localUser?.id) {
+      fetchAndUpdateUser(localUser.id).catch(() => {});
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // تحديث إعداد خصوصية الرسائل الخاصة
   const updateDmPrivacy = async (value: 'all' | 'friends' | 'none') => {
