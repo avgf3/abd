@@ -488,6 +488,7 @@ export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
           <h3 className="text-2xl font-semibold mb-4">غرف الدردشة</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto mt-6">
             <div className="space-y-2">
+              <a href="/watan" className="block text-yellow-300 hover:text-yellow-200 transition-colors">دردشه الوطن</a>
               <a href="/algeria" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات الجزائر</a>
               <a href="/bahrain" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات البحرين</a>
               <a href="/uae" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات الإمارات</a>
