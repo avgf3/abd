@@ -91,6 +91,41 @@ async function applyDeploymentFixes() {
     await sql`ALTER TABLE IF EXISTS users ALTER COLUMN show_system_messages SET NOT NULL`;
     await sql`ALTER TABLE IF EXISTS users ALTER COLUMN global_sound_enabled SET NOT NULL`;
     
+    // Ensure wall_posts has user_gender and user_level
+    console.log('🔍 التحقق من أعمدة wall_posts للجنس والمستوى...');
+    const wallCols = await sql`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = 'wall_posts' 
+      AND column_name IN ('user_gender', 'user_level')
+    `;
+    const wallExisting = wallCols.map(r => r.column_name);
+
+    if (!wallExisting.includes('user_gender')) {
+      console.log('➕ إضافة عمود user_gender إلى wall_posts...');
+      await sql`ALTER TABLE "wall_posts" ADD COLUMN IF NOT EXISTS "user_gender" TEXT`;
+    }
+
+    if (!wallExisting.includes('user_level')) {
+      console.log('➕ إضافة عمود user_level إلى wall_posts...');
+      await sql`ALTER TABLE "wall_posts" ADD COLUMN IF NOT EXISTS "user_level" INTEGER DEFAULT 1`;
+    }
+
+    // Backfill values from users table
+    console.log('🔄 تحديث قيم user_gender و user_level من users...');
+    await sql`
+      UPDATE "wall_posts" AS wp
+      SET "user_gender" = u.gender
+      FROM "users" AS u
+      WHERE wp.user_id = u.id AND (wp.user_gender IS NULL OR wp.user_gender = '')
+    `;
+    await sql`
+      UPDATE "wall_posts" AS wp
+      SET "user_level" = COALESCE(u.level, 1)
+      FROM "users" AS u
+      WHERE wp.user_id = u.id AND (wp.user_level IS NULL OR wp.user_level = 0)
+    `;
+
     // Verify the fix worked
     console.log('✅ التحقق من النتيجة النهائية...');
     const finalResult = await sql`
@@ -107,6 +142,15 @@ async function applyDeploymentFixes() {
     } else {
       console.log('⚠️ لم يتم إضافة جميع الأعمدة المطلوبة');
     }
+
+    // Log wall_posts verification
+    const wpFinal = await sql`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = 'wall_posts' 
+      AND column_name IN ('user_gender', 'user_level')
+    `;
+    console.log('🧱 أعمدة wall_posts:', wpFinal.map(r => r.column_name));
     
   } catch (error) {
     console.error('❌ خطأ في إصلاح قاعدة البيانات:', error);
