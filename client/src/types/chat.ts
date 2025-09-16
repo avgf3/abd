@@ -6,6 +6,7 @@ export interface ChatUser {
   role: 'guest' | 'member' | 'owner' | 'admin' | 'moderator' | 'system';
   isOnline: boolean;
   roomId?: string;
+  currentRoom?: string | null;
 
   // معلومات إضافية - تحسين type safety
   profileBanner?: string;

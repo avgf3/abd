@@ -45,6 +45,8 @@ export interface User {
   profileMusicTitle?: string | null;
   profileMusicEnabled?: boolean;
   profileMusicVolume?: number;
+  // الغرفة الحالية
+  currentRoom?: string | null;
 }
 
 export interface Message {
@@ -1960,6 +1962,19 @@ export class DatabaseService {
       }
     } catch (e) {
       return themeId || 'default';
+    }
+  }
+
+  // ===== Raw SQL execution =====
+  async executeRaw(sqlQuery: string): Promise<any> {
+    if (!this.isConnected()) {
+      throw new Error('قاعدة البيانات غير متوفرة');
+    }
+    try {
+      return await (this.db as any).execute(sql.raw(sqlQuery));
+    } catch (error) {
+      console.error('خطأ في تنفيذ SQL:', error);
+      throw error;
     }
   }
 }
