@@ -13,6 +13,8 @@ import { roomMessageService } from './services/roomMessageService';
 import { friendService } from './services/friendService';
 import { developmentOnly, logDevelopmentEndpoint } from './middleware/development';
 import { sanitizeUserData, sanitizeUsersArray } from './utils/data-sanitizer';
+import { optimizedUserService } from './services/optimizedUserService';
+import { DEFAULT_ROOM_CONSTANTS } from '../client/src/utils/defaultRoomOptimizer';
 
 import bcrypt from 'bcrypt';
 import type { Express } from 'express';
@@ -245,7 +247,7 @@ const authService = new (class AuthService {
       throw new Error('بيانات الدخول غير صحيحة');
     }
 
-    await storage.setUserOnlineStatus(user.id, true);
+    await optimizedUserService.setUserOnlineStatus(user.id, true);
     return user;
   }
 
@@ -1857,7 +1859,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const verified = verifyAuthToken(token);
         if (verified?.userId) {
           try {
-            await storage.setUserOnlineStatus(verified.userId, false);
+            await optimizedUserService.setUserOnlineStatus(verified.userId, false);
           } catch {}
 
           // إزالة المستخدم من قائمة المتصلين والبث برسالة "المستخدم غادر الموقع"
@@ -1956,7 +1958,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // تحديث حالة المستخدم إلى متصل
       try {
-        await storage.setUserOnlineStatus(user.id, true);
+        await optimizedUserService.setUserOnlineStatus(user.id, true);
       } catch (updateError) {
         console.error('خطأ في تحديث حالة المستخدم:', updateError);
       }
@@ -2187,7 +2189,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       .union([z.boolean(), z.string()])
       .optional()
       .transform((v) => v === true || v === 'true'),
-    roomId: z.string().trim().max(100).default('general'),
+    roomId: z.string().trim().max(100).default(DEFAULT_ROOM_CONSTANTS.GENERAL_ROOM_ID),
   });
   app.get('/api/messages/public', async (req, res) => {
     try {
@@ -4414,7 +4416,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           content: imageUrl,
           messageType: 'image',
           isPrivate: true,
-          roomId: 'general',
+          roomId: DEFAULT_ROOM_CONSTANTS.GENERAL_ROOM_ID,
         });
         const sender = await storage.getUser(parsedSenderId);
         const messageWithSender = { ...newMessage, sender };
@@ -4428,7 +4430,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // خلاف ذلك: نعتبرها صورة غرفة
-      const targetRoomId = roomId && typeof roomId === 'string' ? roomId : 'general';
+      const targetRoomId = roomId && typeof roomId === 'string' ? roomId : DEFAULT_ROOM_CONSTANTS.GENERAL_ROOM_ID;
       const newMessage = await storage.createMessage({
         senderId: parsedSenderId,
         content: imageUrl,
@@ -4572,7 +4574,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       let rooms = await storage.getUserRooms(userId);
       if (!Array.isArray(rooms) || rooms.length === 0) {
-        rooms = ['general'];
+        rooms = [DEFAULT_ROOM_CONSTANTS.GENERAL_ROOM_ID];
       }
       for (const roomId of rooms) {
         getIO().to(`room_${roomId}`).emit('message', payload);
@@ -5209,7 +5211,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             level: Math.floor(Math.random() * 5) + 1,
             totalPoints: Math.floor(Math.random() * 5000),
             levelProgress: Math.floor(Math.random() * 100),
-            currentRoom: 'general',
+            currentRoom: DEFAULT_ROOM_CONSTANTS.GENERAL_ROOM_ID,
             isActive: true,
             isOnline: true,
             botType: i === 0 ? 'system' : i < 5 ? 'chat' : 'moderator',
