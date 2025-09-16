@@ -217,17 +217,13 @@ export class DatabaseService {
             showPointsToOthers: schema.users.showPointsToOthers,
             showSystemMessages: schema.users.showSystemMessages,
             globalSoundEnabled: schema.users.globalSoundEnabled,
-            // currentRoom: schema.users.currentRoom, // تعليق مؤقت حتى يتم تطبيق migration
+            currentRoom: schema.users.currentRoom,
           })
           .from(schema.users)
           .where(eq(schema.users.id, id))
           .limit(1);
         
         const user = result[0] || null;
-        if (user) {
-          // إضافة currentRoom افتراضياً إذا لم يكن موجوداً
-          (user as any).currentRoom = 'general';
-        }
         return user;
       } else {
         // SQLite has no users table, so this will return null
@@ -290,17 +286,13 @@ export class DatabaseService {
             showPointsToOthers: schema.users.showPointsToOthers,
             showSystemMessages: schema.users.showSystemMessages,
             globalSoundEnabled: schema.users.globalSoundEnabled,
-            // currentRoom: schema.users.currentRoom, // تعليق مؤقت حتى يتم تطبيق migration
+            currentRoom: schema.users.currentRoom,
           })
           .from(schema.users)
           .where(eq(schema.users.username, username))
           .limit(1);
         
         const user = result[0] || null;
-        if (user) {
-          // إضافة currentRoom افتراضياً إذا لم يكن موجوداً
-          (user as any).currentRoom = 'general';
-        }
         return user;
       } else {
         // SQLite has no users table, so this will return null
@@ -364,17 +356,13 @@ export class DatabaseService {
             showPointsToOthers: schema.users.showPointsToOthers,
             showSystemMessages: schema.users.showSystemMessages,
             globalSoundEnabled: schema.users.globalSoundEnabled,
-            // currentRoom: schema.users.currentRoom, // تعليق مؤقت حتى يتم تطبيق migration
+            currentRoom: schema.users.currentRoom,
           })
           .from(schema.users)
           .where(eq((schema as any).users.email, email))
           .limit(1);
         
         const user = result[0] || null;
-        if (user) {
-          // إضافة currentRoom افتراضياً إذا لم يكن موجوداً
-          (user as any).currentRoom = 'general';
-        }
         return user;
       } else {
         // SQLite has no users table, so this will return null
@@ -439,16 +427,12 @@ export class DatabaseService {
             showPointsToOthers: schema.users.showPointsToOthers,
             showSystemMessages: schema.users.showSystemMessages,
             globalSoundEnabled: schema.users.globalSoundEnabled,
-            // currentRoom: schema.users.currentRoom, // تعليق مؤقت حتى يتم تطبيق migration
+            currentRoom: schema.users.currentRoom,
           })
           .from(schema.users)
           .where(inArray(schema.users.id, uniqueIds));
         
-        // إضافة currentRoom افتراضياً لكل مستخدم
-        return result.map((user: any) => ({
-          ...user,
-          currentRoom: 'general'
-        }));
+        return result;
       } else {
         // SQLite has no users table, so this will return empty array
         return [];

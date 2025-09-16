@@ -95,7 +95,6 @@ export class UserService {
   // تحديث الغرفة الحالية للمستخدم
   async setUserCurrentRoom(id: number, currentRoom: string | null): Promise<void> {
     try {
-      // محاولة تحديث العمود إذا كان موجوداً
       await db
         .update(users)
         .set({
@@ -103,12 +102,7 @@ export class UserService {
           lastSeen: new Date(),
         } as any)
         .where(eq(users.id, id));
-    } catch (error: any) {
-      // إذا فشل التحديث بسبب عدم وجود العمود، تجاهل الخطأ
-      if (error.message?.includes('current_room') || error.message?.includes('column') || error.message?.includes('does not exist')) {
-        console.log('⚠️ عمود current_room غير موجود، تجاهل التحديث');
-        return;
-      }
+    } catch (error) {
       console.error('خطأ في تحديث الغرفة الحالية:', error);
     }
   }

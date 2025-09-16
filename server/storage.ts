@@ -681,16 +681,7 @@ export const storage: LegacyStorage = {
   },
 
   async setUserCurrentRoom(id: number, currentRoom: string | null) {
-    try {
-      await databaseService.updateUser(id, { currentRoom: currentRoom || 'general', lastSeen: new Date() });
-    } catch (error: any) {
-      // إذا فشل التحديث بسبب عدم وجود العمود، تجاهل الخطأ
-      if (error.message?.includes('current_room') || error.message?.includes('column') || error.message?.includes('does not exist')) {
-        console.log('⚠️ عمود current_room غير موجود، تجاهل التحديث');
-        return;
-      }
-      console.error('خطأ في تحديث الغرفة الحالية:', error);
-    }
+    await databaseService.updateUser(id, { currentRoom: currentRoom || 'general', lastSeen: new Date() });
   },
 
   async createMessage(message: any) {
