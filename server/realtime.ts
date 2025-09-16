@@ -22,10 +22,8 @@ import { getClientIpFromHeaders, getDeviceIdFromHeaders } from './utils/device';
 import { verifyAuthToken } from './utils/auth-token';
 import { setupSocketMonitoring, socketPerformanceMonitor } from './utils/socket-performance';
 import { createUserListOptimizer, getUserListOptimizer, optimizedUserJoin, optimizedUserLeave } from './utils/user-list-optimizer';
-import { optimizedUserService } from './services/optimizedUserService';
-import { DEFAULT_ROOM_CONSTANTS } from '../client/src/utils/defaultRoomOptimizer';
 
-const GENERAL_ROOM = DEFAULT_ROOM_CONSTANTS.GENERAL_ROOM_ID;
+const GENERAL_ROOM = 'general';
 
 // Track connected users and their sockets/rooms
 const connectedUsers = new Map<
@@ -355,12 +353,12 @@ async function joinRoom(
   const users = await buildOnlineUsersForRoom(roomId);
   socket.emit('message', { type: 'roomJoined', roomId, users });
 
-  // بث userUpdated للمستخدم نفسه وللغرفة لتحديث currentRoom و lastSeen فوراً على الواجهة - محسن باستخدام المحسنات الجديدة
+  // بث userUpdated للمستخدم نفسه وللغرفة لتحديث currentRoom و lastSeen فوراً على الواجهة
   try {
     const updatedUser = { ...user, currentRoom: roomId, lastSeen: new Date() } as any;
     
-    // 💾 حفظ الغرفة الحالية في قاعدة البيانات باستخدام المحسن
-    await optimizedUserService.setUserCurrentRoom(userId, roomId || DEFAULT_ROOM_CONSTANTS.GENERAL_ROOM_ID);
+    // 💾 حفظ الغرفة الحالية في قاعدة البيانات
+    await storage.setUserCurrentRoom(userId, roomId);
     
     // حدث موجه للمستخدم ذاته بجميع أجهزته
     io.to(userId.toString()).emit('message', { type: 'userUpdated', user: updatedUser });
@@ -424,15 +422,15 @@ async function leaveRoom(
   // 🔥 استخدام النظام المحسّن لتحديث قائمة المستخدمين
   optimizedUserLeave(roomId, userId);
 
-  // بث userUpdated بتفريغ currentRoom وتحديث lastSeen ليظهر فوراً في الواجهة - محسن باستخدام المحسنات الجديدة
+  // بث userUpdated بتفريغ currentRoom وتحديث lastSeen ليظهر فوراً في الواجهة
   try {
     const entry = connectedUsers.get(userId);
     const baseUser = entry?.user || (await storage.getUser(userId));
     if (baseUser) {
-      const updatedUser = { ...baseUser, currentRoom: DEFAULT_ROOM_CONSTANTS.GENERAL_ROOM_ID, lastSeen: new Date() } as any;
+      const updatedUser = { ...baseUser, currentRoom: null, lastSeen: new Date() } as any;
       
-      // 💾 حفظ الغرفة الحالية كـ الغرفة العامة في قاعدة البيانات باستخدام المحسن
-      await optimizedUserService.setUserCurrentRoom(userId, DEFAULT_ROOM_CONSTANTS.GENERAL_ROOM_ID);
+      // 💾 حفظ الغرفة الحالية كـ null في قاعدة البيانات
+      await storage.setUserCurrentRoom(userId, null);
       
       io.to(userId.toString()).emit('message', { type: 'userUpdated', user: updatedUser });
       io.to(`room_${roomId}`).emit('message', { type: 'userUpdated', user: updatedUser });
@@ -715,7 +713,7 @@ export function setupRealtime(httpServer: HttpServer): IOServer<ClientToServerEv
               oldEntry.sockets.delete(socket.id);
               if (oldEntry.sockets.size === 0) {
                 connectedUsers.delete(oldUserId);
-                await optimizedUserService.setUserOnlineStatus(oldUserId, false);
+                await storage.setUserOnlineStatus(oldUserId, false);
               }
             }
             // مغادرة الغرف القديمة
@@ -804,7 +802,7 @@ export function setupRealtime(httpServer: HttpServer): IOServer<ClientToServerEv
             socket.join(user.id.toString());
           } catch {}
           try {
-            await optimizedUserService.setUserOnlineStatus(user.id, true);
+            await storage.setUserOnlineStatus(user.id, true);
           } catch {}
 
           // Track connection - لا نضع المستخدم في أي غرفة تلقائياً
@@ -839,7 +837,7 @@ export function setupRealtime(httpServer: HttpServer): IOServer<ClientToServerEv
         socket.emit('message', { type: 'error', message: 'يجب تسجيل الدخول أولاً' });
         return;
       }
-      const roomId = data && data.roomId ? String(data.roomId) : DEFAULT_ROOM_CONSTANTS.GENERAL_ROOM_ID;
+      const roomId = data && data.roomId ? String(data.roomId) : 'general';
       const username = socket.username || `User#${socket.userId}`;
       try {
         // منع الانضمام المتكرر لنفس الغرفة فقط
@@ -1076,7 +1074,7 @@ export function setupRealtime(httpServer: HttpServer): IOServer<ClientToServerEv
           if (entry.sockets.size === 0) {
             connectedUsers.delete(userId);
             try {
-              await optimizedUserService.setUserOnlineStatus(userId, false);
+              await storage.setUserOnlineStatus(userId, false);
             } catch {}
             // Update any room the user was in last (best effort)
             const lastRoom = socket.currentRoom;
@@ -1088,12 +1086,12 @@ export function setupRealtime(httpServer: HttpServer): IOServer<ClientToServerEv
                 roomId: lastRoom,
                 source: 'disconnect',
               });
-              // بث تحديث آخر تواجد للمستخدم المنفصل للواجهة فوراً - محسن لمنع التذبذب
+              // بث تحديث آخر تواجد للمستخدم المنفصل للواجهة فوراً
               try {
-                const updatedUser = { ...(entry.user || {}), lastSeen: new Date(), currentRoom: DEFAULT_ROOM_CONSTANTS.GENERAL_ROOM_ID } as any;
+                const updatedUser = { ...(entry.user || {}), lastSeen: new Date(), currentRoom: null } as any;
                 
-                // 💾 حفظ الغرفة الحالية كـ الغرفة العامة في قاعدة البيانات عند انقطاع الاتصال باستخدام المحسن
-                await optimizedUserService.setUserCurrentRoom(userId, DEFAULT_ROOM_CONSTANTS.GENERAL_ROOM_ID);
+                // 💾 حفظ الغرفة الحالية كـ null في قاعدة البيانات عند انقطاع الاتصال
+                await storage.setUserCurrentRoom(userId, null);
                 
                 io.to(`room_${lastRoom}`).emit('message', { type: 'userUpdated', user: updatedUser });
                 io.to(userId.toString()).emit('message', { type: 'userUpdated', user: updatedUser });
@@ -1170,29 +1168,27 @@ async function loadActiveBots() {
 // ===== نظام تحديث دوري لـ lastSeen =====
 let lastSeenUpdateInterval: NodeJS.Timeout | null = null;
 
-// دالة تحديث lastSeen للمستخدمين المتصلين - محسنة باستخدام المحسنات الجديدة
+// دالة تحديث lastSeen للمستخدمين المتصلين
 async function updateLastSeenForConnectedUsers() {
   try {
     const now = new Date();
     const updatePromises: Promise<void>[] = [];
     
-    // تحديث lastSeen لجميع المستخدمين المتصلين باستخدام المحسن
+    // تحديث lastSeen لجميع المستخدمين المتصلين
     for (const [userId, entry] of connectedUsers.entries()) {
       if (entry.sockets.size > 0) { // المستخدم متصل
-        // استخدام المحسن لتحديث آخر تواجد
-        updatePromises.push(optimizedUserService.updateLastSeen(userId));
-        
-        // تحديث lastSeen في الكاش المحلي
-        entry.lastSeen = now;
-        connectedUsers.set(userId, entry);
+        updatePromises.push(
+          storage.updateUser(userId, { lastSeen: now }).then(() => {
+            // تم التحديث بنجاح
+          }).catch((error) => {
+            console.error(`خطأ في تحديث lastSeen للمستخدم ${userId}:`, error);
+          })
+        );
       }
     }
     
-    // تنفيذ جميع التحديثات بشكل متوازي
-    if (updatePromises.length > 0) {
-      await Promise.allSettled(updatePromises);
-      console.log(`✅ تم تحديث آخر تواجد لـ ${updatePromises.length} مستخدم متصل`);
-    }
+    await Promise.all(updatePromises);
+    console.log(`تم تحديث lastSeen لـ ${updatePromises.length} مستخدم متصل`);
 
     // بث userUpdated بشكل خفيف لإبلاغ الواجهة بالتحديث الدوري لـ lastSeen
     try {

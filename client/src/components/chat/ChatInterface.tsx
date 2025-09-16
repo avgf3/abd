@@ -14,7 +14,6 @@ import {
 } from 'lucide-react';
 import { lazy, Suspense, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useLocation } from 'wouter';
-import { DEFAULT_ROOM_CONSTANTS } from '@/utils/defaultRoomOptimizer';
 
 import BlockNotification from '../moderation/BlockNotification';
 import MessageAlert from './MessageAlert';
@@ -189,7 +188,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
         if (ok) {
           // الانتقال للغرفة العامة إذا تم حذف الغرفة الحالية
           if (chat.currentRoomId === roomId) {
-            chat.joinRoom(DEFAULT_ROOM_CONSTANTS.GENERAL_ROOM_ID);
+            chat.joinRoom('general');
           }
           showSuccessToast('تم حذف الغرفة بنجاح', 'تم حذف الغرفة');
         }

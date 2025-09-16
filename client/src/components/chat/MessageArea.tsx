@@ -18,7 +18,6 @@ import ImageLightbox from '@/components/ui/ImageLightbox';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { apiRequest, api } from '@/lib/queryClient';
 import type { ChatMessage, ChatUser } from '@/types/chat';
-import { DEFAULT_ROOM_CONSTANTS } from '@/utils/defaultRoomOptimizer';
 import {
   findMentions,
   playMentionSound,
@@ -65,8 +64,8 @@ export default function MessageArea({
   onReportMessage,
   onUserClick,
   onlineUsers = [],
-  currentRoomName = DEFAULT_ROOM_CONSTANTS.GENERAL_ROOM_NAME,
-  currentRoomId = DEFAULT_ROOM_CONSTANTS.GENERAL_ROOM_ID,
+  currentRoomName = 'الدردشة العامة',
+  currentRoomId = 'general',
   ignoredUserIds,
   chatLockAll = false,
   chatLockVisitors = false,
@@ -453,7 +452,7 @@ export default function MessageArea({
         const form = new FormData();
         form.append('image', file);
         form.append('senderId', String(currentUser.id));
-        form.append('roomId', currentRoomId || DEFAULT_ROOM_CONSTANTS.GENERAL_ROOM_ID);
+        form.append('roomId', currentRoomId || 'general');
         await api.upload('/api/upload/message-image', form, { timeout: 60000 });
         // سيتم بث الرسالة عبر الـ socket من الخادم فلا داعي لاستدعاء onSendMessage محلياً
       } catch (err) {
@@ -719,7 +718,7 @@ export default function MessageArea({
                                 method: 'DELETE',
                                 body: {
                                   userId: currentUser.id,
-                                  roomId: message.roomId || DEFAULT_ROOM_CONSTANTS.GENERAL_ROOM_ID,
+                                  roomId: message.roomId || 'general',
                                 },
                               });
                             } catch (e) {
@@ -806,7 +805,7 @@ export default function MessageArea({
                                     method: 'DELETE',
                                     body: {
                                       userId: currentUser.id,
-                                      roomId: message.roomId || DEFAULT_ROOM_CONSTANTS.GENERAL_ROOM_ID,
+                                      roomId: message.roomId || 'general',
                                     },
                                   });
                                 } catch (e) {

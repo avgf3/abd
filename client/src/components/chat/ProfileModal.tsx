@@ -23,27 +23,6 @@ import { getCachedUserWithMerge, setCachedUser } from '@/utils/userCacheManager'
 import { useStories } from '@/hooks/useStories';
 import { useRoomManager } from '@/hooks/useRoomManager';
 import { getSocket } from '@/lib/socket';
-import { 
-  safeProfileUpdate, 
-  safeProfileFetch, 
-  getCachedProfile, 
-  setCachedProfile 
-} from '@/utils/profileOptimizer';
-import { 
-  safeLastSeenUpdate, 
-  formatLastSeenSafe, 
-  getCachedLastSeen, 
-  setCachedLastSeen,
-  startLastSeenPeriodicUpdates,
-  stopLastSeenPeriodicUpdates
-} from '@/utils/lastSeenOptimizer';
-import { 
-  getDefaultRoom, 
-  getUserCurrentRoom, 
-  setUserCurrentRoom,
-  initializeDefaultRooms,
-  DEFAULT_ROOM_CONSTANTS
-} from '@/utils/defaultRoomOptimizer';
 
 interface ProfileModalProps {
   user: ChatUser | null;
@@ -71,45 +50,30 @@ export default function ProfileModal({
   const [currentEditType, setCurrentEditType] = useState<string | null>(null);
   const [editValue, setEditValue] = useState('');
 
-  // حالة محلية للمستخدم للتحديث الفوري - محسن باستخدام المحسنات الجديدة
+  // حالة محلية للمستخدم للتحديث الفوري
   const [localUser, setLocalUser] = useState<ChatUser | null>(() => {
     if (user?.id) {
-      // تهيئة فورية من الكاش المحسن
-      const cached = getCachedProfile(user.id) || getCachedUserWithMerge(user.id, user || undefined);
+      // تهيئة فورية من الكاش لعرض فوري دون فراغات
+      const cached = getCachedUserWithMerge(user.id, user || undefined);
       return cached as any;
     }
     return user;
   });
-
-  // مزامنة حالة المستخدم المحلي عند تغيّر الخصائص القادمة من الأعلى - محسن
+  // مزامنة حالة المستخدم المحلي عند تغيّر الخصائص القادمة من الأعلى
   useEffect(() => {
     if (user?.id) {
-      const cached = getCachedProfile(user.id) || getCachedUserWithMerge(user.id, user || undefined);
+      const cached = getCachedUserWithMerge(user.id, user || undefined);
       setLocalUser(cached as any);
     } else {
       setLocalUser(user);
     }
   }, [user]);
 
-  // تهيئة الغرف الافتراضية عند تحميل المكون
+  // تحديث الغرفة الحالية من قاعدة البيانات عند فتح الملف الشخصي
   useEffect(() => {
-    initializeDefaultRooms();
-    startLastSeenPeriodicUpdates();
-    
-    return () => {
-      stopLastSeenPeriodicUpdates();
-    };
-  }, []);
-
-  // تحديث الغرفة الحالية من قاعدة البيانات عند فتح الملف الشخصي - محسن لمنع التكرار
-  useEffect(() => {
-    if (user?.id && (!localUser?.currentRoom || localUser.currentRoom === DEFAULT_ROOM_CONSTANTS.GENERAL_ROOM_ID)) {
-      // جلب البيانات المحدثة من الخادم إذا لم تكن الغرفة الحالية موجودة أو كانت عامة
-      const timeoutId = setTimeout(() => {
-        fetchAndUpdateUser(user.id);
-      }, 100); // تأخير قصير لمنع التكرار
-      
-      return () => clearTimeout(timeoutId);
+    if (user?.id && !localUser?.currentRoom) {
+      // جلب البيانات المحدثة من الخادم إذا لم تكن الغرفة الحالية موجودة
+      fetchAndUpdateUser(user.id);
     }
   }, [user?.id, localUser?.currentRoom]);
   const [selectedTheme, setSelectedTheme] = useState(user?.profileBackgroundColor || '');
@@ -189,22 +153,56 @@ export default function ProfileModal({
 
   // تم حذف formatAmPmTime لأنها غير مستخدمة
 
-  // معالجة محسنة للغرفة الحالية مع منع التذبذب - محسن باستخدام المحسنات الجديدة
-  const resolvedRoomId = (localUser as any)?.currentRoom || localUser?.roomId || DEFAULT_ROOM_CONSTANTS.GENERAL_ROOM_ID;
-  let resolvedRoomName = DEFAULT_ROOM_CONSTANTS.GENERAL_ROOM_NAME;
-  
-  // استخدام المحسن للغرف الافتراضية
-  const defaultRoom = getDefaultRoom(resolvedRoomId);
-  if (defaultRoom) {
-    resolvedRoomName = defaultRoom.name;
-  } else if (resolvedRoomId && resolvedRoomId !== DEFAULT_ROOM_CONSTANTS.GENERAL_ROOM_ID && resolvedRoomId !== null && resolvedRoomId !== 'null') {
-    // البحث في الغرف الأخرى
+  const resolvedRoomId = (localUser as any)?.currentRoom || localUser?.roomId || 'general';
+  let resolvedRoomName = 'الدردشة العامة';
+  if (resolvedRoomId && resolvedRoomId !== 'general') {
     const found = rooms.find((r) => String((r as any).id) === String(resolvedRoomId));
-    resolvedRoomName = (found && (found as any).name) || `غرفة ${resolvedRoomId}`;
+    resolvedRoomName = (found && (found as any).name) || String(resolvedRoomId);
   }
   
-  // استخدام المحسن لآخر تواجد
-  const formattedLastSeen = formatLastSeenSafe(localUser?.lastSeen as any, resolvedRoomName);
+  // دالة تنسيق آخر تواجد
+  const formatLastSeenWithRoom = (lastSeen?: string | Date | null, roomName?: string): string => {
+    if (!lastSeen) return '';
+    
+    try {
+      const lastSeenDate = lastSeen instanceof Date ? lastSeen : new Date(lastSeen);
+      
+      if (isNaN(lastSeenDate.getTime())) {
+        return '';
+      }
+      
+      const now = new Date();
+      const isToday = lastSeenDate.toDateString() === now.toDateString();
+      
+      const timeString = lastSeenDate.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+      });
+      
+      let formattedTime: string;
+      
+      if (isToday) {
+        // نفس اليوم: الوقت فقط
+        formattedTime = timeString;
+      } else {
+        // أكثر من يوم: التاريخ + الوقت
+        const dateString = lastSeenDate.toLocaleDateString('en-GB', {
+          day: '2-digit',
+          month: '2-digit'
+        });
+        formattedTime = `${dateString} ${timeString}`;
+      }
+      
+      const finalRoomName = roomName || resolvedRoomName;
+      return `${formattedTime} / غرفة║${finalRoomName}`;
+      
+    } catch (error) {
+      return '';
+    }
+  };
+  
+  const formattedLastSeen = formatLastSeenWithRoom(localUser?.lastSeen as any, resolvedRoomName);
   // تحديث حي لنص "آخر تواجد" كل 30 ثانية لعرض أكثر دقة
   const [, forceRerenderTick] = useState(0);
   useEffect(() => {
@@ -220,88 +218,35 @@ export default function ProfileModal({
     const handleUserConnected = (payload: any) => {
       const incoming = payload?.user || payload;
       if (!incoming?.id || incoming.id !== localUser?.id) return;
-      
-      // تحديث فقط إذا كانت هناك تغييرات فعلية
-      const hasChanges = 
-        (incoming.isOnline !== localUser?.isOnline) ||
-        (incoming.currentRoom && incoming.currentRoom !== localUser?.currentRoom);
-        
-      if (!hasChanges) return;
-      
       setLocalUser((prev) => {
         if (!prev) return prev;
         const next: any = { ...prev, isOnline: true };
         if (incoming.currentRoom) next.currentRoom = incoming.currentRoom;
-        
-        // تحديث الكاش المحسن
-        if (next.id) {
-          setCachedProfile(next.id, next);
-        }
-        
-        // تحديث الكاش القديم للتوافق
-        setCachedUser({ 
-          id: next.id, 
-          username: next.username, 
-          isOnline: true, 
-          currentRoom: next.currentRoom 
-        });
+        // تحديث الكاش فوراً
+        setCachedUser({ id: next.id, username: next.username, isOnline: true, currentRoom: next.currentRoom });
         return next;
       });
     };
     const handleUserDisconnected = (payload: any) => {
       const uid = payload?.userId || payload?.id;
       if (!uid || uid !== localUser?.id) return;
-      
-      // تحديث فقط إذا كان المستخدم متصلاً فعلاً
-      if (!localUser?.isOnline) return;
-      
       setLocalUser((prev) => (prev ? ({ ...prev, isOnline: false } as any) : prev));
-      
-      // تحديث الكاش المحسن
-      if (localUser?.id) {
-        const updatedUser = { ...localUser, isOnline: false };
-        setCachedProfile(localUser.id, updatedUser);
-      }
-      
-      // تحديث الكاش القديم للتوافق
       setCachedUser({ id: uid, username: localUser?.username || `مستخدم #${uid}`, isOnline: false });
-      
-      // جلب من السيرفر للحصول على lastSeen المحدث بعد الانفصال - مع تأخير لمنع التكرار
-      setTimeout(() => {
-        fetchAndUpdateUser(uid).catch(() => {});
-      }, 500);
+      // جلب من السيرفر للحصول على lastSeen المحدث بعد الانفصال
+      fetchAndUpdateUser(uid).catch(() => {});
     };
 
-    // الاستماع لتحديثات userUpdated لتحديث lastSeen و currentRoom فورياً في نافذة البروفايل - محسن باستخدام المحسنات الجديدة
+    // الاستماع لتحديثات userUpdated لتحديث lastSeen و currentRoom فورياً في نافذة البروفايل
     const handleUserUpdated = (payload: any) => {
       try {
         const u = payload?.user || payload;
         if (!u?.id || u.id !== localUser?.id) return;
-        
-        // تحديث فقط إذا كانت هناك تغييرات فعلية
-        const hasChanges = 
-          (u.lastSeen && u.lastSeen !== localUser?.lastSeen) ||
-          (typeof u.currentRoom !== 'undefined' && u.currentRoom !== localUser?.currentRoom) ||
-          (typeof u.isOnline !== 'undefined' && u.isOnline !== localUser?.isOnline);
-          
-        if (!hasChanges) return;
-        
         setLocalUser((prev) => {
           if (!prev) return prev;
           const next: any = { ...prev };
           if (u.lastSeen) next.lastSeen = u.lastSeen;
           if (typeof u.currentRoom !== 'undefined') next.currentRoom = u.currentRoom;
           if (typeof u.isOnline !== 'undefined') next.isOnline = u.isOnline;
-          
-          // تحديث الكاش المحسن
-          if (next.id) {
-            setCachedProfile(next.id, next);
-            if (u.lastSeen) {
-              setCachedLastSeen(next.id, new Date(u.lastSeen));
-            }
-          }
-          
-          // تحديث الكاش القديم للتوافق
           setCachedUser({
             id: next.id,
             username: next.username,
@@ -565,65 +510,51 @@ export default function ProfileModal({
   // معالجة محسنة للحالات الفارغة
   // تم إلغاء الإرجاع المبكر بناءً على الطلب لضمان استمرار العرض حتى مع غياب الكائن
 
-  // دالة موحدة لجلب بيانات المستخدم من السيرفر وتحديث الحالة المحلية - محسّنة باستخدام المحسنات الجديدة
+  // دالة موحدة لجلب بيانات المستخدم من السيرفر وتحديث الحالة المحلية - محسّنة
   const fetchAndUpdateUser = async (userId: number) => {
-    // استخدام المحسن لمنع التكرار
-    return safeProfileFetch(userId, async () => {
+    try {
       const userData = await apiRequest(`/api/users/${userId}`);
-      
-      // تحديث الحالة المحلية فقط إذا كانت البيانات مختلفة
-      if (userData && (!localUser || 
-          localUser.currentRoom !== userData.currentRoom ||
-          localUser.isOnline !== userData.isOnline ||
-          localUser.lastSeen !== userData.lastSeen)) {
-        
-        setLocalUser(userData);
-        if (onUpdate) onUpdate(userData);
+      setLocalUser(userData);
+      if (onUpdate) onUpdate(userData);
 
-        // تحديث لون الخلفية والتأثير المحلي
-        if (userData.profileBackgroundColor) {
-          setSelectedTheme(userData.profileBackgroundColor);
-        }
-        if (userData.profileEffect) {
-          setSelectedEffect(userData.profileEffect);
-        }
-
-        // تحديث الكاش المحسن
-        setCachedProfile(userId, userData);
-        setCachedLastSeen(userId, new Date(userData.lastSeen || Date.now()));
-        
-        // تحديث الكاش القديم للتوافق
-        try {
-          setCachedUser({
-            id: userData.id,
-            username: userData.username,
-            userType: userData.userType,
-            role: userData.role,
-            profileImage: userData.profileImage,
-            avatarHash: (userData as any).avatarHash,
-            usernameColor: userData.usernameColor,
-            profileBackgroundColor: userData.profileBackgroundColor,
-            profileEffect: userData.profileEffect,
-            isOnline: userData.isOnline,
-            lastSeen: userData.lastSeen,
-            currentRoom: (userData as any).currentRoom ?? (userData as any).roomId ?? null,
-          } as any);
-        } catch {}
+      // تحديث لون الخلفية والتأثير المحلي
+      if (userData.profileBackgroundColor) {
+        setSelectedTheme(userData.profileBackgroundColor);
       }
-      
-      return userData;
-    });
+      if (userData.profileEffect) {
+        setSelectedEffect(userData.profileEffect);
+      }
+      // حفظ في الكاش لضمان تحميل فوري لاحقاً
+      try {
+        setCachedUser({
+          id: userData.id,
+          username: userData.username,
+          userType: userData.userType,
+          role: userData.role,
+          profileImage: userData.profileImage,
+          avatarHash: (userData as any).avatarHash,
+          usernameColor: userData.usernameColor,
+          profileBackgroundColor: userData.profileBackgroundColor,
+          profileEffect: userData.profileEffect,
+          isOnline: userData.isOnline,
+          lastSeen: userData.lastSeen,
+          currentRoom: (userData as any).currentRoom ?? (userData as any).roomId ?? null,
+        } as any);
+      } catch {}
+    } catch (err: any) {
+      console.error('❌ خطأ في جلب بيانات المستخدم:', err);
+      toast({
+        title: 'خطأ',
+        description: err.message || 'فشل في تحديث بيانات الملف الشخصي من السيرفر',
+        variant: 'destructive',
+      });
+    }
   };
 
   // جلب فوري عند فتح النافذة لضمان عدم الفراغ، مع حماية من التكرار
   useEffect(() => {
     if (localUser?.id) {
-      // تأخير قصير لمنع التكرار مع الاستدعاءات الأخرى
-      const timeoutId = setTimeout(() => {
-        fetchAndUpdateUser(localUser.id).catch(() => {});
-      }, 200);
-      
-      return () => clearTimeout(timeoutId);
+      fetchAndUpdateUser(localUser.id).catch(() => {});
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -671,23 +602,13 @@ export default function ProfileModal({
     }
   };
 
-  // تحديث المستخدم المحلي والخارجي - محسّن باستخدام المحسنات الجديدة
+  // تحديث المستخدم المحلي والخارجي - محسّن
   const updateUserData = (updates: Partial<ChatUser>) => {
     const updatedUser = { ...localUser, ...updates };
     setLocalUser(updatedUser);
 
     if (onUpdate) {
       onUpdate(updatedUser);
-    }
-
-    // تحديث الكاش المحسن
-    if (localUser?.id) {
-      setCachedProfile(localUser.id, updatedUser);
-      
-      // تحديث آخر تواجد إذا كان متوفراً
-      if (updates.lastSeen) {
-        setCachedLastSeen(localUser.id, new Date(updates.lastSeen));
-      }
     }
 
     // تحديث لون الخلفية والتأثير إذا تم تغييرهما

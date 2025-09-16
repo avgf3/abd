@@ -4,13 +4,6 @@
  */
 
 import type { ChatUser } from '@/types/chat';
-import { 
-  getCachedProfile, 
-  setCachedProfile,
-  getCachedLastSeen,
-  setCachedLastSeen
-} from './profileOptimizer';
-import { DEFAULT_ROOM_CONSTANTS } from './defaultRoomOptimizer';
 
 interface CachedUser {
   id: number;
@@ -120,12 +113,6 @@ class UserCacheManager {
 
     this.memoryCache.set(user.id, cached);
     this.saveToLocalStorage();
-    
-    // تحديث المحسن أيضاً
-    setCachedProfile(user.id, cached as any);
-    if (user.lastSeen) {
-      setCachedLastSeen(user.id, new Date(user.lastSeen));
-    }
   }
 
   /**
@@ -177,13 +164,11 @@ class UserCacheManager {
   }
 
   /**
-   * الحصول على بيانات مستخدم كاملة مع دمج البيانات الجديدة - محسن لمنع التذبذب
+   * الحصول على بيانات مستخدم كاملة مع دمج البيانات الجديدة
    */
   getUserWithMerge(userId: number, partialData?: Partial<ChatUser>): ChatUser {
-    // محاولة الحصول على البيانات من المحسن أولاً
-    const optimizedCached = getCachedProfile(userId);
     const cached = this.getUser(userId);
-    const base: Partial<CachedUser> = optimizedCached || cached || { id: userId, username: `مستخدم #${userId}` };
+    const base: Partial<CachedUser> = cached || { id: userId, username: `مستخدم #${userId}` };
     
     // دمج البيانات مع إعطاء الأولوية للبيانات الجديدة
     const merged: ChatUser = {
@@ -198,35 +183,15 @@ class UserCacheManager {
       profileEffect: partialData?.profileEffect || base.profileEffect,
       isOnline: partialData?.isOnline ?? base.isOnline ?? false,
       lastSeen: (partialData as any)?.lastSeen ?? (base as any)?.lastSeen ?? null,
-      // معالجة محسنة لـ currentRoom لمنع التذبذب باستخدام الثوابت الموحدة
-      currentRoom: (partialData as any)?.currentRoom ?? (base as any)?.currentRoom ?? DEFAULT_ROOM_CONSTANTS.GENERAL_ROOM_ID,
+      currentRoom: (partialData as any)?.currentRoom ?? (base as any)?.currentRoom ?? null,
     } as ChatUser;
 
-    // تحديث الكاش بالبيانات المدمجة فقط إذا كانت هناك تغييرات فعلية
-    if (partialData && this.hasSignificantChanges(base, partialData)) {
+    // تحديث الكاش بالبيانات المدمجة
+    if (partialData) {
       this.setUser(merged);
-      // تحديث المحسن أيضاً
-      setCachedProfile(userId, merged);
-      if (partialData.lastSeen) {
-        setCachedLastSeen(userId, new Date(partialData.lastSeen));
-      }
     }
 
     return merged;
-  }
-
-  /**
-   * التحقق من وجود تغييرات مهمة تستحق تحديث الكاش
-   */
-  private hasSignificantChanges(base: Partial<CachedUser>, newData: Partial<ChatUser>): boolean {
-    return (
-      (newData.username && newData.username !== base.username) ||
-      (newData.userType && newData.userType !== base.userType) ||
-      (newData.profileImage && newData.profileImage !== base.profileImage) ||
-      (typeof newData.isOnline !== 'undefined' && newData.isOnline !== base.isOnline) ||
-      ((newData as any).currentRoom && (newData as any).currentRoom !== (base as any)?.currentRoom) ||
-      ((newData as any).lastSeen && (newData as any).lastSeen !== (base as any)?.lastSeen)
-    );
   }
 
   /**
@@ -323,11 +288,6 @@ export const getCachedUsername = (userId: number, fallback?: string): string => 
 
 export const setCachedUser = (user: ChatUser | Partial<ChatUser> & { id: number }): void => {
   userCache.setUser(user);
-  // تحديث المحسن أيضاً
-  setCachedProfile(user.id, user as any);
-  if (user.lastSeen) {
-    setCachedLastSeen(user.id, new Date(user.lastSeen));
-  }
 };
 
 export const getCachedUser = (userId: number): CachedUser | null => {
