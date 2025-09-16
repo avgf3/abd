@@ -81,6 +81,22 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   const [profileUser, setProfileUser] = useState<ChatUser | null>(null);
   // 🔊 مشغل موسيقى البروفايل العالمي
   const profileAudioRef = useRef<HTMLAudioElement | null>(null);
+  
+  // تنظيف الذاكرة عند إغلاق المكون
+  useEffect(() => {
+    return () => {
+      if (profileAudioRef.current) {
+        try {
+          profileAudioRef.current.pause();
+          profileAudioRef.current.src = '';
+          profileAudioRef.current.load();
+          console.log('✅ تم تنظيف مشغل الصوت العالمي عند إغلاق المكون');
+        } catch (cleanupErr) {
+          console.warn('⚠️ تعذر تنظيف مشغل الصوت العالمي عند إغلاق المكون:', cleanupErr);
+        }
+      }
+    };
+  }, []);
   const [showSettings, setShowSettings] = useState(false);
   const [selectedPrivateUser, setSelectedPrivateUser] = useState<ChatUser | null>(null);
   const [showReportModal, setShowReportModal] = useState(false);
@@ -1287,7 +1303,17 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                 onClose={() => {
                   setShowProfile(false);
                   setProfileUser(null);
-                  try { profileAudioRef.current?.pause(); } catch {}
+                  // تنظيف أفضل للذاكرة
+                  try { 
+                    if (profileAudioRef.current) {
+                      profileAudioRef.current.pause();
+                      profileAudioRef.current.src = '';
+                      profileAudioRef.current.load();
+                      console.log('✅ تم تنظيف مشغل الصوت العالمي بنجاح');
+                    }
+                  } catch (cleanupErr) {
+                    console.warn('⚠️ تعذر تنظيف مشغل الصوت العالمي:', cleanupErr);
+                  }
                 }}
                 onUpdate={(updatedUser) => {
                   // تحديث بيانات المستخدم في قائمة المتصلون
@@ -1309,7 +1335,17 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                 onClose={() => {
                   setShowProfile(false);
                   setProfileUser(null);
-                  try { profileAudioRef.current?.pause(); } catch {}
+                  // تنظيف أفضل للذاكرة
+                  try { 
+                    if (profileAudioRef.current) {
+                      profileAudioRef.current.pause();
+                      profileAudioRef.current.src = '';
+                      profileAudioRef.current.load();
+                      console.log('✅ تم تنظيف مشغل الصوت العالمي بنجاح');
+                    }
+                  } catch (cleanupErr) {
+                    console.warn('⚠️ تعذر تنظيف مشغل الصوت العالمي:', cleanupErr);
+                  }
                 }}
                 onUpdate={(updatedUser) => {
                   // تحديث بيانات المستخدم الحالي في قائمة المتصلون
