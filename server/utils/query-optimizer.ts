@@ -50,7 +50,7 @@ export async function getOptimizedRoomMessages(
     return {
       messages: messagesWithSenders.map(({ message, sender }) => ({
         ...message,
-        sender: sender || undefined,
+        sender: sender || { id: message.senderId, username: `مستخدم #${message.senderId}`, userType: 'user' },
       })),
       total,
       hasMore: offset + limit < total,
@@ -188,7 +188,7 @@ export async function searchMessages(
 
     return results.map(({ message, sender }) => ({
       ...message,
-      sender: sender || undefined,
+      sender: sender || { id: message.senderId, username: `مستخدم #${message.senderId}`, userType: 'user' },
     }));
   } catch (error) {
     console.error('خطأ في البحث:', error);
