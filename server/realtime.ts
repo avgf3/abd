@@ -353,12 +353,12 @@ async function joinRoom(
   const users = await buildOnlineUsersForRoom(roomId);
   socket.emit('message', { type: 'roomJoined', roomId, users });
 
-  // بث userUpdated للمستخدم نفسه وللغرفة لتحديث currentRoom و lastSeen فوراً على الواجهة - محسن لمنع التذبذب
+  // بث userUpdated للمستخدم نفسه وللغرفة لتحديث currentRoom و lastSeen فوراً على الواجهة
   try {
     const updatedUser = { ...user, currentRoom: roomId, lastSeen: new Date() } as any;
     
-    // 💾 حفظ الغرفة الحالية في قاعدة البيانات مع التأكد من القيمة
-    await storage.setUserCurrentRoom(userId, roomId || 'general');
+    // 💾 حفظ الغرفة الحالية في قاعدة البيانات
+    await storage.setUserCurrentRoom(userId, roomId);
     
     // حدث موجه للمستخدم ذاته بجميع أجهزته
     io.to(userId.toString()).emit('message', { type: 'userUpdated', user: updatedUser });
@@ -427,10 +427,10 @@ async function leaveRoom(
     const entry = connectedUsers.get(userId);
     const baseUser = entry?.user || (await storage.getUser(userId));
     if (baseUser) {
-      const updatedUser = { ...baseUser, currentRoom: 'general', lastSeen: new Date() } as any;
+      const updatedUser = { ...baseUser, currentRoom: null, lastSeen: new Date() } as any;
       
-      // 💾 حفظ الغرفة الحالية كـ general في قاعدة البيانات بدلاً من null
-      await storage.setUserCurrentRoom(userId, 'general');
+      // 💾 حفظ الغرفة الحالية كـ null في قاعدة البيانات
+      await storage.setUserCurrentRoom(userId, null);
       
       io.to(userId.toString()).emit('message', { type: 'userUpdated', user: updatedUser });
       io.to(`room_${roomId}`).emit('message', { type: 'userUpdated', user: updatedUser });
@@ -1086,12 +1086,12 @@ export function setupRealtime(httpServer: HttpServer): IOServer<ClientToServerEv
                 roomId: lastRoom,
                 source: 'disconnect',
               });
-              // بث تحديث آخر تواجد للمستخدم المنفصل للواجهة فوراً - محسن لمنع التذبذب
+              // بث تحديث آخر تواجد للمستخدم المنفصل للواجهة فوراً
               try {
-                const updatedUser = { ...(entry.user || {}), lastSeen: new Date(), currentRoom: 'general' } as any;
+                const updatedUser = { ...(entry.user || {}), lastSeen: new Date(), currentRoom: null } as any;
                 
-                // 💾 حفظ الغرفة الحالية كـ general في قاعدة البيانات عند انقطاع الاتصال
-                await storage.setUserCurrentRoom(userId, 'general');
+                // 💾 حفظ الغرفة الحالية كـ null في قاعدة البيانات عند انقطاع الاتصال
+                await storage.setUserCurrentRoom(userId, null);
                 
                 io.to(`room_${lastRoom}`).emit('message', { type: 'userUpdated', user: updatedUser });
                 io.to(userId.toString()).emit('message', { type: 'userUpdated', user: updatedUser });

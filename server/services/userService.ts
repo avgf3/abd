@@ -92,21 +92,16 @@ export class UserService {
     }
   }
 
-  // تحديث الغرفة الحالية للمستخدم - محسن لمنع التذبذب
+  // تحديث الغرفة الحالية للمستخدم
   async setUserCurrentRoom(id: number, currentRoom: string | null): Promise<void> {
     try {
-      // التأكد من أن currentRoom ليس null أو undefined
-      const roomToSet = currentRoom || 'general';
-      
       await db
         .update(users)
         .set({
-          currentRoom: roomToSet,
+          currentRoom: currentRoom || 'general',
           lastSeen: new Date(),
         } as any)
         .where(eq(users.id, id));
-        
-      console.log(`✅ تم تحديث الغرفة الحالية للمستخدم ${id} إلى: ${roomToSet}`);
     } catch (error) {
       console.error('خطأ في تحديث الغرفة الحالية:', error);
     }
