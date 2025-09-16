@@ -89,12 +89,23 @@ class UserCacheManager {
   }
 
   /**
-   * تخزين أو تحديث بيانات مستخدم
+   * تخزين أو تحديث بيانات مستخدم - محسن لتجنب التكرار
    */
   setUser(user: ChatUser | Partial<ChatUser> & { id: number }): void {
     if (!user.id || !user.username) return;
 
     const existing = this.memoryCache.get(user.id);
+    
+    // تحديث الكاش فقط إذا كانت هناك تغييرات مهمة
+    const hasImportantChanges = !existing || 
+      existing.username !== user.username ||
+      existing.profileImage !== user.profileImage ||
+      existing.isOnline !== user.isOnline ||
+      existing.currentRoom !== (user as any).currentRoom ||
+      existing.lastSeen !== (user as any).lastSeen;
+
+    if (!hasImportantChanges) return;
+
     const cached: CachedUser = {
       id: user.id,
       username: user.username,

@@ -6,7 +6,7 @@ export interface ChatUser {
   role: 'guest' | 'member' | 'owner' | 'admin' | 'moderator' | 'system';
   isOnline: boolean;
   roomId?: string;
-  currentRoom?: string | null;
+  currentRoom?: string | null; // توحيد الحقل - إزالة التكرار
 
   // معلومات إضافية - تحسين type safety
   profileBanner?: string;
@@ -50,7 +50,7 @@ export interface ChatUser {
   isActive?: boolean;
   muteExpiry?: Date | null;
   banExpiry?: Date | null;
-  currentRoom?: string;
+  // تم حذف currentRoom المكرر هنا
   settings?: any;
 
   // تم إضافة خصائص جديدة

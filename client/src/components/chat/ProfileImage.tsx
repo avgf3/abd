@@ -3,7 +3,7 @@ import { useMemo, useEffect } from 'react';
 import { getUserLevelIcon } from '@/components/chat/UserRoleBadge';
 import type { ChatUser } from '@/types/chat';
 import { getImageSrc } from '@/utils/imageUtils';
-import { setCachedUser } from '@/utils/userCacheManager';
+import { getCachedUser, setCachedUser } from '@/utils/userCacheManager';
 
 interface ProfileImageProps {
   user: ChatUser;
@@ -45,12 +45,19 @@ export default function ProfileImage({
     return base;
   }, [user.profileImage, (user as any)?.avatarHash, (user as any)?.avatarVersion]);
 
-  // تحديث الكاش مع البيانات الحالية
+  // تحديث الكاش مع البيانات الحالية - محسن لتجنب التكرار
   useEffect(() => {
-    if (user?.id) {
-      setCachedUser(user);
+    if (user?.id && user?.username) {
+      // تحديث الكاش فقط عند تغيير البيانات المهمة
+      const currentCached = getCachedUser(user.id);
+      if (!currentCached || 
+          currentCached.username !== user.username ||
+          currentCached.profileImage !== user.profileImage ||
+          currentCached.isOnline !== user.isOnline) {
+        setCachedUser(user);
+      }
     }
-  }, [user]);
+  }, [user?.id, user?.username, user?.profileImage, user?.isOnline]);
 
   return (
     <div className="relative inline-block" onClick={onClick}>
