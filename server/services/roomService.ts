@@ -3,8 +3,6 @@ import path from 'path';
 
 import { db, dbType } from '../database-adapter';
 import { storage } from '../storage';
-import { optimizedUserService } from './optimizedUserService';
-import { DEFAULT_ROOM_CONSTANTS } from '../../client/src/utils/defaultRoomOptimizer';
 
 export interface Room {
   id: string;
@@ -195,7 +193,7 @@ class RoomService {
       // نقل المستخدمين المتصلين للغرفة العامة
       for (const [uId, currentRoomId] of this.userRooms.entries()) {
         if (currentRoomId === roomId) {
-          this.userRooms.set(uId, DEFAULT_ROOM_CONSTANTS.GENERAL_ROOM_ID);
+          this.userRooms.set(uId, 'general');
         }
       }
       // إبطال الكاش وزيادة النسخة
@@ -269,8 +267,8 @@ class RoomService {
       // 💾 حفظ في قاعدة البيانات
       await storage.joinRoom(userId, roomId);
       
-      // 💾 حفظ الغرفة الحالية في قاعدة البيانات باستخدام المحسن والثوابت الموحدة
-      await optimizedUserService.setUserCurrentRoom(userId, roomId || DEFAULT_ROOM_CONSTANTS.GENERAL_ROOM_ID);
+      // 💾 حفظ الغرفة الحالية في قاعدة البيانات مع التأكد من القيمة
+      await storage.setUserCurrentRoom(userId, roomId || 'general');
 
       // إبطال كاش مستخدمي الغرفة
       this.roomUsersCache.delete(roomId);
@@ -307,8 +305,8 @@ class RoomService {
       // 💾 حفظ في قاعدة البيانات
       if (db && dbType !== 'disabled') {
         await storage.leaveRoom(userId, roomId);
-        // 💾 تحديث الغرفة الحالية إلى الغرفة العامة في قاعدة البيانات باستخدام المحسن والثوابت الموحدة
-        await optimizedUserService.setUserCurrentRoom(userId, DEFAULT_ROOM_CONSTANTS.GENERAL_ROOM_ID);
+        // 💾 تحديث الغرفة الحالية إلى general في قاعدة البيانات بدلاً من null
+        await storage.setUserCurrentRoom(userId, 'general');
       }
 
       // إبطال كاش مستخدمي الغرفة
@@ -329,7 +327,7 @@ class RoomService {
       this.connectedRooms.get(roomId)!.delete(userId);
 
       // حذف الغرفة من الذاكرة إذا أصبحت فارغة (عدا الغرفة العامة)
-      if (this.connectedRooms.get(roomId)!.size === 0 && roomId !== DEFAULT_ROOM_CONSTANTS.GENERAL_ROOM_ID) {
+      if (this.connectedRooms.get(roomId)!.size === 0 && roomId !== 'general') {
         this.connectedRooms.delete(roomId);
       }
     }
@@ -581,7 +579,7 @@ class RoomService {
   cleanupRooms(): void {
     // 🧹 تنظيف الغرف الفارغة
     for (const [roomId, userSet] of this.connectedRooms.entries()) {
-      if (userSet.size === 0 && roomId !== DEFAULT_ROOM_CONSTANTS.GENERAL_ROOM_ID) {
+      if (userSet.size === 0 && roomId !== 'general') {
         this.connectedRooms.delete(roomId);
       }
     }
