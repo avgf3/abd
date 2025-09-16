@@ -243,7 +243,7 @@ export function getSocket(): Socket {
     auth: { deviceId },
     extraHeaders: { 'x-device-id': deviceId },
     // 🔥 إعدادات محسّنة للاستقرار والأداء
-    closeOnBeforeunload: true, // ✅ إغلاق صحيح عند إعادة التحميل
+    closeOnBeforeunload: false, // ✅ عدم إغلاق عند تغيير الصفحة للعمل في الخلفية
     // 🔥 تحسين إدارة الاتصال
     multiplex: true, // تمكين multiplexing للأداء الأفضل
     forceBase64: false, // استخدام binary للأداء الأفضل

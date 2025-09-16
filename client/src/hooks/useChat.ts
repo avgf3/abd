@@ -434,8 +434,37 @@ export const useChat = () => {
       }
     };
 
+    const handlePageHide = () => {
+      // ✅ عدم قطع الاتصال عند إخفاء الصفحة للعمل في الخلفية
+      console.log('الصفحة مخفية - الاتصال مستمر في الخلفية');
+    };
+
+    const handlePageShow = () => {
+      // ✅ التأكد من الاتصال عند العودة للواجهة الأمامية
+      console.log('الصفحة ظاهرة - التأكد من الاتصال');
+      if (socket.current && !socket.current.connected) {
+        try {
+          socket.current.connect();
+        } catch {}
+      }
+    };
+
+    const handleBeforeUnload = () => {
+      // ✅ عدم قطع الاتصال عند إعادة التحميل للعمل في الخلفية
+      console.log('إعادة تحميل - الاتصال مستمر في الخلفية');
+    };
+
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('pagehide', handlePageHide);
+    window.addEventListener('pageshow', handlePageShow);
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('pagehide', handlePageHide);
+      window.removeEventListener('pageshow', handlePageShow);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
   }, []);
 
   // 🔥 SIMPLIFIED Socket event handling - حذف التضارب
@@ -447,8 +476,8 @@ export const useChat = () => {
     
     let lastPingTime = 0;
     const pingId = window.setInterval(() => {
-      // ✅ إرسال ping فقط عندما تكون الصفحة مرئية
-      if (socketInstance.connected && isPageVisibleRef.current) {
+      // ✅ إرسال ping حتى لو كانت الصفحة مخفية للعمل في الخلفية
+      if (socketInstance.connected) {
         lastPingTime = Date.now();
         socketInstance.emit('client_ping');
       }
