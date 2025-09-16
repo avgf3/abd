@@ -565,7 +565,7 @@ export default function MessageArea({
                         />
                       </div>
                     )}
-                    <div className={`flex-1 min-w-0 flex ${isMobile ? 'flex-wrap items-start' : 'items-center'} gap-2`}>
+                    <div className={`flex-1 min-w-0 flex ${isMobile ? 'flex-col items-start' : 'items-center'} gap-2`}>
                       {message.sender && (message.sender.userType as any) !== 'bot' && (
                         <UserRoleBadge user={message.sender} showOnlyIcon={true} hideGuestAndGender={true} size={16} />
                       )}
@@ -601,7 +601,7 @@ export default function MessageArea({
                     )}
 
                     {/* Inline row: badge, name, content */}
-                    <div className={`flex-1 min-w-0 flex ${isMobile ? 'flex-wrap items-start' : 'items-center'} gap-2`}>
+                    <div className={`flex-1 min-w-0 flex ${isMobile ? 'flex-col items-start' : 'items-center'} gap-2`}>
                       {message.sender && (message.sender.userType as any) !== 'bot' && (
                         <UserRoleBadge user={message.sender} showOnlyIcon={true} hideGuestAndGender={true} size={16} />
                       )}
@@ -702,8 +702,10 @@ export default function MessageArea({
                           </button>
                         )}
 
+                      {/* Desktop: delete button - hidden on mobile */}
                       {currentUser &&
                         message.sender &&
+                        !isMobile &&
                         (() => {
                           const isOwner = currentUser.userType === 'owner';
                           const isAdmin = currentUser.userType === 'admin';
@@ -777,7 +779,7 @@ export default function MessageArea({
                         </div>
                       )}
 
-                      {/* Mobile: reactions in a three-dots menu */}
+                      {/* Mobile: reactions and delete in a three-dots menu */}
                       {currentUser && !message.isPrivate && isMobile && (
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -790,6 +792,35 @@ export default function MessageArea({
                             </button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="start" sideOffset={6} className="min-w-[160px]">
+                            {/* Delete button - moved here for mobile */}
+                            {(() => {
+                              const isOwner = currentUser.userType === 'owner';
+                              const isAdmin = currentUser.userType === 'admin';
+                              const isSender = currentUser.id === message.sender.id;
+                              const canDelete = isSender || isOwner || isAdmin;
+                              if (!canDelete) return null;
+                              const handleDelete = async () => {
+                                try {
+                                  await apiRequest(`/api/messages/${message.id}`, {
+                                    method: 'DELETE',
+                                    body: {
+                                      userId: currentUser.id,
+                                      roomId: message.roomId || 'general',
+                                    },
+                                  });
+                                } catch (e) {
+                                  console.error('خطأ في حذف الرسالة', e);
+                                }
+                              };
+                              return (
+                                <DropdownMenuItem onClick={handleDelete} className="text-red-600 hover:text-red-700">
+                                  <span className="mr-2">🗑️</span>
+                                  <span>حذف الرسالة</span>
+                                </DropdownMenuItem>
+                              );
+                            })()}
+                            
+                            {/* Reactions */}
                             {(['like', 'dislike', 'heart'] as const).map((r) => {
                               const isMine = message.myReaction === r;
                               const count = message.reactions?.[r] ?? 0;
