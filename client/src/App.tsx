@@ -10,6 +10,7 @@ import { ComposerStyleProvider } from '@/contexts/ComposerStyleContext';
 import ChatPage from '@/pages/chat';
 import ArabicChat from '@/pages/ArabicChat';
 import CountryChat from '@/pages/CountryChat';
+import CityChat from '@/pages/CityChat';
 import PrivacyPolicy from '@/pages/PrivacyPolicy';
 import TermsOfService from '@/pages/TermsOfService';
 
@@ -53,6 +54,41 @@ function Router() {
       <Route path="/iraq" component={CountryChat} />
       <Route path="/comoros" component={CountryChat} />
       <Route path="/djibouti" component={CountryChat} />
+      
+      {/* City-specific routes */}
+      {/* Oman Cities */}
+      <Route path="/oman/muscat" component={CityChat} />
+      <Route path="/oman/salalah" component={CityChat} />
+      <Route path="/oman/nizwa" component={CityChat} />
+      <Route path="/oman/sohar" component={CityChat} />
+      
+      {/* Egypt Cities */}
+      <Route path="/egypt/cairo" component={CityChat} />
+      <Route path="/egypt/alexandria" component={CityChat} />
+      <Route path="/egypt/giza" component={CityChat} />
+      
+      {/* Saudi Cities */}
+      <Route path="/saudi/riyadh" component={CityChat} />
+      <Route path="/saudi/jeddah" component={CityChat} />
+      <Route path="/saudi/makkah" component={CityChat} />
+      <Route path="/saudi/medina" component={CityChat} />
+      <Route path="/saudi/dammam" component={CityChat} />
+      
+      {/* UAE Cities */}
+      <Route path="/uae/dubai" component={CityChat} />
+      <Route path="/uae/abudhabi" component={CityChat} />
+      <Route path="/uae/sharjah" component={CityChat} />
+      
+      {/* Jordan Cities */}
+      <Route path="/jordan/amman" component={CityChat} />
+      <Route path="/jordan/zarqa" component={CityChat} />
+      <Route path="/jordan/irbid" component={CityChat} />
+      
+      {/* Palestine Cities */}
+      <Route path="/palestine/jerusalem" component={CityChat} />
+      <Route path="/palestine/gaza" component={CityChat} />
+      <Route path="/palestine/ramallah" component={CityChat} />
+      
       <Route component={ChatPage} />
     </Switch>
   );
