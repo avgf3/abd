@@ -1,5 +1,5 @@
 import { X } from 'lucide-react';
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -24,6 +24,58 @@ import { useStories } from '@/hooks/useStories';
 import { useRoomManager } from '@/hooks/useRoomManager';
 import { getSocket } from '@/lib/socket';
 
+// 🚀 نظام إدارة الحالة المحسن
+interface ProfileState {
+  isLoading: boolean;
+  currentEditType: string | null;
+  editValue: string;
+  localUser: ChatUser | null;
+  selectedTheme: string;
+  selectedEffect: string;
+  sendingPoints: boolean;
+  pointsToSend: string;
+  pointsSentNotification: {
+    show: boolean;
+    points: number;
+    recipientName: string;
+  };
+  friends: ChatUser[];
+  loadingFriends: boolean;
+  musicEnabled: boolean;
+  musicVolume: number;
+  audioError: boolean;
+  audioLoading: boolean;
+  isPlaying: boolean;
+  activeTab: 'info' | 'options' | 'other';
+  previewProfile: string | null;
+}
+
+// الحالة الأولية المحسنة
+const initialProfileState: ProfileState = {
+  isLoading: false,
+  currentEditType: null,
+  editValue: '',
+  localUser: null,
+  selectedTheme: '',
+  selectedEffect: 'none',
+  sendingPoints: false,
+  pointsToSend: '',
+  pointsSentNotification: {
+    show: false,
+    points: 0,
+    recipientName: '',
+  },
+  friends: [],
+  loadingFriends: false,
+  musicEnabled: true,
+  musicVolume: 70,
+  audioError: false,
+  audioLoading: false,
+  isPlaying: false,
+  activeTab: 'info',
+  previewProfile: null,
+};
+
 interface ProfileModalProps {
   user: ChatUser | null;
   currentUser: ChatUser | null;
@@ -34,6 +86,7 @@ interface ProfileModalProps {
   externalAudioManaged?: boolean;
 }
 
+// 🚀 المكون الرئيسي المحسن
 export default function ProfileModal({
   user,
   currentUser,
@@ -43,45 +96,492 @@ export default function ProfileModal({
   externalAudioManaged,
 }: ProfileModalProps) {
   const { toast } = useToast();
+  
+  // المراجع المحسنة
   const fileInputRef = useRef<HTMLInputElement>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const musicFileInputRef = useRef<HTMLInputElement>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [currentEditType, setCurrentEditType] = useState<string | null>(null);
-  const [editValue, setEditValue] = useState('');
-
-  // حالة محلية للمستخدم للتحديث الفوري
-  const [localUser, setLocalUser] = useState<ChatUser | null>(() => {
+  const audioRef = useRef<HTMLAudioElement>(null);
+  
+  // 🎯 إدارة الحالة الموحدة
+  const [state, setState] = useState<ProfileState>(() => {
+    const initialState = { ...initialProfileState };
     if (user?.id) {
-      // تهيئة فورية من الكاش لعرض فوري دون فراغات
       const cached = getCachedUserWithMerge(user.id, user || undefined);
-      return cached as any;
+      initialState.localUser = cached as any;
+      initialState.selectedTheme = user.profileBackgroundColor || '';
+      initialState.selectedEffect = user.profileEffect || 'none';
+      initialState.musicEnabled = user.profileMusicEnabled ?? true;
+      initialState.musicVolume = typeof user.profileMusicVolume === 'number' ? user.profileMusicVolume : 70;
     }
-    return user;
+    return initialState;
   });
-  // مزامنة حالة المستخدم المحلي عند تغيّر الخصائص القادمة من الأعلى
+  
+  // 🔧 دوال تحديث الحالة المحسنة
+  const updateState = useCallback((updates: Partial<ProfileState>) => {
+    setState(prev => ({ ...prev, ...updates }));
+  }, []);
+  
+  const updateLocalUser = useCallback((updates: Partial<ChatUser>) => {
+    setState(prev => {
+      if (!prev.localUser) return prev;
+      const updatedUser = { ...prev.localUser, ...updates };
+      setCachedUser(updatedUser);
+      return { ...prev, localUser: updatedUser };
+    });
+  }, []);
+  // 🎯 نظام إدارة البيانات المحسن
+  const [dataManager] = useState(() => ({
+    // منع التكرار في الطلبات
+    activeRequests: new Set<string>(),
+    lastFetchTime: 0,
+    debounceTimeouts: new Map<string, NodeJS.Timeout>(),
+    
+    // تسجيل الطلب النشط
+    startRequest: (key: string) => {
+      this.activeRequests.add(key);
+    },
+    
+    // إنهاء الطلب
+    endRequest: (key: string) => {
+      this.activeRequests.delete(key);
+    },
+    
+    // التحقق من وجود طلب نشط
+    hasActiveRequest: (key: string) => {
+      return this.activeRequests.has(key);
+    },
+    
+    // منع الطلبات المتكررة
+    debounceRequest: (key: string, callback: () => void, delay: number = 300) => {
+      const existingTimeout = this.debounceTimeouts.get(key);
+      if (existingTimeout) {
+        clearTimeout(existingTimeout);
+      }
+      
+      const timeout = setTimeout(() => {
+        this.debounceTimeouts.delete(key);
+        callback();
+      }, delay);
+      
+      this.debounceTimeouts.set(key, timeout);
+    },
+    
+    // تنظيف جميع المهلات
+    clearAllTimeouts: () => {
+      this.debounceTimeouts.forEach(timeout => clearTimeout(timeout));
+      this.debounceTimeouts.clear();
+    }
+  }));
+
+  // 🏠 نظام إدارة الغرف المحسن
+  const { rooms, fetchRooms } = useRoomManager({ autoRefresh: false });
+  
+  // معالجة محسنة للغرفة الحالية مع منع التذبذب
+  const resolvedRoomInfo = useMemo(() => {
+    const localUser = state.localUser;
+    if (!localUser) {
+      return { id: 'general', name: 'الدردشة العامة' };
+    }
+    
+    // تحديد معرف الغرفة
+    const roomId = (localUser as any)?.currentRoom || localUser?.roomId || 'general';
+    
+    // إذا كانت الغرفة عامة، نعيد القيم الافتراضية
+    if (roomId === 'general' || roomId === null || roomId === 'null') {
+      return { id: 'general', name: 'الدردشة العامة' };
+    }
+    
+    // البحث عن اسم الغرفة
+    const foundRoom = rooms.find((r) => String((r as any).id) === String(roomId));
+    const roomName = foundRoom ? (foundRoom as any).name : `غرفة ${roomId}`;
+    
+  // 🔄 نظام إدارة البيانات المحسن
+  const fetchAndUpdateUser = useCallback(async (userId: number, force: boolean = false) => {
+    const requestKey = `user_${userId}`;
+    
+    // منع التكرار إذا كان هناك طلب قيد التنفيذ
+    if (!force && dataManager.hasActiveRequest(requestKey)) {
+      return;
+    }
+    
+    // منع الطلبات المتكررة (أقل من ثانية واحدة)
+    const now = Date.now();
+    if (!force && now - dataManager.lastFetchTime < 1000) {
+      return;
+    }
+    
+    try {
+      dataManager.startRequest(requestKey);
+      updateState({ isLoading: true });
+      
+      const userData = await apiRequest(`/api/users/${userId}`);
+      
+      if (userData && userData.id) {
+        const updatedUser = {
+          ...userData,
+          currentRoom: userData.currentRoom ?? userData.roomId ?? null,
+        } as ChatUser;
+        
+        updateState({ 
+          localUser: updatedUser,
+          selectedTheme: userData.profileBackgroundColor || '',
+          selectedEffect: userData.profileEffect || 'none',
+          musicEnabled: userData.profileMusicEnabled ?? true,
+          musicVolume: typeof userData.profileMusicVolume === 'number' ? userData.profileMusicVolume : 70,
+        });
+        
+        setCachedUser(updatedUser);
+        
+        if (onUpdate) {
+          onUpdate(updatedUser);
+        }
+      }
+      
+      dataManager.lastFetchTime = now;
+    } catch (err: any) {
+      console.error('❌ خطأ في جلب بيانات المستخدم:', err);
+      toast({
+        title: 'خطأ',
+        description: err.message || 'فشل في تحديث بيانات الملف الشخصي',
+        variant: 'destructive',
+      });
+    } finally {
+      updateState({ isLoading: false });
+      dataManager.endRequest(requestKey);
+    }
+  // 👥 نظام إدارة الأصدقاء المحسن
+  const fetchFriends = useCallback(async (userId: number) => {
+    const requestKey = `friends_${userId}`;
+    
+    if (dataManager.hasActiveRequest(requestKey)) {
+      return;
+    }
+    
+    try {
+      dataManager.startRequest(requestKey);
+      updateState({ loadingFriends: true });
+      
+      const response = await fetch(`/api/friends/${userId}`);
+      if (!response.ok) {
+        throw new Error('فشل في جلب قائمة الأصدقاء');
+      }
+      
+      const data = await response.json();
+      if (data.friends) {
+        updateState({ friends: data.friends });
+      }
+    } catch (error) {
+      console.error('خطأ في جلب الأصدقاء:', error);
+      updateState({ friends: [] });
+    } finally {
+      updateState({ loadingFriends: false });
+      dataManager.endRequest(requestKey);
+    }
+  // 🏠 نظام إدارة الغرف المحسن
+  const fetchRoomsDebounced = useCallback(() => {
+    dataManager.debounceRequest('rooms', () => {
+      fetchRooms(false).catch((err) => {
+        console.error('خطأ في جلب الغرف:', err);
+      });
+    }, 500);
+  // 🎵 نظام إدارة الصوت المحسن
+  const audioManager = useMemo(() => ({
+    // تشغيل الصوت
+    play: async () => {
+      if (!audioRef.current || !state.localUser?.profileMusicUrl) return;
+      
+      try {
+        await audioRef.current.play();
+        updateState({ isPlaying: true, audioError: false });
+      } catch (err) {
+        console.error('خطأ في تشغيل الصوت:', err);
+        updateState({ isPlaying: false, audioError: true });
+      }
+    },
+    
+    // إيقاف الصوت
+    pause: () => {
+      if (!audioRef.current) return;
+      audioRef.current.pause();
+      updateState({ isPlaying: false });
+    },
+    
+    // إيقاف الصوت
+    stop: () => {
+      if (!audioRef.current) return;
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+      updateState({ isPlaying: false });
+    },
+    
+    // تنظيف الصوت
+    cleanup: () => {
+      if (!audioRef.current) return;
+      try {
+        audioRef.current.pause();
+        audioRef.current.src = '';
+        audioRef.current.load();
+        updateState({ isPlaying: false, audioError: false });
+      } catch (err) {
+        console.warn('تعذر تنظيف مشغل الصوت:', err);
+      }
+    },
+    
+    // تحديث مستوى الصوت
+    setVolume: (volume: number) => {
+      if (!audioRef.current) return;
+      try {
+        audioRef.current.volume = Math.max(0, Math.min(1, volume / 100));
+      } catch (err) {
+        console.warn('تعذر ضبط مستوى الصوت:', err);
+      }
+    }
+  // 🎯 نظام إدارة الأحداث المحسن
+  const eventManager = useMemo(() => ({
+    // تحديث المستخدم
+    updateUser: (updates: Partial<ChatUser>) => {
+      updateLocalUser(updates);
+    },
+    
+    // تحديث الحالة
+    updateState: (updates: Partial<ProfileState>) => {
+      updateState(updates);
+    },
+    
+    // إغلاق المكون
+    close: () => {
+      audioManager.cleanup();
+      dataManager.clearAllTimeouts();
+      onClose();
+    },
+    
+    // تحديث التبويب
+    setActiveTab: (tab: 'info' | 'options' | 'other') => {
+      updateState({ activeTab: tab });
+    },
+    
+    // تحديث نوع التحرير
+    setEditType: (type: string | null) => {
+      updateState({ currentEditType: type, editValue: '' });
+    },
+    
+    // تحديث قيمة التحرير
+    setEditValue: (value: string) => {
+      updateState({ editValue: value });
+    }
+  // 🔄 نظام إدارة الأحداث المحسن
+  const eventManager = useMemo(() => ({
+    // تحديث المستخدم
+    updateUser: (updates: Partial<ChatUser>) => {
+      updateLocalUser(updates);
+    },
+    
+    // تحديث الحالة
+    updateState: (updates: Partial<ProfileState>) => {
+      updateState(updates);
+    },
+    
+    // إغلاق المكون
+    close: () => {
+      audioManager.cleanup();
+      dataManager.clearAllTimeouts();
+      onClose();
+    },
+    
+    // تحديث التبويب
+    setActiveTab: (tab: 'info' | 'options' | 'other') => {
+      updateState({ activeTab: tab });
+    },
+    
+    // تحديث نوع التحرير
+    setEditType: (type: string | null) => {
+      updateState({ currentEditType: type, editValue: '' });
+    },
+    
+    // تحديث قيمة التحرير
+    setEditValue: (value: string) => {
+      updateState({ editValue: value });
+    }
+  // 🔄 نظام إدارة الأحداث المحسن
+  const eventManager = useMemo(() => ({
+    // تحديث المستخدم
+    updateUser: (updates: Partial<ChatUser>) => {
+      updateLocalUser(updates);
+    },
+    
+    // تحديث الحالة
+    updateState: (updates: Partial<ProfileState>) => {
+      updateState(updates);
+    },
+    
+    // إغلاق المكون
+    close: () => {
+      audioManager.cleanup();
+      dataManager.clearAllTimeouts();
+      onClose();
+    },
+    
+    // تحديث التبويب
+    setActiveTab: (tab: 'info' | 'options' | 'other') => {
+      updateState({ activeTab: tab });
+    },
+    
+    // تحديث نوع التحرير
+    setEditType: (type: string | null) => {
+      updateState({ currentEditType: type, editValue: '' });
+    },
+    
+    // تحديث قيمة التحرير
+    setEditValue: (value: string) => {
+      updateState({ editValue: value });
+    }
+  // 🔄 نظام إدارة الأحداث المحسن
+  const eventManager = useMemo(() => ({
+    // تحديث المستخدم
+    updateUser: (updates: Partial<ChatUser>) => {
+      updateLocalUser(updates);
+    },
+    
+    // تحديث الحالة
+    updateState: (updates: Partial<ProfileState>) => {
+      updateState(updates);
+    },
+    
+    // إغلاق المكون
+    close: () => {
+      audioManager.cleanup();
+      dataManager.clearAllTimeouts();
+      onClose();
+    },
+    
+    // تحديث التبويب
+    setActiveTab: (tab: 'info' | 'options' | 'other') => {
+      updateState({ activeTab: tab });
+    },
+    
+    // تحديث نوع التحرير
+    setEditType: (type: string | null) => {
+      updateState({ currentEditType: type, editValue: '' });
+    },
+    
+    // تحديث قيمة التحرير
+    setEditValue: (value: string) => {
+      updateState({ editValue: value });
+    }
+  // 🔄 useEffect المحسن - إدارة الأحداث بشكل موحد
   useEffect(() => {
+    // تحديث المستخدم المحلي عند تغيير المستخدم الخارجي
     if (user?.id) {
       const cached = getCachedUserWithMerge(user.id, user || undefined);
-      setLocalUser(cached as any);
+      updateState({ 
+        localUser: cached as any,
+        selectedTheme: user.profileBackgroundColor || '',
+        selectedEffect: user.profileEffect || 'none',
+        musicEnabled: user.profileMusicEnabled ?? true,
+        musicVolume: typeof user.profileMusicVolume === 'number' ? user.profileMusicVolume : 70,
+      });
     } else {
-      setLocalUser(user);
+      updateState({ localUser: user });
     }
-  }, [user]);
-
-  // تحديث الغرفة الحالية من قاعدة البيانات عند فتح الملف الشخصي - محسن لمنع التكرار
+  }, [user, updateState]);
+  
   useEffect(() => {
-    if (user?.id && (!localUser?.currentRoom || localUser.currentRoom === 'general')) {
-      // جلب البيانات المحدثة من الخادم إذا لم تكن الغرفة الحالية موجودة أو كانت عامة
-      const timeoutId = setTimeout(() => {
-        fetchAndUpdateUser(user.id);
-      }, 100); // تأخير قصير لمنع التكرار
-      
-      return () => clearTimeout(timeoutId);
+    // جلب بيانات المستخدم عند فتح الملف الشخصي
+    if (state.localUser?.id) {
+      dataManager.debounceRequest('initial_fetch', () => {
+        fetchAndUpdateUser(state.localUser!.id, true);
+      }, 200);
     }
-  }, [user?.id, localUser?.currentRoom]);
-  const [selectedTheme, setSelectedTheme] = useState(user?.profileBackgroundColor || '');
-  const [selectedEffect, setSelectedEffect] = useState(user?.profileEffect || 'none');
+  }, [state.localUser?.id, fetchAndUpdateUser, dataManager]);
+  
+  useEffect(() => {
+    // جلب الغرف عند فتح الملف الشخصي
+    fetchRoomsDebounced();
+  }, [fetchRoomsDebounced]);
+  
+  useEffect(() => {
+    // جلب الأصدقاء عند فتح تبويب الأصدقاء
+    if (state.localUser?.id && 
+        state.localUser.id !== currentUser?.id && 
+        state.activeTab === 'other') {
+      fetchFriends(state.localUser.id);
+    }
+  }, [state.localUser?.id, currentUser?.id, state.activeTab, fetchFriends]);
+  
+  useEffect(() => {
+    // تنظيف الموارد عند إغلاق المكون
+    return () => {
+      audioManager.cleanup();
+      dataManager.clearAllTimeouts();
+    };
+  // 🎯 نظام إدارة الأحداث المحسن
+  const eventManager = useMemo(() => ({
+    // تحديث المستخدم
+    updateUser: (updates: Partial<ChatUser>) => {
+      updateLocalUser(updates);
+    },
+    
+    // تحديث الحالة
+    updateState: (updates: Partial<ProfileState>) => {
+      updateState(updates);
+    },
+    
+    // إغلاق المكون
+    close: () => {
+      audioManager.cleanup();
+      dataManager.clearAllTimeouts();
+      onClose();
+    },
+    
+    // تحديث التبويب
+    setActiveTab: (tab: 'info' | 'options' | 'other') => {
+      updateState({ activeTab: tab });
+    },
+    
+    // تحديث نوع التحرير
+    setEditType: (type: string | null) => {
+      updateState({ currentEditType: type, editValue: '' });
+    },
+    
+    // تحديث قيمة التحرير
+    setEditValue: (value: string) => {
+      updateState({ editValue: value });
+    }
+  // 🎯 نظام إدارة الأحداث المحسن
+  const eventManager = useMemo(() => ({
+    // تحديث المستخدم
+    updateUser: (updates: Partial<ChatUser>) => {
+      updateLocalUser(updates);
+    },
+    
+    // تحديث الحالة
+    updateState: (updates: Partial<ProfileState>) => {
+      updateState(updates);
+    },
+    
+    // إغلاق المكون
+    close: () => {
+      audioManager.cleanup();
+      dataManager.clearAllTimeouts();
+      onClose();
+    },
+    
+    // تحديث التبويب
+    setActiveTab: (tab: 'info' | 'options' | 'other') => {
+      updateState({ activeTab: tab });
+    },
+    
+    // تحديث نوع التحرير
+    setEditType: (type: string | null) => {
+      updateState({ currentEditType: type, editValue: '' });
+    },
+    
+    // تحديث قيمة التحرير
+    setEditValue: (value: string) => {
+      updateState({ editValue: value });
+    }
+  }), [updateLocalUser, updateState, audioManager, dataManager, onClose]);
 
   // توحيد لون خلفية الملف الشخصي للأعضاء والزوار ليطابق لون البوت فقط داخل نافذة البروفايل
   const isMemberOrGuest =
