@@ -336,10 +336,13 @@ export default function UserContextMenu({
             <span className="text-lg">💬 رسالة خاصة</span>
           </ContextMenuItem>
 
-          <ContextMenuItem className="flex items-center gap-3 text-green-600 font-semibold bg-green-50 hover:bg-green-100 border border-green-200 rounded-lg p-2 cursor-pointer transition-all duration-200">
-            <UserCheck className="w-5 h-5" />
-            <span className="text-lg">👥 إضافة صديق</span>
-          </ContextMenuItem>
+          {/* زر إضافة صديق - مخفي للزوار */}
+          {currentUser && currentUser.userType !== 'guest' && (
+            <ContextMenuItem className="flex items-center gap-3 text-green-600 font-semibold bg-green-50 hover:bg-green-100 border border-green-200 rounded-lg p-2 cursor-pointer transition-all duration-200">
+              <UserCheck className="w-5 h-5" />
+              <span className="text-lg">👥 إضافة صديق</span>
+            </ContextMenuItem>
+          )}
 
           <div className="my-4 border-t-2 border-border"></div>
 
