@@ -434,9 +434,73 @@ export const useChat = () => {
       }
     };
 
+    const handlePageHide = () => {
+      // ✅ عدم قطع الاتصال عند إخفاء الصفحة للعمل في الخلفية
+      console.log('الصفحة مخفية - الاتصال مستمر في الخلفية');
+      
+      // ✅ تفعيل Service Worker للعمل في الخلفية
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.ready.then(registration => {
+          registration.active?.postMessage({ type: 'KEEP_ALIVE' });
+          registration.active?.postMessage({ type: 'BACKGROUND_SYNC' });
+        });
+      }
+    };
+
+    const handlePageShow = () => {
+      // ✅ التأكد من الاتصال عند العودة للواجهة الأمامية
+      console.log('الصفحة ظاهرة - التأكد من الاتصال');
+      if (socket.current && !socket.current.connected) {
+        try {
+          socket.current.connect();
+        } catch {}
+      }
+    };
+
+    const handleBeforeUnload = () => {
+      // ✅ عدم قطع الاتصال عند إعادة التحميل للعمل في الخلفية
+      console.log('إعادة تحميل - الاتصال مستمر في الخلفية');
+    };
+
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('pagehide', handlePageHide);
+    window.addEventListener('pageshow', handlePageShow);
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('pagehide', handlePageHide);
+      window.removeEventListener('pageshow', handlePageShow);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
   }, []);
+
+  // 🔥 معالجة الرسائل من Service Worker في الخلفية
+  useEffect(() => {
+    const handleServiceWorkerMessage = (event: MessageEvent) => {
+      if (event.data.type === 'NEW_MESSAGES') {
+        console.log('📨 تم استلام رسائل جديدة من الخلفية:', event.data.messages);
+        
+        // إضافة الرسائل الجديدة للحالة
+        event.data.messages.forEach((message: any) => {
+          dispatch({
+            type: 'ADD_MESSAGE',
+            payload: {
+              ...message,
+              roomId: message.roomId || state.currentRoom,
+            },
+          });
+        });
+      }
+    };
+
+    // الاستماع لرسائل Service Worker
+    navigator.serviceWorker?.addEventListener('message', handleServiceWorkerMessage);
+
+    return () => {
+      navigator.serviceWorker?.removeEventListener('message', handleServiceWorkerMessage);
+    };
+  }, [state.currentRoom]);
 
   // 🔥 SIMPLIFIED Socket event handling - حذف التضارب
   const setupSocketListeners = useCallback((socketInstance: Socket) => {
@@ -447,8 +511,8 @@ export const useChat = () => {
     
     let lastPingTime = 0;
     const pingId = window.setInterval(() => {
-      // ✅ إرسال ping فقط عندما تكون الصفحة مرئية
-      if (socketInstance.connected && isPageVisibleRef.current) {
+      // ✅ إرسال ping حتى لو كانت الصفحة مخفية للعمل في الخلفية
+      if (socketInstance.connected) {
         lastPingTime = Date.now();
         socketInstance.emit('client_ping');
       }
