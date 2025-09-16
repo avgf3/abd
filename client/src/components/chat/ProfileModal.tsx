@@ -59,23 +59,33 @@ export default function ProfileModal({
     }
     return user;
   });
-  // مزامنة حالة المستخدم المحلي عند تغيّر الخصائص القادمة من الأعلى
+  // إدارة المستخدم والبيانات الأساسية - دمج useEffect المتشابهة
   useEffect(() => {
+    // مزامنة المستخدم
     if (user?.id) {
       const cached = getCachedUserWithMerge(user.id, user || undefined);
       setLocalUser(cached as any);
     } else {
       setLocalUser(user);
     }
-  }, [user]);
-
-  // تحديث الغرفة الحالية من قاعدة البيانات عند فتح الملف الشخصي
-  useEffect(() => {
+    
+    // تحديث الحالة المحلية
+    if (user) {
+      setSelectedTheme(user.profileBackgroundColor || '');
+      setSelectedEffect(user.profileEffect || 'none');
+      setMusicTitle(user.profileMusicTitle || '');
+    }
+    
+    // جلب البيانات المفقودة
     if (user?.id && !localUser?.currentRoom) {
-      // جلب البيانات المحدثة من الخادم إذا لم تكن الغرفة الحالية موجودة
       fetchAndUpdateUser(user.id);
     }
-  }, [user?.id, localUser?.currentRoom]);
+    
+    // جلب فوري عند فتح النافذة
+    if (localUser?.id) {
+      fetchAndUpdateUser(localUser.id).catch(() => {});
+    }
+  }, [user, localUser?.currentRoom, localUser?.id]);
   const [selectedTheme, setSelectedTheme] = useState(user?.profileBackgroundColor || '');
   const [selectedEffect, setSelectedEffect] = useState(user?.profileEffect || 'none');
 
@@ -103,21 +113,6 @@ export default function ProfileModal({
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [musicTitle, setMusicTitle] = useState(localUser?.profileMusicTitle || '');
   
-  // تنظيف الذاكرة عند إغلاق المكون
-  useEffect(() => {
-    return () => {
-      if (audioRef.current) {
-        try {
-          audioRef.current.pause();
-          audioRef.current.src = '';
-          audioRef.current.load();
-          console.log('✅ تم تنظيف مشغل الصوت عند إغلاق المكون');
-        } catch (cleanupErr) {
-          console.warn('⚠️ تعذر تنظيف مشغل الصوت عند إغلاق المكون:', cleanupErr);
-        }
-      }
-    };
-  }, []);
 
   // قائمة الأصدقاء
   const [friends, setFriends] = useState<ChatUser[]>([]);
@@ -137,19 +132,25 @@ export default function ProfileModal({
 
   // ===== آخر تواجد + اسم الغرفة =====
   const { rooms, fetchRooms } = useRoomManager({ autoRefresh: false });
-  // جلب أسماء الغرف فقط عند فتح النافذة لأول مرة أو تغيّر الغرفة المعروضة
+  // إدارة الغرف والاتصال - دمج useEffect المتشابهة
   useEffect(() => {
+    // جلب الغرف
     let didFetch = false;
     if (!didFetch) {
       fetchRooms(false).catch(() => {});
       didFetch = true;
     }
-  }, [fetchRooms]);
-  useEffect(() => {
+    
+    // جلب الغرف عند تغيير الغرفة
     if ((localUser as any)?.currentRoom) {
       fetchRooms(false).catch(() => {});
     }
-  }, [(localUser as any)?.currentRoom, fetchRooms]);
+    
+    // جلب الأصدقاء
+    if (localUser?.id && localUser.id !== currentUser?.id && activeTab === 'other') {
+      fetchFriends(localUser.id);
+    }
+  }, [fetchRooms, (localUser as any)?.currentRoom, localUser?.id, currentUser?.id, activeTab]);
 
   // تم حذف formatAmPmTime لأنها غير مستخدمة
 
@@ -205,15 +206,14 @@ export default function ProfileModal({
   const formattedLastSeen = formatLastSeenWithRoom(localUser?.lastSeen as any, resolvedRoomName);
   // تحديث حي لنص "آخر تواجد" كل 30 ثانية لعرض أكثر دقة
   const [, forceRerenderTick] = useState(0);
+  // إدارة السوكيت والتنظيف - دمج useEffect المتشابهة
   useEffect(() => {
+    // تحديث آخر تواجد
     const intervalId = window.setInterval(() => {
       forceRerenderTick((t) => (t + 1) % 1000);
-    }, 30000); // تحديث كل 30 ثانية بدلاً من 60 ثانية
-    return () => clearInterval(intervalId);
-  }, []);
-
-  // الاشتراك في أحداث السوكِت لتحديث آخر تواجد للمستخدمين الآخرين أيضاً
-  useEffect(() => {
+    }, 30000);
+    
+    // الاشتراك في السوكيت
     const socket = getSocket();
     const handleUserConnected = (payload: any) => {
       const incoming = payload?.user || payload;
@@ -222,21 +222,19 @@ export default function ProfileModal({
         if (!prev) return prev;
         const next: any = { ...prev, isOnline: true };
         if (incoming.currentRoom) next.currentRoom = incoming.currentRoom;
-        // تحديث الكاش فوراً
         setCachedUser({ id: next.id, username: next.username, isOnline: true, currentRoom: next.currentRoom });
         return next;
       });
     };
+    
     const handleUserDisconnected = (payload: any) => {
       const uid = payload?.userId || payload?.id;
       if (!uid || uid !== localUser?.id) return;
       setLocalUser((prev) => (prev ? ({ ...prev, isOnline: false } as any) : prev));
       setCachedUser({ id: uid, username: localUser?.username || `مستخدم #${uid}`, isOnline: false });
-      // جلب من السيرفر للحصول على lastSeen المحدث بعد الانفصال
       fetchAndUpdateUser(uid).catch(() => {});
     };
-
-    // الاستماع لتحديثات userUpdated لتحديث lastSeen و currentRoom فورياً في نافذة البروفايل
+    
     const handleUserUpdated = (payload: any) => {
       try {
         const u = payload?.user || payload;
@@ -258,20 +256,32 @@ export default function ProfileModal({
         });
       } catch {}
     };
-
+    
     socket.on('userConnected', handleUserConnected);
     socket.on('userDisconnected', handleUserDisconnected);
     socket.on('message', handleUserUpdated);
+    
+    // تنظيف الذاكرة
     return () => {
+      clearInterval(intervalId);
       socket.off('userConnected', handleUserConnected);
       socket.off('userDisconnected', handleUserDisconnected);
       socket.off('message', handleUserUpdated);
+      
+      if (audioRef.current) {
+        try {
+          audioRef.current.pause();
+          audioRef.current.src = '';
+          audioRef.current.load();
+        } catch {}
+      }
     };
   }, [localUser?.id]);
   const canShowLastSeen = (((localUser as any)?.privacy?.showLastSeen ?? (localUser as any)?.showLastSeen) ?? true) !== false;
   
-  // ضبط مستوى الصوت عند تحميل الصوت
+  // إدارة الصوت والموسيقى - دمج useEffect المتشابهة
   useEffect(() => {
+    // ضبط مستوى الصوت
     if (audioRef.current && localUser?.profileMusicUrl) {
       try {
         audioRef.current.volume = Math.max(0, Math.min(1, musicVolume / 100));
@@ -280,17 +290,26 @@ export default function ProfileModal({
         console.warn('⚠️ تعذر ضبط مستوى الصوت:', volumeErr);
       }
     }
-  }, [musicVolume, localUser?.profileMusicUrl]);
-  
-  // تشغيل الموسيقى تلقائياً عند فتح البروفايل (معطّل إذا كانت مُدارة خارجياً)
-  useEffect(() => {
+    
+    // تحديث حالة التشغيل
+    const audio = audioRef.current;
+    if (!audio) return;
+    
+    const handlePlay = () => setIsPlaying(true);
+    const handlePause = () => setIsPlaying(false);
+    const handleEnded = () => setIsPlaying(false);
+    
+    audio.addEventListener('play', handlePlay);
+    audio.addEventListener('pause', handlePause);
+    audio.addEventListener('ended', handleEnded);
+    
+    // تشغيل الموسيقى تلقائياً
     if (externalAudioManaged) return;
     if ((currentUser as any)?.globalSoundEnabled === false) return;
     if (localUser?.profileMusicUrl && musicEnabled && audioRef.current) {
       let attempts = 0;
       const maxAttempts = 3;
       
-      // محاولة التشغيل التلقائي مع إعادة المحاولة
       const playAudio = async () => {
         if (!audioRef.current || attempts >= maxAttempts) return;
         
@@ -299,48 +318,32 @@ export default function ProfileModal({
           setAudioLoading(true);
           setAudioError(false);
           
-          // ضبط مستوى الصوت
-          try {
-            audioRef.current.volume = Math.max(0, Math.min(1, musicVolume / 100));
-            console.log(`✅ تم ضبط مستوى الصوت إلى ${musicVolume}%`);
-          } catch (volumeErr) {
-            console.warn('⚠️ تعذر ضبط مستوى الصوت:', volumeErr);
-          }
-          
-          // محاولة التشغيل العادي أولاً
           await audioRef.current.play();
           setIsPlaying(true);
-          } catch (err: any) {
-          // إذا فشلت المحاولة الأولى، نحاول مع الصوت المكتوم
+        } catch (err: any) {
           if (attempts === 1 && audioRef.current) {
             try {
               audioRef.current.muted = true;
               await audioRef.current.play();
-              // بعد التشغيل، نرفع الكتم تدريجياً
               setTimeout(() => {
                 if (audioRef.current) {
                   audioRef.current.muted = false;
                 }
               }, 100);
               setIsPlaying(true);
-              } catch (mutedErr) {
-              // إعادة المحاولة بعد تأخير
+            } catch (mutedErr) {
               setTimeout(playAudio, 1000);
             }
           } else if (attempts < maxAttempts) {
-            // إعادة المحاولة بعد تأخير أطول
             setTimeout(playAudio, 1500);
           } else {
-            // بعد فشل كل المحاولات، ننتظر تفاعل المستخدم
-            // إضافة مستمع للنقر لمحاولة التشغيل عند أول تفاعل
             const handleUserInteraction = async () => {
               if (audioRef.current && audioRef.current.paused) {
                 try {
                   await audioRef.current.play();
                   setIsPlaying(true);
-                  } catch {}
+                } catch {}
               }
-              // إزالة المستمع بعد أول تفاعل
               document.removeEventListener('click', handleUserInteraction);
               document.removeEventListener('touchstart', handleUserInteraction);
             };
@@ -353,17 +356,24 @@ export default function ProfileModal({
         }
       };
       
-      // تأخير بسيط للسماح بتحميل الصوت
       const timer = setTimeout(playAudio, 300);
       
       return () => {
         clearTimeout(timer);
-        // تنظيف المستمعات عند إلغاء المكون
         document.removeEventListener('click', playAudio);
         document.removeEventListener('touchstart', playAudio);
+        audio.removeEventListener('play', handlePlay);
+        audio.removeEventListener('pause', handlePause);
+        audio.removeEventListener('ended', handleEnded);
       };
     }
-  }, [localUser?.profileMusicUrl, musicEnabled, musicVolume, externalAudioManaged, (currentUser as any)?.globalSoundEnabled]);
+    
+    return () => {
+      audio.removeEventListener('play', handlePlay);
+      audio.removeEventListener('pause', handlePause);
+      audio.removeEventListener('ended', handleEnded);
+    };
+  }, [musicVolume, localUser?.profileMusicUrl, externalAudioManaged, currentUser, musicEnabled]);
   
   // معالج أخطاء الصوت - محسن
   const handleAudioError = (event: any) => {
@@ -422,46 +432,7 @@ export default function ProfileModal({
     }
   };
   
-  // تحديث حالة التشغيل
-  useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-    
-    const handlePlay = () => setIsPlaying(true);
-    const handlePause = () => setIsPlaying(false);
-    const handleEnded = () => setIsPlaying(false);
-    
-    audio.addEventListener('play', handlePlay);
-    audio.addEventListener('pause', handlePause);
-    audio.addEventListener('ended', handleEnded);
-    
-    return () => {
-      audio.removeEventListener('play', handlePlay);
-      audio.removeEventListener('pause', handlePause);
-      audio.removeEventListener('ended', handleEnded);
-    };
-  }, [localUser?.profileMusicUrl]);
-  
 
-  // تحديث الحالة المحلية عند تغيير المستخدم
-  useEffect(() => {
-    if (user) {
-      setLocalUser(user);
-      setSelectedTheme(user.profileBackgroundColor || '');
-      setSelectedEffect(user.profileEffect || 'none');
-      setMusicTitle(user.profileMusicTitle || '');
-      setMusicEnabled(user.profileMusicEnabled ?? true);
-      setMusicVolume(typeof user.profileMusicVolume === 'number' ? user.profileMusicVolume : 70);
-      
-    }
-  }, [user]);
-
-  // جلب الأصدقاء عند تغيير المستخدم أو فتح تبويب الأصدقاء (للمستخدمين الآخرين فقط)
-  useEffect(() => {
-    if (localUser?.id && localUser.id !== currentUser?.id && activeTab === 'other') {
-      fetchFriends(localUser.id);
-    }
-  }, [localUser?.id, currentUser?.id, activeTab]);
   // Stories
   const { fetchMine } = useStories({ autoRefresh: false });
 
@@ -551,13 +522,6 @@ export default function ProfileModal({
     }
   };
 
-  // جلب فوري عند فتح النافذة لضمان عدم الفراغ، مع حماية من التكرار
-  useEffect(() => {
-    if (localUser?.id) {
-      fetchAndUpdateUser(localUser.id).catch(() => {});
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   // تحديث إعداد خصوصية الرسائل الخاصة
   const updateDmPrivacy = async (value: 'all' | 'friends' | 'none') => {
