@@ -350,7 +350,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           type: 'avatar',
           originalName: req.file.originalname,
           mimeType: req.file.mimetype,
-          priority: 'balanced'
+          priority: 'balanced' as any
         });
 
         // تنظيف الملف المؤقت
@@ -485,7 +485,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           type: 'banner',
           originalName: req.file.originalname,
           mimeType: req.file.mimetype,
-          priority: 'balanced'
+          priority: 'balanced' as any
         });
 
         // تنظيف الملف المؤقت
@@ -5050,7 +5050,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           type: 'avatar',
           originalName: req.file.originalname,
           mimeType: req.file.mimetype,
-          priority: 'balanced'
+          priority: 'balanced' as any
         } as any);
         
         // تنظيف الملف المؤقت المرفوع

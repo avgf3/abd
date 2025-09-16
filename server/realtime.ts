@@ -1166,9 +1166,11 @@ async function updateLastSeenForConnectedUsers() {
     for (const [userId, entry] of connectedUsers.entries()) {
       if (entry.sockets.size > 0) { // المستخدم متصل
         updatePromises.push(
-          storage.updateUser(userId, { lastSeen: now }).catch((error) => {
+          storage.updateUser(userId, { lastSeen: now }).then(() => {
+            // تم التحديث بنجاح
+          }).catch((error) => {
             console.error(`خطأ في تحديث lastSeen للمستخدم ${userId}:`, error);
-          })
+          });
         );
       }
     }
