@@ -437,6 +437,14 @@ export const useChat = () => {
     const handlePageHide = () => {
       // ✅ عدم قطع الاتصال عند إخفاء الصفحة للعمل في الخلفية
       console.log('الصفحة مخفية - الاتصال مستمر في الخلفية');
+      
+      // ✅ تفعيل Service Worker للعمل في الخلفية
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.ready.then(registration => {
+          registration.active?.postMessage({ type: 'KEEP_ALIVE' });
+          registration.active?.postMessage({ type: 'BACKGROUND_SYNC' });
+        });
+      }
     };
 
     const handlePageShow = () => {
@@ -466,6 +474,33 @@ export const useChat = () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
   }, []);
+
+  // 🔥 معالجة الرسائل من Service Worker في الخلفية
+  useEffect(() => {
+    const handleServiceWorkerMessage = (event: MessageEvent) => {
+      if (event.data.type === 'NEW_MESSAGES') {
+        console.log('📨 تم استلام رسائل جديدة من الخلفية:', event.data.messages);
+        
+        // إضافة الرسائل الجديدة للحالة
+        event.data.messages.forEach((message: any) => {
+          dispatch({
+            type: 'ADD_MESSAGE',
+            payload: {
+              ...message,
+              roomId: message.roomId || state.currentRoom,
+            },
+          });
+        });
+      }
+    };
+
+    // الاستماع لرسائل Service Worker
+    navigator.serviceWorker?.addEventListener('message', handleServiceWorkerMessage);
+
+    return () => {
+      navigator.serviceWorker?.removeEventListener('message', handleServiceWorkerMessage);
+    };
+  }, [state.currentRoom]);
 
   // 🔥 SIMPLIFIED Socket event handling - حذف التضارب
   const setupSocketListeners = useCallback((socketInstance: Socket) => {

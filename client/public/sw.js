@@ -1,4 +1,4 @@
-/* Simple Service Worker for caching static assets and small JSON */
+/* Service Worker للعمل الكامل في الخلفية مع الرسائل */
 const VERSION = 'v1';
 const STATIC_CACHE = `static-${VERSION}`;
 
@@ -14,6 +14,84 @@ self.addEventListener('activate', (event) => {
 	);
 	self.clients.claim();
 });
+
+// 🔥 إضافة معالجة الرسائل في الخلفية
+self.addEventListener('message', event => {
+  if (event.data.type === 'KEEP_ALIVE') {
+    // ✅ الحفاظ على الاتصال في الخلفية
+    event.waitUntil(keepConnectionAlive());
+  }
+  
+  if (event.data.type === 'BACKGROUND_SYNC') {
+    // ✅ مزامنة الرسائل في الخلفية
+    event.waitUntil(syncMessagesInBackground());
+  }
+});
+
+// 🔥 الحفاظ على الاتصال في الخلفية
+const keepConnectionAlive = async () => {
+  console.log('🔄 بدء الحفاظ على الاتصال في الخلفية');
+  
+  // إرسال ping دوري للخادم
+  const pingInterval = setInterval(async () => {
+    try {
+      const response = await fetch('/api/ping', { 
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          timestamp: Date.now(),
+          source: 'service-worker'
+        })
+      });
+      
+      if (response.ok) {
+        console.log('✅ Ping ناجح من الخلفية');
+      }
+    } catch (error) {
+      console.log('❌ فشل في إرسال ping من الخلفية:', error);
+    }
+  }, 30000); // كل 30 ثانية
+  
+  // إيقاف Ping بعد 10 دقائق لتوفير البطارية
+  setTimeout(() => {
+    clearInterval(pingInterval);
+    console.log('⏹️ توقف Ping في الخلفية');
+  }, 600000); // 10 دقائق
+};
+
+// 🔥 مزامنة الرسائل في الخلفية
+const syncMessagesInBackground = async () => {
+  console.log('📨 بدء مزامنة الرسائل في الخلفية');
+  
+  try {
+    // جلب الرسائل الجديدة
+    const response = await fetch('/api/messages/latest', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    });
+    
+    if (response.ok) {
+      const messages = await response.json();
+      
+      // إرسال الرسائل للصفحة المفتوحة
+      const clients = await self.clients.matchAll();
+      clients.forEach(client => {
+        client.postMessage({
+          type: 'NEW_MESSAGES',
+          messages: messages
+        });
+      });
+      
+      console.log(`📨 تم مزامنة ${messages.length} رسالة في الخلفية`);
+    }
+  } catch (error) {
+    console.log('❌ فشل في مزامنة الرسائل:', error);
+  }
+};
 
 function isSameOrigin(url) {
 	try {
