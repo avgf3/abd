@@ -11,22 +11,54 @@ type StoredSession = {
   token?: string;
   roomId?: string;
   wallTab?: string;
+  lastAuthTime?: number;
+  isAuthenticated?: boolean;
 };
 
 export function saveSession(partial: Partial<StoredSession>) {
   try {
     const existing = getSession();
-    const merged: StoredSession = { ...existing, ...partial };
+    const merged: StoredSession = { 
+      ...existing, 
+      ...partial,
+      lastAuthTime: partial.token ? Date.now() : existing.lastAuthTime,
+      isAuthenticated: !!partial.token || !!partial.userId
+    };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
-  } catch {}
+    
+    // حفظ الرمز المميز في كوكي أيضاً للاستمرارية
+    if (partial.token) {
+      document.cookie = `auth_token=${partial.token}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`;
+    }
+  } catch (error) {
+    console.warn('فشل في حفظ الجلسة:', error);
+  }
 }
 
 export function getSession(): StoredSession {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return {};
-    return JSON.parse(raw) as StoredSession;
-  } catch {
+    let session: StoredSession = {};
+    
+    if (raw) {
+      session = JSON.parse(raw) as StoredSession;
+    }
+    
+    // محاولة استرداد الرمز المميز من الكوكي إذا لم يكن موجوداً في localStorage
+    if (!session.token) {
+      const cookies = document.cookie.split(';');
+      for (const cookie of cookies) {
+        const [name, value] = cookie.trim().split('=');
+        if (name === 'auth_token' && value) {
+          session.token = value;
+          break;
+        }
+      }
+    }
+    
+    return session;
+  } catch (error) {
+    console.warn('فشل في قراءة الجلسة:', error);
     return {};
   }
 }
