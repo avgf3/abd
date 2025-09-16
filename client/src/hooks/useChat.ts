@@ -437,14 +437,7 @@ export const useChat = () => {
     const handlePageHide = () => {
       // ✅ عدم قطع الاتصال عند إخفاء الصفحة للعمل في الخلفية
       console.log('الصفحة مخفية - الاتصال مستمر في الخلفية');
-      
-      // ✅ تعطيل Service Worker مؤقتاً لتجنب المشاكل
-      // if ('serviceWorker' in navigator) {
-      //   navigator.serviceWorker.ready.then(registration => {
-      //     registration.active?.postMessage({ type: 'KEEP_ALIVE' });
-      //     registration.active?.postMessage({ type: 'BACKGROUND_SYNC' });
-      //   });
-      // }
+      // لا توجد تحديثات أو ping - الاتصال مستمر فقط
     };
 
     const handlePageShow = () => {
@@ -511,12 +504,15 @@ export const useChat = () => {
     
     let lastPingTime = 0;
     const pingId = window.setInterval(() => {
-      // ✅ إرسال ping حتى لو كانت الصفحة مخفية للعمل في الخلفية
+      // ✅ إرسال ping مستمر للحفاظ على الاتصال
       if (socketInstance.connected) {
         lastPingTime = Date.now();
         socketInstance.emit('client_ping');
+      } else {
+        // محاولة إعادة الاتصال إذا انقطع
+        socketInstance.connect();
       }
-    }, 20000);
+    }, 30000); // ping كل 30 ثانية للحفاظ على الاتصال المستمر
     pingIntervalRef.current = pingId;
     
     // 🔥 قياس الكمون وتسجيل حالة الاتصال

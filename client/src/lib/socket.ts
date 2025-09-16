@@ -229,12 +229,12 @@ export function getSocket(): Socket {
     transports: ['websocket', 'polling'],
     upgrade: true,
     rememberUpgrade: true, // تذكر الترقية الناجحة
-    autoConnect: false, // إصلاح: تعطيل الاتصال التلقائي لتجنب مشاكل المصادقة
+    autoConnect: true, // اتصال تلقائي مستمر
     reconnection: true,
     // 🔥 تحسين إعادة الاتصال - محاولات محدودة مع تدرج ذكي
-    reconnectionAttempts: isProduction ? 10 : 5, // محاولات محدودة بدلاً من لانهائية
-    reconnectionDelay: isDevelopment ? 1000 : 2000, // تقليل التأخير في التطوير
-    reconnectionDelayMax: isProduction ? 10000 : 5000, // تقليل الحد الأقصى
+    reconnectionAttempts: Infinity, // محاولات لا نهائية للاتصال المستمر
+    reconnectionDelay: 1000, // إعادة الاتصال بسرعة
+    reconnectionDelayMax: 5000, // حد أقصى قصير
     randomizationFactor: 0.3, // تقليل العشوائية لاتصال أسرع
     // 🔥 تحسين أوقات الاستجابة
     timeout: isDevelopment ? 15000 : 20000, // timeout أقل لاستجابة أسرع
@@ -243,7 +243,7 @@ export function getSocket(): Socket {
     auth: { deviceId },
     extraHeaders: { 'x-device-id': deviceId },
     // 🔥 إعدادات محسّنة للاستقرار والأداء
-    closeOnBeforeunload: false, // ✅ عدم إغلاق عند تغيير الصفحة للعمل في الخلفية
+    closeOnBeforeunload: false, // عدم إغلاق الاتصال أبداً للحفاظ على الاتصال المستمر
     // 🔥 تحسين إدارة الاتصال
     multiplex: true, // تمكين multiplexing للأداء الأفضل
     forceBase64: false, // استخدام binary للأداء الأفضل
