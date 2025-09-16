@@ -502,18 +502,17 @@ export const useChat = () => {
       clearInterval(pingIntervalRef.current);
     }
     
-    let lastPingTime = 0;
-    const pingId = window.setInterval(() => {
-      // ✅ إرسال ping مستمر للحفاظ على الاتصال
-      if (socketInstance.connected) {
-        lastPingTime = Date.now();
-        socketInstance.emit('client_ping');
-      } else {
-        // محاولة إعادة الاتصال إذا انقطع
-        socketInstance.connect();
-      }
-    }, 30000); // ping كل 30 ثانية للحفاظ على الاتصال المستمر
-    pingIntervalRef.current = pingId;
+    // تم إزالة ping تلقائي - Socket.io يتولى إدارة الاتصال تلقائياً
+    // let lastPingTime = 0;
+    // const pingId = window.setInterval(() => {
+    //   if (socketInstance.connected) {
+    //     lastPingTime = Date.now();
+    //     socketInstance.emit('client_ping');
+    //   } else {
+    //     socketInstance.connect();
+    //   }
+    // }, 60000);
+    // pingIntervalRef.current = pingId;
     
     // 🔥 قياس الكمون وتسجيل حالة الاتصال
     socketInstance.on('client_pong', (data: any) => {
