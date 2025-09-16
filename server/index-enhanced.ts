@@ -201,13 +201,15 @@ async function initializeApp() {
     const { store: sessionStore } = initializeRedis();
     
     // Initialize database and session
-    const { sessionMiddleware, io } = await initializeSystem(app, server, sessionStore);
+    const systemResult = await initializeSystem() as any;
+    const sessionMiddleware = systemResult.sessionMiddleware;
+    const io = systemResult.io;
     
     // Setup Socket.IO Redis Adapter for clustering
     await setupSocketRedisAdapter(io);
     
     // Register all routes
-    registerRoutes(app, io);
+    registerRoutes(app);
     
     logger.info('Application initialization completed');
   } catch (error) {

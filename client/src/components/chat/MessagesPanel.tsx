@@ -175,7 +175,10 @@ export default function MessagesPanel({
       const cachedUser = userCache.getUser(c.otherUserId);
       const user =
         c.otherUser ||
-        (cachedUser ? getCachedUserWithMerge(c.otherUserId, cachedUser) : null) ||
+        (cachedUser ? getCachedUserWithMerge(c.otherUserId, {
+          ...cachedUser,
+          role: cachedUser.role as 'guest' | 'member' | 'owner' | 'admin' | 'moderator' | 'system'
+        }) : null) ||
         onlineUsers.find((u) => u.id === c.otherUserId) ||
         null;
       if (!user) continue;

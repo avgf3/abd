@@ -1,7 +1,7 @@
 import createDOMPurify from 'isomorphic-dompurify';
 
 // إنشاء instance من DOMPurify
-const DOMPurify = createDOMPurify();
+const DOMPurify = createDOMPurify as any;
 
 // إعدادات التنقية الافتراضية
 const defaultConfig = {
@@ -77,7 +77,7 @@ export function sanitizeName(name: string): string {
   }
 
   // إزالة جميع HTML tags والاحتفاظ بالنص فقط
-  const cleaned = sanitizeHTML(name, nameConfig);
+  const cleaned = sanitizeHTML(name, nameConfig as any);
   
   // إزالة أي أحرف خاصة قد تسبب مشاكل
   return cleaned

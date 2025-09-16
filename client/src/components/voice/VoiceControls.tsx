@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { 
-  Mic, MicOff, Headphones, HeadphonesOff, Settings, 
+  Mic, MicOff, Headphones, HeadphoneOff, Settings, 
   Phone, PhoneOff, Volume2, VolumeX, Signal, Wifi, WifiOff
 } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -243,7 +243,7 @@ export default function VoiceControls({
                         size="sm"
                         onClick={onToggleDeafen}
                       >
-                        {isDeafened ? <HeadphonesOff className="w-4 h-4" /> : <Headphones className="w-4 h-4" />}
+                        {isDeafened ? <HeadphoneOff className="w-4 h-4" /> : <Headphones className="w-4 h-4" />}
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>

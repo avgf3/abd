@@ -152,7 +152,15 @@ const musicStorage = multer.diskStorage({
       }
     } catch (err) {
       console.error('خطأ في إعداد مجلد رفع الموسيقى:', err);
-      cb(err as any, '');
+      // استخدام مجلد temp كبديل آمن
+      const tempDir = path.join(process.cwd(), 'temp', 'uploads', 'music');
+      try {
+        await fsp.mkdir(tempDir, { recursive: true });
+        cb(null, tempDir);
+      } catch (tempErr) {
+        console.error('خطأ في إنشاء مجلد temp:', tempErr);
+        cb(err as any, '');
+      }
     }
   },
   filename: (_req, file, cb) => {
@@ -172,7 +180,7 @@ const musicUpload = multer({
     parts: 10 
   },
   fileFilter: (_req, file, cb) => {
-    // قائمة أنواع الملفات المدعومة
+    // قائمة أنواع الملفات المدعومة - محسنة
     const allowedMimeTypes = [
       'audio/mpeg',
       'audio/mp3',
@@ -185,13 +193,17 @@ const musicUpload = multer({
       'audio/mp4'
     ];
     
-    // التحقق من نوع الملف
-    const isAllowed = allowedMimeTypes.some(type => 
-      file.mimetype.toLowerCase().includes(type.split('/')[1])
-    );
+    const allowedExtensions = ['.mp3', '.wav', '.ogg', '.webm', '.m4a', '.aac', '.mp4'];
     
-    if (!isAllowed) {
-      return cb(new Error(`نوع ملف الصوت غير مدعوم: ${file.mimetype}. الأنواع المدعومة: MP3, WAV, OGG, M4A, AAC`));
+    // التحقق من نوع MIME
+    const isValidMimeType = allowedMimeTypes.includes(file.mimetype.toLowerCase());
+    
+    // التحقق من امتداد الملف
+    const fileExtension = path.extname(file.originalname).toLowerCase();
+    const isValidExtension = allowedExtensions.includes(fileExtension);
+    
+    if (!isValidMimeType && !isValidExtension) {
+      return cb(new Error(`Unsupported audio file type: ${file.mimetype}. Supported types: MP3, WAV, OGG, M4A, AAC`));
     }
     
     cb(null, true);
@@ -338,7 +350,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           type: 'avatar',
           originalName: req.file.originalname,
           mimeType: req.file.mimetype,
-          priority: 'balanced'
+          priority: 'balanced' as any
         });
 
         // تنظيف الملف المؤقت
@@ -369,18 +381,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // بث فوري عبر Socket لتحديث الأفاتار في جميع الواجهات
         try {
-          const { getIO } = await import('./socket');
+          const { getIO } = await import('./realtime');
           const io = getIO();
           // إرسال حدث خاص بالأفاتار لتسريع التزامن مع تقليل الحمولة
           io.to(userId.toString()).emit('message', {
             type: 'selfAvatarUpdated',
             avatarHash: processedImage.metadata.hash,
-            avatarVersion: processedImage.metadata.version || undefined,
+            avatarVersion: (processedImage.metadata as any).version || undefined,
           });
           // بث إلى الغرف التي يتواجد فيها المستخدم قائمة المتصلين المحدّثة
           try {
             const { roomService } = await import('./services/roomService');
-            const { default: realtime } = await import('./realtime');
+            const realtime = await import('./realtime');
           } catch {}
         } catch {}
 
@@ -473,7 +485,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           type: 'banner',
           originalName: req.file.originalname,
           mimeType: req.file.mimetype,
-          priority: 'balanced'
+          priority: 'balanced' as any
         });
 
         // تنظيف الملف المؤقت
@@ -604,12 +616,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
 
-        // حذف الملف القديم إن وجد
+        // حذف الملف القديم إن وجد - مع معالجة أفضل للأخطاء
         if (user.profileMusicUrl) {
           const oldPath = path.join(process.cwd(), 'client', 'public', user.profileMusicUrl);
           try {
-            await fsp.unlink(oldPath).catch(() => {});
-          } catch {}
+            await fsp.unlink(oldPath);
+            console.log(`✅ تم حذف الملف القديم: ${oldPath}`);
+          } catch (unlinkErr) {
+            console.warn(`⚠️ تعذر حذف الملف القديم: ${oldPath}`, unlinkErr);
+            // لا نوقف العملية إذا فشل حذف الملف القديم
+          }
         }
 
         // تكون الملفات ضمن /uploads/music
@@ -628,19 +644,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         if (!updated) {
           // حذف الملف في حالة فشل التحديث
-          try { await fsp.unlink(req.file.path).catch(() => {}); } catch {}
+          try { 
+            await fsp.unlink(req.file.path);
+            console.log(`✅ تم حذف الملف بعد فشل التحديث: ${req.file.path}`);
+          } catch (cleanupErr) {
+            console.warn(`⚠️ تعذر حذف الملف بعد فشل التحديث: ${req.file.path}`, cleanupErr);
+          }
           return res.status(500).json({ 
             success: false,
             error: 'فشل تحديث بيانات المستخدم' 
           });
         }
 
-        // بث تحديث مبسط
+        // بث تحديث محسن مع معالجة أفضل للأخطاء
         try { 
-          emitUserUpdatedToUser(userId, updated); 
-          emitUserUpdatedToAll(updated); 
+          const sanitizedUser = sanitizeUserData(updated);
+          emitUserUpdatedToUser(userId, sanitizedUser); 
+          emitUserUpdatedToAll(sanitizedUser); 
+          
+          console.log(`✅ تم بث تحديث موسيقى البروفايل للمستخدم ${userId}`);
         } catch (broadcastErr) {
-          console.error('خطأ في بث التحديث:', broadcastErr);
+          console.error('❌ خطأ في بث التحديث:', broadcastErr);
+          // لا نوقف العملية إذا فشل البث
         }
 
         return res.json({ 
@@ -654,12 +679,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // حذف الملف في حالة حدوث خطأ
         if (req.file) {
-          try { await fsp.unlink(req.file.path).catch(() => {}); } catch {}
+          try { 
+            await fsp.unlink(req.file.path);
+            console.log(`✅ تم حذف الملف بعد حدوث خطأ: ${req.file.path}`);
+          } catch (cleanupErr) {
+            console.warn(`⚠️ تعذر حذف الملف بعد حدوث خطأ: ${req.file.path}`, cleanupErr);
+          }
         }
         
-        res.status(500).json({ 
+        // معالجة أفضل للأخطاء
+        let errorMessage = 'خطأ في الخادم أثناء رفع الملف الصوتي';
+        let statusCode = 500;
+        
+        if (error.code === 'LIMIT_FILE_SIZE') {
+          errorMessage = 'حجم الملف كبير جداً (الحد الأقصى 10 ميجابايت)';
+          statusCode = 413;
+        } else if (error.message?.includes('Unsupported audio file type')) {
+          errorMessage = 'نوع الملف غير مدعوم';
+          statusCode = 415;
+        } else if (error.message?.includes('هذه الميزة متاحة للمشرفين فقط')) {
+          errorMessage = 'ليس لديك صلاحية لرفع الموسيقى';
+          statusCode = 403;
+        } else if (error.message) {
+          errorMessage = error.message;
+        }
+        
+        res.status(statusCode).json({ 
           success: false,
-          error: error.message || 'خطأ في الخادم أثناء رفع الملف الصوتي' 
+          error: errorMessage
         });
       }
     }
@@ -3296,16 +3343,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const user = await storage.getUser(userId);
       if (!user) return res.status(404).json({ error: 'المستخدم غير موجود' });
 
+      // حذف الملف الفعلي من الخادم إن وجد
+      if (user.profileMusicUrl) {
+        const filePath = path.join(process.cwd(), 'client', 'public', user.profileMusicUrl);
+        try {
+          await fsp.unlink(filePath);
+          console.log(`✅ تم حذف ملف الموسيقى: ${filePath}`);
+        } catch (unlinkErr) {
+          console.warn(`⚠️ تعذر حذف ملف الموسيقى: ${filePath}`, unlinkErr);
+          // لا نوقف العملية إذا فشل حذف الملف
+        }
+      }
+
       const updated = await storage.updateUser(userId, {
         profileMusicUrl: null as any,
         profileMusicTitle: null as any,
       } as any);
       if (!updated) return res.status(500).json({ error: 'فشل تحديث المستخدم' });
 
-      try { emitUserUpdatedToUser(userId, updated); emitUserUpdatedToAll(updated); } catch {}
+      try { 
+        const sanitizedUser = sanitizeUserData(updated);
+        emitUserUpdatedToUser(userId, sanitizedUser); 
+        emitUserUpdatedToAll(sanitizedUser); 
+        
+        console.log(`✅ تم بث حذف موسيقى البروفايل للمستخدم ${userId}`);
+      } catch (broadcastErr) {
+        console.error('❌ خطأ في بث حذف الموسيقى:', broadcastErr);
+      }
       res.json({ success: true });
     } catch (e) {
-      res.status(500).json({ error: 'خطأ في حذف موسيقى البروفايل' });
+      console.error('خطأ في حذف موسيقى البروفايل:', e);
+      
+      // معالجة أفضل للأخطاء
+      let errorMessage = 'خطأ في حذف موسيقى البروفايل';
+      let statusCode = 500;
+      
+      if (e instanceof Error) {
+        if (e.message.includes('not found') || e.message.includes('غير موجود')) {
+          errorMessage = 'الموسيقى غير موجودة';
+          statusCode = 404;
+        } else if (e.message.includes('permission') || e.message.includes('صلاحية')) {
+          errorMessage = 'ليس لديك صلاحية لحذف هذه الموسيقى';
+          statusCode = 403;
+        } else {
+          errorMessage = e.message;
+        }
+      }
+      
+      res.status(statusCode).json({ 
+        success: false,
+        error: errorMessage 
+      });
     }
   });
 
@@ -3444,9 +3532,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(500).json({ error: 'فشل في تحديث البيانات في قاعدة البيانات' });
       }
 
-      // بث موجه للمستخدم + بث خفيف للجميع
-      emitUserUpdatedToUser(userIdNum, updatedUser);
-      emitUserUpdatedToAll(updatedUser);
+      // بث موجه للمستخدم + بث خفيف للجميع مع معالجة أفضل للأخطاء
+      try {
+        const sanitizedUser = sanitizeUserData(updatedUser);
+        emitUserUpdatedToUser(userIdNum, sanitizedUser);
+        emitUserUpdatedToAll(sanitizedUser);
+        
+        console.log(`✅ تم بث تحديث إعدادات موسيقى البروفايل للمستخدم ${userIdNum}`);
+      } catch (broadcastErr) {
+        console.error('❌ خطأ في بث تحديث إعدادات الموسيقى:', broadcastErr);
+      }
 
       res.json({
         success: true,
@@ -4955,7 +5050,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           type: 'avatar',
           originalName: req.file.originalname,
           mimeType: req.file.mimetype,
-          priority: 'balanced'
+          priority: 'balanced' as any
         } as any);
         
         // تنظيف الملف المؤقت المرفوع

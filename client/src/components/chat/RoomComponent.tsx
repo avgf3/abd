@@ -1,4 +1,4 @@
-import { X, Plus, Users, Mic, RefreshCw, MessageCircle, Search, Settings, Lock, Unlock, Phone, PhoneOff } from 'lucide-react';
+import { X, Plus, Users, Mic, MicOff, RefreshCw, MessageCircle, Search, Settings, Lock, Unlock, Phone, PhoneOff } from 'lucide-react';
 import React, { useState, useCallback, useMemo, useRef } from 'react';
 import { Virtuoso } from 'react-virtuoso';
 
@@ -105,7 +105,7 @@ const RoomCard: React.FC<RoomCardProps> = ({
           <span className="flex items-center gap-1 flex-shrink-0">
             {room.isBroadcast && <Mic className="w-3 h-3 text-orange-500" />}
             {room.isLocked && <Lock className="w-3 h-3 text-yellow-600" />}
-            {isVoiceConnected && currentVoiceRoom?.id === room.id && (
+            {false && (
               <Phone className="w-3 h-3 text-green-500" />
             )}
           </span>
@@ -696,7 +696,7 @@ export default function RoomComponent({
                   size="sm"
                   onClick={handleVoiceToggleMute}
                 >
-                  {isVoiceMuted ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                  {false ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
                 </Button>
               </div>
             </div>

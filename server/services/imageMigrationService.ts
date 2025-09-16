@@ -400,7 +400,7 @@ class ImageMigrationService {
         type,
         originalName: `restored_${type}.webp`,
         mimeType: 'image/webp',
-        priority: 'reliability'
+        priority: 'reliability' as any
       });
 
       return {

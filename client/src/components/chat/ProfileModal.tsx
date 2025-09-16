@@ -94,6 +94,22 @@ export default function ProfileModal({
   // موسيقى البروفايل
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [musicTitle, setMusicTitle] = useState(localUser?.profileMusicTitle || '');
+  
+  // تنظيف الذاكرة عند إغلاق المكون
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        try {
+          audioRef.current.pause();
+          audioRef.current.src = '';
+          audioRef.current.load();
+          console.log('✅ تم تنظيف مشغل الصوت عند إغلاق المكون');
+        } catch (cleanupErr) {
+          console.warn('⚠️ تعذر تنظيف مشغل الصوت عند إغلاق المكون:', cleanupErr);
+        }
+      }
+    };
+  }, []);
 
   // قائمة الأصدقاء
   const [friends, setFriends] = useState<ChatUser[]>([]);
@@ -249,7 +265,12 @@ export default function ProfileModal({
   // ضبط مستوى الصوت عند تحميل الصوت
   useEffect(() => {
     if (audioRef.current && localUser?.profileMusicUrl) {
-      audioRef.current.volume = Math.max(0, Math.min(1, musicVolume / 100));
+      try {
+        audioRef.current.volume = Math.max(0, Math.min(1, musicVolume / 100));
+        console.log(`✅ تم ضبط مستوى الصوت إلى ${musicVolume}%`);
+      } catch (volumeErr) {
+        console.warn('⚠️ تعذر ضبط مستوى الصوت:', volumeErr);
+      }
     }
   }, [musicVolume, localUser?.profileMusicUrl]);
   
@@ -271,7 +292,12 @@ export default function ProfileModal({
           setAudioError(false);
           
           // ضبط مستوى الصوت
-          audioRef.current.volume = Math.max(0, Math.min(1, musicVolume / 100));
+          try {
+            audioRef.current.volume = Math.max(0, Math.min(1, musicVolume / 100));
+            console.log(`✅ تم ضبط مستوى الصوت إلى ${musicVolume}%`);
+          } catch (volumeErr) {
+            console.warn('⚠️ تعذر ضبط مستوى الصوت:', volumeErr);
+          }
           
           // محاولة التشغيل العادي أولاً
           await audioRef.current.play();
@@ -331,23 +357,43 @@ export default function ProfileModal({
     }
   }, [localUser?.profileMusicUrl, musicEnabled, musicVolume, externalAudioManaged, (currentUser as any)?.globalSoundEnabled]);
   
-  // معالج أخطاء الصوت
-  const handleAudioError = () => {
+  // معالج أخطاء الصوت - محسن
+  const handleAudioError = (event: any) => {
     setAudioError(true);
     setAudioLoading(false);
     setIsPlaying(false);
-    console.error('خطأ في تحميل ملف الصوت');
+    
+    // تسجيل تفصيلي للخطأ
+    const error = event.target?.error;
+    if (error) {
+      console.warn('خطأ في تحميل الصوت:', {
+        code: error.code,
+        message: error.message,
+        src: event.target?.src
+      });
+    } else {
+      console.warn('خطأ غير محدد في تحميل الصوت');
+    }
   };
   
-  // معالج تحميل الصوت
+  // معالج تحميل الصوت - محسن
   const handleAudioLoadStart = () => {
     setAudioLoading(true);
     setAudioError(false);
+    console.log('بدء تحميل ملف الصوت...');
   };
   
   const handleAudioCanPlay = () => {
     setAudioLoading(false);
     setAudioError(false);
+    console.log('تم تحميل ملف الصوت بنجاح');
+  };
+  
+  // معالج إكمال التحميل
+  const handleAudioLoadedData = () => {
+    setAudioLoading(false);
+    setAudioError(false);
+    console.log('تم تحميل بيانات الصوت بالكامل');
   };
   
   // معالج تشغيل/إيقاف الصوت
@@ -573,6 +619,18 @@ export default function ProfileModal({
     if (Object.prototype.hasOwnProperty.call(updates, 'profileMusicVolume')) {
       const v = Number((updates as any).profileMusicVolume);
       setMusicVolume(Number.isFinite(v) ? v : 70);
+    }
+    if (Object.prototype.hasOwnProperty.call(updates, 'profileMusicUrl')) {
+      // تحديث مصدر الصوت إذا تغير
+      if (audioRef.current && updates.profileMusicUrl) {
+        try {
+          audioRef.current.src = updates.profileMusicUrl as string;
+          audioRef.current.load();
+          console.log('✅ تم تحديث مصدر الصوت بنجاح');
+        } catch (updateErr) {
+          console.warn('⚠️ تعذر تحديث مصدر الصوت:', updateErr);
+        }
+      }
     }
     
   };
@@ -2466,6 +2524,7 @@ export default function ProfileModal({
                     onError={handleAudioError}
                     onLoadStart={handleAudioLoadStart}
                     onCanPlay={handleAudioCanPlay}
+                    onLoadedData={handleAudioLoadedData}
                   />
                 )}
                 
@@ -2480,6 +2539,7 @@ export default function ProfileModal({
                     onError={handleAudioError}
                     onLoadStart={handleAudioLoadStart}
                     onCanPlay={handleAudioCanPlay}
+                    onLoadedData={handleAudioLoadedData}
                   />
                 )}
               </>
@@ -2535,7 +2595,7 @@ export default function ProfileModal({
                     color: getFinalUsernameColor(localUser || {}),
                     textShadow: '0 2px 4px rgba(0,0,0,0.5)',
                     cursor: 'pointer',
-                    direction: 'auto',
+                    direction: 'ltr' as const,
                     unicodeBidi: 'plaintext',
                     textAlign: 'center',
                     whiteSpace: 'normal',
@@ -2593,7 +2653,7 @@ export default function ProfileModal({
                     color: getFinalUsernameColor(localUser || {}),
                     textShadow: '0 2px 4px rgba(0,0,0,0.5)',
                     cursor: 'pointer',
-                    direction: 'auto',
+                    direction: 'ltr' as const,
                     unicodeBidi: 'plaintext',
                     textAlign: 'center',
                     whiteSpace: 'normal',
@@ -2649,7 +2709,7 @@ export default function ProfileModal({
                     fontWeight: 'bold',
                     color: getFinalUsernameColor(localUser || {}),
                     textShadow: '0 2px 4px rgba(0,0,0,0.5)',
-                    direction: 'auto',
+                    direction: 'ltr' as const,
                     unicodeBidi: 'plaintext',
                     textAlign: 'center',
                     whiteSpace: 'normal',
@@ -2893,7 +2953,7 @@ export default function ProfileModal({
                         padding: '4px 8px',
                         fontSize: '12px'
                       }}
-                      onChange={(e) => updateDmPrivacy(e.target.value)}
+                      onChange={(e) => updateDmPrivacy(e.target.value as 'all' | 'friends' | 'none')}
                     >
                       <option value="all">السماح للجميع</option>
                       <option value="friends">👥 السماح للأصدقاء فقط</option>
@@ -3061,10 +3121,16 @@ export default function ProfileModal({
                                   setIsLoading(true);
                                   await apiRequest(`/api/users/${localUser?.id}/profile-music`, { method: 'DELETE' });
                                   
-                                  // إيقاف الموسيقى وتنظيف المشغل
+                                  // إيقاف الموسيقى وتنظيف المشغل مع معالجة أفضل للأخطاء
                                   if (audioRef.current) { 
-                                    audioRef.current.pause(); 
-                                    audioRef.current.src = ''; 
+                                    try {
+                                      audioRef.current.pause(); 
+                                      audioRef.current.src = ''; 
+                                      audioRef.current.load();
+                                      console.log('✅ تم تنظيف مشغل الصوت بنجاح');
+                                    } catch (cleanupErr) {
+                                      console.warn('⚠️ تعذر تنظيف مشغل الصوت:', cleanupErr);
+                                    }
                                   }
                                   
                                   // تحديث البيانات المحلية
@@ -3082,9 +3148,22 @@ export default function ProfileModal({
                                   toast({ title: 'تم ✅', description: 'تم حذف موسيقى البروفايل' });
                                 } catch (err: any) {
                                   console.error('خطأ في حذف الموسيقى:', err);
+                                  
+                                  // معالجة أفضل للأخطاء
+                                  let errorMessage = 'فشل حذف الموسيقى';
+                                  if (err?.response?.status === 404) {
+                                    errorMessage = 'الموسيقى غير موجودة';
+                                  } else if (err?.response?.status === 403) {
+                                    errorMessage = 'ليس لديك صلاحية لحذف هذه الموسيقى';
+                                  } else if (err?.response?.status >= 500) {
+                                    errorMessage = 'خطأ في الخادم، حاول مرة أخرى';
+                                  } else if (err?.message) {
+                                    errorMessage = err.message;
+                                  }
+                                  
                                   toast({ 
                                     title: 'خطأ', 
-                                    description: err?.message || 'فشل حذف الموسيقى', 
+                                    description: errorMessage, 
                                     variant: 'destructive' 
                                   });
                                 } finally {
@@ -3148,12 +3227,22 @@ export default function ProfileModal({
                                   const file = e.target.files?.[0];
                                   if (!file) return;
                                   
-                                  // التحقق من نوع الملف
-                                  const allowedTypes = ['audio/mpeg', 'audio/mp3', 'audio/ogg', 'audio/webm', 'audio/wav', 'audio/m4a', 'audio/aac'];
-                                  if (!allowedTypes.some(type => file.type.includes(type.split('/')[1]))) {
+                                  // التحقق من نوع الملف - تحسين الدقة
+                                  const allowedMimeTypes = [
+                                    'audio/mpeg', 'audio/mp3', 'audio/ogg', 
+                                    'audio/webm', 'audio/wav', 'audio/m4a', 
+                                    'audio/aac', 'audio/x-m4a', 'audio/mp4'
+                                  ];
+                                  const allowedExtensions = ['.mp3', '.wav', '.ogg', '.webm', '.m4a', '.aac', '.mp4'];
+                                  
+                                  const fileExtension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
+                                  const isValidMimeType = allowedMimeTypes.includes(file.type.toLowerCase());
+                                  const isValidExtension = allowedExtensions.includes(fileExtension);
+                                  
+                                  if (!isValidMimeType && !isValidExtension) {
                                     toast({
                                       title: 'نوع ملف غير مدعوم',
-                                      description: 'يرجى اختيار ملف صوتي (MP3, WAV, OGG, M4A)',
+                                      description: 'يرجى اختيار ملف صوتي صالح (MP3, WAV, OGG, M4A, AAC)',
                                       variant: 'destructive',
                                     });
                                     return;
@@ -3188,29 +3277,52 @@ export default function ProfileModal({
                                     setMusicEnabled(true);
                                     setAudioError(false);
                                     
-                                    // تحديث مشغل الصوت
+                                    // تحديث مشغل الصوت مع معالجة أفضل للأخطاء
                                     if (audioRef.current) {
-                                      audioRef.current.src = url;
-                                      audioRef.current.volume = Math.max(0, Math.min(1, (musicVolume || 70) / 100));
-                                      audioRef.current.load(); // إعادة تحميل الصوت
-                                      
-                                      // محاولة التشغيل بعد التحميل
-                                      setTimeout(async () => {
-                                        try {
-                                          await audioRef.current?.play();
-                                        } catch (playErr) {
+                                      try {
+                                        audioRef.current.src = url;
+                                        audioRef.current.volume = Math.max(0, Math.min(1, (musicVolume || 70) / 100));
+                                        audioRef.current.load(); // إعادة تحميل الصوت
+                                        
+                                        // محاولة التشغيل بعد التحميل
+                                        setTimeout(async () => {
+                                          try {
+                                            if (audioRef.current && !audioRef.current.paused) {
+                                              await audioRef.current.play();
+                                              console.log('✅ تم تشغيل الموسيقى الجديدة بنجاح');
+                                            }
+                                          } catch (playErr) {
+                                            console.warn('⚠️ تعذر التشغيل التلقائي:', playErr);
                                           }
-                                      }, 500);
+                                        }, 500);
+                                      } catch (updateErr) {
+                                        console.error('❌ خطأ في تحديث مشغل الصوت:', updateErr);
+                                      }
                                     }
                                     
                                     toast({ title: 'تم ✅', description: 'تم تحديث موسيقى البروفايل بنجاح' });
                                   }
                                 } catch (err: any) {
                                   console.error('خطأ في رفع الموسيقى:', err);
+                                  
+                                  // معالجة أفضل للأخطاء
+                                  let errorMessage = 'فشل رفع الملف الصوتي';
+                                  if (err?.response?.status === 413) {
+                                    errorMessage = 'حجم الملف كبير جداً (الحد الأقصى 10 ميجابايت)';
+                                  } else if (err?.response?.status === 415) {
+                                    errorMessage = 'نوع الملف غير مدعوم';
+                                  } else if (err?.response?.status === 403) {
+                                    errorMessage = 'ليس لديك صلاحية لرفع الموسيقى';
+                                  } else if (err?.response?.status >= 500) {
+                                    errorMessage = 'خطأ في الخادم، حاول مرة أخرى';
+                                  } else if (err?.message) {
+                                    errorMessage = err.message;
+                                  }
+                                  
                                   toast({ 
-                                    title: 'خطأ في رفع الملف', 
-                                    description: err?.message || 'فشل رفع الملف الصوتي. تأكد من نوع وحجم الملف.', 
-                                    variant: 'destructive' 
+                                    title: 'خطأ في رفع الملف',
+                                    description: errorMessage,
+                                    variant: 'destructive',
                                   });
                                 } finally {
                                   setIsLoading(false);
@@ -3324,9 +3436,6 @@ export default function ProfileModal({
                           border: '1px solid rgba(255,255,255,0.08)',
                           cursor: 'pointer',
                           transition: 'all 0.2s ease',
-                          ':hover': {
-                            background: 'rgba(255,255,255,0.1)'
-                          }
                         }}
                         onMouseEnter={(e) => {
                           e.currentTarget.style.background = 'rgba(255,255,255,0.1)';

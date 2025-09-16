@@ -93,7 +93,7 @@ export async function initializeDatabase(): Promise<boolean> {
       onnotice: () => {}, // تجاهل الإشعارات
       // إضافة إعدادات إضافية للأداء
       fetch_types: false, // تحسين الأداء
-      types: false, // تحسين الأداء
+      types: {},
       connection: {
         application_name: 'chat-app',
         statement_timeout: 30000, // 30 ثانية كحد أقصى لكل استعلام

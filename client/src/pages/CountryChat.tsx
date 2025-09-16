@@ -16,7 +16,7 @@ export default function CountryChat() {
   const [, setLocation] = useLocation();
   
   // Get country data based on URL
-  const countryPath = `/${params?.country}`;
+  const countryPath = params ? `/${(params as any).country || ''}` : '/';
   const countryData = getCountryByPath(countryPath);
   
   // If country not found, redirect to home
