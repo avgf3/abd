@@ -1170,7 +1170,7 @@ async function updateLastSeenForConnectedUsers() {
             // تم التحديث بنجاح
           }).catch((error) => {
             console.error(`خطأ في تحديث lastSeen للمستخدم ${userId}:`, error);
-          });
+          })
         );
       }
     }

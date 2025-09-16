@@ -104,8 +104,8 @@ export class VoiceManager extends EventEmitter {
   private async initializeSocket(): Promise<void> {
     try {
       // استيراد Socket.IO من المكتبة الموجودة
-      const { socket } = await import('@/lib/socket');
-      this.socket = socket;
+      const socketModule = await import('@/lib/socket');
+      this.socket = (socketModule as any).socket;
 
       // إعداد معالجات أحداث الصوت
       this.socket.on('voice:room-joined', (data: any) => {
@@ -671,7 +671,7 @@ export class VoiceManager extends EventEmitter {
         .map(device => ({
           deviceId: device.deviceId,
           label: device.label || `جهاز ${device.kind === 'audioinput' ? 'الميكروفون' : 'السماعة'}`,
-          kind: device.kind,
+          kind: device.kind as 'audioinput' | 'audiooutput',
           isDefault: device.deviceId === 'default'
         }));
       

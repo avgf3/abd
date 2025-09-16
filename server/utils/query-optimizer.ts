@@ -92,7 +92,7 @@ export async function getLatestMessagesPerRoom(roomIds: string[], messagesPerRoo
     // تجميع الرسائل حسب الغرفة
     const messagesByRoom: Record<string, any[]> = {};
     for (const msg of latestMessages) {
-      const roomId = msg.room_id;
+      const roomId = String(msg.room_id);
       if (!messagesByRoom[roomId]) {
         messagesByRoom[roomId] = [];
       }

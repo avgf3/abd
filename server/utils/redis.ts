@@ -1,5 +1,5 @@
 import Redis from 'ioredis';
-import RedisStore from 'connect-redis';
+import { RedisStore } from 'connect-redis';
 
 let redisClient: Redis | null = null;
 let sessionStore: any = null;
@@ -56,7 +56,6 @@ export function initializeRedis(): { client: Redis | null; store: any } {
         prefix: 'sess:',
         ttl: 86400, // 24 ساعة
         disableTouch: false,
-        logErrors: true,
       });
 
       return { client: redisClient, store: sessionStore };

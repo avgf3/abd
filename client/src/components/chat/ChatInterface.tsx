@@ -1777,7 +1777,12 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                   <div key={id} className="flex items-center justify-between p-2 border rounded">
                     <div className="flex items-center gap-2">
                       {user ? (
-                        <ProfileImage user={user} size="small" />
+                        <ProfileImage user={{
+                          ...user,
+                          role: (user as any).role || 'member',
+                          isOnline: (user as any).isOnline ?? true,
+                          userType: (user as any).userType || 'member'
+                        }} size="small" />
                       ) : (
                         <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-500">
                           👤

@@ -234,7 +234,7 @@ class VoiceService extends EventEmitter {
       const voiceUser: VoiceUser = {
         id: userId,
         username: user.username,
-        displayName: user.displayName,
+        displayName: user.username,
         profileImage: user.profileImage,
         role: user.userType as any,
         isMuted: false,
@@ -665,8 +665,17 @@ class VoiceService extends EventEmitter {
         profileImage: u.profileImage,
         role: u.role,
         isMuted: u.isMuted,
+        isDeafened: u.isDeafened,
         isSpeaking: u.isSpeaking,
-        connectionQuality: u.connectionQuality
+        volume: u.volume,
+        micQuality: u.micQuality,
+        connectionQuality: u.connectionQuality,
+        isConnected: true,
+        lastActivity: new Date(),
+        latency: 0,
+        socketId: '',
+        roomId: room.id,
+        joinedAt: new Date()
       })),
       userCount: room.userCount
     };
