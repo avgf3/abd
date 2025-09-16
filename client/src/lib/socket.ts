@@ -42,7 +42,7 @@ function getTokenFromCookies(): string | null {
     for (const cookie of cookies) {
       const [name, value] = cookie.trim().split('=');
       if (name === 'auth_token' && value) {
-        return decodeURIComponent(value);
+        return value; // إزالة decodeURIComponent لتجنب مشاكل التشفير
       }
     }
   } catch (error) {
@@ -229,7 +229,7 @@ export function getSocket(): Socket {
     transports: ['websocket', 'polling'],
     upgrade: true,
     rememberUpgrade: true, // تذكر الترقية الناجحة
-    autoConnect: true, // ✅ تمكين الاتصال التلقائي
+    autoConnect: false, // إصلاح: تعطيل الاتصال التلقائي لتجنب مشاكل المصادقة
     reconnection: true,
     // 🔥 تحسين إعادة الاتصال - محاولات محدودة مع تدرج ذكي
     reconnectionAttempts: isProduction ? 10 : 5, // محاولات محدودة بدلاً من لانهائية

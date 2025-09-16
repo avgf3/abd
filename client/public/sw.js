@@ -52,7 +52,7 @@ const keepConnectionAlive = async () => {
     } catch (error) {
       console.log('❌ فشل في إرسال ping من الخلفية:', error);
     }
-  }, 30000); // كل 30 ثانية
+  }, 300000); // إصلاح: كل 5 دقائق بدلاً من 30 ثانية لتقليل الحمل
   
   // إيقاف Ping بعد 10 دقائق لتوفير البطارية
   setTimeout(() => {
