@@ -3,173 +3,62 @@ import { eq, desc, and } from 'drizzle-orm';
 
 import { users, type User, type InsertUser } from '../../shared/schema';
 import { db } from '../database-adapter';
+import { optimizedUserService } from './optimizedUserService';
 
 export class UserService {
-  // إنشاء مستخدم جديد
+  // إنشاء مستخدم جديد - محسن
   async createUser(userData: InsertUser): Promise<User> {
-    try {
-      // تشفير كلمة المرور إذا كانت موجودة
-      if (userData.password) {
-        userData.password = await bcrypt.hash(userData.password, 10);
-      }
-
-      // تعيين القيم الافتراضية
-      const userToInsert: InsertUser = {
-        ...userData,
-        role: userData.role || userData.userType || 'guest',
-        profileBackgroundColor: userData.profileBackgroundColor || '#2a2a2a',
-        usernameColor: userData.usernameColor || '#000000',
-      };
-
-      const [newUser] = await db
-        .insert(users)
-        .values(userToInsert as any)
-        .returning();
-      return newUser;
-    } catch (error) {
-      console.error('خطأ في إنشاء المستخدم:', error);
-      throw error;
-    }
+    return optimizedUserService.createUser(userData);
   }
 
-  // الحصول على مستخدم بالمعرف
+  // الحصول على مستخدم بالمعرف - محسن
   async getUserById(id: number): Promise<User | undefined> {
-    try {
-      const [user] = await db.select().from(users).where(eq(users.id, id)).limit(1);
-      return user;
-    } catch (error) {
-      console.error('خطأ في الحصول على المستخدم:', error);
-      return undefined;
-    }
+    return optimizedUserService.getUserById(id);
   }
 
-  // الحصول على مستخدم باسم المستخدم
+  // الحصول على مستخدم باسم المستخدم - محسن
   async getUserByUsername(username: string): Promise<User | undefined> {
-    try {
-      const [user] = await db
-        .select()
-        .from(users)
-        .where(eq(users.username, username.trim()))
-        .limit(1);
-      return user;
-    } catch (error) {
-      console.error('خطأ في الحصول على المستخدم باسم المستخدم:', error);
-      return undefined;
-    }
+    return optimizedUserService.getUserByUsername(username);
   }
 
-  // تحديث بيانات المستخدم
+  // تحديث بيانات المستخدم - محسن
   async updateUser(id: number, updates: Partial<User>): Promise<User | undefined> {
-    try {
-      // إزالة المعرف من التحديثات
-      const { id: userId, ...updateData } = updates as any;
-
-      const [updatedUser] = await db
-        .update(users)
-        .set(updateData)
-        .where(eq(users.id, id))
-        .returning();
-
-      return updatedUser;
-    } catch (error) {
-      console.error('خطأ في تحديث المستخدم:', error);
-      return undefined;
-    }
+    return optimizedUserService.updateUser(id, updates);
   }
 
-  // تعيين حالة الاتصال
+  // تعيين حالة الاتصال - محسن
   async setUserOnlineStatus(id: number, isOnline: boolean): Promise<void> {
-    try {
-      await db
-        .update(users)
-        .set({
-          isOnline,
-          lastSeen: new Date(), // تحديث lastSeen دائماً سواء كان متصل أو غير متصل
-        } as any)
-        .where(eq(users.id, id));
-    } catch (error) {
-      console.error('خطأ في تعيين حالة الاتصال:', error);
-    }
+    return optimizedUserService.setUserOnlineStatus(id, isOnline);
   }
 
   // تحديث الغرفة الحالية للمستخدم - محسن لمنع التذبذب
   async setUserCurrentRoom(id: number, currentRoom: string | null): Promise<void> {
-    try {
-      // التأكد من أن currentRoom ليس null أو undefined
-      const roomToSet = currentRoom || 'general';
-      
-      await db
-        .update(users)
-        .set({
-          currentRoom: roomToSet,
-          lastSeen: new Date(),
-        } as any)
-        .where(eq(users.id, id));
-        
-      console.log(`✅ تم تحديث الغرفة الحالية للمستخدم ${id} إلى: ${roomToSet}`);
-    } catch (error) {
-      console.error('خطأ في تحديث الغرفة الحالية:', error);
-    }
+    return optimizedUserService.setUserCurrentRoom(id, currentRoom);
   }
 
-  // تعيين حالة الإخفاء
+  // تعيين حالة الإخفاء - محسن
   async setUserHiddenStatus(id: number, isHidden: boolean): Promise<void> {
-    try {
-      await db
-        .update(users)
-        .set({ isHidden } as any)
-        .where(eq(users.id, id));
-    } catch (error) {
-      console.error('خطأ في تعيين حالة الإخفاء:', error);
-    }
+    return optimizedUserService.setUserHiddenStatus(id, isHidden);
   }
 
-  // الحصول على جميع المستخدمين المتصلين
+  // الحصول على جميع المستخدمين المتصلين - محسن
   async getOnlineUsers(): Promise<User[]> {
-    try {
-      const onlineUsers = await db
-        .select()
-        .from(users)
-        .where(and(eq(users.isOnline, true), eq(users.isHidden, false)));
-
-      return onlineUsers;
-    } catch (error) {
-      console.error('خطأ في الحصول على المستخدمين المتصلين:', error);
-      return [];
-    }
+    return optimizedUserService.getOnlineUsers();
   }
 
-  // الحصول على جميع المستخدمين
+  // الحصول على جميع المستخدمين - محسن
   async getAllUsers(): Promise<User[]> {
-    try {
-      const allUsers = await db.select().from(users).orderBy(desc(users.joinDate));
-      return allUsers;
-    } catch (error) {
-      console.error('خطأ في الحصول على جميع المستخدمين:', error);
-      return [];
-    }
+    return optimizedUserService.getAllUsers();
   }
 
-  // التحقق من بيانات الاعتماد
+  // التحقق من بيانات الاعتماد - محسن
   async verifyUserCredentials(username: string, password: string): Promise<User | null> {
-    try {
-      const user = await this.getUserByUsername(username);
+    return optimizedUserService.verifyUserCredentials(username, password);
+  }
 
-      if (!user || !user.password) {
-        return null;
-      }
-
-      const isPasswordValid = await bcrypt.compare(password, user.password);
-
-      if (isPasswordValid) {
-        return user;
-      }
-
-      return null;
-    } catch (error) {
-      console.error('خطأ في التحقق من بيانات الاعتماد:', error);
-      return null;
-    }
+  // تحديث آخر تواجد - محسن
+  async updateLastSeen(id: number): Promise<void> {
+    return optimizedUserService.updateLastSeen(id);
   }
 
   // إضافة مستخدم للقائمة المتجاهلة
