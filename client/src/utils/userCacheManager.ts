@@ -183,8 +183,8 @@ class UserCacheManager {
       profileEffect: partialData?.profileEffect || base.profileEffect,
       isOnline: partialData?.isOnline ?? base.isOnline ?? false,
       lastSeen: (partialData as any)?.lastSeen ?? (base as any)?.lastSeen ?? null,
-      // معالجة محسنة لـ currentRoom لمنع التذبذب
-      currentRoom: (partialData as any)?.currentRoom ?? (base as any)?.currentRoom ?? 'general',
+      // معالجة محسنة لـ currentRoom لمنع التذبذب - إزالة الافتراضي العام
+      currentRoom: (partialData as any)?.currentRoom ?? (base as any)?.currentRoom ?? null,
     } as ChatUser;
 
     // تحديث الكاش بالبيانات المدمجة فقط إذا كانت هناك تغييرات فعلية
