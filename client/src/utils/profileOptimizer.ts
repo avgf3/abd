@@ -287,22 +287,3 @@ export function getCachedProfile(userId: number): ChatUser | null {
 export function setCachedProfile(userId: number, user: ChatUser): void {
   profileOptimizer.setCachedUser(userId, user);
 }
-
-/**
- * دالة مساعدة لحفظ آخر ظهور للمستخدم في الكاش
- */
-export function setCachedLastSeen(userId: number, lastSeen: Date): void {
-  const cached = profileOptimizer.getCachedUser(userId);
-  if (cached) {
-    const updatedUser = { ...cached, lastSeen };
-    profileOptimizer.setCachedUser(userId, updatedUser);
-  }
-}
-
-/**
- * دالة مساعدة للحصول على آخر ظهور للمستخدم من الكاش
- */
-export function getCachedLastSeen(userId: number): Date | null {
-  const cached = profileOptimizer.getCachedUser(userId);
-  return cached?.lastSeen || null;
-}
