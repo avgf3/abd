@@ -35,6 +35,22 @@ export function saveSession(partial: Partial<StoredSession>) {
   }
 }
 
+// دالة مساعدة لاستخراج الرمز المميز من الكوكيز
+function getTokenFromCookies(): string | null {
+  try {
+    const cookies = document.cookie.split(';');
+    for (const cookie of cookies) {
+      const [name, value] = cookie.trim().split('=');
+      if (name === 'auth_token' && value) {
+        return decodeURIComponent(value);
+      }
+    }
+  } catch (error) {
+    console.warn('فشل في قراءة الكوكيز:', error);
+  }
+  return null;
+}
+
 export function getSession(): StoredSession {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -46,13 +62,13 @@ export function getSession(): StoredSession {
     
     // محاولة استرداد الرمز المميز من الكوكي إذا لم يكن موجوداً في localStorage
     if (!session.token) {
-      const cookies = document.cookie.split(';');
-      for (const cookie of cookies) {
-        const [name, value] = cookie.trim().split('=');
-        if (name === 'auth_token' && value) {
-          session.token = value;
-          break;
-        }
+      const tokenFromCookie = getTokenFromCookies();
+      if (tokenFromCookie) {
+        session.token = tokenFromCookie;
+        // حفظ الرمز المميز في localStorage للاستخدام المستقبلي
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
+        } catch {}
       }
     }
     
@@ -63,9 +79,37 @@ export function getSession(): StoredSession {
   }
 }
 
+// دالة لاستخراج الرمز المميز من استجابة تسجيل الدخول
+export function extractTokenFromResponse(response: any): string | null {
+  try {
+    // محاولة استخراج الرمز المميز من الكوكيز أولاً
+    const tokenFromCookie = getTokenFromCookies();
+    if (tokenFromCookie) {
+      return tokenFromCookie;
+    }
+    
+    // محاولة استخراج الرمز المميز من الاستجابة مباشرة
+    if (response?.token) {
+      return response.token;
+    }
+    
+    // محاولة استخراج الرمز المميز من بيانات المستخدم
+    if (response?.user?.token) {
+      return response.user.token;
+    }
+    
+    return null;
+  } catch (error) {
+    console.warn('فشل في استخراج الرمز المميز:', error);
+    return null;
+  }
+}
+
 export function clearSession() {
   try {
     localStorage.removeItem(STORAGE_KEY);
+    // مسح الكوكي أيضاً
+    document.cookie = 'auth_token=; path=/; max-age=0; SameSite=Lax';
   } catch {}
   // إعادة تعيين Socket instance عند مسح الجلسة
   if (socketInstance) {
@@ -130,6 +174,24 @@ function attachCoreListeners(socket: Socket) {
       } catch {}
     }
   });
+
+  // معالجة Page Visibility API للحفاظ على الاتصال
+  const handleVisibilityChange = () => {
+    const isVisible = !document.hidden;
+    if (isVisible && !socket.connected) {
+      // إعادة الاتصال عند العودة للواجهة الأمامية
+      try {
+        socket.connect();
+      } catch {}
+    }
+  };
+
+  document.addEventListener('visibilitychange', handleVisibilityChange);
+  
+  // تنظيف المستمع عند إزالة Socket
+  socket.on('disconnect', () => {
+    document.removeEventListener('visibilitychange', handleVisibilityChange);
+  });
 }
 
 export function getSocket(): Socket {
@@ -167,7 +229,7 @@ export function getSocket(): Socket {
     transports: ['websocket', 'polling'],
     upgrade: true,
     rememberUpgrade: true, // تذكر الترقية الناجحة
-    autoConnect: false,
+    autoConnect: true, // ✅ تمكين الاتصال التلقائي
     reconnection: true,
     // 🔥 تحسين إعادة الاتصال - محاولات محدودة مع تدرج ذكي
     reconnectionAttempts: isProduction ? 10 : 5, // محاولات محدودة بدلاً من لانهائية
@@ -181,7 +243,7 @@ export function getSocket(): Socket {
     auth: { deviceId },
     extraHeaders: { 'x-device-id': deviceId },
     // 🔥 إعدادات محسّنة للاستقرار والأداء
-    closeOnBeforeunload: false, // لا تغلق عند إعادة التحميل
+    closeOnBeforeunload: true, // ✅ إغلاق صحيح عند إعادة التحميل
     // 🔥 تحسين إدارة الاتصال
     multiplex: true, // تمكين multiplexing للأداء الأفضل
     forceBase64: false, // استخدام binary للأداء الأفضل
@@ -200,7 +262,7 @@ export function getSocket(): Socket {
 
   attachCoreListeners(socketInstance);
   
-  // لا نتصل تلقائياً هنا بعد الآن؛ الاتصال يتم صراحةً عبر connectSocket()
+  // الاتصال التلقائي مفعل الآن
   return socketInstance;
 }
 

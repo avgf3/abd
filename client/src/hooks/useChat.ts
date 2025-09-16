@@ -418,6 +418,25 @@ export const useChat = () => {
 
   // Track ping interval to avoid leaks
   const pingIntervalRef = useRef<number | null>(null);
+  const isPageVisibleRef = useRef<boolean>(true);
+
+  // 🔥 معالجة Page Visibility API للحفاظ على الاتصال في الخلفية
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      const isVisible = !document.hidden;
+      isPageVisibleRef.current = isVisible;
+      
+      if (isVisible && socket.current && !socket.current.connected) {
+        // إعادة الاتصال عند العودة للواجهة الأمامية
+        try {
+          socket.current.connect();
+        } catch {}
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, []);
 
   // 🔥 SIMPLIFIED Socket event handling - حذف التضارب
   const setupSocketListeners = useCallback((socketInstance: Socket) => {
@@ -428,7 +447,8 @@ export const useChat = () => {
     
     let lastPingTime = 0;
     const pingId = window.setInterval(() => {
-      if (socketInstance.connected) {
+      // ✅ إرسال ping فقط عندما تكون الصفحة مرئية
+      if (socketInstance.connected && isPageVisibleRef.current) {
         lastPingTime = Date.now();
         socketInstance.emit('client_ping');
       }
@@ -1281,18 +1301,31 @@ export const useChat = () => {
         const s = connectSocket();
         socket.current = s;
         
-        // حفظ الجلسة
-        saveSession({ userId: user.id, username: user.username, userType: user.userType });
+        // حفظ الجلسة مع الرمز المميز
+        const sessionData: any = { 
+          userId: user.id, 
+          username: user.username, 
+          userType: user.userType 
+        };
+        
+        // إضافة الرمز المميز إذا كان متوفراً
+        if ((user as any).token) {
+          sessionData.token = (user as any).token;
+        }
+        
+        saveSession(sessionData);
 
         // إعداد المستمعين
         setupSocketListeners(s);
 
         // إذا كان متصلاً بالفعل، أرسل المصادقة فقط، والانضمام سيتم بعد التأكيد
         if (s.connected) {
+          const session = getSession();
           s.emit('auth', {
             userId: user.id,
             username: user.username,
             userType: user.userType,
+            token: session.token,
           });
         }
 
@@ -1304,10 +1337,12 @@ export const useChat = () => {
 
           // إعادة إرسال المصادقة فقط، والانضمام للغرفة بعد Event roomJoined
           try {
+            const session = getSession();
             s.emit('auth', {
               userId: user.id,
               username: user.username,
               userType: user.userType,
+              token: session.token,
             });
           } catch {}
 
