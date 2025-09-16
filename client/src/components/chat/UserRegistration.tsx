@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
+import { extractTokenFromResponse } from '@/lib/socket';
 import type { ChatUser } from '@/types/chat';
 
 interface UserRegistrationProps {
@@ -104,7 +105,16 @@ export default function UserRegistration({ isOpen, onClose, onRegister }: UserRe
         description: 'مرحباً بك كعضو جديد في الموقع',
       });
 
-      onRegister(user);
+      // استخراج الرمز المميز من الاستجابة
+      const token = extractTokenFromResponse(response);
+      if (token) {
+        // إضافة الرمز المميز لبيانات المستخدم
+        const userWithToken = { ...user, token };
+        onRegister(userWithToken);
+      } else {
+        onRegister(user);
+      }
+      
       onClose();
     } catch (error: any) {
       const errorData = await error.response?.json();
