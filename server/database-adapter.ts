@@ -3,6 +3,7 @@ import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 
 import * as schema from '../shared/schema';
+import { DEFAULT_ROOM_CONSTANTS } from '../client/src/utils/defaultRoomOptimizer';
 
 type DatabaseType = 'postgresql' | 'disabled';
 
@@ -432,7 +433,7 @@ export async function ensureBotsTable(): Promise<void> {
           relation TEXT DEFAULT 'غير محدد',
           bio TEXT DEFAULT 'أنا بوت آلي',
           is_online BOOLEAN DEFAULT true,
-          current_room TEXT DEFAULT 'general',
+          current_room TEXT DEFAULT '${DEFAULT_ROOM_CONSTANTS.GENERAL_ROOM_ID}',
           username_color TEXT DEFAULT '#00FF00',
           profile_effect TEXT DEFAULT 'none',
           points INTEGER DEFAULT 0,
