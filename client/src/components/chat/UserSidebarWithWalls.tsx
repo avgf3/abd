@@ -626,7 +626,7 @@ export default function UnifiedSidebar({
                 const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight <= threshold;
                 setIsAtBottomSidebarWall(atBottom);
               }}
-              className="flex-1 overflow-y-auto px-2 pb-4 cursor-grab"
+              className="flex-1 overflow-y-auto touch-scroll px-2 pb-4 cursor-grab"
             >
               {/* Post Creation */}
               {currentUser && currentUser.userType !== 'guest' && (
