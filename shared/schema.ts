@@ -60,6 +60,8 @@ export const users = pgTable('users', {
   showPointsToOthers: boolean('show_points_to_others').notNull().default(true),
   showSystemMessages: boolean('show_system_messages').notNull().default(true),
   globalSoundEnabled: boolean('global_sound_enabled').notNull().default(true),
+  // الغرفة الحالية للمستخدم
+  currentRoom: text('current_room').default('general'),
 });
 
 export const messages = pgTable(

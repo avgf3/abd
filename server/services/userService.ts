@@ -92,6 +92,21 @@ export class UserService {
     }
   }
 
+  // تحديث الغرفة الحالية للمستخدم
+  async setUserCurrentRoom(id: number, currentRoom: string | null): Promise<void> {
+    try {
+      await db
+        .update(users)
+        .set({
+          currentRoom: currentRoom || 'general',
+          lastSeen: new Date(),
+        } as any)
+        .where(eq(users.id, id));
+    } catch (error) {
+      console.error('خطأ في تحديث الغرفة الحالية:', error);
+    }
+  }
+
   // تعيين حالة الإخفاء
   async setUserHiddenStatus(id: number, isHidden: boolean): Promise<void> {
     try {

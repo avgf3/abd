@@ -680,6 +680,10 @@ export const storage: LegacyStorage = {
     await databaseService.updateUser(id, { isOnline, lastSeen: new Date() });
   },
 
+  async setUserCurrentRoom(id: number, currentRoom: string | null) {
+    await databaseService.updateUser(id, { currentRoom: currentRoom || 'general', lastSeen: new Date() });
+  },
+
   async createMessage(message: any) {
     try {
       // If public message to room, validate per-room moderation (PostgreSQL only)
