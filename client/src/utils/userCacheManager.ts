@@ -164,7 +164,7 @@ class UserCacheManager {
   }
 
   /**
-   * الحصول على بيانات مستخدم كاملة مع دمج البيانات الجديدة
+   * الحصول على بيانات مستخدم كاملة مع دمج البيانات الجديدة - محسن لمنع التذبذب
    */
   getUserWithMerge(userId: number, partialData?: Partial<ChatUser>): ChatUser {
     const cached = this.getUser(userId);
@@ -183,15 +183,30 @@ class UserCacheManager {
       profileEffect: partialData?.profileEffect || base.profileEffect,
       isOnline: partialData?.isOnline ?? base.isOnline ?? false,
       lastSeen: (partialData as any)?.lastSeen ?? (base as any)?.lastSeen ?? null,
-      currentRoom: (partialData as any)?.currentRoom ?? (base as any)?.currentRoom ?? null,
+      // معالجة محسنة لـ currentRoom لمنع التذبذب
+      currentRoom: (partialData as any)?.currentRoom ?? (base as any)?.currentRoom ?? 'general',
     } as ChatUser;
 
-    // تحديث الكاش بالبيانات المدمجة
-    if (partialData) {
+    // تحديث الكاش بالبيانات المدمجة فقط إذا كانت هناك تغييرات فعلية
+    if (partialData && this.hasSignificantChanges(base, partialData)) {
       this.setUser(merged);
     }
 
     return merged;
+  }
+
+  /**
+   * التحقق من وجود تغييرات مهمة تستحق تحديث الكاش
+   */
+  private hasSignificantChanges(base: Partial<CachedUser>, newData: Partial<ChatUser>): boolean {
+    return (
+      (newData.username && newData.username !== base.username) ||
+      (newData.userType && newData.userType !== base.userType) ||
+      (newData.profileImage && newData.profileImage !== base.profileImage) ||
+      (typeof newData.isOnline !== 'undefined' && newData.isOnline !== base.isOnline) ||
+      ((newData as any).currentRoom && (newData as any).currentRoom !== (base as any)?.currentRoom) ||
+      ((newData as any).lastSeen && (newData as any).lastSeen !== (base as any)?.lastSeen)
+    );
   }
 
   /**
