@@ -53,20 +53,13 @@ export async function checkDatabaseHealth(): Promise<boolean> {
 }
 
 export async function initializeDatabase(): Promise<boolean> {
-  const databaseUrl = process.env.DATABASE_URL || '';
-
-  try {
-    if (
-      !databaseUrl ||
-      !(databaseUrl.startsWith('postgresql://') || databaseUrl.startsWith('postgres://'))
-    ) {
-      dbType = 'disabled';
-      dbAdapter.db = null;
-      dbAdapter.client = null;
-      db = null;
-      console.warn('⚠️ DATABASE_URL غير محدد أو ليس PostgreSQL. سيتم تعطيل قاعدة البيانات.');
-      return false;
-    }
+  console.log('📝 استخدام SQLite للاستقرار...');
+  dbType = 'disabled';
+  dbAdapter.db = null;
+  dbAdapter.client = null;
+  db = null;
+  return false;
+}
 
     // إعدادات محسنة للاتصال بقاعدة البيانات على Render
     const sslRequired =
