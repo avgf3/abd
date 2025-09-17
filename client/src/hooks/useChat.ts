@@ -484,10 +484,10 @@ export const useChat = () => {
         // إضافة الرسائل الجديدة للحالة
         event.data.messages.forEach((message: any) => {
           dispatch({
-            type: 'ADD_MESSAGE',
+            type: 'ADD_ROOM_MESSAGE',
             payload: {
               ...message,
-              roomId: message.roomId || state.currentRoom,
+              roomId: message.roomId || state.currentRoomId,
             },
           });
         });
@@ -500,7 +500,7 @@ export const useChat = () => {
     return () => {
       navigator.serviceWorker?.removeEventListener('message', handleServiceWorkerMessage);
     };
-  }, [state.currentRoom]);
+  }, [state.currentRoomId]);
 
   // 🔥 SIMPLIFIED Socket event handling - حذف التضارب
   const setupSocketListeners = useCallback((socketInstance: Socket) => {

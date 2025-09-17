@@ -4283,8 +4283,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { roomMessageService } = await import('./services/roomMessageService');
       const messages = await roomMessageService.getLatestRoomMessages(
         String(roomId), 
-        10, // آخر 10 رسائل
-        after ? new Date(String(after)) : undefined
+        10 // آخر 10 رسائل
       );
       
       res.json(messages);
