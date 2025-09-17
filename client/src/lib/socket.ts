@@ -91,7 +91,7 @@ function attachCoreListeners(socket: Socket) {
     reauth(false);
     // إذا لم تكن هناك جلسة محفوظة، لا نرسل auth هنا لتفادي مهلة غير ضرورية
     
-    // إرسال ping دوري للحفاظ على الاتصال نشطاً
+    // 🔥 إرسال ping دوري محسن للحفاظ على الاتصال نشطاً
     const keepAliveInterval = setInterval(() => {
       if (socket.connected) {
         try {
@@ -103,7 +103,7 @@ function attachCoreListeners(socket: Socket) {
       } else {
         clearInterval(keepAliveInterval);
       }
-    }, 20000); // كل 20 ثانية
+    }, 15000); // كل 15 ثانية - أكثر تكراراً للـ free tier
     
     // حفظ معرف الـ interval للتنظيف لاحقاً
     (socket as any).__keepAliveInterval = keepAliveInterval;
@@ -141,11 +141,20 @@ function attachCoreListeners(socket: Socket) {
     console.warn('خطأ في إعادة الاتصال:', error.message);
   });
 
-  // معالجة pong من الخادم
+  // معالجة pong من الخادم مع مراقبة محسنة
   socket.on('client_pong', (data) => {
     const latency = Date.now() - data.t;
-    if (latency > 5000) { // إذا كان الكمون أكثر من 5 ثواني
+    if (latency > 3000) { // إذا كان الكمون أكثر من 3 ثواني
       console.warn(`كمون عالي: ${latency}ms`);
+    }
+  });
+
+  // معالجة server_ping من الخادم
+  socket.on('server_ping', (data) => {
+    try {
+      socket.emit('server_pong', { t: data.t, clientTime: Date.now() });
+    } catch (error) {
+      console.warn('فشل إرسال server_pong:', error);
     }
   });
 }
@@ -187,13 +196,13 @@ export function getSocket(): Socket {
     rememberUpgrade: true, // تذكر الترقية الناجحة
     autoConnect: false,
     reconnection: true,
-    // 🔥 تحسين إعادة الاتصال - محاولات محدودة مع تدرج ذكي للـ free tier
-    reconnectionAttempts: isProduction ? 5 : 3, // تقليل المحاولات للـ free tier
-    reconnectionDelay: isDevelopment ? 2000 : 3000, // تأخير أطول للـ free tier
-    reconnectionDelayMax: isProduction ? 15000 : 10000, // تقليل الحد الأقصى
-    randomizationFactor: 0.5, // زيادة العشوائية لتجنب التحميل المتزامن
+    // 🔥 تحسين إعادة الاتصال - محاولات أكثر ذكاءً للـ free tier
+    reconnectionAttempts: isProduction ? 8 : 5, // زيادة المحاولات للـ free tier
+    reconnectionDelay: isDevelopment ? 2000 : 2000, // تأخير أقصر للاستجابة السريعة
+    reconnectionDelayMax: isProduction ? 10000 : 8000, // تقليل الحد الأقصى للاستجابة السريعة
+    randomizationFactor: 0.3, // تقليل العشوائية للاستجابة المتسقة
     // 🔥 تحسين أوقات الاستجابة للـ free tier
-    timeout: isDevelopment ? 20000 : 25000, // timeout أطول للـ free tier
+    timeout: isDevelopment ? 20000 : 30000, // timeout أطول للـ free tier
     forceNew: false, // إعادة استخدام الاتصالات الموجودة
     withCredentials: true,
     auth: { deviceId },
