@@ -56,16 +56,8 @@ export async function initializeDatabase(): Promise<boolean> {
   try {
     const databaseUrl = process.env.DATABASE_URL;
     
-    // Check if we should use PostgreSQL
-    if (
-      databaseUrl &&
-      !(databaseUrl.startsWith('postgresql://') || databaseUrl.startsWith('postgres://'))
-    ) {
-      console.warn('⚠️ DATABASE_URL لا يبدو كرابط PostgreSQL صحيح');
-    }
-
     if (databaseUrl && (databaseUrl.startsWith('postgresql://') || databaseUrl.startsWith('postgres://'))) {
-      console.log('🔗 محاولة الاتصال بـ PostgreSQL...');
+      console.log('🔗 الاتصال بـ PostgreSQL...');
       
       const client = postgres(databaseUrl, {
         max: 20,
@@ -79,16 +71,15 @@ export async function initializeDatabase(): Promise<boolean> {
       db = dbAdapter.db;
       dbType = 'postgresql';
       
-      // Test connection
       await client`select 1 as ok`;
-      console.log('✅ تم الاتصال بـ PostgreSQL بنجاح');
+      console.log('✅ تم الاتصال بـ PostgreSQL');
       return true;
     } else {
-      console.log('📝 لا يوجد DATABASE_URL، استخدام SQLite...');
+      console.log('📝 استخدام SQLite...');
       return false;
     }
   } catch (error) {
-    console.error('❌ فشل في الاتصال بقاعدة البيانات:', error);
+    console.error('❌ فشل الاتصال:', error);
     dbAdapter.client = null;
     dbAdapter.db = null;
     db = null;
