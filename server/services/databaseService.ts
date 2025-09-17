@@ -45,6 +45,8 @@ export interface User {
   profileMusicTitle?: string | null;
   profileMusicEnabled?: boolean;
   profileMusicVolume?: number;
+  // الغرفة الحالية
+  currentRoom?: string | null;
 }
 
 export interface Message {
@@ -169,12 +171,60 @@ export class DatabaseService {
 
     try {
       if (this.type === 'postgresql') {
+        // تحديد الأعمدة المطلوبة فقط لتجنب مشاكل الأعمدة المفقودة
         const result = await (this.db as any)
-          .select()
+          .select({
+            id: schema.users.id,
+            username: schema.users.username,
+            password: schema.users.password,
+            userType: schema.users.userType,
+            role: schema.users.role,
+            profileImage: schema.users.profileImage,
+            profileBanner: schema.users.profileBanner,
+            profileBackgroundColor: schema.users.profileBackgroundColor,
+            avatarHash: schema.users.avatarHash,
+            avatarVersion: schema.users.avatarVersion,
+            status: schema.users.status,
+            gender: schema.users.gender,
+            age: schema.users.age,
+            country: schema.users.country,
+            relation: schema.users.relation,
+            bio: schema.users.bio,
+            isOnline: schema.users.isOnline,
+            isHidden: schema.users.isHidden,
+            lastSeen: schema.users.lastSeen,
+            joinDate: schema.users.joinDate,
+            createdAt: schema.users.createdAt,
+            isMuted: schema.users.isMuted,
+            muteExpiry: schema.users.muteExpiry,
+            isBanned: schema.users.isBanned,
+            banExpiry: schema.users.banExpiry,
+            isBlocked: schema.users.isBlocked,
+            ipAddress: schema.users.ipAddress,
+            deviceId: schema.users.deviceId,
+            ignoredUsers: schema.users.ignoredUsers,
+            usernameColor: schema.users.usernameColor,
+            profileEffect: schema.users.profileEffect,
+            points: schema.users.points,
+            level: schema.users.level,
+            totalPoints: schema.users.totalPoints,
+            levelProgress: schema.users.levelProgress,
+            profileMusicUrl: schema.users.profileMusicUrl,
+            profileMusicTitle: schema.users.profileMusicTitle,
+            profileMusicEnabled: schema.users.profileMusicEnabled,
+            profileMusicVolume: schema.users.profileMusicVolume,
+            dmPrivacy: schema.users.dmPrivacy,
+            showPointsToOthers: schema.users.showPointsToOthers,
+            showSystemMessages: schema.users.showSystemMessages,
+            globalSoundEnabled: schema.users.globalSoundEnabled,
+            currentRoom: schema.users.currentRoom,
+          })
           .from(schema.users)
           .where(eq(schema.users.id, id))
           .limit(1);
-        return result[0] || null;
+        
+        const user = result[0] || null;
+        return user;
       } else {
         // SQLite has no users table, so this will return null
         return null;
@@ -190,12 +240,60 @@ export class DatabaseService {
 
     try {
       if (this.type === 'postgresql') {
+        // تحديد الأعمدة المطلوبة فقط لتجنب مشاكل الأعمدة المفقودة
         const result = await (this.db as any)
-          .select()
+          .select({
+            id: schema.users.id,
+            username: schema.users.username,
+            password: schema.users.password,
+            userType: schema.users.userType,
+            role: schema.users.role,
+            profileImage: schema.users.profileImage,
+            profileBanner: schema.users.profileBanner,
+            profileBackgroundColor: schema.users.profileBackgroundColor,
+            avatarHash: schema.users.avatarHash,
+            avatarVersion: schema.users.avatarVersion,
+            status: schema.users.status,
+            gender: schema.users.gender,
+            age: schema.users.age,
+            country: schema.users.country,
+            relation: schema.users.relation,
+            bio: schema.users.bio,
+            isOnline: schema.users.isOnline,
+            isHidden: schema.users.isHidden,
+            lastSeen: schema.users.lastSeen,
+            joinDate: schema.users.joinDate,
+            createdAt: schema.users.createdAt,
+            isMuted: schema.users.isMuted,
+            muteExpiry: schema.users.muteExpiry,
+            isBanned: schema.users.isBanned,
+            banExpiry: schema.users.banExpiry,
+            isBlocked: schema.users.isBlocked,
+            ipAddress: schema.users.ipAddress,
+            deviceId: schema.users.deviceId,
+            ignoredUsers: schema.users.ignoredUsers,
+            usernameColor: schema.users.usernameColor,
+            profileEffect: schema.users.profileEffect,
+            points: schema.users.points,
+            level: schema.users.level,
+            totalPoints: schema.users.totalPoints,
+            levelProgress: schema.users.levelProgress,
+            profileMusicUrl: schema.users.profileMusicUrl,
+            profileMusicTitle: schema.users.profileMusicTitle,
+            profileMusicEnabled: schema.users.profileMusicEnabled,
+            profileMusicVolume: schema.users.profileMusicVolume,
+            dmPrivacy: schema.users.dmPrivacy,
+            showPointsToOthers: schema.users.showPointsToOthers,
+            showSystemMessages: schema.users.showSystemMessages,
+            globalSoundEnabled: schema.users.globalSoundEnabled,
+            currentRoom: schema.users.currentRoom,
+          })
           .from(schema.users)
           .where(eq(schema.users.username, username))
           .limit(1);
-        return result[0] || null;
+        
+        const user = result[0] || null;
+        return user;
       } else {
         // SQLite has no users table, so this will return null
         return null;
@@ -212,12 +310,60 @@ export class DatabaseService {
 
     try {
       if (this.type === 'postgresql') {
+        // تحديد الأعمدة المطلوبة فقط لتجنب مشاكل الأعمدة المفقودة
         const result = await (this.db as any)
-          .select()
+          .select({
+            id: schema.users.id,
+            username: schema.users.username,
+            password: schema.users.password,
+            userType: schema.users.userType,
+            role: schema.users.role,
+            profileImage: schema.users.profileImage,
+            profileBanner: schema.users.profileBanner,
+            profileBackgroundColor: schema.users.profileBackgroundColor,
+            avatarHash: schema.users.avatarHash,
+            avatarVersion: schema.users.avatarVersion,
+            status: schema.users.status,
+            gender: schema.users.gender,
+            age: schema.users.age,
+            country: schema.users.country,
+            relation: schema.users.relation,
+            bio: schema.users.bio,
+            isOnline: schema.users.isOnline,
+            isHidden: schema.users.isHidden,
+            lastSeen: schema.users.lastSeen,
+            joinDate: schema.users.joinDate,
+            createdAt: schema.users.createdAt,
+            isMuted: schema.users.isMuted,
+            muteExpiry: schema.users.muteExpiry,
+            isBanned: schema.users.isBanned,
+            banExpiry: schema.users.banExpiry,
+            isBlocked: schema.users.isBlocked,
+            ipAddress: schema.users.ipAddress,
+            deviceId: schema.users.deviceId,
+            ignoredUsers: schema.users.ignoredUsers,
+            usernameColor: schema.users.usernameColor,
+            profileEffect: schema.users.profileEffect,
+            points: schema.users.points,
+            level: schema.users.level,
+            totalPoints: schema.users.totalPoints,
+            levelProgress: schema.users.levelProgress,
+            profileMusicUrl: schema.users.profileMusicUrl,
+            profileMusicTitle: schema.users.profileMusicTitle,
+            profileMusicEnabled: schema.users.profileMusicEnabled,
+            profileMusicVolume: schema.users.profileMusicVolume,
+            dmPrivacy: schema.users.dmPrivacy,
+            showPointsToOthers: schema.users.showPointsToOthers,
+            showSystemMessages: schema.users.showSystemMessages,
+            globalSoundEnabled: schema.users.globalSoundEnabled,
+            currentRoom: schema.users.currentRoom,
+          })
           .from(schema.users)
           .where(eq((schema as any).users.email, email))
           .limit(1);
-        return result[0] || null;
+        
+        const user = result[0] || null;
+        return user;
       } else {
         // SQLite has no users table, so this will return null
         return null;
@@ -235,10 +381,58 @@ export class DatabaseService {
     if (uniqueIds.length === 0) return [];
     try {
       if (this.type === 'postgresql') {
-        return await (this.db as any)
-          .select()
+        // تحديد الأعمدة المطلوبة فقط لتجنب مشاكل الأعمدة المفقودة
+        const result = await (this.db as any)
+          .select({
+            id: schema.users.id,
+            username: schema.users.username,
+            password: schema.users.password,
+            userType: schema.users.userType,
+            role: schema.users.role,
+            profileImage: schema.users.profileImage,
+            profileBanner: schema.users.profileBanner,
+            profileBackgroundColor: schema.users.profileBackgroundColor,
+            avatarHash: schema.users.avatarHash,
+            avatarVersion: schema.users.avatarVersion,
+            status: schema.users.status,
+            gender: schema.users.gender,
+            age: schema.users.age,
+            country: schema.users.country,
+            relation: schema.users.relation,
+            bio: schema.users.bio,
+            isOnline: schema.users.isOnline,
+            isHidden: schema.users.isHidden,
+            lastSeen: schema.users.lastSeen,
+            joinDate: schema.users.joinDate,
+            createdAt: schema.users.createdAt,
+            isMuted: schema.users.isMuted,
+            muteExpiry: schema.users.muteExpiry,
+            isBanned: schema.users.isBanned,
+            banExpiry: schema.users.banExpiry,
+            isBlocked: schema.users.isBlocked,
+            ipAddress: schema.users.ipAddress,
+            deviceId: schema.users.deviceId,
+            ignoredUsers: schema.users.ignoredUsers,
+            usernameColor: schema.users.usernameColor,
+            profileEffect: schema.users.profileEffect,
+            points: schema.users.points,
+            level: schema.users.level,
+            totalPoints: schema.users.totalPoints,
+            levelProgress: schema.users.levelProgress,
+            profileMusicUrl: schema.users.profileMusicUrl,
+            profileMusicTitle: schema.users.profileMusicTitle,
+            profileMusicEnabled: schema.users.profileMusicEnabled,
+            profileMusicVolume: schema.users.profileMusicVolume,
+            dmPrivacy: schema.users.dmPrivacy,
+            showPointsToOthers: schema.users.showPointsToOthers,
+            showSystemMessages: schema.users.showSystemMessages,
+            globalSoundEnabled: schema.users.globalSoundEnabled,
+            currentRoom: schema.users.currentRoom,
+          })
           .from(schema.users)
           .where(inArray(schema.users.id, uniqueIds));
+        
+        return result;
       } else {
         // SQLite has no users table, so this will return empty array
         return [];
@@ -1960,6 +2154,19 @@ export class DatabaseService {
       }
     } catch (e) {
       return themeId || 'default';
+    }
+  }
+
+  // ===== Raw SQL execution =====
+  async executeRaw(sqlQuery: string): Promise<any> {
+    if (!this.isConnected()) {
+      throw new Error('قاعدة البيانات غير متوفرة');
+    }
+    try {
+      return await (this.db as any).execute(sql.raw(sqlQuery));
+    } catch (error) {
+      console.error('خطأ في تنفيذ SQL:', error);
+      throw error;
     }
   }
 }

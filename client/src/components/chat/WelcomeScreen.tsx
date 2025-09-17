@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
+import { extractTokenFromResponse } from '@/lib/socket';
 import type { ChatUser } from '@/types/chat';
 
 interface WelcomeScreenProps {
@@ -54,7 +55,17 @@ export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
           gender: guestGender,
         },
       });
-      onUserLogin(data.user);
+      
+      // استخراج الرمز المميز من الاستجابة
+      const token = extractTokenFromResponse(data);
+      if (token) {
+        // إضافة الرمز المميز لبيانات المستخدم
+        const userWithToken = { ...data.user, token };
+        onUserLogin(userWithToken);
+      } else {
+        onUserLogin(data.user);
+      }
+      
       setShowGuestModal(false);
     } catch (error: any) {
       toast({
@@ -86,7 +97,17 @@ export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
           password: memberPassword.trim(),
         },
       });
-      onUserLogin(data.user);
+      
+      // استخراج الرمز المميز من الاستجابة
+      const token = extractTokenFromResponse(data);
+      if (token) {
+        // إضافة الرمز المميز لبيانات المستخدم
+        const userWithToken = { ...data.user, token };
+        onUserLogin(userWithToken);
+      } else {
+        onUserLogin(data.user);
+      }
+      
       setShowMemberModal(false);
     } catch (error: any) {
       toast({
@@ -155,7 +176,17 @@ export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
         title: 'نجح التسجيل',
         description: data.message,
       });
-      onUserLogin(data.user);
+      
+      // استخراج الرمز المميز من الاستجابة
+      const token = extractTokenFromResponse(data);
+      if (token) {
+        // إضافة الرمز المميز لبيانات المستخدم
+        const userWithToken = { ...data.user, token };
+        onUserLogin(userWithToken);
+      } else {
+        onUserLogin(data.user);
+      }
+      
       setShowRegisterModal(false);
     } catch (error: any) {
       toast({

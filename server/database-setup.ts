@@ -23,6 +23,7 @@ import { ensureRoomsColumns } from './database-adapter';
 import { ensureBotsTable } from './database-adapter';
 import { ensureChatLockColumns } from './database-adapter';
 import { ensureUserPreferencesColumns } from './database-adapter';
+import { DEFAULT_ROOM_CONSTANTS } from '../client/src/utils/defaultRoomOptimizer';
 
 // إعادة تصدير دالة التهيئة من المحول
 export { initializeDatabase } from './database-adapter';
@@ -198,9 +199,9 @@ export async function createDefaultRooms(): Promise<void> {
             // اشتقاق معرف نصي ثابت للغرفة
             const derivedId =
               room.name === 'العامة'
-                ? 'general'
+                ? DEFAULT_ROOM_CONSTANTS.GENERAL_ROOM_ID
                 : room.name === 'الترحيب'
-                  ? 'welcome'
+                  ? DEFAULT_ROOM_CONSTANTS.WELCOME_ROOM_ID
                   : room.name
                       .toLowerCase()
                       .replace(/[^a-z0-9]+/gi, '-')

@@ -266,6 +266,9 @@ class RoomService {
 
       // 💾 حفظ في قاعدة البيانات
       await storage.joinRoom(userId, roomId);
+      
+      // 💾 حفظ الغرفة الحالية في قاعدة البيانات
+      await storage.setUserCurrentRoom(userId, roomId);
 
       // إبطال كاش مستخدمي الغرفة
       this.roomUsersCache.delete(roomId);
@@ -302,6 +305,8 @@ class RoomService {
       // 💾 حفظ في قاعدة البيانات
       if (db && dbType !== 'disabled') {
         await storage.leaveRoom(userId, roomId);
+        // 💾 تحديث الغرفة الحالية إلى null في قاعدة البيانات
+        await storage.setUserCurrentRoom(userId, null);
       }
 
       // إبطال كاش مستخدمي الغرفة

@@ -7,7 +7,7 @@ const CityWelcomeScreen = lazy(() => import('@/components/chat/CityWelcomeScreen
 const RoomSelectorScreen = lazy(() => import('@/components/chat/RoomSelectorScreen'));
 import KickCountdown from '@/components/moderation/KickCountdown';
 import { useChat } from '@/hooks/useChat';
-import { clearSession, getSession } from '@/lib/socket';
+import { clearSession, getSession, extractTokenFromResponse } from '@/lib/socket';
 import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser } from '@/types/chat';
 
@@ -52,6 +52,15 @@ export default function CityChat() {
       const savedUserId = session?.userId;
       const proceedWithUser = (user: any) => {
         if (!user || !user.id || !user.username) return;
+        
+        // استخراج الرمز المميز من الكوكيز إذا لم يكن موجوداً في بيانات المستخدم
+        if (!(user as any).token) {
+          const token = extractTokenFromResponse({ user });
+          if (token) {
+            user.token = token;
+          }
+        }
+        
         chat.connect(user);
         setShowWelcome(false);
         const roomId = session?.roomId && session.roomId !== 'public' && session.roomId !== 'friends'

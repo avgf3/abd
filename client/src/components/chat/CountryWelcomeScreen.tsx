@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
+import { extractTokenFromResponse } from '@/lib/socket';
 import type { ChatUser } from '@/types/chat';
 import type { CountryChat } from '@/data/countryChats';
 
@@ -79,7 +80,17 @@ export default function CountryWelcomeScreen({ onUserLogin, countryData }: Count
           country: countryData.nameAr.replace('شات ', ''),
         },
       });
-      onUserLogin(data.user);
+      
+      // استخراج الرمز المميز من الاستجابة
+      const token = extractTokenFromResponse(data);
+      if (token) {
+        // إضافة الرمز المميز لبيانات المستخدم
+        const userWithToken = { ...data.user, token };
+        onUserLogin(userWithToken);
+      } else {
+        onUserLogin(data.user);
+      }
+      
       setShowGuestModal(false);
     } catch (error: any) {
       toast({
@@ -111,7 +122,17 @@ export default function CountryWelcomeScreen({ onUserLogin, countryData }: Count
           password: memberPassword.trim(),
         },
       });
-      onUserLogin(data.user);
+      
+      // استخراج الرمز المميز من الاستجابة
+      const token = extractTokenFromResponse(data);
+      if (token) {
+        // إضافة الرمز المميز لبيانات المستخدم
+        const userWithToken = { ...data.user, token };
+        onUserLogin(userWithToken);
+      } else {
+        onUserLogin(data.user);
+      }
+      
       setShowMemberModal(false);
     } catch (error: any) {
       toast({
@@ -171,7 +192,17 @@ export default function CountryWelcomeScreen({ onUserLogin, countryData }: Count
         title: 'نجح التسجيل',
         description: data.message,
       });
-      onUserLogin(data.user);
+      
+      // استخراج الرمز المميز من الاستجابة
+      const token = extractTokenFromResponse(data);
+      if (token) {
+        // إضافة الرمز المميز لبيانات المستخدم
+        const userWithToken = { ...data.user, token };
+        onUserLogin(userWithToken);
+      } else {
+        onUserLogin(data.user);
+      }
+      
       setShowRegisterModal(false);
     } catch (error: any) {
       toast({

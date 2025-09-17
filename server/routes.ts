@@ -4254,6 +4254,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  // 🔥 Ping endpoint للعمل في الخلفية (POST)
+  app.post('/api/ping', async (req, res) => {
+    try {
+      const { timestamp, source } = req.body;
+      console.log(`🏓 Ping من ${source || 'غير محدد'} في ${new Date().toISOString()}`);
+      
+      res.json({ 
+        status: 'pong', 
+        timestamp: new Date().toISOString(),
+        receivedAt: timestamp 
+      });
+    } catch (error) {
+      res.status(500).json({ status: 'error', error: error.message });
+    }
+  });
+
+  // 🔥 جلب الرسائل الجديدة للعمل في الخلفية
+  app.get('/api/messages/latest', async (req, res) => {
+    try {
+      const { roomId, after } = req.query;
+      
+      if (!roomId) {
+        return res.status(400).json({ error: 'roomId مطلوب' });
+      }
+      
+      // جلب الرسائل الجديدة من قاعدة البيانات
+      const { roomMessageService } = await import('./services/roomMessageService');
+      const messages = await roomMessageService.getLatestRoomMessages(
+        String(roomId), 
+        10 // آخر 10 رسائل
+      );
+      
+      res.json(messages);
+    } catch (error) {
+      console.error('خطأ في جلب الرسائل الجديدة:', error);
+      res.status(500).json({ error: 'فشل في جلب الرسائل' });
+    }
+  });
+
   // نقطة فحص Socket.IO
   app.get('/api/socket-status', (req, res) => {
     try {

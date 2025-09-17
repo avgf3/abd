@@ -16,6 +16,8 @@ import {
 import { friendService } from './services/friendService';
 import { notificationService } from './services/notificationService';
 import { userService } from './services/userService';
+import { optimizedUserService } from './services/optimizedUserService';
+import { DEFAULT_ROOM_CONSTANTS } from '../client/src/utils/defaultRoomOptimizer';
 
 // Helper function
 function safeParseJsonArray(value: string): any[] {
@@ -677,7 +679,13 @@ export const storage: LegacyStorage = {
   },
 
   async setUserOnlineStatus(id: number, isOnline: boolean) {
-    await databaseService.updateUser(id, { isOnline, lastSeen: new Date() });
+    // استخدام المحسن لتحديث حالة الاتصال
+    await optimizedUserService.setUserOnlineStatus(id, isOnline);
+  },
+
+  async setUserCurrentRoom(id: number, currentRoom: string | null) {
+    // استخدام المحسن لتحديث الغرفة الحالية
+    await optimizedUserService.setUserCurrentRoom(id, currentRoom);
   },
 
   async createMessage(message: any) {
@@ -703,7 +711,7 @@ export const storage: LegacyStorage = {
   },
 
   async getPublicMessages(limit = 50) {
-    return await databaseService.getMessages('general', limit);
+    return await databaseService.getMessages(DEFAULT_ROOM_CONSTANTS.GENERAL_ROOM_ID, limit);
   },
 
   async getPrivateMessages(userId1: number, userId2: number, limit = 50) {
@@ -1037,12 +1045,12 @@ export const storage: LegacyStorage = {
       const room = await databaseService.getRoomById(roomId as any);
       if (room) return room as any;
 
-      // Fallback: if not found and asking for 'general', synthesize minimal room info
-      if (roomId === 'general') {
+      // Fallback: if not found and asking for general room, synthesize minimal room info
+      if (roomId === DEFAULT_ROOM_CONSTANTS.GENERAL_ROOM_ID) {
         return {
-          id: 'general',
-          name: 'الغرفة العامة',
-          description: 'الغرفة العامة للدردشة',
+          id: DEFAULT_ROOM_CONSTANTS.GENERAL_ROOM_ID,
+          name: DEFAULT_ROOM_CONSTANTS.GENERAL_ROOM_NAME,
+          description: DEFAULT_ROOM_CONSTANTS.DEFAULT_ROOM_DESCRIPTION,
           isDefault: true,
           isActive: true,
           isLocked: false,

@@ -68,6 +68,14 @@ export default function ProfileModal({
       setLocalUser(user);
     }
   }, [user]);
+
+  // تحديث الغرفة الحالية من قاعدة البيانات عند فتح الملف الشخصي
+  useEffect(() => {
+    if (user?.id && !localUser?.currentRoom) {
+      // جلب البيانات المحدثة من الخادم إذا لم تكن الغرفة الحالية موجودة
+      fetchAndUpdateUser(user.id);
+    }
+  }, [user?.id, localUser?.currentRoom]);
   const [selectedTheme, setSelectedTheme] = useState(user?.profileBackgroundColor || '');
   const [selectedEffect, setSelectedEffect] = useState(user?.profileEffect || 'none');
 

@@ -1,8 +1,9 @@
-import { useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
 
 import { getUserLevelIcon } from '@/components/chat/UserRoleBadge';
 import type { ChatUser } from '@/types/chat';
 import { getImageSrc } from '@/utils/imageUtils';
+import { setCachedUser } from '@/utils/userCacheManager';
 
 interface ProfileImageProps {
   user: ChatUser;
@@ -43,6 +44,13 @@ export default function ProfileImage({
     }
     return base;
   }, [user.profileImage, (user as any)?.avatarHash, (user as any)?.avatarVersion]);
+
+  // تحديث الكاش مع البيانات الحالية
+  useEffect(() => {
+    if (user?.id) {
+      setCachedUser(user);
+    }
+  }, [user]);
 
   return (
     <div className="relative inline-block" onClick={onClick}>

@@ -418,6 +418,89 @@ export const useChat = () => {
 
   // Track ping interval to avoid leaks
   const pingIntervalRef = useRef<number | null>(null);
+  const isPageVisibleRef = useRef<boolean>(true);
+
+  // 🔥 معالجة Page Visibility API للحفاظ على الاتصال في الخلفية
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      const isVisible = !document.hidden;
+      isPageVisibleRef.current = isVisible;
+      
+      if (isVisible && socket.current && !socket.current.connected) {
+        // إعادة الاتصال عند العودة للواجهة الأمامية
+        try {
+          socket.current.connect();
+        } catch {}
+      }
+    };
+
+    const handlePageHide = () => {
+      // ✅ عدم قطع الاتصال عند إخفاء الصفحة للعمل في الخلفية
+      console.log('الصفحة مخفية - الاتصال مستمر في الخلفية');
+      
+      // ✅ تفعيل Service Worker للعمل في الخلفية
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.ready.then(registration => {
+          registration.active?.postMessage({ type: 'KEEP_ALIVE' });
+          registration.active?.postMessage({ type: 'BACKGROUND_SYNC' });
+        });
+      }
+    };
+
+    const handlePageShow = () => {
+      // ✅ التأكد من الاتصال عند العودة للواجهة الأمامية
+      console.log('الصفحة ظاهرة - التأكد من الاتصال');
+      if (socket.current && !socket.current.connected) {
+        try {
+          socket.current.connect();
+        } catch {}
+      }
+    };
+
+    const handleBeforeUnload = () => {
+      // ✅ عدم قطع الاتصال عند إعادة التحميل للعمل في الخلفية
+      console.log('إعادة تحميل - الاتصال مستمر في الخلفية');
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('pagehide', handlePageHide);
+    window.addEventListener('pageshow', handlePageShow);
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('pagehide', handlePageHide);
+      window.removeEventListener('pageshow', handlePageShow);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, []);
+
+  // 🔥 معالجة الرسائل من Service Worker في الخلفية
+  useEffect(() => {
+    const handleServiceWorkerMessage = (event: MessageEvent) => {
+      if (event.data.type === 'NEW_MESSAGES') {
+        console.log('📨 تم استلام رسائل جديدة من الخلفية:', event.data.messages);
+        
+        // إضافة الرسائل الجديدة للحالة
+        event.data.messages.forEach((message: any) => {
+          dispatch({
+            type: 'ADD_ROOM_MESSAGE',
+            payload: {
+              ...message,
+              roomId: message.roomId || state.currentRoomId,
+            },
+          });
+        });
+      }
+    };
+
+    // الاستماع لرسائل Service Worker
+    navigator.serviceWorker?.addEventListener('message', handleServiceWorkerMessage);
+
+    return () => {
+      navigator.serviceWorker?.removeEventListener('message', handleServiceWorkerMessage);
+    };
+  }, [state.currentRoomId]);
 
   // 🔥 SIMPLIFIED Socket event handling - حذف التضارب
   const setupSocketListeners = useCallback((socketInstance: Socket) => {
@@ -428,6 +511,7 @@ export const useChat = () => {
     
     let lastPingTime = 0;
     const pingId = window.setInterval(() => {
+      // ✅ إرسال ping حتى لو كانت الصفحة مخفية للعمل في الخلفية
       if (socketInstance.connected) {
         lastPingTime = Date.now();
         socketInstance.emit('client_ping');
@@ -1281,18 +1365,31 @@ export const useChat = () => {
         const s = connectSocket();
         socket.current = s;
         
-        // حفظ الجلسة
-        saveSession({ userId: user.id, username: user.username, userType: user.userType });
+        // حفظ الجلسة مع الرمز المميز
+        const sessionData: any = { 
+          userId: user.id, 
+          username: user.username, 
+          userType: user.userType 
+        };
+        
+        // إضافة الرمز المميز إذا كان متوفراً
+        if ((user as any).token) {
+          sessionData.token = (user as any).token;
+        }
+        
+        saveSession(sessionData);
 
         // إعداد المستمعين
         setupSocketListeners(s);
 
         // إذا كان متصلاً بالفعل، أرسل المصادقة فقط، والانضمام سيتم بعد التأكيد
         if (s.connected) {
+          const session = getSession();
           s.emit('auth', {
             userId: user.id,
             username: user.username,
             userType: user.userType,
+            token: session.token,
           });
         }
 
@@ -1304,10 +1401,12 @@ export const useChat = () => {
 
           // إعادة إرسال المصادقة فقط، والانضمام للغرفة بعد Event roomJoined
           try {
+            const session = getSession();
             s.emit('auth', {
               userId: user.id,
               username: user.username,
               userType: user.userType,
+              token: session.token,
             });
           } catch {}
 
