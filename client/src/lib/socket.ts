@@ -153,9 +153,14 @@ export function getSocket(): Socket {
     // 🔥 تحسين إدارة الاتصال
     multiplex: true, // تمكين multiplexing للأداء الأفضل
     forceBase64: false, // استخدام binary للأداء الأفضل
-    // 🔥 إعدادات ping مخصصة (هذه الخيارات للخادم فقط، لكن نتركها للتوثيق)
-    // pingTimeout: isProduction ? 60000 : 30000, // مطابق للخادم
-    // pingInterval: isProduction ? 25000 : 15000, // مطابق للخادم
+    // 🔥 إعدادات ping محسّنة للـ Free Tier
+    // pingTimeout: isProduction ? 30000 : 20000, // مطابق للخادم المحسّن
+    // pingInterval: isProduction ? 15000 : 10000, // مطابق للخادم المحسّن
+    // 🔥 إعدادات إعادة الاتصال التلقائي
+    reconnection: true,
+    reconnectionAttempts: 5,
+    reconnectionDelay: 1000,
+    reconnectionDelayMax: 5000,
     query: {
       deviceId,
       t: Date.now(), // timestamp لتجنب الكاش
