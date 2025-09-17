@@ -37,6 +37,12 @@ export function clearSession() {
   } catch {}
   // إعادة تعيين Socket instance عند مسح الجلسة
   if (socketInstance) {
+    // تنظيف keep-alive interval
+    const keepAliveInterval = (socketInstance as any).__keepAliveInterval;
+    if (keepAliveInterval) {
+      clearInterval(keepAliveInterval);
+    }
+    
     socketInstance.removeAllListeners();
     socketInstance.disconnect();
     socketInstance = null;
@@ -84,10 +90,36 @@ function attachCoreListeners(socket: Socket) {
   socket.on('connect', () => {
     reauth(false);
     // إذا لم تكن هناك جلسة محفوظة، لا نرسل auth هنا لتفادي مهلة غير ضرورية
+    
+    // إرسال ping دوري للحفاظ على الاتصال نشطاً
+    const keepAliveInterval = setInterval(() => {
+      if (socket.connected) {
+        try {
+          socket.emit('client_ping', { t: Date.now() });
+        } catch (error) {
+          console.warn('فشل إرسال ping:', error);
+          clearInterval(keepAliveInterval);
+        }
+      } else {
+        clearInterval(keepAliveInterval);
+      }
+    }, 20000); // كل 20 ثانية
+    
+    // حفظ معرف الـ interval للتنظيف لاحقاً
+    (socket as any).__keepAliveInterval = keepAliveInterval;
   });
 
   socket.on('reconnect', () => {
     reauth(true);
+  });
+
+  socket.on('disconnect', () => {
+    // تنظيف keep-alive interval عند الانقطاع
+    const keepAliveInterval = (socket as any).__keepAliveInterval;
+    if (keepAliveInterval) {
+      clearInterval(keepAliveInterval);
+      (socket as any).__keepAliveInterval = null;
+    }
   });
 
   // If network goes back online, try to connect
@@ -96,6 +128,24 @@ function attachCoreListeners(socket: Socket) {
       try {
         socket.connect();
       } catch {}
+    }
+  });
+
+  // معالجة أخطاء الاتصال
+  socket.on('connect_error', (error) => {
+    console.warn('خطأ في الاتصال:', error.message);
+  });
+
+  // معالجة أخطاء إعادة الاتصال
+  socket.on('reconnect_error', (error) => {
+    console.warn('خطأ في إعادة الاتصال:', error.message);
+  });
+
+  // معالجة pong من الخادم
+  socket.on('client_pong', (data) => {
+    const latency = Date.now() - data.t;
+    if (latency > 5000) { // إذا كان الكمون أكثر من 5 ثواني
+      console.warn(`كمون عالي: ${latency}ms`);
     }
   });
 }
@@ -137,13 +187,13 @@ export function getSocket(): Socket {
     rememberUpgrade: true, // تذكر الترقية الناجحة
     autoConnect: false,
     reconnection: true,
-    // 🔥 تحسين إعادة الاتصال - محاولات محدودة مع تدرج ذكي
-    reconnectionAttempts: isProduction ? 10 : 5, // محاولات محدودة بدلاً من لانهائية
-    reconnectionDelay: isDevelopment ? 1000 : 2000, // تقليل التأخير في التطوير
-    reconnectionDelayMax: isProduction ? 10000 : 5000, // تقليل الحد الأقصى
-    randomizationFactor: 0.3, // تقليل العشوائية لاتصال أسرع
-    // 🔥 تحسين أوقات الاستجابة
-    timeout: isDevelopment ? 15000 : 20000, // timeout أقل لاستجابة أسرع
+    // 🔥 تحسين إعادة الاتصال - محاولات محدودة مع تدرج ذكي للـ free tier
+    reconnectionAttempts: isProduction ? 5 : 3, // تقليل المحاولات للـ free tier
+    reconnectionDelay: isDevelopment ? 2000 : 3000, // تأخير أطول للـ free tier
+    reconnectionDelayMax: isProduction ? 15000 : 10000, // تقليل الحد الأقصى
+    randomizationFactor: 0.5, // زيادة العشوائية لتجنب التحميل المتزامن
+    // 🔥 تحسين أوقات الاستجابة للـ free tier
+    timeout: isDevelopment ? 20000 : 25000, // timeout أطول للـ free tier
     forceNew: false, // إعادة استخدام الاتصالات الموجودة
     withCredentials: true,
     auth: { deviceId },

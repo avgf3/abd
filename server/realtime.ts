@@ -509,9 +509,9 @@ export function setupRealtime(httpServer: HttpServer): IOServer<ClientToServerEv
       ? ['polling']
       : ['websocket', 'polling'],
     allowEIO3: true,
-    // 🔥 تحسين أوقات الاستجابة - تقليل timeout لتحسين الأداء
-    pingTimeout: (process?.env?.NODE_ENV === 'production') ? 60000 : 30000, // دقيقة واحدة في الإنتاج، 30 ثانية في التطوير
-    pingInterval: (process?.env?.NODE_ENV === 'production') ? 20000 : 15000, // ping كل 20 ثانية في الإنتاج، 15 في التطوير
+    // 🔥 تحسين أوقات الاستجابة - إعدادات محسنة للـ free tier
+    pingTimeout: (process?.env?.NODE_ENV === 'production') ? 30000 : 20000, // 30 ثانية في الإنتاج، 20 ثانية في التطوير
+    pingInterval: (process?.env?.NODE_ENV === 'production') ? 25000 : 15000, // ping كل 25 ثانية في الإنتاج، 15 في التطوير
     upgradeTimeout: 30000, // تقليل timeout للترقية لتحسين الاستجابة
     allowUpgrades: (process?.env?.SOCKET_IO_POLLING_ONLY !== 'true'),
     cookie: false,
@@ -525,9 +525,10 @@ export function setupRealtime(httpServer: HttpServer): IOServer<ClientToServerEv
       memLevel: 7, // توفير ذاكرة
     },
     httpCompression: true, // تفعيل ضغط HTTP للأداء الأفضل
-    // 🔥 إعدادات جديدة لتحسين الأداء
+    // 🔥 إعدادات جديدة لتحسين الأداء والاستقرار للـ free tier
     connectTimeout: 45000, // timeout للاتصال الأولي
     cleanupEmptyChildNamespaces: true, // تنظيف namespaces الفارغة
+    // إعدادات إضافية للاستقرار
     allowRequest: (req, callback) => {
       try {
         const originHeader = req.headers.origin || '';
@@ -618,6 +619,9 @@ export function setupRealtime(httpServer: HttpServer): IOServer<ClientToServerEv
 
   io.on('connection', (rawSocket) => {
     const socket = rawSocket as CustomSocket;
+    
+    // تسجيل وقت الاتصال للتشخيص
+    (socket as any).connectedAt = Date.now();
 
     // Basic ping/pong to keep alive
     socket.on('client_ping', () => {
@@ -1055,8 +1059,10 @@ export function setupRealtime(httpServer: HttpServer): IOServer<ClientToServerEv
       }
     });
 
-    socket.on('disconnect', async () => {
+    socket.on('disconnect', async (reason) => {
       try {
+        console.log(`❌ انقطاع اتصال: ${socket.id} بعد ${Math.floor((Date.now() - (socket as any).connectedAt) / 1000)}s - السبب: ${reason}`);
+        
         const userId = socket.userId;
         if (!userId) return;
         const entry = connectedUsers.get(userId);
