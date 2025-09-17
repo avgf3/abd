@@ -53,14 +53,89 @@ export async function checkDatabaseHealth(): Promise<boolean> {
 }
 
 export async function initializeDatabase(): Promise<boolean> {
-  console.log('📝 استخدام SQLite...');
-  dbType = 'disabled';
-  dbAdapter.db = null;
-  dbAdapter.client = null;
-  db = null;
-  return false;
-}
+  const databaseUrl = process.env.DATABASE_URL || '';
 
+  try {
+    if (
+      !databaseUrl ||
+      !(databaseUrl.startsWith('postgresql://') || databaseUrl.startsWith('postgres://'))
+    ) {
+      dbType = 'disabled';
+      dbAdapter.db = null;
+      dbAdapter.client = null;
+      db = null;
+      console.warn('⚠️ DATABASE_URL غير محدد أو ليس PostgreSQL. سيتم تعطيل قاعدة البيانات.');
+      return false;
+    }
+
+    // إعدادات محسنة للاتصال بقاعدة البيانات على Render
+    const sslRequired =
+      /\bsslmode=require\b/.test(databaseUrl) || process.env.NODE_ENV === 'production';
+    
+    // إضافة معاملات SSL إذا لم تكن موجودة في production
+    let connectionString = databaseUrl;
+    if (process.env.NODE_ENV === 'production' && !connectionString.includes('sslmode=')) {
+      connectionString += connectionString.includes('?') ? '&sslmode=require' : '?sslmode=require';
+    }
+    
+    const client = postgres(connectionString, {
+      ssl: sslRequired ? 'require' : undefined,
+      // ضبط الحد الأقصى للاتصالات: متغير بيئة أو افتراضي 20 لتوافق الخطط المحدودة
+      max: (() => {
+        const env = Number(process.env.DB_MAX_CONNECTIONS);
+        if (!Number.isNaN(env) && env > 0) return env;
+        return 20;
+      })(),
+      idle_timeout: 30, // تقليل timeout إلى 30 ثانية لتحرير الاتصالات بشكل أسرع
+      connect_timeout: 30, // تقليل timeout الاتصال إلى 30 ثانية
+      max_lifetime: 60 * 10, // إعادة تدوير الاتصالات كل 10 دقائق لمنع التراكم
+      prepare: true, // تفعيل prepared statements لتحسين الأداء
+      onnotice: () => {}, // تجاهل الإشعارات
+      // إضافة إعدادات إضافية للأداء
+      fetch_types: false, // تحسين الأداء
+      types: {},
+      connection: {
+        application_name: 'chat-app',
+        statement_timeout: 30000, // 30 ثانية كحد أقصى لكل استعلام
+      },
+    });
+
+    const drizzleDb = drizzle(client, { schema, logger: false });
+
+    // محاولة الاتصال مع إعادة المحاولة
+    let connected = false;
+    let attempts = 0;
+    const maxAttempts = 3;
+    
+    while (!connected && attempts < maxAttempts) {
+      try {
+        await client`select 1 as ok`;
+        connected = true;
+      } catch (error) {
+        attempts++;
+        if (attempts < maxAttempts) {
+          await new Promise(resolve => setTimeout(resolve, 2000 * attempts));
+        } else {
+          throw error;
+        }
+      }
+    }
+
+    dbType = 'postgresql';
+    dbAdapter.client = client as any;
+    dbAdapter.db = drizzleDb as any;
+    db = drizzleDb as any;
+
+    return true;
+  } catch (error: any) {
+    console.error('❌ فشل الاتصال بقاعدة البيانات:', error?.message || error);
+    dbType = 'disabled';
+    dbAdapter.db = null;
+    dbAdapter.client = null;
+    db = null;
+    return false;
+  }
+}
 
 export async function runMigrationsIfAvailable(): Promise<void> {
   try {
@@ -116,7 +191,7 @@ export async function ensureChatLockColumns(): Promise<void> {
     await dbAdapter.client.unsafe(`CREATE INDEX IF NOT EXISTS "idx_rooms_chat_lock_all" ON "rooms" ("chat_lock_all")`);
     await dbAdapter.client.unsafe(`CREATE INDEX IF NOT EXISTS "idx_rooms_chat_lock_visitors" ON "rooms" ("chat_lock_visitors")`);
     
-    } catch (error) {
+  } catch (error) {
     console.error('❌ خطأ في ضمان أعمدة chat_lock:', error);
   }
 }
@@ -339,7 +414,7 @@ export async function ensureBotsTable(): Promise<void> {
     try {
       const migrationSQL = await fs.readFile(migrationPath, 'utf-8');
       await dbAdapter.client.unsafe(migrationSQL);
-      } catch (error) {
+    } catch (error) {
       // إذا فشلت قراءة الملف، نقوم بإنشاء الجدول مباشرة
       await dbAdapter.client.unsafe(`
         CREATE TABLE IF NOT EXISTS bots (
@@ -377,7 +452,7 @@ export async function ensureBotsTable(): Promise<void> {
         CREATE INDEX IF NOT EXISTS idx_bots_is_active ON bots(is_active);
         CREATE INDEX IF NOT EXISTS idx_bots_bot_type ON bots(bot_type);
       `);
-      }
+    }
   } catch (e) {
     console.error('❌ خطأ في إنشاء جدول البوتات:', (e as any)?.message || e);
   }
