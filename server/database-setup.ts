@@ -22,7 +22,6 @@ import { ensureUserProfileMusicColumns } from './database-adapter';
 import { ensureRoomsColumns } from './database-adapter';
 import { ensureBotsTable } from './database-adapter';
 import { ensureChatLockColumns } from './database-adapter';
-import { ensureUserPreferencesColumns } from './database-adapter';
 
 // إعادة تصدير دالة التهيئة من المحول
 export { initializeDatabase } from './database-adapter';
@@ -278,13 +277,6 @@ export async function initializeSystem(): Promise<boolean> {
       await ensureUserProfileMusicColumns();
     } catch (e) {
       console.warn('⚠️ تعذر ضمان أعمدة موسيقى البروفايل:', (e as any)?.message || e);
-    }
-
-    // ضمان أعمدة تفضيلات المستخدم العامة
-    try {
-      await ensureUserPreferencesColumns();
-    } catch (e) {
-      console.warn('⚠️ تعذر ضمان أعمدة تفضيلات المستخدم:', (e as any)?.message || e);
     }
 
     // ضمان أعمدة جدول الغرف (مثل is_locked)

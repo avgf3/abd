@@ -71,25 +71,6 @@ async function applyDeploymentFixes() {
     await sql`UPDATE "users" SET "dm_privacy" = 'all' WHERE "dm_privacy" IS NULL OR "dm_privacy" NOT IN ('all','friends','none')`;
     await sql`ALTER TABLE "users" ALTER COLUMN "dm_privacy" SET DEFAULT 'all'`;
     await sql`ALTER TABLE "users" ALTER COLUMN "dm_privacy" SET NOT NULL`;
-
-    // Ensure user preference columns exist and are defaulted
-    console.log('🔍 التحقق من أعمدة تفضيلات المستخدم العامة في users...');
-    await sql`ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS show_points_to_others BOOLEAN`;
-    await sql`ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS show_system_messages BOOLEAN`;
-    await sql`ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS global_sound_enabled BOOLEAN`;
-
-    console.log('🔄 ضبط القيم الافتراضية لأعمدة التفضيلات...');
-    await sql`UPDATE users SET show_points_to_others = COALESCE(show_points_to_others, TRUE)`;
-    await sql`UPDATE users SET show_system_messages = COALESCE(show_system_messages, TRUE)`;
-    await sql`UPDATE users SET global_sound_enabled = COALESCE(global_sound_enabled, TRUE)`;
-
-    await sql`ALTER TABLE IF EXISTS users ALTER COLUMN show_points_to_others SET DEFAULT TRUE`;
-    await sql`ALTER TABLE IF EXISTS users ALTER COLUMN show_system_messages SET DEFAULT TRUE`;
-    await sql`ALTER TABLE IF EXISTS users ALTER COLUMN global_sound_enabled SET DEFAULT TRUE`;
-
-    await sql`ALTER TABLE IF EXISTS users ALTER COLUMN show_points_to_others SET NOT NULL`;
-    await sql`ALTER TABLE IF EXISTS users ALTER COLUMN show_system_messages SET NOT NULL`;
-    await sql`ALTER TABLE IF EXISTS users ALTER COLUMN global_sound_enabled SET NOT NULL`;
     
     // Verify the fix worked
     console.log('✅ التحقق من النتيجة النهائية...');
