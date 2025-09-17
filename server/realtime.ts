@@ -509,9 +509,9 @@ export function setupRealtime(httpServer: HttpServer): IOServer<ClientToServerEv
       ? ['polling']
       : ['websocket', 'polling'],
     allowEIO3: true,
-    // 🔥 تحسين أوقات الاستجابة للـ Free Tier - تقليل timeout لتجنب انقطاع الاتصال
-    pingTimeout: (process?.env?.NODE_ENV === 'production') ? 30000 : 20000, // 30 ثانية في الإنتاج، 20 ثانية في التطوير
-    pingInterval: (process?.env?.NODE_ENV === 'production') ? 15000 : 10000, // ping كل 15 ثانية في الإنتاج، 10 في التطوير
+    // 🔥 تحسين أوقات الاستجابة - تقليل timeout لتحسين الأداء
+    pingTimeout: (process?.env?.NODE_ENV === 'production') ? 60000 : 30000, // دقيقة واحدة في الإنتاج، 30 ثانية في التطوير
+    pingInterval: (process?.env?.NODE_ENV === 'production') ? 20000 : 15000, // ping كل 20 ثانية في الإنتاج، 15 في التطوير
     upgradeTimeout: 30000, // تقليل timeout للترقية لتحسين الاستجابة
     allowUpgrades: (process?.env?.SOCKET_IO_POLLING_ONLY !== 'true'),
     cookie: false,
