@@ -7,6 +7,21 @@ import { parseEntityId } from '../types/entities';
 
 import { createError, ERROR_MESSAGES } from './errorHandler';
 
+// Simple IP-based rate limiting for failed auth attempts
+const failedAuthAttempts = new Map<string, { count: number; lastAttempt: number }>();
+const MAX_FAILED_ATTEMPTS = 10; // Maximum failed attempts per IP
+const RATE_LIMIT_WINDOW = 15 * 60 * 1000; // 15 minutes
+
+// Clean up old entries periodically
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, data] of failedAuthAttempts.entries()) {
+    if (now - data.lastAttempt > RATE_LIMIT_WINDOW) {
+      failedAuthAttempts.delete(ip);
+    }
+  }
+}, 5 * 60 * 1000); // Clean up every 5 minutes
+
 // تمديد نوع Request - moved to server/types/api.ts
 
 // أنواع الحماية المختلفة
@@ -40,6 +55,22 @@ function hasPermission(userRole: string, requiredLevel: ProtectionLevel): boolea
 // Middleware للتحقق من المصادقة الأساسية
 export const requireAuth = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    const clientIP = req.ip || req.connection.remoteAddress || 'unknown';
+    
+    // Check rate limiting for failed auth attempts
+    const now = Date.now();
+    const ipData = failedAuthAttempts.get(clientIP);
+    
+    if (ipData && (now - ipData.lastAttempt) < RATE_LIMIT_WINDOW && ipData.count >= MAX_FAILED_ATTEMPTS) {
+      log.security('IP محظور مؤقتاً بسبب محاولات مصادقة فاشلة متكررة', {
+        ip: clientIP,
+        attempts: ipData.count,
+        path: req.path,
+        method: req.method,
+      });
+      return res.status(429).json({ error: 'تم تجاوز الحد الأقصى للمحاولات، حاول مرة أخرى لاحقاً' });
+    }
+    
     // قبول الهوية فقط من جلسة موثوقة أو توكن (يُستكمل لاحقاً)
     let userId: number | undefined;
     // أولوية: Authorization Bearer أو كوكي auth_token
@@ -56,23 +87,46 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
     }
 
     if (!userId || isNaN(userId)) {
+      // Increment failed attempt counter
+      if (ipData) {
+        ipData.count++;
+        ipData.lastAttempt = now;
+      } else {
+        failedAuthAttempts.set(clientIP, { count: 1, lastAttempt: now });
+      }
+      
       log.security('محاولة وصول بدون معرف مستخدم صالح', {
         ip: req.ip,
         path: req.path,
         method: req.method,
+        userAgent: req.get('User-Agent'),
+        timestamp: new Date().toISOString(),
       });
-      throw createError.unauthorized('معرف المستخدم مطلوب للوصول لهذه الخدمة');
+      throw createError.unauthorized('غير مصرح لك بالوصول');
     }
 
     // التحقق من وجود المستخدم
     const user = await storage.getUser(userId);
     if (!user) {
+      // Increment failed attempt counter for non-existent user
+      if (ipData) {
+        ipData.count++;
+        ipData.lastAttempt = now;
+      } else {
+        failedAuthAttempts.set(clientIP, { count: 1, lastAttempt: now });
+      }
+      
       log.security('محاولة وصول بمعرف مستخدم غير موجود', {
         userId,
         ip: req.ip,
         path: req.path,
       });
       throw createError.unauthorized('المستخدم غير موجود');
+    }
+
+    // Reset failed attempts counter on successful authentication
+    if (ipData) {
+      failedAuthAttempts.delete(clientIP);
     }
 
     // التحقق من أن المستخدم ليس محظوراً

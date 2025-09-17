@@ -220,7 +220,7 @@ export class DatabaseService {
             currentRoom: schema.users.currentRoom,
           })
           .from(schema.users)
-          .where(eq(schema.users.id, id))
+          .where(eq(schema.users.id, Number(id))) // تأكد من تحويل ID إلى رقم
           .limit(1);
         
         const user = result[0] || null;
@@ -491,7 +491,7 @@ export class DatabaseService {
         const result = await (this.db as any)
           .update(schema.users)
           .set(updates)
-          .where(eq(schema.users.id, id))
+          .where(eq(schema.users.id, Number(id))) // تأكد من تحويل ID إلى رقم
           .returning();
         return result[0] || null;
       } else {

@@ -1172,23 +1172,38 @@ let lastSeenUpdateInterval: NodeJS.Timeout | null = null;
 async function updateLastSeenForConnectedUsers() {
   try {
     const now = new Date();
-    const updatePromises: Promise<void>[] = [];
+    const userIds = Array.from(connectedUsers.keys()).filter(userId => {
+      const entry = connectedUsers.get(userId);
+      return entry && entry.sockets.size > 0;
+    });
     
-    // تحديث lastSeen لجميع المستخدمين المتصلين
-    for (const [userId, entry] of connectedUsers.entries()) {
-      if (entry.sockets.size > 0) { // المستخدم متصل
-        updatePromises.push(
-          storage.updateUser(userId, { lastSeen: now }).then(() => {
-            // تم التحديث بنجاح
-          }).catch((error) => {
-            console.error(`خطأ في تحديث lastSeen للمستخدم ${userId}:`, error);
-          })
-        );
+    if (userIds.length === 0) return;
+    
+    // تحديث المستخدمين في مجموعات صغيرة لتجنب استنزاف connection pool
+    const batchSize = 5; // تحديث 5 مستخدمين في كل مرة
+    const batches = [];
+    
+    for (let i = 0; i < userIds.length; i += batchSize) {
+      batches.push(userIds.slice(i, i + batchSize));
+    }
+    
+    // معالجة كل مجموعة بشكل متسلسل مع تأخير قصير بين المجموعات
+    for (const batch of batches) {
+      const updatePromises = batch.map(userId => 
+        storage.updateUser(userId, { lastSeen: now }).catch(error => {
+          console.warn(`⚠️ فشل تحديث lastSeen للمستخدم ${userId}:`, error.message);
+        })
+      );
+      
+      await Promise.all(updatePromises);
+      
+      // تأخير قصير بين المجموعات لتجنب الضغط على قاعدة البيانات
+      if (batches.indexOf(batch) < batches.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 100));
       }
     }
     
-    await Promise.all(updatePromises);
-    console.log(`تم تحديث lastSeen لـ ${updatePromises.length} مستخدم متصل`);
+    console.log(`✅ تم تحديث lastSeen لـ ${userIds.length} مستخدم متصل`);
 
     // بث userUpdated بشكل خفيف لإبلاغ الواجهة بالتحديث الدوري لـ lastSeen
     try {
@@ -1212,7 +1227,7 @@ async function updateLastSeenForConnectedUsers() {
       }
     } catch {}
   } catch (error) {
-    console.error('خطأ في تحديث lastSeen للمستخدمين المتصلين:', error);
+    console.error('❌ خطأ في تحديث lastSeen للمستخدمين المتصلين:', error);
   }
 }
 
