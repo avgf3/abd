@@ -49,7 +49,7 @@ let socketInstance: Socket | null = null;
 function getServerUrl(): string {
   try {
     const isDev = (import.meta as any)?.env?.DEV;
-    if (isDev) return 'http://localhost:5000';
+    if (isDev) return 'http://localhost:3000';
     
     // في الإنتاج، استخدم نفس الأصل دائماً
     // هذا يضمن التوافق مع أي بيئة استضافة
