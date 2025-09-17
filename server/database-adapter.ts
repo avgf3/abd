@@ -80,15 +80,15 @@ export async function initializeDatabase(): Promise<boolean> {
     
     const client = postgres(connectionString, {
       ssl: sslRequired ? 'require' : undefined,
-      // ضبط الحد الأقصى للاتصالات: متغير بيئة أو افتراضي 20 لتوافق الخطط المحدودة
+      // ضبط الحد الأقصى للاتصالات: متغير بيئة أو افتراضي 30 لتوافق الخطط المحدودة
       max: (() => {
         const env = Number(process.env.DB_MAX_CONNECTIONS);
         if (!Number.isNaN(env) && env > 0) return env;
-        return 20;
+        return 30; // زيادة من 20 إلى 30
       })(),
-      idle_timeout: 30, // تقليل timeout إلى 30 ثانية لتحرير الاتصالات بشكل أسرع
-      connect_timeout: 30, // تقليل timeout الاتصال إلى 30 ثانية
-      max_lifetime: 60 * 10, // إعادة تدوير الاتصالات كل 10 دقائق لمنع التراكم
+      idle_timeout: 20, // تقليل timeout إلى 20 ثانية لتحرير الاتصالات بشكل أسرع
+      connect_timeout: 20, // تقليل timeout الاتصال إلى 20 ثانية
+      max_lifetime: 60 * 5, // إعادة تدوير الاتصالات كل 5 دقائق لمنع التراكم
       prepare: true, // تفعيل prepared statements لتحسين الأداء
       onnotice: () => {}, // تجاهل الإشعارات
       // إضافة إعدادات إضافية للأداء
@@ -96,7 +96,7 @@ export async function initializeDatabase(): Promise<boolean> {
       types: {},
       connection: {
         application_name: 'chat-app',
-        statement_timeout: 30000, // 30 ثانية كحد أقصى لكل استعلام
+        statement_timeout: 15000, // تقليل إلى 15 ثانية كحد أقصى لكل استعلام
       },
     });
 
