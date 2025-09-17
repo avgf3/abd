@@ -3,7 +3,7 @@ import { useMemo, useEffect } from 'react';
 import { getUserLevelIcon } from '@/components/chat/UserRoleBadge';
 import type { ChatUser } from '@/types/chat';
 import { getImageSrc } from '@/utils/imageUtils';
-import { getCachedUser, setCachedUser } from '@/utils/userCacheManager';
+import { setCachedUser } from '@/utils/userCacheManager';
 
 interface ProfileImageProps {
   user: ChatUser;
@@ -32,32 +32,17 @@ export default function ProfileImage({
   
 
 
-  // مصدر الصورة مع دعم ?v=hash إذا وُجد
+  // مصدر الصورة
   const imageSrc = useMemo(() => {
-    const base = getImageSrc(user.profileImage, '/default_avatar.svg');
-    // لا تضف ?v عندما يكون base عبارة عن data:base64 أو يحتوي بالفعل على v
-    const isBase64 = typeof base === 'string' && base.startsWith('data:');
-    const hasVersionAlready = typeof base === 'string' && base.includes('?v=');
-    const versionTag = (user as any)?.avatarHash || (user as any)?.avatarVersion;
-    if (!isBase64 && versionTag && !hasVersionAlready && typeof base === 'string' && base.startsWith('/')) {
-      return `${base}?v=${versionTag}`;
-    }
-    return base;
-  }, [user.profileImage, (user as any)?.avatarHash, (user as any)?.avatarVersion]);
+    return getImageSrc(user.profileImage, '/default_avatar.svg');
+  }, [user.profileImage]);
 
-  // تحديث الكاش مع البيانات الحالية - محسن لتجنب التكرار
+  // تحديث الكاش عند تغيير المستخدم
   useEffect(() => {
     if (user?.id && user?.username) {
-      // تحديث الكاش فقط عند تغيير البيانات المهمة
-      const currentCached = getCachedUser(user.id);
-      if (!currentCached || 
-          currentCached.username !== user.username ||
-          currentCached.profileImage !== user.profileImage ||
-          currentCached.isOnline !== user.isOnline) {
-        setCachedUser(user);
-      }
+      setCachedUser(user);
     }
-  }, [user?.id, user?.username, user?.profileImage, user?.isOnline]);
+  }, [user?.id, user?.username]);
 
   return (
     <div className="relative inline-block" onClick={onClick}>
