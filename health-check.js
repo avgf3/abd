@@ -1,231 +1,180 @@
 #!/usr/bin/env node
 
 /**
- * سكريبت فحص شامل للنظام
- * يتحقق من جميع المكونات الحرجة
+ * Enhanced Health Check Script for Render
+ * 
+ * This script provides comprehensive health monitoring
+ * for the deployed application on Render
  */
 
-import https from 'node:https';
-import http from 'node:http';
-import { URL } from 'node:url';
-import fs from 'node:fs';
+import dotenv from 'dotenv';
+import postgres from 'postgres';
 
-// الألوان للطباعة
-const colors = {
-  reset: '\x1b[0m',
-  red: '\x1b[31m',
-  green: '\x1b[32m',
-  yellow: '\x1b[33m',
-  blue: '\x1b[34m',
-  cyan: '\x1b[36m'
-};
+dotenv.config();
 
-function log(message, color = 'reset') {
-  console.log(`${colors[color]}${message}${colors.reset}`);
-}
+const PORT = process.env.PORT || 10000;
+const DATABASE_URL = process.env.DATABASE_URL;
 
-// قراءة URL من البيئة أو استخدام القيمة الافتراضية
-const APP_URL = process.env.RENDER_EXTERNAL_URL || process.env.APP_URL || 'http://localhost:5000';
+console.log('🏥 بدء فحص صحة التطبيق...\n');
 
-async function checkEndpoint(endpoint, method = 'GET', expectedStatus = 200) {
-  return new Promise((resolve) => {
-    const url = new URL(endpoint, APP_URL);
-    const protocol = url.protocol === 'https:' ? https : http;
-    
-    const options = {
-      hostname: url.hostname,
-      port: url.port,
-      path: url.pathname + url.search,
-      method: method,
-      headers: {
-        'User-Agent': 'HealthCheck/1.0',
-        'Accept': 'application/json',
-      },
-      timeout: 10000
-    };
-
-    const req = protocol.request(options, (res) => {
-      let data = '';
-      res.on('data', chunk => data += chunk);
-      res.on('end', () => {
-        const success = res.statusCode === expectedStatus;
-        resolve({
-          endpoint,
-          status: res.statusCode,
-          success,
-          data: data.substring(0, 100), // أول 100 حرف فقط
-          headers: res.headers
-        });
-      });
-    });
-
-    req.on('error', (error) => {
-      resolve({
-        endpoint,
-        status: 0,
-        success: false,
-        error: error.message
-      });
-    });
-
-    req.on('timeout', () => {
-      req.destroy();
-      resolve({
-        endpoint,
-        status: 0,
-        success: false,
-        error: 'Timeout'
-      });
-    });
-
-    req.end();
-  });
-}
-
-async function checkWebSocket() {
-  return new Promise(async (resolve) => {
-    try {
-      const { io } = await import('socket.io-client');
-      const socket = io(APP_URL, {
-        path: '/socket.io',
-        transports: ['polling', 'websocket'],
-        timeout: 10000,
-        reconnection: false
-      });
-
-      const timeout = setTimeout(() => {
-        socket.disconnect();
-        resolve({
-          endpoint: 'WebSocket',
-          success: false,
-          error: 'Connection timeout'
-        });
-      }, 10000);
-
-      socket.on('connect', () => {
-        clearTimeout(timeout);
-        const transport = socket.io.engine.transport.name;
-        socket.disconnect();
-        resolve({
-          endpoint: 'WebSocket',
-          success: true,
-          transport
-        });
-      });
-
-      socket.on('connect_error', (error) => {
-        clearTimeout(timeout);
-        resolve({
-          endpoint: 'WebSocket',
-          success: false,
-          error: error.message
-        });
-      });
-    } catch (error) {
-      resolve({
-        endpoint: 'WebSocket',
-        success: false,
-        error: 'Socket.IO client not available'
-      });
-    }
-  });
-}
-
-async function runHealthCheck() {
-  log('\n========================================', 'cyan');
-  log('🔍 بدء الفحص الشامل للنظام', 'cyan');
-  log(`📍 URL: ${APP_URL}`, 'cyan');
-  log('========================================\n', 'cyan');
-
-  const checks = [
-    // فحص الصحة الأساسي
-    { name: 'Health Check', check: () => checkEndpoint('/api/health') },
-    
-    // فحص الغرف
-    { name: 'Rooms API', check: () => checkEndpoint('/api/rooms') },
-    
-    // فحص المستخدمين
-    { name: 'Users API', check: () => checkEndpoint('/api/users') },
-    
-    // فحص الرسائل (المسار الصحيح للرسائل العامة)
-    { name: 'Messages API', check: () => checkEndpoint('/api/messages/public') },
-    
-    // فحص الإعدادات
-    { name: 'Settings API', check: () => checkEndpoint('/api/settings/site-theme') },
-    
-    // فحص WebSocket
-    { name: 'WebSocket', check: () => checkWebSocket() },
-    
-    // فحص الملفات الثابتة
-    { name: 'Static Files', check: () => checkEndpoint('/') },
-    
-    // فحص رفع الملفات (OPTIONS) مع ترويسات CORS قياسية
-    { name: 'Upload CORS', check: () => checkEndpoint('/api/upload/profile-image?cors=1', 'OPTIONS', 204) },
-  ];
-
-  let successCount = 0;
-  let failureCount = 0;
-  const results = [];
-
-  for (const { name, check } of checks) {
-    process.stdout.write(`⏳ فحص ${name}...`);
-    const result = await check();
-    results.push({ name, ...result });
-    
-    if (result.success) {
-      successCount++;
-      process.stdout.write(`\r✅ ${name}: نجح\n`);
-      if (result.transport) {
-        log(`   Transport: ${result.transport}`, 'blue');
-      }
-    } else {
-      failureCount++;
-      process.stdout.write(`\r❌ ${name}: فشل\n`);
-      log(`   Error: ${result.error || `Status ${result.status}`}`, 'red');
-    }
-  }
-
-  // النتائج النهائية
-  log('\n========================================', 'cyan');
-  log('📊 النتائج النهائية:', 'cyan');
-  log('========================================\n', 'cyan');
+// Basic health check
+function basicHealthCheck() {
+  console.log('📊 فحص أساسي:');
+  console.log(`   - المنفذ: ${PORT}`);
+  console.log(`   - البيئة: ${process.env.NODE_ENV}`);
+  console.log(`   - قاعدة البيانات: ${DATABASE_URL ? '✅ محدد' : '❌ غير محدد'}`);
+  console.log(`   - اتصالات قاعدة البيانات: ${process.env.DB_MAX_CONNECTIONS || 'غير محدد'}`);
   
-  log(`✅ نجح: ${successCount}`, 'green');
-  log(`❌ فشل: ${failureCount}`, failureCount > 0 ? 'red' : 'green');
-  
-  const healthPercentage = Math.round((successCount / checks.length) * 100);
-  
-  if (healthPercentage === 100) {
-    log('\n🎉 النظام يعمل بشكل مثالي!', 'green');
-  } else if (healthPercentage >= 75) {
-    log('\n⚠️ النظام يعمل مع بعض المشاكل', 'yellow');
-  } else if (healthPercentage >= 50) {
-    log('\n⚠️ النظام يواجه مشاكل متعددة', 'yellow');
-  } else {
-    log('\n🚨 النظام يواجه مشاكل خطيرة!', 'red');
-  }
-  
-  log(`\n📈 صحة النظام: ${healthPercentage}%\n`, healthPercentage >= 75 ? 'green' : 'red');
-
-  // حفظ التقرير
-  const report = {
-    timestamp: new Date().toISOString(),
-    url: APP_URL,
-    healthPercentage,
-    successCount,
-    failureCount,
-    results
+  return {
+    port: PORT,
+    environment: process.env.NODE_ENV,
+    databaseConfigured: !!DATABASE_URL,
+    maxConnections: process.env.DB_MAX_CONNECTIONS
   };
-
-  const reportPath = 'health-report.json';
-  fs.writeFileSync(reportPath, JSON.stringify(report, null, 2));
-  log(`📄 تم حفظ التقرير في: ${reportPath}`, 'blue');
-
-  process.exit(failureCount > 0 ? 1 : 0);
 }
 
-// تشغيل الفحص
-runHealthCheck().catch(error => {
-  log(`\n🚨 خطأ في تشغيل الفحص: ${error.message}`, 'red');
-  process.exit(1);
-});
+// Database health check
+async function databaseHealthCheck() {
+  console.log('\n🔗 فحص صحة قاعدة البيانات...');
+  
+  if (!DATABASE_URL) {
+    console.log('⚠️ DATABASE_URL غير محدد - تخطي فحص قاعدة البيانات');
+    return { connected: false, error: 'DATABASE_URL not configured' };
+  }
+  
+  try {
+    const client = postgres(DATABASE_URL, {
+      ssl: 'require',
+      max: 1,
+      idle_timeout: 5,
+      connect_timeout: 30,
+      prepare: false,
+    });
+    
+    const startTime = Date.now();
+    await client`select 1 as health_check`;
+    const responseTime = Date.now() - startTime;
+    await client.end();
+    
+    console.log(`✅ قاعدة البيانات متصلة (${responseTime}ms)`);
+    return { 
+      connected: true, 
+      responseTime,
+      error: null 
+    };
+  } catch (error) {
+    console.log(`❌ فشل الاتصال بقاعدة البيانات: ${error.message}`);
+    return { 
+      connected: false, 
+      error: error.message 
+    };
+  }
+}
+
+// Memory usage check
+function memoryHealthCheck() {
+  console.log('\n💾 فحص استخدام الذاكرة...');
+  
+  const memUsage = process.memoryUsage();
+  const heapUsedMB = Math.round(memUsage.heapUsed / 1024 / 1024);
+  const heapTotalMB = Math.round(memUsage.heapTotal / 1024 / 1024);
+  const externalMB = Math.round(memUsage.external / 1024 / 1024);
+  
+  console.log(`   - الذاكرة المستخدمة: ${heapUsedMB}MB`);
+  console.log(`   - إجمالي الذاكرة: ${heapTotalMB}MB`);
+  console.log(`   - الذاكرة الخارجية: ${externalMB}MB`);
+  
+  const memoryHealthy = heapUsedMB < 400; // Render Free Tier limit is ~512MB
+  
+  if (memoryHealthy) {
+    console.log('✅ استخدام الذاكرة طبيعي');
+  } else {
+    console.log('⚠️ استخدام الذاكرة مرتفع');
+  }
+  
+  return {
+    heapUsed: heapUsedMB,
+    heapTotal: heapTotalMB,
+    external: externalMB,
+    healthy: memoryHealthy
+  };
+}
+
+// Uptime check
+function uptimeCheck() {
+  console.log('\n⏰ فحص وقت التشغيل...');
+  
+  const uptime = Math.floor(process.uptime());
+  const hours = Math.floor(uptime / 3600);
+  const minutes = Math.floor((uptime % 3600) / 60);
+  const seconds = uptime % 60;
+  
+  console.log(`   - وقت التشغيل: ${hours}س ${minutes}د ${seconds}ث`);
+  
+  return {
+    uptime,
+    formatted: `${hours}h ${minutes}m ${seconds}s`
+  };
+}
+
+// Generate health report
+function generateHealthReport(results) {
+  console.log('\n' + '='.repeat(50));
+  console.log('📋 تقرير صحة التطبيق:');
+  console.log('='.repeat(50));
+  
+  const overallHealth = results.basic.databaseConfigured && 
+                      results.database.connected && 
+                      results.memory.healthy;
+  
+  console.log(`الحالة العامة: ${overallHealth ? '✅ صحية' : '⚠️ تحتاج انتباه'}`);
+  console.log('');
+  
+  console.log('📊 التفاصيل:');
+  console.log(`   - المنفذ: ${results.basic.port}`);
+  console.log(`   - البيئة: ${results.basic.environment}`);
+  console.log(`   - قاعدة البيانات: ${results.database.connected ? '✅ متصلة' : '❌ غير متصلة'}`);
+  if (results.database.responseTime) {
+    console.log(`   - سرعة الاستجابة: ${results.database.responseTime}ms`);
+  }
+  console.log(`   - الذاكرة: ${results.memory.heapUsed}MB / ${results.memory.heapTotal}MB`);
+  console.log(`   - وقت التشغيل: ${results.uptime.formatted}`);
+  
+  if (!overallHealth) {
+    console.log('\n⚠️ المشاكل المكتشفة:');
+    if (!results.basic.databaseConfigured) {
+      console.log('   - DATABASE_URL غير محدد');
+    }
+    if (!results.database.connected) {
+      console.log(`   - قاعدة البيانات غير متصلة: ${results.database.error}`);
+    }
+    if (!results.memory.healthy) {
+      console.log('   - استخدام الذاكرة مرتفع');
+    }
+  }
+  
+  return overallHealth;
+}
+
+// Main execution
+async function main() {
+  try {
+    const basic = basicHealthCheck();
+    const database = await databaseHealthCheck();
+    const memory = memoryHealthCheck();
+    const uptime = uptimeCheck();
+    
+    const results = { basic, database, memory, uptime };
+    const healthy = generateHealthReport(results);
+    
+    // Return appropriate exit code
+    process.exit(healthy ? 0 : 1);
+    
+  } catch (error) {
+    console.error('\n💥 خطأ في فحص الصحة:', error.message);
+    process.exit(1);
+  }
+}
+
+// Run the health check
+main();

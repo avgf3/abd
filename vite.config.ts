@@ -32,48 +32,68 @@ export default defineConfig({
 		},
 		rollupOptions: {
 			output: {
-				manualChunks: {
-					vendor: ['react', 'react-dom'],
-					utils: ['@tanstack/react-query'],
-					charts: ['recharts'],
-					socket: ['socket.io-client'],
-					motion: ['framer-motion'],
-					virtuoso: ['react-virtuoso'],
-					carousel: ['embla-carousel-react'],
-					emoji: ['emoji-regex'],
-					icons: ['lucide-react'],
-					radix: [
-						'@radix-ui/react-accordion',
-						'@radix-ui/react-alert-dialog',
-						'@radix-ui/react-aspect-ratio',
-						'@radix-ui/react-avatar',
-						'@radix-ui/react-checkbox',
-						'@radix-ui/react-collapsible',
-						'@radix-ui/react-context-menu',
-						'@radix-ui/react-dialog',
-						'@radix-ui/react-dropdown-menu',
-						'@radix-ui/react-hover-card',
-						'@radix-ui/react-label',
-						'@radix-ui/react-menubar',
-						'@radix-ui/react-navigation-menu',
-						'@radix-ui/react-popover',
-						'@radix-ui/react-progress',
-						'@radix-ui/react-radio-group',
-						'@radix-ui/react-scroll-area',
-						'@radix-ui/react-select',
-						'@radix-ui/react-separator',
-						'@radix-ui/react-slider',
-						'@radix-ui/react-slot',
-						'@radix-ui/react-switch',
-						'@radix-ui/react-tabs',
-						'@radix-ui/react-toast',
-						'@radix-ui/react-toggle',
-						'@radix-ui/react-toggle-group',
-						'@radix-ui/react-tooltip'
-					]
+				manualChunks: (id) => {
+					// Split large emoji libraries into separate chunks
+					if (id.includes('@emoji-mart') || id.includes('emoji-mart')) {
+						return 'emoji-mart';
+					}
+					if (id.includes('@lottiefiles') || id.includes('lottie')) {
+						return 'lottie';
+					}
+					
+					// Split vendor libraries
+					if (id.includes('node_modules')) {
+						if (id.includes('react') || id.includes('react-dom')) {
+							return 'react-vendor';
+						}
+						if (id.includes('@radix-ui')) {
+							return 'radix-ui';
+						}
+						if (id.includes('socket.io')) {
+							return 'socket';
+						}
+						if (id.includes('framer-motion')) {
+							return 'motion';
+						}
+						if (id.includes('react-virtuoso')) {
+							return 'virtuoso';
+						}
+						if (id.includes('embla-carousel')) {
+							return 'carousel';
+						}
+						if (id.includes('recharts')) {
+							return 'charts';
+						}
+						if (id.includes('@tanstack/react-query')) {
+							return 'query';
+						}
+						if (id.includes('lucide-react')) {
+							return 'icons';
+						}
+						if (id.includes('date-fns')) {
+							return 'date-utils';
+						}
+						if (id.includes('zod')) {
+							return 'validation';
+						}
+						if (id.includes('bcrypt') || id.includes('passport')) {
+							return 'auth';
+						}
+						// Group smaller libraries together
+						return 'vendor';
+					}
 				},
+				// Optimize chunk size limits
+				chunkFileNames: (chunkInfo) => {
+					const facadeModuleId = chunkInfo.facadeModuleId ? chunkInfo.facadeModuleId.split('/').pop() : 'chunk';
+					return `assets/[name]-[hash].js`;
+				},
+				entryFileNames: 'assets/[name]-[hash].js',
+				assetFileNames: 'assets/[name]-[hash].[ext]',
 			},
 		},
+		// Increase chunk size warning limit
+		chunkSizeWarningLimit: 1000,
 		// Source maps for debugging in development
 		sourcemap: process.env.NODE_ENV !== 'production',
 	},

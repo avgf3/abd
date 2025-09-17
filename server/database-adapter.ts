@@ -80,42 +80,55 @@ export async function initializeDatabase(): Promise<boolean> {
     
     const client = postgres(connectionString, {
       ssl: sslRequired ? 'require' : undefined,
-      // ضبط الحد الأقصى للاتصالات: متغير بيئة أو افتراضي 30 لتوافق الخطط المحدودة
+      // ضبط الحد الأقصى للاتصالات: متغير بيئة أو افتراضي 10 لتوافق Render Free Tier
       max: (() => {
         const env = Number(process.env.DB_MAX_CONNECTIONS);
-        if (!Number.isNaN(env) && env > 0) return env;
-        return 30; // زيادة من 20 إلى 30
+        if (!Number.isNaN(env) && env > 0) return Math.min(env, 10); // حد أقصى 10 للـ Free Tier
+        return 10; // تقليل من 30 إلى 10 للـ Free Tier
       })(),
-      idle_timeout: 20, // تقليل timeout إلى 20 ثانية لتحرير الاتصالات بشكل أسرع
-      connect_timeout: 20, // تقليل timeout الاتصال إلى 20 ثانية
-      max_lifetime: 60 * 5, // إعادة تدوير الاتصالات كل 5 دقائق لمنع التراكم
-      prepare: true, // تفعيل prepared statements لتحسين الأداء
+      idle_timeout: 5, // تقليل timeout الخمول إلى 5 ثواني لتحرير الاتصالات بشكل أسرع
+      connect_timeout: 30, // زيادة timeout الاتصال إلى 30 ثانية للاتصالات البطيئة
+      max_lifetime: 60 * 2, // إعادة تدوير الاتصالات كل دقيقتين لمنع التراكم
+      prepare: false, // تعطيل prepared statements لتجنب مشاكل الاتصال
       onnotice: () => {}, // تجاهل الإشعارات
       // إضافة إعدادات إضافية للأداء
       fetch_types: false, // تحسين الأداء
       types: {},
       connection: {
         application_name: 'chat-app',
-        statement_timeout: 15000, // تقليل إلى 15 ثانية كحد أقصى لكل استعلام
+        statement_timeout: 30000, // زيادة إلى 30 ثانية كحد أقصى لكل استعلام
+      },
+      // إضافة إعدادات إضافية لتحسين الاستقرار
+      transform: {
+        undefined: null, // تحويل undefined إلى null
       },
     });
 
     const drizzleDb = drizzle(client, { schema, logger: false });
 
-    // محاولة الاتصال مع إعادة المحاولة
+    // محاولة الاتصال مع إعادة المحاولة المحسنة
     let connected = false;
     let attempts = 0;
-    const maxAttempts = 3;
+    const maxAttempts = 5; // زيادة عدد المحاولات
+    const baseDelay = 1000; // تأخير أساسي 1 ثانية
     
     while (!connected && attempts < maxAttempts) {
       try {
+        console.log(`🔄 محاولة الاتصال بقاعدة البيانات (${attempts + 1}/${maxAttempts})...`);
         await client`select 1 as ok`;
         connected = true;
-      } catch (error) {
+        console.log('✅ تم الاتصال بقاعدة البيانات بنجاح');
+      } catch (error: any) {
         attempts++;
+        console.warn(`⚠️ فشل الاتصال (محاولة ${attempts}/${maxAttempts}):`, error?.message || error);
+        
         if (attempts < maxAttempts) {
-          await new Promise(resolve => setTimeout(resolve, 2000 * attempts));
+          // تأخير متزايد: 1s, 2s, 4s, 8s
+          const delay = baseDelay * Math.pow(2, attempts - 1);
+          console.log(`⏳ انتظار ${delay}ms قبل المحاولة التالية...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
         } else {
+          console.error('❌ فشل في الاتصال بقاعدة البيانات بعد جميع المحاولات');
           throw error;
         }
       }
