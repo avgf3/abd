@@ -720,6 +720,13 @@ export class DatabaseService {
 
   async getUserStories(userId: number, includeExpired = false): Promise<Story[]> {
     if (!this.isConnected()) return [];
+    
+    // Defensive check: ensure userId is a valid number
+    if (!userId || typeof userId !== 'number' || Number.isNaN(userId) || userId <= 0) {
+      console.error('Error getUserStories: Invalid userId provided:', userId);
+      return [];
+    }
+    
     try {
       if (this.type === 'postgresql') {
         const now = new Date();
