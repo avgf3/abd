@@ -61,15 +61,6 @@ export async function initializeDatabase(): Promise<boolean> {
   return false;
 }
 
-    // إعدادات محسنة للاتصال بقاعدة البيانات على Render
-    const sslRequired =
-      /\bsslmode=require\b/.test(databaseUrl) || process.env.NODE_ENV === 'production';
-    
-    // إضافة معاملات SSL إذا لم تكن موجودة في production
-    let connectionString = databaseUrl;
-    if (process.env.NODE_ENV === 'production' && !connectionString.includes('sslmode=')) {
-      connectionString += connectionString.includes('?') ? '&sslmode=require' : '?sslmode=require';
-    }
     
     const client = postgres(connectionString, {
       ssl: sslRequired ? 'require' : undefined,
