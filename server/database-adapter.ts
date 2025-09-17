@@ -53,90 +53,50 @@ export async function checkDatabaseHealth(): Promise<boolean> {
 }
 
 export async function initializeDatabase(): Promise<boolean> {
-  const databaseUrl = process.env.DATABASE_URL || '';
-
   try {
+    const databaseUrl = process.env.DATABASE_URL;
+    
+    // Check if we should use PostgreSQL
     if (
-      !databaseUrl ||
+      databaseUrl &&
       !(databaseUrl.startsWith('postgresql://') || databaseUrl.startsWith('postgres://'))
     ) {
-      dbType = 'disabled';
-      dbAdapter.db = null;
-      dbAdapter.client = null;
-      db = null;
-      console.warn('⚠️ DATABASE_URL غير محدد أو ليس PostgreSQL. سيتم تعطيل قاعدة البيانات.');
+      console.warn('⚠️ DATABASE_URL لا يبدو كرابط PostgreSQL صحيح');
+    }
+
+    if (databaseUrl && (databaseUrl.startsWith('postgresql://') || databaseUrl.startsWith('postgres://'))) {
+      console.log('🔗 محاولة الاتصال بـ PostgreSQL...');
+      
+      const client = postgres(databaseUrl, {
+        max: 20,
+        idle_timeout: 20,
+        connect_timeout: 10,
+        ssl: databaseUrl.includes('localhost') ? false : 'require',
+      });
+      
+      dbAdapter.client = client;
+      dbAdapter.db = drizzle(client, { schema });
+      db = dbAdapter.db;
+      dbType = 'postgresql';
+      
+      // Test connection
+      await client`select 1 as ok`;
+      console.log('✅ تم الاتصال بـ PostgreSQL بنجاح');
+      return true;
+    } else {
+      console.log('📝 لا يوجد DATABASE_URL، استخدام SQLite...');
       return false;
     }
-
-    // إعدادات محسنة للاتصال بقاعدة البيانات على Render
-    const sslRequired =
-      /\bsslmode=require\b/.test(databaseUrl) || process.env.NODE_ENV === 'production';
-    
-    // إضافة معاملات SSL إذا لم تكن موجودة في production
-    let connectionString = databaseUrl;
-    if (process.env.NODE_ENV === 'production' && !connectionString.includes('sslmode=')) {
-      connectionString += connectionString.includes('?') ? '&sslmode=require' : '?sslmode=require';
-    }
-
-    
-    const client = postgres(connectionString, {
-      ssl: sslRequired ? 'require' : undefined,
-      // ضبط الحد الأقصى للاتصالات: متغير بيئة أو افتراضي 20 لتوافق الخطط المحدودة
-      max: (() => {
-        const env = Number(process.env.DB_MAX_CONNECTIONS);
-        if (!Number.isNaN(env) && env > 0) return env;
-        return 20;
-      })(),
-      idle_timeout: 30, // تقليل timeout إلى 30 ثانية لتحرير الاتصالات بشكل أسرع
-      connect_timeout: 30, // تقليل timeout الاتصال إلى 30 ثانية
-      max_lifetime: 60 * 10, // إعادة تدوير الاتصالات كل 10 دقائق لمنع التراكم
-      prepare: true, // تفعيل prepared statements لتحسين الأداء
-      onnotice: () => {}, // تجاهل الإشعارات
-      // إضافة إعدادات إضافية للأداء
-      fetch_types: false, // تحسين الأداء
-      types: {},
-      connection: {
-        application_name: 'chat-app',
-        statement_timeout: 30000, // 30 ثانية كحد أقصى لكل استعلام
-      },
-    });
-
-    const drizzleDb = drizzle(client, { schema, logger: false });
-
-    // محاولة الاتصال مع إعادة المحاولة
-    let connected = false;
-    let attempts = 0;
-    const maxAttempts = 3;
-    
-    while (!connected && attempts < maxAttempts) {
-      try {
-        await client`select 1 as ok`;
-        connected = true;
-      } catch (error) {
-        attempts++;
-        if (attempts < maxAttempts) {
-          await new Promise(resolve => setTimeout(resolve, 2000 * attempts));
-        } else {
-          throw error;
-        }
-      }
-    }
-
-    dbType = 'postgresql';
-    dbAdapter.client = client as any;
-    dbAdapter.db = drizzleDb as any;
-    db = drizzleDb as any;
-
-    return true;
-  } catch (error: any) {
-    console.error('❌ فشل الاتصال بقاعدة البيانات:', error?.message || error);
-    dbType = 'disabled';
-    dbAdapter.db = null;
+  } catch (error) {
+    console.error('❌ فشل في الاتصال بقاعدة البيانات:', error);
     dbAdapter.client = null;
+    dbAdapter.db = null;
     db = null;
+    dbType = 'disabled';
     return false;
   }
 }
+
 
 export async function runMigrationsIfAvailable(): Promise<void> {
   try {
