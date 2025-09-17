@@ -37,6 +37,12 @@ export function clearSession() {
   } catch {}
   // إعادة تعيين Socket instance عند مسح الجلسة
   if (socketInstance) {
+    // تنظيف keep-alive interval
+    const keepAliveInterval = (socketInstance as any).__keepAliveInterval;
+    if (keepAliveInterval) {
+      clearInterval(keepAliveInterval);
+    }
+    
     socketInstance.removeAllListeners();
     socketInstance.disconnect();
     socketInstance = null;
@@ -84,10 +90,36 @@ function attachCoreListeners(socket: Socket) {
   socket.on('connect', () => {
     reauth(false);
     // إذا لم تكن هناك جلسة محفوظة، لا نرسل auth هنا لتفادي مهلة غير ضرورية
+    
+    // 🔥 إرسال ping دوري محسن للحفاظ على الاتصال نشطاً
+    const keepAliveInterval = setInterval(() => {
+      if (socket.connected) {
+        try {
+          socket.emit('client_ping', { t: Date.now() });
+        } catch (error) {
+          console.warn('فشل إرسال ping:', error);
+          clearInterval(keepAliveInterval);
+        }
+      } else {
+        clearInterval(keepAliveInterval);
+      }
+    }, 15000); // كل 15 ثانية - أكثر تكراراً للـ free tier
+    
+    // حفظ معرف الـ interval للتنظيف لاحقاً
+    (socket as any).__keepAliveInterval = keepAliveInterval;
   });
 
   socket.on('reconnect', () => {
     reauth(true);
+  });
+
+  socket.on('disconnect', () => {
+    // تنظيف keep-alive interval عند الانقطاع
+    const keepAliveInterval = (socket as any).__keepAliveInterval;
+    if (keepAliveInterval) {
+      clearInterval(keepAliveInterval);
+      (socket as any).__keepAliveInterval = null;
+    }
   });
 
   // If network goes back online, try to connect
@@ -96,6 +128,33 @@ function attachCoreListeners(socket: Socket) {
       try {
         socket.connect();
       } catch {}
+    }
+  });
+
+  // معالجة أخطاء الاتصال
+  socket.on('connect_error', (error) => {
+    console.warn('خطأ في الاتصال:', error.message);
+  });
+
+  // معالجة أخطاء إعادة الاتصال
+  socket.on('reconnect_error', (error) => {
+    console.warn('خطأ في إعادة الاتصال:', error.message);
+  });
+
+  // معالجة pong من الخادم مع مراقبة محسنة
+  socket.on('client_pong', (data) => {
+    const latency = Date.now() - data.t;
+    if (latency > 3000) { // إذا كان الكمون أكثر من 3 ثواني
+      console.warn(`كمون عالي: ${latency}ms`);
+    }
+  });
+
+  // معالجة server_ping من الخادم
+  socket.on('server_ping', (data) => {
+    try {
+      socket.emit('server_pong', { t: data.t, clientTime: Date.now() });
+    } catch (error) {
+      console.warn('فشل إرسال server_pong:', error);
     }
   });
 }
@@ -137,13 +196,13 @@ export function getSocket(): Socket {
     rememberUpgrade: true, // تذكر الترقية الناجحة
     autoConnect: false,
     reconnection: true,
-    // 🔥 تحسين إعادة الاتصال - محاولات محدودة مع تدرج ذكي
-    reconnectionAttempts: isProduction ? 10 : 5, // محاولات محدودة بدلاً من لانهائية
-    reconnectionDelay: isDevelopment ? 1000 : 2000, // تقليل التأخير في التطوير
-    reconnectionDelayMax: isProduction ? 10000 : 5000, // تقليل الحد الأقصى
-    randomizationFactor: 0.3, // تقليل العشوائية لاتصال أسرع
-    // 🔥 تحسين أوقات الاستجابة
-    timeout: isDevelopment ? 15000 : 20000, // timeout أقل لاستجابة أسرع
+    // 🔥 تحسين إعادة الاتصال - محاولات أكثر ذكاءً للـ free tier
+    reconnectionAttempts: isProduction ? 8 : 5, // زيادة المحاولات للـ free tier
+    reconnectionDelay: isDevelopment ? 2000 : 2000, // تأخير أقصر للاستجابة السريعة
+    reconnectionDelayMax: isProduction ? 10000 : 8000, // تقليل الحد الأقصى للاستجابة السريعة
+    randomizationFactor: 0.3, // تقليل العشوائية للاستجابة المتسقة
+    // 🔥 تحسين أوقات الاستجابة للـ free tier
+    timeout: isDevelopment ? 20000 : 30000, // timeout أطول للـ free tier
     forceNew: false, // إعادة استخدام الاتصالات الموجودة
     withCredentials: true,
     auth: { deviceId },
