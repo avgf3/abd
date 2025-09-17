@@ -802,6 +802,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   return (
     <div
       className={`min-h-[100dvh] flex flex-col chat-container ${isMobile ? 'mobile-layout' : 'desktop-layout'}`}
+      style={{ backgroundColor: 'var(--background-solid, hsl(220, 25%, 10%))' }}
       onClick={closeUserPopup}
     >
       {/* Modern Header */}

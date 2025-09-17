@@ -132,7 +132,7 @@ export default function ChatPage() {
   };
 
   return (
-    <div className="min-h-[100dvh] bg-background text-foreground font-['Cairo'] overflow-hidden" dir="rtl" style={{ minHeight: '100dvh' }}>
+    <div className="min-h-[100dvh] bg-background text-foreground font-['Cairo'] overflow-hidden" dir="rtl" style={{ minHeight: '100dvh', backgroundColor: 'var(--background-solid, hsl(220, 25%, 10%))' }}>
       <Suspense fallback={
         <div className="min-h-[100dvh] bg-background text-foreground flex items-center justify-center">
           <div className="text-center">

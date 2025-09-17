@@ -29,7 +29,7 @@
 
 :root {
   /* Modern Gradient Backgrounds */
-  --background: linear-gradient(135deg, hsl(220, 25%, 10%) 0%, hsl(225, 30%, 15%) 100%);
+  --background: hsl(220, 25%, 10%);
   --background-solid: hsl(220, 25%, 10%);
   --foreground: hsl(0, 0%, 98%);
   
@@ -48,22 +48,22 @@
   --input: rgba(255, 255, 255, 0.08);
   
   /* Vibrant Modern Primary Colors */
-  --primary: linear-gradient(135deg, hsl(200, 100%, 50%) 0%, hsl(190, 100%, 45%) 100%);
+  --primary: hsl(195, 100%, 48%);
   --primary-solid: hsl(195, 100%, 48%);
   --primary-foreground: hsl(0, 0%, 100%);
   
   /* Secondary with Gradient */
-  --secondary: linear-gradient(135deg, hsl(220, 25%, 20%) 0%, hsl(225, 30%, 25%) 100%);
+  --secondary: hsl(220, 25%, 22%);
   --secondary-solid: hsl(220, 25%, 22%);
   --secondary-foreground: hsl(0, 0%, 98%);
   
   /* Modern Accent Colors */
-  --accent: linear-gradient(135deg, hsl(280, 70%, 55%) 0%, hsl(300, 70%, 50%) 100%);
+  --accent: hsl(290, 70%, 52%);
   --accent-solid: hsl(290, 70%, 52%);
   --accent-foreground: hsl(0, 0%, 100%);
   
   /* Destructive with Gradient */
-  --destructive: linear-gradient(135deg, hsl(0, 85%, 55%) 0%, hsl(10, 85%, 50%) 100%);
+  --destructive: hsl(5, 85%, 52%);
   --destructive-solid: hsl(5, 85%, 52%);
   --destructive-foreground: hsl(0, 0%, 100%);
   
@@ -71,14 +71,14 @@
   --ring: hsl(195, 100%, 50%);
   --radius: 1rem;
   
-  /* Modern Chat Colors with Gradients */
-  --chat-primary: linear-gradient(135deg, hsl(220, 25%, 10%) 0%, hsl(225, 30%, 15%) 100%);
-  --chat-secondary: linear-gradient(135deg, hsl(220, 20%, 18%) 0%, hsl(225, 25%, 22%) 100%);
-  --chat-accent: linear-gradient(135deg, hsl(280, 70%, 55%) 0%, hsl(300, 70%, 50%) 100%);
-  --chat-highlight: linear-gradient(135deg, hsl(200, 100%, 50%) 0%, hsl(190, 100%, 45%) 100%);
-  --chat-success: linear-gradient(135deg, hsl(145, 80%, 42%) 0%, hsl(155, 80%, 38%) 100%);
-  --chat-warning: linear-gradient(135deg, hsl(35, 95%, 50%) 0%, hsl(45, 95%, 45%) 100%);
-  --chat-danger: linear-gradient(135deg, hsl(0, 85%, 55%) 0%, hsl(10, 85%, 50%) 100%);
+  /* Modern Chat Colors */
+  --chat-primary: hsl(220, 25%, 10%);
+  --chat-secondary: hsl(220, 20%, 18%);
+  --chat-accent: hsl(290, 70%, 52%);
+  --chat-highlight: hsl(195, 100%, 48%);
+  --chat-success: hsl(145, 80%, 42%);
+  --chat-warning: hsl(35, 95%, 50%);
+  --chat-danger: hsl(5, 85%, 52%);
   
   /* Modern Shadow System */
   --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -90,9 +90,8 @@
 }
 
 .dark {
-  /* Inherits all the modern gradient variables from :root */
-  /* Dark mode specific overrides if needed */
-  --background: linear-gradient(135deg, hsl(220, 25%, 8%) 0%, hsl(225, 30%, 12%) 100%);
+  /* Dark mode specific overrides */
+  --background: hsl(220, 25%, 8%);
   --background-solid: hsl(220, 25%, 8%);
   --muted: hsl(220, 20%, 16%);
   --popover: rgba(25, 30, 45, 0.95);
@@ -108,7 +107,8 @@
     @apply font-sans antialiased text-foreground;
     font-family: 'Cairo', sans-serif;
     direction: rtl;
-    background: var(--background);
+    background: var(--background-solid, hsl(220, 25%, 10%));
+    color: var(--foreground, hsl(0, 0%, 98%));
     min-height: 100dvh;
     position: relative;
     overflow-x: hidden;
@@ -177,6 +177,13 @@
     /* Stabilize layout and tune base sizing */
     font-size: 90%;
     scrollbar-gutter: stable both-edges;
+  }
+  
+  #root {
+    background: var(--background-solid, hsl(220, 25%, 10%));
+    color: var(--foreground, hsl(0, 0%, 98%));
+    min-height: 100dvh;
+    width: 100%;
   }
   
   /* Modern Scrollbar */
