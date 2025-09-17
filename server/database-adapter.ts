@@ -29,6 +29,8 @@ export let db: ReturnType<typeof drizzle<typeof schema>> | null = null;
 
 // متغير لتتبع حالة المراقبة
 let healthCheckInterval: NodeJS.Timeout | null = null;
+let connectionAttempts = 0;
+let lastConnectionTime = 0;
 
 function getEnvMode(): DatabaseStatus['environment'] {
   const mode = process.env.NODE_ENV;
@@ -47,7 +49,10 @@ export function getDatabaseStatus(): DatabaseStatus {
 
 export async function checkDatabaseHealth(): Promise<boolean> {
   try {
-    if (!dbAdapter.client) return false;
+    if (!dbAdapter.client) {
+      // محاولة إنشاء اتصال جديد
+      return await createConnectionOnDemand();
+    }
     await dbAdapter.client`select 1 as ok`;
     return true;
   } catch (error) {
@@ -59,12 +64,26 @@ export async function checkDatabaseHealth(): Promise<boolean> {
 // دالة إعادة الاتصال التلقائي
 export async function reconnectDatabase(): Promise<boolean> {
   try {
-    console.log('🔄 محاولة إعادة الاتصال بقاعدة البيانات...');
+    const now = Date.now();
+    
+    // منع إعادة الاتصال المتكررة (كل 5 ثواني على الأكثر)
+    if (now - lastConnectionTime < 5000) {
+      console.log('⏳ انتظار قبل إعادة الاتصال...');
+      return false;
+    }
+    
+    connectionAttempts++;
+    lastConnectionTime = now;
+    
+    console.log(`🔄 محاولة إعادة الاتصال بقاعدة البيانات (المحاولة ${connectionAttempts})...`);
     
     // إغلاق الاتصال الحالي إذا كان موجوداً
     if (dbAdapter.client) {
       try {
         await dbAdapter.client.end();
+        dbAdapter.client = null;
+        dbAdapter.db = null;
+        db = null;
       } catch (e) {
         // تجاهل أخطاء الإغلاق
       }
@@ -74,8 +93,9 @@ export async function reconnectDatabase(): Promise<boolean> {
     const success = await initializeDatabase();
     if (success) {
       console.log('✅ تم إعادة الاتصال بقاعدة البيانات بنجاح');
+      connectionAttempts = 0; // إعادة تعيين العداد عند النجاح
     } else {
-      console.error('❌ فشل في إعادة الاتصال بقاعدة البيانات');
+      console.error(`❌ فشل في إعادة الاتصال بقاعدة البيانات (المحاولة ${connectionAttempts})`);
     }
     
     return success;
@@ -91,13 +111,23 @@ export function startDatabaseHealthMonitoring(): void {
     clearInterval(healthCheckInterval);
   }
   
-  const interval = Number(process.env.DB_HEALTH_CHECK_INTERVAL) || 30000;
+  const interval = Number(process.env.DB_HEALTH_CHECK_INTERVAL) || 15000; // فحص كل 15 ثانية
   
   healthCheckInterval = setInterval(async () => {
-    const isHealthy = await checkDatabaseHealth();
-    if (!isHealthy) {
-      console.warn('⚠️ قاعدة البيانات غير متاحة، محاولة إعادة الاتصال...');
-      await reconnectDatabase();
+    try {
+      const isHealthy = await checkDatabaseHealth();
+      if (!isHealthy) {
+        console.warn('⚠️ قاعدة البيانات غير متاحة، محاولة إعادة الاتصال...');
+        await reconnectDatabase();
+      } else {
+        // إعادة تعيين عداد المحاولات عند الاتصال الناجح
+        if (connectionAttempts > 0) {
+          console.log('✅ قاعدة البيانات متاحة مرة أخرى');
+          connectionAttempts = 0;
+        }
+      }
+    } catch (error) {
+      console.error('❌ خطأ في المراقبة الدورية:', error);
     }
   }, interval);
 }
@@ -115,11 +145,17 @@ export async function executeWithRetry<T>(
   queryFn: () => Promise<T>,
   maxRetries?: number
 ): Promise<T> {
-  const retries = maxRetries || Number(process.env.DB_RETRY_ATTEMPTS) || 3;
+  const retries = maxRetries || Number(process.env.DB_RETRY_ATTEMPTS) || 5;
   let lastError: any;
   
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
+      // إنشاء اتصال عند الطلب
+      const connectionReady = await createConnectionOnDemand();
+      if (!connectionReady) {
+        throw new Error('فشل في إنشاء الاتصال بقاعدة البيانات');
+      }
+
       // فحص صحة الاتصال قبل الاستعلام
       const isHealthy = await checkDatabaseHealth();
       if (!isHealthy) {
@@ -127,7 +163,24 @@ export async function executeWithRetry<T>(
         await reconnectDatabase();
       }
       
-      return await queryFn();
+      const result = await queryFn();
+      
+      // إغلاق الاتصال بعد الاستعلام لتوفير الموارد
+      if (dbAdapter.client && attempt === 1) {
+        setTimeout(async () => {
+          try {
+            await dbAdapter.client?.end();
+            dbAdapter.client = null;
+            dbAdapter.db = null;
+            db = null;
+            console.log('🔌 تم إغلاق الاتصال لتوفير الموارد');
+          } catch (e) {
+            // تجاهل أخطاء الإغلاق
+          }
+        }, 2000);
+      }
+      
+      return result;
     } catch (error: any) {
       lastError = error;
       
@@ -135,12 +188,14 @@ export async function executeWithRetry<T>(
       if (error.message?.includes('connection') || 
           error.message?.includes('timeout') ||
           error.message?.includes('ECONNRESET') ||
-          error.message?.includes('ENOTFOUND')) {
+          error.message?.includes('ENOTFOUND') ||
+          error.message?.includes('pool') ||
+          error.message?.includes('client')) {
         
         console.warn(`⚠️ خطأ اتصال في المحاولة ${attempt}/${retries}:`, error.message);
         
         if (attempt < retries) {
-          await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+          await new Promise(resolve => setTimeout(resolve, 500 * attempt));
           await reconnectDatabase();
           continue;
         }
@@ -152,6 +207,63 @@ export async function executeWithRetry<T>(
   }
   
   throw lastError;
+}
+
+// دالة إنشاء اتصال عند الطلب
+async function createConnectionOnDemand(): Promise<boolean> {
+  try {
+    if (dbAdapter.client) {
+      return true; // الاتصال موجود بالفعل
+    }
+
+    const databaseUrl = process.env.DATABASE_URL || '';
+    if (!databaseUrl) return false;
+
+    const sslRequired =
+      /\bsslmode=require\b/.test(databaseUrl) || process.env.NODE_ENV === 'production';
+    
+    let connectionString = databaseUrl;
+    if (process.env.NODE_ENV === 'production' && !connectionString.includes('sslmode=')) {
+      connectionString += connectionString.includes('?') ? '&sslmode=require' : '?sslmode=require';
+    }
+    
+    const client = postgres(connectionString, {
+      ssl: sslRequired ? 'require' : undefined,
+      max: 1,
+      idle_timeout: 20,
+      connect_timeout: 10,
+      max_lifetime: 60 * 5,
+      prepare: false,
+      onnotice: () => {},
+      fetch_types: false,
+      types: {},
+      connection: {
+        application_name: 'chat-app',
+        statement_timeout: 30000,
+        keep_alive: false,
+      },
+      retry_delay: 500,
+      max_retries: 5,
+      transform: {
+        undefined: null,
+      },
+    });
+
+    const drizzleDb = drizzle(client, { schema, logger: false });
+
+    // اختبار الاتصال
+    await client`select 1 as ok`;
+
+    dbAdapter.client = client as any;
+    dbAdapter.db = drizzleDb as any;
+    db = drizzleDb as any;
+
+    console.log('🔌 تم إنشاء اتصال جديد بقاعدة البيانات');
+    return true;
+  } catch (error: any) {
+    console.error('❌ فشل في إنشاء الاتصال:', error?.message || error);
+    return false;
+  }
 }
 
 export async function initializeDatabase(): Promise<boolean> {
@@ -180,61 +292,27 @@ export async function initializeDatabase(): Promise<boolean> {
       connectionString += connectionString.includes('?') ? '&sslmode=require' : '?sslmode=require';
     }
     
-    const client = postgres(connectionString, {
+    // إنشاء اتصال مؤقت فقط للاختبار
+    const testClient = postgres(connectionString, {
       ssl: sslRequired ? 'require' : undefined,
-      // إعدادات محسنة لمنع انقطاع الاتصال
-      max: (() => {
-        const env = Number(process.env.DB_MAX_CONNECTIONS);
-        if (!Number.isNaN(env) && env > 0) return env;
-        return 10; // تقليل عدد الاتصالات لتجنب تجاوز الحدود
-      })(),
-      idle_timeout: 60, // زيادة timeout إلى 60 ثانية لمنع الانقطاع المبكر
-      connect_timeout: 60, // زيادة timeout الاتصال إلى 60 ثانية
-      max_lifetime: 60 * 30, // إعادة تدوير الاتصالات كل 30 دقيقة بدلاً من 10
-      prepare: false, // تعطيل prepared statements لتجنب مشاكل الاتصال
-      onnotice: () => {}, // تجاهل الإشعارات
-      // إعدادات إضافية للاستقرار
-      fetch_types: false,
-      types: {},
-      connection: {
-        application_name: 'chat-app',
-        statement_timeout: 60000, // زيادة timeout الاستعلام إلى 60 ثانية
-        keep_alive: true, // تفعيل keep-alive للحفاظ على الاتصال
-        keep_alive_initial_delay_ms: 10000, // تأخير أولي 10 ثواني
-      },
-      // إضافة إعدادات إعادة الاتصال
-      retry_delay: 1000, // تأخير إعادة المحاولة ثانية واحدة
-      max_retries: 3, // عدد محاولات إعادة الاتصال
+      max: 1,
+      idle_timeout: 5,
+      connect_timeout: 10,
+      prepare: false,
+      onnotice: () => {},
     });
 
-    const drizzleDb = drizzle(client, { schema, logger: false });
+    // اختبار الاتصال فقط
+    await testClient`select 1 as ok`;
+    await testClient.end();
 
-    // محاولة الاتصال مع إعادة المحاولة
-    let connected = false;
-    let attempts = 0;
-    const maxAttempts = 3;
-    
-    while (!connected && attempts < maxAttempts) {
-      try {
-        await client`select 1 as ok`;
-        connected = true;
-      } catch (error) {
-        attempts++;
-        if (attempts < maxAttempts) {
-          await new Promise(resolve => setTimeout(resolve, 2000 * attempts));
-        } else {
-          throw error;
-        }
-      }
-    }
-
+    // إعداد النظام للاتصال عند الطلب
     dbType = 'postgresql';
-    dbAdapter.client = client as any;
-    dbAdapter.db = drizzleDb as any;
-    db = drizzleDb as any;
+    dbAdapter.db = null; // سيتم إنشاؤه عند الطلب
+    dbAdapter.client = null; // سيتم إنشاؤه عند الطلب
+    db = null; // سيتم إنشاؤه عند الطلب
 
-    // بدء المراقبة الدورية لصحة قاعدة البيانات
-    startDatabaseHealthMonitoring();
+    console.log('✅ تم اختبار الاتصال بقاعدة البيانات بنجاح - سيتم الاتصال عند الطلب');
 
     return true;
   } catch (error: any) {
@@ -243,9 +321,6 @@ export async function initializeDatabase(): Promise<boolean> {
     dbAdapter.db = null;
     dbAdapter.client = null;
     db = null;
-    
-    // إيقاف المراقبة الدورية عند فشل الاتصال
-    stopDatabaseHealthMonitoring();
     
     return false;
   }
