@@ -53,13 +53,30 @@ export async function checkDatabaseHealth(): Promise<boolean> {
 }
 
 export async function initializeDatabase(): Promise<boolean> {
-  console.log('📝 استخدام SQLite للاستقرار...');
-  dbType = 'disabled';
-  dbAdapter.db = null;
-  dbAdapter.client = null;
-  db = null;
-  return false;
-}
+  const databaseUrl = process.env.DATABASE_URL || '';
+
+  try {
+    if (
+      !databaseUrl ||
+      !(databaseUrl.startsWith('postgresql://') || databaseUrl.startsWith('postgres://'))
+    ) {
+      dbType = 'disabled';
+      dbAdapter.db = null;
+      dbAdapter.client = null;
+      db = null;
+      console.warn('⚠️ DATABASE_URL غير محدد أو ليس PostgreSQL. سيتم تعطيل قاعدة البيانات.');
+      return false;
+    }
+
+    // إعدادات محسنة للاتصال بقاعدة البيانات على Render
+    const sslRequired =
+      /\bsslmode=require\b/.test(databaseUrl) || process.env.NODE_ENV === 'production';
+    
+    // إضافة معاملات SSL إذا لم تكن موجودة في production
+    let connectionString = databaseUrl;
+    if (process.env.NODE_ENV === 'production' && !connectionString.includes('sslmode=')) {
+      connectionString += connectionString.includes('?') ? '&sslmode=require' : '?sslmode=require';
+    }
 
     
     const client = postgres(connectionString, {

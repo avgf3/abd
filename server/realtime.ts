@@ -1055,9 +1055,8 @@ export function setupRealtime(httpServer: HttpServer): IOServer<ClientToServerEv
       }
     });
 
-    socket.on('disconnect', async (reason) => {
+    socket.on('disconnect', async () => {
       try {
-        console.log(`🔌 انقطاع اتصال: ${socket.id} - السبب: ${reason}`);
         const userId = socket.userId;
         if (!userId) return;
         const entry = connectedUsers.get(userId);
