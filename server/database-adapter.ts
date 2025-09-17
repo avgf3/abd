@@ -53,39 +53,12 @@ export async function checkDatabaseHealth(): Promise<boolean> {
 }
 
 export async function initializeDatabase(): Promise<boolean> {
-  try {
-    const databaseUrl = process.env.DATABASE_URL;
-    
-    if (databaseUrl && (databaseUrl.startsWith('postgresql://') || databaseUrl.startsWith('postgres://'))) {
-      console.log('🔗 الاتصال بـ PostgreSQL...');
-      
-      const client = postgres(databaseUrl, {
-        max: 20,
-        idle_timeout: 20,
-        connect_timeout: 10,
-        ssl: databaseUrl.includes('localhost') ? false : 'require',
-      });
-      
-      dbAdapter.client = client;
-      dbAdapter.db = drizzle(client, { schema });
-      db = dbAdapter.db;
-      dbType = 'postgresql';
-      
-      await client`select 1 as ok`;
-      console.log('✅ تم الاتصال بـ PostgreSQL');
-      return true;
-    } else {
-      console.log('📝 استخدام SQLite...');
-      return false;
-    }
-  } catch (error) {
-    console.error('❌ فشل الاتصال:', error);
-    dbAdapter.client = null;
-    dbAdapter.db = null;
-    db = null;
-    dbType = 'disabled';
-    return false;
-  }
+  console.log('📝 استخدام SQLite...');
+  dbType = 'disabled';
+  dbAdapter.db = null;
+  dbAdapter.client = null;
+  db = null;
+  return false;
 }
 
 
