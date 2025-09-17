@@ -16,7 +16,7 @@ services:
       - key: PORT
         value: 10000
       - key: DB_MAX_CONNECTIONS
-        value: 20
+        value: 5
       - key: ENABLE_WEBSOCKET
         value: true
       - key: SOCKET_IO_POLLING_ONLY
