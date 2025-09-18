@@ -249,13 +249,30 @@ export default function ProfileModal({
       } catch {}
     };
 
+    // الاستماع لتحديثات الصورة الشخصية
+    const handleSelfAvatarUpdated = (payload: any) => {
+      try {
+        if (payload?.type === 'selfAvatarUpdated' && payload?.avatarHash) {
+          setLocalUser((prev) => {
+            if (!prev) return prev;
+            const next: any = { ...prev };
+            next.avatarHash = payload.avatarHash;
+            if (payload.avatarVersion) next.avatarVersion = payload.avatarVersion;
+            return next;
+          });
+        }
+      } catch {}
+    };
+
     socket.on('userConnected', handleUserConnected);
     socket.on('userDisconnected', handleUserDisconnected);
     socket.on('message', handleUserUpdated);
+    socket.on('message', handleSelfAvatarUpdated);
     return () => {
       socket.off('userConnected', handleUserConnected);
       socket.off('userDisconnected', handleUserDisconnected);
       socket.off('message', handleUserUpdated);
+      socket.off('message', handleSelfAvatarUpdated);
     };
   }, [localUser?.id]);
   const canShowLastSeen = (((localUser as any)?.privacy?.showLastSeen ?? (localUser as any)?.showLastSeen) ?? true) !== false;
