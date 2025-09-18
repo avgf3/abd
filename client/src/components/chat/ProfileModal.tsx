@@ -110,7 +110,7 @@ export default function ProfileModal({
   let resolvedRoomName = 'الدردشة العامة';
   if (resolvedRoomId && resolvedRoomId !== 'general') {
     const found = rooms.find((r) => String((r as any).id) === String(resolvedRoomId));
-    resolvedRoomName = (found && (found as any).name) || `غرفة ${resolvedRoomId}`;
+    resolvedRoomName = (found && (found as any).name) || String(resolvedRoomId);
   }
   
   // دالة تنسيق آخر تواجد
@@ -127,7 +127,7 @@ export default function ProfileModal({
       const now = new Date();
       const isToday = lastSeenDate.toDateString() === now.toDateString();
       
-      const timeString = lastSeenDate.toLocaleTimeString('ar-SA', {
+      const timeString = lastSeenDate.toLocaleTimeString('en-US', {
         hour: 'numeric',
         minute: '2-digit',
         hour12: true
@@ -140,7 +140,7 @@ export default function ProfileModal({
         formattedTime = timeString;
       } else {
         // أكثر من يوم: التاريخ + الوقت
-        const dateString = lastSeenDate.toLocaleDateString('ar-SA', {
+        const dateString = lastSeenDate.toLocaleDateString('en-GB', {
           day: '2-digit',
           month: '2-digit'
         });
@@ -148,7 +148,7 @@ export default function ProfileModal({
       }
       
       const finalRoomName = roomName || resolvedRoomName;
-      return `${formattedTime} / ${finalRoomName}`;
+      return `${formattedTime} / غرفة║${finalRoomName}`;
       
     } catch (error) {
       return '';
