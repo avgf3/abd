@@ -58,12 +58,10 @@ export default function ProfileImage({
     return base;
   }, [user.profileImage, (user as any)?.avatarHash, (user as any)?.avatarVersion]);
 
-  // إضافة timestamp إضافي لضمان تحديث الصورة
+  // استخدام الصورة مباشرة بدون timestamp إضافي لتجنب الضغط على السيرفر
   const imageSrcWithTimestamp = useMemo(() => {
-    if (imageSrc === '/default_avatar.svg') return imageSrc;
-    const separator = imageSrc.includes('?') ? '&' : '?';
-    return `${imageSrc}${separator}_t=${imageTimestamp}`;
-  }, [imageSrc, imageTimestamp]);
+    return imageSrc; // استخدام الصورة كما هي بدون timestamp إضافي
+  }, [imageSrc]);
 
   return (
     <div className="relative inline-block" onClick={onClick}>
