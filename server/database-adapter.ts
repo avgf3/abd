@@ -89,24 +89,6 @@ export async function initializeDatabase(): Promise<boolean> {
 
     const drizzleDb = drizzle(client, { schema, logger: false });
 
-    let connected = false;
-    let attempts = 0;
-    const maxAttempts = 3;
-    
-    while (!connected && attempts < maxAttempts) {
-      try {
-        await client`select 1 as ok`;
-        connected = true;
-      } catch (error) {
-        attempts++;
-        if (attempts < maxAttempts) {
-          await new Promise(resolve => setTimeout(resolve, 2000 * attempts));
-        } else {
-          throw error;
-        }
-      }
-    }
-
     dbType = 'postgresql';
     dbAdapter.client = client as any;
     dbAdapter.db = drizzleDb as any;
