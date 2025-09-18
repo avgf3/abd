@@ -80,12 +80,7 @@ export async function initializeDatabase(): Promise<boolean> {
     
     const client = postgres(connectionString, {
       ssl: sslRequired ? 'require' : undefined,
-      // ضبط الحد الأقصى للاتصالات: متغير بيئة أو افتراضي بدون حد أقصى
-      max: (() => {
-        const env = Number(process.env.DB_MAX_CONNECTIONS);
-        if (!Number.isNaN(env) && env > 0) return env;
-        return undefined; // بدون حد أقصى
-      })(),
+      // إزالة جميع القيود على قاعدة البيانات
       prepare: true, // تفعيل prepared statements لتحسين الأداء
       onnotice: () => {}, // تجاهل الإشعارات
       // إضافة إعدادات إضافية للأداء

@@ -8,7 +8,7 @@ import { desc, eq, and, gte, lte, sql as drizzleSql } from 'drizzle-orm';
  */
 export async function getOptimizedRoomMessages(
   roomId: string,
-  limit: number = 20,
+  limit: number = 200, // إزالة قيود قاعدة البيانات
   offset: number = 0
 ) {
   if (!db) return { messages: [], total: 0 };
@@ -161,7 +161,7 @@ setInterval(() => {
 export async function searchMessages(
   searchTerm: string,
   roomId?: string,
-  limit: number = 20
+  limit: number = 200 // إزالة قيود قاعدة البيانات
 ) {
   if (!db || !searchTerm.trim()) return [];
 
