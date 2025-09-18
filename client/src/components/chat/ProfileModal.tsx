@@ -156,12 +156,12 @@ export default function ProfileModal({
   };
   
   const formattedLastSeen = formatLastSeenWithRoom(localUser?.lastSeen, resolvedRoomName);
-  // تحديث حي لنص "آخر تواجد" كل 10 ثوانٍ لعرض أكثر دقة
+  // تحديث حي لنص "آخر تواجد" كل دقيقة فقط عند الحاجة
   const [, forceRerenderTick] = useState(0);
   useEffect(() => {
     const intervalId = window.setInterval(() => {
       forceRerenderTick((t) => (t + 1) % 1000);
-    }, 10000); // تحديث كل 10 ثوانٍ لضمان التزامن مع الخادم
+    }, 60000); // تحديث كل دقيقة فقط لتجنب التأثير على الأداء
     return () => clearInterval(intervalId);
   }, []);
 
