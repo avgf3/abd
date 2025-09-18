@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useEffect, useState } from 'react';
 
 import { getUserLevelIcon } from '@/components/chat/UserRoleBadge';
 import type { ChatUser } from '@/types/chat';
@@ -19,6 +19,8 @@ export default function ProfileImage({
   onClick,
   hideRoleBadgeOverlay = false,
 }: ProfileImageProps) {
+  const [imageTimestamp, setImageTimestamp] = useState(Date.now());
+  
   const sizeClasses = {
     small: 'w-10 h-10',
     medium: 'w-16 h-16',
@@ -28,6 +30,18 @@ export default function ProfileImage({
   // تحديد لون الإطار حسب الجنس - كما كان سابقاً (ring + border color)
   const borderColor =
     user.gender === 'female' ? 'border-pink-400 ring-pink-200' : 'border-blue-400 ring-blue-200';
+
+  // الاستماع لتحديثات الصورة
+  useEffect(() => {
+    const handleAvatarUpdated = (event: any) => {
+      if (event.detail?.userId === user.id) {
+        setImageTimestamp(Date.now());
+      }
+    };
+
+    window.addEventListener('avatarUpdated', handleAvatarUpdated);
+    return () => window.removeEventListener('avatarUpdated', handleAvatarUpdated);
+  }, [user.id]);
   
 
 
@@ -44,11 +58,18 @@ export default function ProfileImage({
     return base;
   }, [user.profileImage, (user as any)?.avatarHash, (user as any)?.avatarVersion]);
 
+  // إضافة timestamp إضافي لضمان تحديث الصورة
+  const imageSrcWithTimestamp = useMemo(() => {
+    if (imageSrc === '/default_avatar.svg') return imageSrc;
+    const separator = imageSrc.includes('?') ? '&' : '?';
+    return `${imageSrc}${separator}_t=${imageTimestamp}`;
+  }, [imageSrc, imageTimestamp]);
+
   return (
     <div className="relative inline-block" onClick={onClick}>
       {/* الصورة الأساسية */}
       <img
-        src={imageSrc}
+        src={imageSrcWithTimestamp}
         alt={`صورة ${user.username}`}
         className={`${sizeClasses[size]} rounded-full ring-2 ${borderColor} shadow-sm object-cover ${className}`}
         style={{

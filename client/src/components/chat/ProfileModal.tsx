@@ -156,12 +156,12 @@ export default function ProfileModal({
   };
   
   const formattedLastSeen = formatLastSeenWithRoom(localUser?.lastSeen, resolvedRoomName);
-  // تحديث حي لنص "آخر تواجد" كل 30 ثانية لعرض أكثر دقة
+  // تحديث حي لنص "آخر تواجد" كل 10 ثوانٍ لعرض أكثر دقة
   const [, forceRerenderTick] = useState(0);
   useEffect(() => {
     const intervalId = window.setInterval(() => {
       forceRerenderTick((t) => (t + 1) % 1000);
-    }, 30000); // تحديث كل 30 ثانية بدلاً من 60 ثانية
+    }, 10000); // تحديث كل 10 ثوانٍ لضمان التزامن مع الخادم
     return () => clearInterval(intervalId);
   }, []);
 
@@ -202,13 +202,30 @@ export default function ProfileModal({
       } catch {}
     };
 
+    // الاستماع لتحديثات الصورة الشخصية
+    const handleSelfAvatarUpdated = (payload: any) => {
+      try {
+        if (payload?.type === 'selfAvatarUpdated' && payload?.avatarHash) {
+          setLocalUser((prev) => {
+            if (!prev) return prev;
+            const next: any = { ...prev };
+            next.avatarHash = payload.avatarHash;
+            if (payload.avatarVersion) next.avatarVersion = payload.avatarVersion;
+            return next;
+          });
+        }
+      } catch {}
+    };
+
     socket.on('userConnected', handleUserConnected);
     socket.on('userDisconnected', handleUserDisconnected);
     socket.on('message', handleUserUpdated);
+    socket.on('message', handleSelfAvatarUpdated);
     return () => {
       socket.off('userConnected', handleUserConnected);
       socket.off('userDisconnected', handleUserDisconnected);
       socket.off('message', handleUserUpdated);
+      socket.off('message', handleSelfAvatarUpdated);
     };
   }, [localUser?.id]);
   const canShowLastSeen = (((localUser as any)?.privacy?.showLastSeen ?? (localUser as any)?.showLastSeen) ?? true) !== false;

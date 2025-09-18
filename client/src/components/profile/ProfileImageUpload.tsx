@@ -97,6 +97,14 @@ export default function ProfileImageUpload({
       if ((result as any).avatarHash && currentUser?.id) {
         try {
           await api.put(`/api/users/${currentUser.id}`, { avatarHash: (result as any).avatarHash });
+          // إجبار تحديث الصورة في جميع المكونات
+          window.dispatchEvent(new CustomEvent('avatarUpdated', { 
+            detail: { 
+              userId: currentUser.id, 
+              avatarHash: (result as any).avatarHash,
+              imageUrl: result.imageUrl 
+            } 
+          }));
         } catch {}
       }
 
