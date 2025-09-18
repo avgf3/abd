@@ -68,11 +68,9 @@ export async function initializeDatabase(): Promise<boolean> {
       return false;
     }
 
-    // إعدادات محسنة للاتصال بقاعدة البيانات على Render
     const sslRequired =
       /\bsslmode=require\b/.test(databaseUrl) || process.env.NODE_ENV === 'production';
     
-    // إضافة معاملات SSL إذا لم تكن موجودة في production
     let connectionString = databaseUrl;
     if (process.env.NODE_ENV === 'production' && !connectionString.includes('sslmode=')) {
       connectionString += connectionString.includes('?') ? '&sslmode=require' : '?sslmode=require';
@@ -80,37 +78,16 @@ export async function initializeDatabase(): Promise<boolean> {
     
     const client = postgres(connectionString, {
       ssl: sslRequired ? 'require' : undefined,
-      // إزالة جميع القيود على قاعدة البيانات
-      prepare: true, // تفعيل prepared statements لتحسين الأداء
-      onnotice: () => {}, // تجاهل الإشعارات
-      // إضافة إعدادات إضافية للأداء
-      fetch_types: false, // تحسين الأداء
-      types: false, // تحسين الأداء
+      prepare: true,
+      onnotice: () => {},
+      fetch_types: false,
+      types: false,
       connection: {
         application_name: 'chat-app',
       },
     });
 
     const drizzleDb = drizzle(client, { schema, logger: false });
-
-    // محاولة الاتصال مع إعادة المحاولة
-    let connected = false;
-    let attempts = 0;
-    const maxAttempts = 3;
-    
-    while (!connected && attempts < maxAttempts) {
-      try {
-        await client`select 1 as ok`;
-        connected = true;
-      } catch (error) {
-        attempts++;
-        if (attempts < maxAttempts) {
-          await new Promise(resolve => setTimeout(resolve, 2000 * attempts));
-        } else {
-          throw error;
-        }
-      }
-    }
 
     dbType = 'postgresql';
     dbAdapter.client = client as any;
