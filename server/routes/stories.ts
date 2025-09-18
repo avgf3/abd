@@ -156,7 +156,9 @@ router.post('/upload', protect.member, limiters.upload, upload.single('story'), 
 router.get('/my', protect.auth, async (req, res) => {
   try {
     const userId = (req as any)?.user?.id as number;
-    if (!userId) return res.status(401).json({ error: 'غير مصرح' });
+    if (!userId || typeof userId !== 'number' || Number.isNaN(userId) || userId <= 0) {
+      return res.status(401).json({ error: 'غير مصرح' });
+    }
     const stories = await databaseService.getUserStories(userId, false);
     res.json({ success: true, stories });
   } catch (error) {
@@ -195,6 +197,10 @@ router.post('/:storyId/view', protect.auth, async (req, res) => {
 router.get('/:storyId/views', protect.auth, async (req, res) => {
   try {
     const requesterId = (req as any)?.user?.id as number;
+    if (!requesterId || typeof requesterId !== 'number' || Number.isNaN(requesterId) || requesterId <= 0) {
+      return res.status(401).json({ error: 'غير مصرح' });
+    }
+    
     const storyId = parseInt(req.params.storyId, 10);
     if (!Number.isFinite(storyId)) return res.status(400).json({ error: 'storyId غير صالح' });
 
