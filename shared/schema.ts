@@ -60,7 +60,21 @@ export const users = pgTable('users', {
   showPointsToOthers: boolean('show_points_to_others').notNull().default(true),
   showSystemMessages: boolean('show_system_messages').notNull().default(true),
   globalSoundEnabled: boolean('global_sound_enabled').notNull().default(true),
-});
+}, (table) => ({
+  // فهارس محسنة للأداء
+  usernameIndex: index('idx_users_username').on(table.username),
+  userTypeIndex: index('idx_users_user_type').on(table.userType),
+  isOnlineIndex: index('idx_users_is_online').on(table.isOnline),
+  lastSeenIndex: index('idx_users_last_seen').on(table.lastSeen),
+  joinDateIndex: index('idx_users_join_date').on(table.joinDate),
+  pointsIndex: index('idx_users_points').on(table.points),
+  levelIndex: index('idx_users_level').on(table.level),
+  countryIndex: index('idx_users_country').on(table.country),
+  // فهارس مركبة للاستعلامات المعقدة
+  onlineUsersIndex: index('idx_users_online_hidden').on(table.isOnline, table.isHidden),
+  userTypeLevelIndex: index('idx_users_type_level').on(table.userType, table.level),
+  lastSeenOnlineIndex: index('idx_users_last_seen_online').on(table.lastSeen, table.isOnline),
+}));
 
 export const messages = pgTable(
   'messages',

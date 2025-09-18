@@ -28,6 +28,7 @@ class UserCacheManager {
   private readonly MAX_CACHE_SIZE = 500;
   private readonly CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 ساعة
   private readonly PRIORITY_CACHE_DURATION = 7 * 24 * 60 * 60 * 1000; // 7 أيام للمستخدمين المهمين
+  private saveTimeout: NodeJS.Timeout | null = null;
 
   private constructor() {
     this.loadFromLocalStorage();
@@ -62,6 +63,20 @@ class UserCacheManager {
       // في حالة فساد البيانات، نقوم بمسحها
       localStorage.removeItem(this.CACHE_KEY);
     }
+  }
+
+  /**
+   * حفظ البيانات في localStorage مع debouncing لتجنب التضارب
+   */
+  private debouncedSave(): void {
+    if (this.saveTimeout) {
+      clearTimeout(this.saveTimeout);
+    }
+    
+    this.saveTimeout = setTimeout(() => {
+      this.saveToLocalStorage();
+      this.saveTimeout = null;
+    }, 1000); // تأخير ثانية واحدة
   }
 
   /**
@@ -112,14 +127,46 @@ class UserCacheManager {
     };
 
     this.memoryCache.set(user.id, cached);
-    this.saveToLocalStorage();
+    this.debouncedSave();
   }
 
   /**
-   * تحديث مجموعة من المستخدمين دفعة واحدة
+   * تحديث مجموعة من المستخدمين دفعة واحدة مع تحسين الأداء
    */
   setUsers(users: Array<ChatUser | Partial<ChatUser> & { id: number }>): void {
-    users.forEach(user => this.setUser(user));
+    const now = Date.now();
+    
+    users.forEach(user => {
+      if (!user.id || !user.username) return;
+      
+      const existing = this.memoryCache.get(user.id);
+      
+      // تجنب التضارب: إذا كانت البيانات الجديدة أقدم من الموجودة، تجاهلها
+      if (existing && existing.lastUpdated > now - 1000) {
+        return;
+      }
+      
+      const cached: CachedUser = {
+        id: user.id,
+        username: user.username,
+        userType: 'userType' in user ? user.userType : existing?.userType,
+        role: 'role' in user ? user.role : existing?.role,
+        profileImage: 'profileImage' in user ? user.profileImage : existing?.profileImage,
+        avatarHash: 'avatarHash' in user ? (user as any).avatarHash : existing?.avatarHash,
+        usernameColor: 'usernameColor' in user ? user.usernameColor : existing?.usernameColor,
+        profileBackgroundColor: 'profileBackgroundColor' in user ? user.profileBackgroundColor : existing?.profileBackgroundColor,
+        profileEffect: 'profileEffect' in user ? user.profileEffect : existing?.profileEffect,
+        isOnline: 'isOnline' in user ? user.isOnline : existing?.isOnline,
+        lastSeen: 'lastSeen' in user ? (user as any).lastSeen : existing?.lastSeen,
+        currentRoom: 'currentRoom' in user ? (user as any).currentRoom : existing?.currentRoom,
+        lastUpdated: now,
+      };
+      
+      this.memoryCache.set(user.id, cached);
+    });
+    
+    // حفظ مرة واحدة فقط بعد تحديث جميع المستخدمين
+    this.debouncedSave();
   }
 
   /**

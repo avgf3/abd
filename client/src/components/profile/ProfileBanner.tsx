@@ -33,11 +33,16 @@ export default function ProfileBanner({ currentUser, onBannerUpdate }: ProfileBa
       });
       return;
     }
+    
     // السماح برفع البانر فقط للمشرفين أو للمستوى 20+
     const isModerator = ['owner', 'admin', 'moderator'].includes(currentUser.userType);
     const lvl = Number(currentUser.level || 1);
     if (!isModerator && lvl < 20) {
-      toast({ title: 'غير مسموح', description: 'الغلاف للمشرفين أو للمستوى 20 فما فوق', variant: 'destructive' });
+      toast({ 
+        title: 'غير مسموح', 
+        description: 'الغلاف للمشرفين أو للمستوى 20 فما فوق', 
+        variant: 'destructive' 
+      });
       return;
     }
 
@@ -52,6 +57,7 @@ export default function ProfileBanner({ currentUser, onBannerUpdate }: ProfileBa
     }
 
     setUploading(true);
+    setUploadProgress(0);
 
     try {
       // إنشاء معاينة للصورة
@@ -66,8 +72,13 @@ export default function ProfileBanner({ currentUser, onBannerUpdate }: ProfileBa
       formData.append('banner', file);
       formData.append('userId', currentUser.id.toString());
 
-      // رفع الصورة
-      const result = await api.upload('/api/upload/profile-banner', formData);
+      // رفع الصورة مع شريط التقدم
+      const result = await api.upload('/api/upload/profile-banner', formData, {
+        timeout: getUploadTimeout('image'),
+        onProgress: (progress) => {
+          setUploadProgress(Math.round(progress));
+        },
+      });
 
       if (!result.success) {
         throw new Error(result.error || 'فشل في رفع صورة البانر');
@@ -77,18 +88,39 @@ export default function ProfileBanner({ currentUser, onBannerUpdate }: ProfileBa
       if (onBannerUpdate && result.bannerUrl) {
         onBannerUpdate(result.bannerUrl);
       }
+      
       setPreview(null);
+      setUploadProgress(0);
+      
       toast({
         title: 'تم بنجاح',
         description: 'تم تحديث صورة البانر',
         variant: 'default',
       });
     } catch (error: any) {
+      console.error('❌ خطأ في رفع صورة البانر:', error);
+      
+      // معالجة أخطاء محددة
+      let errorMessage = 'فشل في رفع صورة البانر، يرجى المحاولة مرة أخرى';
+      
+      if (error.message?.includes('timeout')) {
+        errorMessage = 'انتهت مهلة الرفع، يرجى المحاولة مرة أخرى';
+      } else if (error.message?.includes('network')) {
+        errorMessage = 'مشكلة في الاتصال، تحقق من الإنترنت';
+      } else if (error.message?.includes('size')) {
+        errorMessage = 'حجم الصورة كبير جداً';
+      } else if (error.message?.includes('format')) {
+        errorMessage = 'نوع الملف غير مدعوم';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       toast({
         title: 'خطأ',
-        description: error.message || 'فشل في رفع صورة البانر، يرجى المحاولة مرة أخرى',
+        description: errorMessage,
         variant: 'destructive',
       });
+      
       setPreview(null);
     } finally {
       setUploading(false);
@@ -213,6 +245,20 @@ export default function ProfileBanner({ currentUser, onBannerUpdate }: ProfileBa
           <div className="bg-white/90 backdrop-blur-md rounded-lg p-4 flex flex-col items-center gap-3">
             <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
             <span className="text-gray-700 font-medium">جاري رفع صورة البانر...</span>
+            {uploadProgress > 0 && (
+              <div className="w-48 space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span>التقدم</span>
+                  <span>{uploadProgress}%</span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div
+                    className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+                    style={{ width: `${uploadProgress}%` }}
+                  />
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

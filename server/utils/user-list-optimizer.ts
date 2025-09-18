@@ -1,5 +1,5 @@
 /**
- * نظام تحسين قائمة المستخدمين مع debouncing وتجميع التحديثات
+ * نظام مبسط لتحديث قائمة المستخدمين بدون تعقيد مفرط
  */
 
 interface UserUpdateEvent {
@@ -10,63 +10,46 @@ interface UserUpdateEvent {
   timestamp: number;
 }
 
-interface PendingUpdate {
-  roomId: string;
-  events: UserUpdateEvent[];
-  timeoutId: any; // Timer ID
-}
-
 class UserListOptimizer {
-  private pendingUpdates = new Map<string, PendingUpdate>();
-  private readonly DEBOUNCE_DELAY = 1000; // تأخير 1 ثانية للتجميع
-  private readonly MAX_BATCH_SIZE = 50; // حد أقصى للأحداث في المجموعة الواحدة
+  private pendingUpdates = new Map<string, UserUpdateEvent[]>();
+  private readonly DEBOUNCE_DELAY = 500; // تقليل التأخير إلى 500ms
+  private readonly MAX_BATCH_SIZE = 20; // تقليل الحد الأقصى
 
   constructor(private emitCallback: (roomId: string, users: any[]) => Promise<void>) {}
 
-  // إضافة حدث تحديث مع debouncing
+  // إضافة حدث تحديث مبسط
   addUpdateEvent(event: UserUpdateEvent) {
     const { roomId } = event;
     
-    // الحصول على التحديث المعلق أو إنشاء جديد
-    let pending = this.pendingUpdates.get(roomId);
-    
-    if (!pending) {
-      pending = {
-        roomId,
-        events: [],
-        timeoutId: setTimeout(() => this.processUpdates(roomId), this.DEBOUNCE_DELAY),
-      };
-      this.pendingUpdates.set(roomId, pending);
-    } else {
-      // إعادة تعيين المؤقت
-      clearTimeout(pending.timeoutId);
-      pending.timeoutId = setTimeout(() => this.processUpdates(roomId), this.DEBOUNCE_DELAY);
+    if (!this.pendingUpdates.has(roomId)) {
+      this.pendingUpdates.set(roomId, []);
     }
     
-    // إضافة الحدث
-    pending.events.push(event);
+    const updates = this.pendingUpdates.get(roomId)!;
+    updates.push(event);
     
     // إذا وصلنا للحد الأقصى، معالجة فورية
-    if (pending.events.length >= this.MAX_BATCH_SIZE) {
-      clearTimeout(pending.timeoutId);
+    if (updates.length >= this.MAX_BATCH_SIZE) {
       this.processUpdates(roomId);
+    } else {
+      // معالجة بعد تأخير قصير
+      setTimeout(() => this.processUpdates(roomId), this.DEBOUNCE_DELAY);
     }
   }
 
-  // معالجة التحديثات المجمعة
+  // معالجة التحديثات المبسطة
   private async processUpdates(roomId: string) {
-    const pending = this.pendingUpdates.get(roomId);
-    if (!pending || pending.events.length === 0) {
+    const updates = this.pendingUpdates.get(roomId);
+    if (!updates || updates.length === 0) {
       return;
     }
     
     try {
-      // إزالة التحديث المعلق
+      // إزالة التحديثات المعلقة
       this.pendingUpdates.delete(roomId);
-      clearTimeout(pending.timeoutId);
       
-      // تجميع الأحداث وإزالة التكرارات
-      const optimizedEvents = this.optimizeEvents(pending.events);
+      // تجميع الأحداث وإزالة التكرارات البسيطة
+      const optimizedEvents = this.optimizeEvents(updates);
       
       console.log(`🔄 معالجة ${optimizedEvents.length} أحداث للغرفة ${roomId}`);
       
@@ -81,31 +64,21 @@ class UserListOptimizer {
     }
   }
 
-  // تحسين الأحداث وإزالة التكرارات
+  // تحسين الأحداث البسيط
   private optimizeEvents(events: UserUpdateEvent[]): UserUpdateEvent[] {
     // ترتيب الأحداث حسب الوقت
     events.sort((a, b) => a.timestamp - b.timestamp);
     
-    // تجميع الأحداث حسب المستخدم
-    const userEvents = new Map<number, UserUpdateEvent[]>();
-    for (const event of events) {
-      if (!userEvents.has(event.userId)) {
-        userEvents.set(event.userId, []);
-      }
-      userEvents.get(event.userId)!.push(event);
-    }
-    
     // الاحتفاظ بآخر حدث لكل مستخدم فقط
-    const optimized: UserUpdateEvent[] = [];
-    for (const [userId, userEventList] of userEvents) {
-      const lastEvent = userEventList[userEventList.length - 1];
-      optimized.push(lastEvent);
+    const userEvents = new Map<number, UserUpdateEvent>();
+    for (const event of events) {
+      userEvents.set(event.userId, event);
     }
     
-    return optimized;
+    return Array.from(userEvents.values());
   }
 
-  // بناء قائمة المستخدمين المحدثة
+  // بناء قائمة المستخدمين المحدثة المبسطة
   private async buildUpdatedUserList(roomId: string, events: UserUpdateEvent[]): Promise<any[]> {
     try {
       // استيراد الدوال المطلوبة
@@ -114,7 +87,7 @@ class UserListOptimizer {
       // الحصول على القائمة الحالية
       const currentUsers = await buildOnlineUsersForRoom(roomId);
       
-      // تطبيق الأحداث
+      // تطبيق الأحداث البسيط
       const userMap = new Map<number, any>();
       
       // إضافة المستخدمين الحاليين
@@ -154,65 +127,33 @@ class UserListOptimizer {
     }
   }
 
-  // إجبار معالجة التحديثات المعلقة لغرفة معينة
+  // إجبار معالجة التحديثات المعلقة
   async flushUpdates(roomId?: string) {
     if (roomId) {
-      const pending = this.pendingUpdates.get(roomId);
-      if (pending) {
-        clearTimeout(pending.timeoutId);
-        await this.processUpdates(roomId);
-      }
+      this.processUpdates(roomId);
     } else {
       // معالجة جميع التحديثات المعلقة
       const roomIds = Array.from(this.pendingUpdates.keys());
-      await Promise.all(roomIds.map(id => {
-        const pending = this.pendingUpdates.get(id);
-        if (pending) {
-          clearTimeout(pending.timeoutId);
-          return this.processUpdates(id);
-        }
-      }));
+      for (const id of roomIds) {
+        this.processUpdates(id);
+      }
     }
   }
 
-  // الحصول على إحصائيات التحديثات المعلقة
-  getPendingStats() {
-    const stats = {
-      totalPendingRooms: this.pendingUpdates.size,
-      totalPendingEvents: 0,
-      roomDetails: [] as Array<{ roomId: string; eventCount: number; oldestEvent: number }>,
-    };
-    
-    for (const [roomId, pending] of this.pendingUpdates) {
-      stats.totalPendingEvents += pending.events.length;
-      const oldestEvent = pending.events.length > 0 
-        ? Math.min(...pending.events.map(e => e.timestamp))
-        : Date.now();
-        
-      stats.roomDetails.push({
-        roomId,
-        eventCount: pending.events.length,
-        oldestEvent,
-      });
-    }
-    
-    return stats;
-  }
-
-  // تنظيف التحديثات القديمة (أكثر من 10 ثوان)
+  // تنظيف التحديثات القديمة
   cleanup() {
     const now = Date.now();
     const maxAge = 10000; // 10 ثوان
     
-    for (const [roomId, pending] of this.pendingUpdates) {
-      const oldestEvent = pending.events.length > 0 
-        ? Math.min(...pending.events.map(e => e.timestamp))
-        : now;
-        
-      if (now - oldestEvent > maxAge) {
-        console.warn(`🧹 تنظيف تحديثات قديمة للغرفة ${roomId}`);
-        clearTimeout(pending.timeoutId);
+    for (const [roomId, updates] of this.pendingUpdates) {
+      const recentUpdates = updates.filter(update => 
+        now - update.timestamp < maxAge
+      );
+      
+      if (recentUpdates.length === 0) {
         this.pendingUpdates.delete(roomId);
+      } else {
+        this.pendingUpdates.set(roomId, recentUpdates);
       }
     }
   }
