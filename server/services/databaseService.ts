@@ -179,12 +179,7 @@ export class DatabaseService {
         // SQLite has no users table, so this will return null
         return null;
       }
-    } catch (error: any) {
-      // معالجة أفضل للأخطاء لتجنب إيقاف العملية
-      if (error?.code === 'XX000' || error?.message?.includes('timeout')) {
-        console.warn(`Timeout في جلب المستخدم ${id}:`, error.message);
-        return null; // إرجاع null بدلاً من رمي الخطأ
-      }
+    } catch (error) {
       console.error('Error getting user by ID:', error);
       return null;
     }
@@ -309,12 +304,7 @@ export class DatabaseService {
         // SQLite has no users table, so this will return null
         return null;
       }
-    } catch (error: any) {
-      // معالجة أفضل للأخطاء لتجنب إيقاف العملية
-      if (error?.code === 'XX000' || error?.message?.includes('timeout')) {
-        console.warn(`Timeout في تحديث المستخدم ${id}:`, error.message);
-        return null; // إرجاع null بدلاً من رمي الخطأ
-      }
+    } catch (error) {
       console.error('Error updating user:', error);
       return null;
     }

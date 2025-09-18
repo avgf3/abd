@@ -1160,35 +1160,21 @@ let lastSeenUpdateInterval: NodeJS.Timeout | null = null;
 async function updateLastSeenForConnectedUsers() {
   try {
     const now = new Date();
-    const connectedUserIds: number[] = [];
+    const updatePromises: Promise<void>[] = [];
     
-    // جمع معرفات المستخدمين المتصلين
+    // تحديث lastSeen لجميع المستخدمين المتصلين
     for (const [userId, entry] of connectedUsers.entries()) {
-      if (entry.sockets.size > 0) {
-        connectedUserIds.push(userId);
+      if (entry.sockets.size > 0) { // المستخدم متصل
+        updatePromises.push(
+          storage.updateUser(userId, { lastSeen: now }).catch((error) => {
+            console.error(`خطأ في تحديث lastSeen للمستخدم ${userId}:`, error);
+          })
+        );
       }
     }
     
-    if (connectedUserIds.length === 0) return;
-    
-    // تحديث المستخدمين على دفعات صغيرة
-    const BATCH_SIZE = 10;
-    
-    for (let i = 0; i < connectedUserIds.length; i += BATCH_SIZE) {
-      const batch = connectedUserIds.slice(i, i + BATCH_SIZE);
-      const batchPromises = batch.map(userId => 
-        storage.updateUser(userId, { lastSeen: now }).catch(() => {})
-      );
-      
-      await Promise.all(batchPromises);
-      
-      // تأخير قصير بين الدفعات
-      if (i + BATCH_SIZE < connectedUserIds.length) {
-        await new Promise(resolve => setTimeout(resolve, 100));
-      }
-    }
-    
-    console.log(`تم تحديث lastSeen لـ ${connectedUserIds.length} مستخدم متصل`);
+    await Promise.all(updatePromises);
+    console.log(`تم تحديث lastSeen لـ ${updatePromises.length} مستخدم متصل`);
 
     // بث userUpdated بشكل خفيف لإبلاغ الواجهة بالتحديث الدوري لـ lastSeen
     try {
