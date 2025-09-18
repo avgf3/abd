@@ -89,9 +89,13 @@ async function applyDeploymentFixes() {
     }
     
     console.log('🔄 ضبط القيم الافتراضية والصحيحة لـ dm_privacy...');
-    await sql`UPDATE "users" SET "dm_privacy" = 'all' WHERE "dm_privacy" IS NULL OR "dm_privacy" NOT IN ('all','friends','none')`;
-    await sql`ALTER TABLE "users" ALTER COLUMN "dm_privacy" SET DEFAULT 'all'`;
-    await sql`ALTER TABLE "users" ALTER COLUMN "dm_privacy" SET NOT NULL`;
+    try {
+      await sql`UPDATE "users" SET "dm_privacy" = 'all' WHERE "dm_privacy" IS NULL OR "dm_privacy" NOT IN ('all','friends','none')`;
+      await sql`ALTER TABLE "users" ALTER COLUMN "dm_privacy" SET DEFAULT 'all'`;
+      await sql`ALTER TABLE "users" ALTER COLUMN "dm_privacy" SET NOT NULL`;
+    } catch (dmError) {
+      console.warn('⚠️ تحذير في dm_privacy:', dmError.message);
+    }
 
     // Ensure user preference columns exist and are defaulted
     console.log('🔍 التحقق من أعمدة تفضيلات المستخدم العامة في users...');
@@ -110,13 +114,17 @@ async function applyDeploymentFixes() {
     await sql`ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS ignored_users TEXT DEFAULT '[]'`;
 
     console.log('🔄 ضبط القيم الافتراضية لأعمدة التفضيلات...');
-    await sql`UPDATE users SET show_points_to_others = COALESCE(show_points_to_others, TRUE)`;
-    await sql`UPDATE users SET show_system_messages = COALESCE(show_system_messages, TRUE)`;
-    await sql`UPDATE users SET global_sound_enabled = COALESCE(global_sound_enabled, TRUE)`;
-    
-    // تحديث قيم role المفقودة
-    console.log('🔄 تحديث قيم role المفقودة...');
-    await sql`UPDATE users SET role = COALESCE(role, user_type, 'guest') WHERE role IS NULL`;
+    try {
+      await sql`UPDATE users SET show_points_to_others = COALESCE(show_points_to_others, TRUE)`;
+      await sql`UPDATE users SET show_system_messages = COALESCE(show_system_messages, TRUE)`;
+      await sql`UPDATE users SET global_sound_enabled = COALESCE(global_sound_enabled, TRUE)`;
+      
+      // تحديث قيم role المفقودة
+      console.log('🔄 تحديث قيم role المفقودة...');
+      await sql`UPDATE users SET role = COALESCE(role, user_type, 'guest') WHERE role IS NULL`;
+    } catch (updateError) {
+      console.warn('⚠️ تحذير في تحديث البيانات:', updateError.message);
+    }
 
     await sql`ALTER TABLE IF EXISTS users ALTER COLUMN show_points_to_others SET DEFAULT TRUE`;
     await sql`ALTER TABLE IF EXISTS users ALTER COLUMN show_system_messages SET DEFAULT TRUE`;
