@@ -15,8 +15,6 @@ services:
         value: production
       - key: PORT
         value: 10000
-      - key: DB_MAX_CONNECTIONS
-        value: 5
       - key: DB_STATEMENT_TIMEOUT
         value: 30000
       - key: DB_IDLE_TIMEOUT
