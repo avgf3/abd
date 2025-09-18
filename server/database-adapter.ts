@@ -80,11 +80,11 @@ export async function initializeDatabase(): Promise<boolean> {
     
     const client = postgres(connectionString, {
       ssl: sslRequired ? 'require' : undefined,
-      // ضبط الحد الأقصى للاتصالات: متغير بيئة أو افتراضي 20 لتجنب استنزاف الموارد
+      // ضبط الحد الأقصى للاتصالات: متغير بيئة أو افتراضي بدون حد أقصى
       max: (() => {
         const env = Number(process.env.DB_MAX_CONNECTIONS);
         if (!Number.isNaN(env) && env > 0) return env;
-        return 20; // حد أقصى آمن لتجنب استنزاف قاعدة البيانات
+        return undefined; // بدون حد أقصى
       })(),
       connect_timeout: 15, // timeout قصير للاتصال
       max_lifetime: 60 * 5, // إعادة تدوير الاتصالات كل 5 دقائق لمنع التراكم
