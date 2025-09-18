@@ -120,6 +120,7 @@ export function useRoomManager(options: UseRoomManagerOptions = {}) {
         const response = await apiRequest('/api/rooms', {
           method: 'GET',
           signal: abortControllerRef.current.signal,
+          timeout: 45000, // زيادة timeout إلى 45 ثانية للغرف
         });
 
         if (!response?.rooms || !Array.isArray(response.rooms)) {
@@ -203,6 +204,7 @@ export function useRoomManager(options: UseRoomManagerOptions = {}) {
         const data = await apiRequest('/api/rooms', {
           method: 'POST',
           body: formData,
+          timeout: 60000, // زيادة timeout لإنشاء الغرف
         });
         const newRoom: ChatRoom = mapApiRoom(data.room);
 
@@ -242,6 +244,7 @@ export function useRoomManager(options: UseRoomManagerOptions = {}) {
       const response = await apiRequest(`/api/rooms/${roomId}`, {
         method: 'DELETE',
         body: { userId },
+        timeout: 30000, // timeout لحذف الغرف
       });
 
       if (!response) {
@@ -287,6 +290,7 @@ export function useRoomManager(options: UseRoomManagerOptions = {}) {
         const data = await apiRequest(`/api/rooms/${roomId}/icon`, {
           method: 'PUT',
           body: formData,
+          timeout: 60000, // timeout لتحديث الأيقونة
         });
 
         if (!data?.room) {
@@ -331,6 +335,7 @@ export function useRoomManager(options: UseRoomManagerOptions = {}) {
         const data = await apiRequest(`/api/rooms/${roomId}/lock`, {
           method: 'PUT',
           body: { isLocked },
+          timeout: 30000, // timeout لتبديل القفل
         });
 
         if (!data?.room) {

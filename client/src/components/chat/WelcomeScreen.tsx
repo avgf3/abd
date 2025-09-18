@@ -4,7 +4,7 @@ import { useState } from 'react';
 import UserRegistration from './UserRegistration';
 
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useToast } from '@/hooks/use-toast';
@@ -269,6 +269,9 @@ export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
               <span className="text-4xl">📝</span>
               أدخل اسم الزائر
             </DialogTitle>
+            <DialogDescription className="text-center text-slate-400">
+              أدخل اسمك للدخول كزائر والاستمتاع بالمحادثة
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <Input
@@ -540,6 +543,9 @@ export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
               <span>🔐</span>
               تسجيل دخول الأعضاء
             </DialogTitle>
+            <DialogDescription className="text-center text-slate-400">
+              أدخل بيانات حسابك للدخول كعضو مسجل
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <Input
@@ -576,6 +582,9 @@ export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
               <span>📝</span>
               تسجيل عضوية جديدة
             </DialogTitle>
+            <DialogDescription className="text-center text-slate-400">
+              أنشئ حساباً جديداً للوصول إلى جميع الميزات المتقدمة
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <Input

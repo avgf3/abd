@@ -35,7 +35,7 @@ async function throwIfResNotOk(res: Response) {
   }
 }
 
-// دالة apiRequest محسّنة وموحدة
+// دالة apiRequest محسّنة وموحدة مع تحسينات timeout
 export async function apiRequest<T = any>(
   endpoint: string,
   options?: {
@@ -46,7 +46,7 @@ export async function apiRequest<T = any>(
     signal?: AbortSignal;
   }
 ): Promise<T> {
-  const { method = 'GET', body, headers = {}, timeout = 30000, signal } = options || {};
+  const { method = 'GET', body, headers = {}, timeout = 60000, signal } = options || {}; // زيادة timeout إلى 60 ثانية
 
   const requestHeaders: Record<string, string> = { ...headers };
   try {
@@ -76,19 +76,27 @@ export async function apiRequest<T = any>(
     requestBody = undefined;
   }
 
-  // إضافة timeout للطلبات مع دعم signal خارجي
+  // إضافة timeout للطلبات مع دعم signal خارجي محسن
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeout);
+  const timeoutId = setTimeout(() => {
+    console.warn(`⏰ Request timeout after ${timeout}ms for ${endpoint}`);
+    controller.abort();
+  }, timeout);
+  
   if (signal) {
     if (signal.aborted) {
       controller.abort();
     } else {
-      const onAbort = () => controller.abort();
+      const onAbort = () => {
+        console.log(`🛑 External signal aborted for ${endpoint}`);
+        controller.abort();
+      };
       signal.addEventListener('abort', onAbort, { once: true });
     }
   }
 
   try {
+    console.log(`🚀 Making ${upperMethod} request to ${endpoint} with ${timeout}ms timeout`);
     const res = await fetch(endpoint, {
       method: upperMethod,
       headers: requestHeaders,
@@ -113,6 +121,8 @@ export async function apiRequest<T = any>(
       const timeoutError = new Error('انتهت مهلة الطلب - يرجى المحاولة مرة أخرى') as any;
       timeoutError.code = 'TIMEOUT';
       timeoutError.status = 408;
+      timeoutError.endpoint = endpoint;
+      timeoutError.timeout = timeout;
       throw timeoutError;
     }
 

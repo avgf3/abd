@@ -163,7 +163,7 @@ export function useNotificationManager(currentUser: ChatUser | null) {
     [updateFriendQueries]
   );
 
-  // Setup event listeners
+  // Setup event listeners - محسن لتجنب مشاكل المستمع غير المتزامن
   useEffect(() => {
     if (!currentUser?.id) return;
 
@@ -174,13 +174,35 @@ export function useNotificationManager(currentUser: ChatUser | null) {
       { name: 'friendAdded', handler: handleFriendAdded },
     ];
 
+    // إضافة مستمعات الأحداث مع معالجة أفضل للأخطاء
     events.forEach(({ name, handler }) => {
-      window.addEventListener(name, handler as EventListener);
+      const wrappedHandler = (event: Event) => {
+        try {
+          // التأكد من أن المعالج لا يسبب مشاكل غير متزامنة
+          if (typeof handler === 'function') {
+            handler(event as CustomEvent<NotificationEventDetail>);
+          }
+        } catch (error) {
+          console.error(`🔔 Error in ${name} handler:`, error);
+        }
+      };
+      
+      window.addEventListener(name, wrappedHandler);
     });
 
     return () => {
       events.forEach(({ name, handler }) => {
-        window.removeEventListener(name, handler as EventListener);
+        const wrappedHandler = (event: Event) => {
+          try {
+            if (typeof handler === 'function') {
+              handler(event as CustomEvent<NotificationEventDetail>);
+            }
+          } catch (error) {
+            console.error(`🔔 Error in ${name} cleanup handler:`, error);
+          }
+        };
+        
+        window.removeEventListener(name, wrappedHandler);
       });
     };
   }, [
