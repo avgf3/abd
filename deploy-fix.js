@@ -16,12 +16,7 @@ if (!DATABASE_URL) {
 console.log('🚀 تطبيق إصلاحات قاعدة البيانات للنشر...');
 
 async function applyDeploymentFixes() {
-  const sql = postgres(DATABASE_URL, {
-    idle_timeout: 60, // زيادة timeout إلى 60 ثانية
-    connect_timeout: 60, // زيادة timeout الاتصال إلى 60 ثانية
-    max_lifetime: 60 * 30, // إعادة تدوير الاتصالات كل 30 دقيقة
-    statement_timeout: 120000, // 2 دقيقة لكل استعلام
-  });
+  const sql = postgres(DATABASE_URL);
   
   try {
     console.log('🔍 التحقق من أعمدة chat_lock...');
