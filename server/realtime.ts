@@ -1164,35 +1164,31 @@ async function updateLastSeenForConnectedUsers() {
     
     // جمع معرفات المستخدمين المتصلين
     for (const [userId, entry] of connectedUsers.entries()) {
-      if (entry.sockets.size > 0) { // المستخدم متصل
+      if (entry.sockets.size > 0) {
         connectedUserIds.push(userId);
       }
     }
     
     if (connectedUserIds.length === 0) return;
     
-    // تحديث المستخدمين على دفعات صغيرة لتجنب استنفاد pool الاتصالات
-    const BATCH_SIZE = 10; // تحديث 10 مستخدمين في كل مرة
-    let updatedCount = 0;
+    // تحديث المستخدمين على دفعات صغيرة
+    const BATCH_SIZE = 10;
     
     for (let i = 0; i < connectedUserIds.length; i += BATCH_SIZE) {
       const batch = connectedUserIds.slice(i, i + BATCH_SIZE);
       const batchPromises = batch.map(userId => 
-        storage.updateUser(userId, { lastSeen: now }).catch((error) => {
-          console.error(`خطأ في تحديث lastSeen للمستخدم ${userId}:`, error);
-        })
+        storage.updateUser(userId, { lastSeen: now }).catch(() => {})
       );
       
       await Promise.all(batchPromises);
-      updatedCount += batch.length;
       
-      // تأخير قصير بين الدفعات لتجنب الضغط على قاعدة البيانات
+      // تأخير قصير بين الدفعات
       if (i + BATCH_SIZE < connectedUserIds.length) {
         await new Promise(resolve => setTimeout(resolve, 100));
       }
     }
     
-    console.log(`تم تحديث lastSeen لـ ${updatedCount} مستخدم متصل`);
+    console.log(`تم تحديث lastSeen لـ ${connectedUserIds.length} مستخدم متصل`);
 
     // بث userUpdated بشكل خفيف لإبلاغ الواجهة بالتحديث الدوري لـ lastSeen
     try {
