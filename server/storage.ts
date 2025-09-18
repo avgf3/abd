@@ -70,7 +70,7 @@ export async function getPointsHistory(userId: number): Promise<any[]> {
   return await databaseService.getUserPointsHistory(userId);
 }
 
-export async function getTopUsersByPoints(limit: number = 100): Promise<User[]> { // إزالة قيود قاعدة البيانات
+export async function getTopUsersByPoints(limit?: number): Promise<User[]> { // إزالة الحد الأقصى تماماً
   try {
     return await databaseService.getTopUsersByPoints(limit);
   } catch (error) {
@@ -338,7 +338,7 @@ export async function createWallPost(postData: any): Promise<any> {
   }
 }
 
-export async function getWallPosts(userId: number, limit: number = 100): Promise<any[]> { // إزالة قيود قاعدة البيانات
+export async function getWallPosts(userId: number, limit?: number): Promise<any[]> { // إزالة الحد الأقصى تماماً
   try {
     const { db, dbType } = await import('./database-adapter');
     if (!db || dbType === 'disabled') return [];
@@ -359,7 +359,7 @@ export async function getWallPosts(userId: number, limit: number = 100): Promise
   }
 }
 
-export async function getWallPostsByUsers(userIds: number[], limit: number = 100): Promise<any[]> { // إزالة قيود قاعدة البيانات
+export async function getWallPostsByUsers(userIds: number[], limit?: number): Promise<any[]> { // إزالة الحد الأقصى تماماً
   try {
     const { db, dbType } = await import('./database-adapter');
     if (!db || dbType === 'disabled') return [];
@@ -702,18 +702,18 @@ export const storage: LegacyStorage = {
     }
   },
 
-  async getPublicMessages(limit = 200) { // إزالة قيود قاعدة البيانات
+  async getPublicMessages(limit?: number) { // إزالة الحد الأقصى تماماً
     return await databaseService.getMessages('general', limit);
   },
 
-  async getPrivateMessages(userId1: number, userId2: number, limit = 200) { // إزالة قيود قاعدة البيانات
+  async getPrivateMessages(userId1: number, userId2: number, limit?: number) { // إزالة الحد الأقصى تماماً
     return await databaseService.getPrivateMessages(userId1, userId2, limit);
   },
 
   async getPrivateMessagesBefore(
     userId1: number,
     userId2: number,
-    limit = 200, // إزالة قيود قاعدة البيانات
+    limit?: number, // إزالة الحد الأقصى تماماً
     beforeTimestamp?: Date,
     beforeId?: number
   ) {
@@ -726,7 +726,7 @@ export const storage: LegacyStorage = {
     );
   },
 
-  async getRoomMessages(roomId: string, limit = 200, offset = 0) { // إزالة قيود قاعدة البيانات
+  async getRoomMessages(roomId: string, limit?: number, offset = 0) { // إزالة الحد الأقصى تماماً
     return await databaseService.getMessages(roomId, limit, offset);
   },
 
@@ -813,7 +813,7 @@ export const storage: LegacyStorage = {
     }
   },
 
-  async getUserNotifications(userId: number, limit = 200) { // إزالة قيود قاعدة البيانات
+  async getUserNotifications(userId: number, limit?: number) { // إزالة الحد الأقصى تماماً
     return await notificationService.getUserNotifications(userId, limit);
   },
 
@@ -1017,7 +1017,7 @@ export const storage: LegacyStorage = {
     return await databaseService.getLastRoomMessage(roomId);
   },
   async searchRoomMessages(roomId: string, searchQuery: string, limit?: number, offset?: number) {
-    return await databaseService.searchRoomMessages(roomId, searchQuery, limit ?? 100, offset ?? 0); // إزالة قيود قاعدة البيانات
+    return await databaseService.searchRoomMessages(roomId, searchQuery, limit, offset ?? 0); // إزالة الحد الأقصى تماماً
   },
   async countSearchRoomMessages(roomId: string, searchQuery: string) {
     return await databaseService.countSearchRoomMessages(roomId, searchQuery);

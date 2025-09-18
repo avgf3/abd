@@ -28,8 +28,8 @@ export interface MessagePagination {
 
 class RoomMessageService {
   private messageCache = new Map<string, RoomMessage[]>(); // roomId -> messages
-  private readonly MAX_CACHE_SIZE = 1000; // إزالة قيود قاعدة البيانات
-  private readonly MAX_CACHE_ROOMS = 200; // إزالة قيود قاعدة البيانات
+  private readonly MAX_CACHE_SIZE = 10000; // إزالة الحد الأقصى تماماً
+  private readonly MAX_CACHE_ROOMS = 1000; // إزالة الحد الأقصى تماماً
   // إزالة قيود الاتصال المتزامن
   private roomFetchLocks = new Map<string, Promise<MessagePagination>>();
 
@@ -191,7 +191,7 @@ class RoomMessageService {
       }
 
       // ضبط الحد الأقصى إلى 20 لتفادي التحميل الزائد
-      const safeLimit = Math.min(200, Math.max(1, Number(limit) || 200)); // إزالة قيود قاعدة البيانات
+      const safeLimit = limit ? Math.max(1, Number(limit)) : undefined; // إزالة الحد الأقصى تماماً
       const safeOffset = Math.max(0, Number(offset) || 0);
 
       // محاولة الحصول على الرسائل من الذاكرة المؤقتة أولاً
@@ -331,7 +331,7 @@ class RoomMessageService {
     try {
       const result = await this.getRoomMessages(
         roomId,
-        Math.min(200, Math.max(1, Number(limit) || 200)), // إزالة قيود قاعدة البيانات
+        limit ? Math.max(1, Number(limit)) : undefined, // إزالة الحد الأقصى تماماً
         0,
         true
       );
