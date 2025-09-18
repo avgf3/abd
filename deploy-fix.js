@@ -20,7 +20,7 @@ async function applyDeploymentFixes() {
     idle_timeout: 60, // زيادة timeout إلى 60 ثانية
     connect_timeout: 60, // زيادة timeout الاتصال إلى 60 ثانية
     max_lifetime: 60 * 30, // إعادة تدوير الاتصالات كل 30 دقيقة
-    statement_timeout: 120000, // 2 دقيقة لكل استعلام
+    statement_timeout: 300000, // 5 دقائق لكل استعلام
   });
   
   try {
@@ -103,11 +103,25 @@ async function applyDeploymentFixes() {
     await sql`ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS show_points_to_others BOOLEAN`;
     await sql`ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS show_system_messages BOOLEAN`;
     await sql`ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS global_sound_enabled BOOLEAN`;
+    
+    // إضافة العمود المفقود role
+    console.log('🔍 التحقق من عمود role في users...');
+    await sql`ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS role TEXT`;
+    
+    // إضافة أعمدة أخرى مفقودة
+    await sql`ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS profile_background_color TEXT DEFAULT '#1e1e1e'`;
+    await sql`ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS username_color TEXT DEFAULT '#ffffff'`;
+    await sql`ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS bio TEXT DEFAULT ''`;
+    await sql`ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS ignored_users TEXT DEFAULT '[]'`;
 
     console.log('🔄 ضبط القيم الافتراضية لأعمدة التفضيلات...');
     await sql`UPDATE users SET show_points_to_others = COALESCE(show_points_to_others, TRUE)`;
     await sql`UPDATE users SET show_system_messages = COALESCE(show_system_messages, TRUE)`;
     await sql`UPDATE users SET global_sound_enabled = COALESCE(global_sound_enabled, TRUE)`;
+    
+    // تحديث قيم role المفقودة
+    console.log('🔄 تحديث قيم role المفقودة...');
+    await sql`UPDATE users SET role = COALESCE(role, user_type, 'guest') WHERE role IS NULL`;
 
     await sql`ALTER TABLE IF EXISTS users ALTER COLUMN show_points_to_others SET DEFAULT TRUE`;
     await sql`ALTER TABLE IF EXISTS users ALTER COLUMN show_system_messages SET DEFAULT TRUE`;
