@@ -15,6 +15,10 @@ services:
         value: production
       - key: PORT
         value: 10000
+      - key: DB_STATEMENT_TIMEOUT
+        value: 30000
+      - key: DB_IDLE_TIMEOUT
+        value: 20
       - key: ENABLE_WEBSOCKET
         value: true
       - key: SOCKET_IO_POLLING_ONLY
