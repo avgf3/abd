@@ -86,7 +86,6 @@ export async function initializeDatabase(): Promise<boolean> {
         if (!Number.isNaN(env) && env > 0) return env;
         return 20; // حد أقصى آمن لتجنب استنزاف قاعدة البيانات
       })(),
-      idle_timeout: Number(process.env.DB_IDLE_TIMEOUT) || 20, // timeout قصير لتحرير الاتصالات بسرعة
       connect_timeout: 15, // timeout قصير للاتصال
       max_lifetime: 60 * 5, // إعادة تدوير الاتصالات كل 5 دقائق لمنع التراكم
       prepare: true, // تفعيل prepared statements لتحسين الأداء
