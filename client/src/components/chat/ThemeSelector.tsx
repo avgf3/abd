@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser } from '@/types/chat';
@@ -322,6 +322,9 @@ export default function ThemeSelector({
             <span>🎨</span>
             اختيار ثيم الموقع (المالك فقط)
           </DialogTitle>
+          <DialogDescription className="text-slate-400 text-center">
+            اختر الثيم المناسب لموقعك من مجموعة متنوعة من الألوان والتصاميم
+          </DialogDescription>
         </DialogHeader>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 p-4">
           {themes.map((theme) => (

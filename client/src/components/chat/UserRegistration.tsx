@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -130,6 +130,9 @@ export default function UserRegistration({ isOpen, onClose, onRegister }: UserRe
           <DialogTitle className="text-white text-xl font-bold text-center">
             تسجيل عضوية جديدة
           </DialogTitle>
+          <DialogDescription className="text-slate-400 text-center">
+            أنشئ حساباً جديداً للوصول إلى جميع الميزات المتقدمة
+          </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">

@@ -1977,21 +1977,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Session restore route - يسترجع المستخدم من كوكي المصادقة بدون إعادة تسجيل الدخول
   app.get('/api/auth/session', async (req, res) => {
     try {
+      // تحسين معالجة الأخطاء وإضافة المزيد من التفاصيل
       const token = getAuthTokenFromRequest(req as any);
       if (!token) {
-        return res.status(401).json({ error: 'غير مسجل' });
+        console.log('🔐 Session check: No token found');
+        return res.status(401).json({ 
+          error: 'غير مسجل', 
+          code: 'NO_TOKEN',
+          message: 'لم يتم العثور على رمز المصادقة'
+        });
       }
+
       const verified = verifyAuthToken(token);
       if (!verified?.userId) {
-        return res.status(401).json({ error: 'غير مسجل' });
+        console.log('🔐 Session check: Invalid token');
+        return res.status(401).json({ 
+          error: 'غير مسجل', 
+          code: 'INVALID_TOKEN',
+          message: 'رمز المصادقة غير صالح أو منتهي الصلاحية'
+        });
       }
+
+      // التحقق من وجود قاعدة البيانات قبل محاولة جلب المستخدم
+      if (!db || dbType === 'disabled') {
+        console.log('🔐 Session check: Database disabled');
+        return res.status(503).json({ 
+          error: 'قاعدة البيانات غير متاحة', 
+          code: 'DB_DISABLED',
+          message: 'قاعدة البيانات معطلة مؤقتاً'
+        });
+      }
+
       const user = await storage.getUser(verified.userId);
       if (!user) {
-        return res.status(401).json({ error: 'غير مسجل' });
+        console.log(`🔐 Session check: User ${verified.userId} not found`);
+        return res.status(401).json({ 
+          error: 'غير مسجل', 
+          code: 'USER_NOT_FOUND',
+          message: 'المستخدم غير موجود'
+        });
       }
-      res.json({ user: buildUserBroadcastPayload(user) });
+
+      console.log(`🔐 Session check: User ${user.username} authenticated successfully`);
+      res.json({ 
+        user: buildUserBroadcastPayload(user),
+        success: true,
+        timestamp: new Date().toISOString()
+      });
     } catch (error) {
-      res.status(500).json({ error: 'خطأ في الخادم' });
+      console.error('🔐 Session check error:', error);
+      res.status(500).json({ 
+        error: 'خطأ في الخادم', 
+        code: 'SERVER_ERROR',
+        message: 'حدث خطأ غير متوقع في الخادم'
+      });
     }
   });
 
@@ -3305,31 +3344,97 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Alternative endpoint with userId in query parameter (for client compatibility)
+  // Alternative endpoint with userId in query parameter (for client compatibility)
   app.get('/api/notifications/unread-count', async (req, res) => {
     try {
-      // Check database availability
+      // Check database availability first
       if (!db || dbType === 'disabled') {
-        return res.json({ count: 0 });
+        console.log('📊 Notifications: Database disabled, returning 0 count');
+        return res.json({ count: 0, source: 'fallback' });
       }
 
-      const userId = req.query.userId ? (parseEntityId(req.query.userId as any).id as number) : null;
-      if (!userId || isNaN(userId)) {
-        console.error('Invalid userId in notifications/unread-count:', req.query.userId);
-        return res.status(400).json({ error: 'معرف المستخدم غير صحيح أو مفقود' });
+      // تحسين التحقق من userId مع معالجة أفضل للأخطاء
+      const userIdParam = req.query.userId;
+      if (!userIdParam) {
+        console.error('📊 Notifications: Missing userId parameter');
+        return res.status(400).json({ 
+          error: 'معرف المستخدم مطلوب', 
+          code: 'MISSING_USER_ID',
+          message: 'يجب توفير معرف المستخدم في المعاملات'
+        });
       }
 
-      // التحقق من وجود المستخدم
-      const user = await storage.getUser(userId);
-      if (!user) {
-        console.error('User not found for notifications:', userId);
-        return res.status(404).json({ error: 'المستخدم غير موجود' });
+      let userId: number;
+      try {
+        // محاولة تحويل userId إلى رقم مع معالجة أفضل للأخطاء
+        if (typeof userIdParam === 'string') {
+          userId = parseInt(userIdParam, 10);
+        } else if (typeof userIdParam === 'number') {
+          userId = userIdParam;
+        } else {
+          throw new Error('Invalid userId type');
+        }
+
+        // التحقق من صحة الرقم
+        if (isNaN(userId) || userId <= 0 || !Number.isInteger(userId)) {
+          throw new Error('Invalid userId value');
+        }
+      } catch (parseError) {
+        console.error('📊 Notifications: Invalid userId format:', userIdParam, parseError);
+        return res.status(400).json({ 
+          error: 'معرف المستخدم غير صحيح', 
+          code: 'INVALID_USER_ID',
+          message: 'معرف المستخدم يجب أن يكون رقماً صحيحاً موجباً'
+        });
       }
 
-      const count = await storage.getUnreadNotificationCount(userId);
-      res.json({ count: count || 0 });
+      // التحقق من وجود المستخدم في قاعدة البيانات
+      try {
+        const user = await storage.getUser(userId);
+        if (!user) {
+          console.error(`📊 Notifications: User ${userId} not found`);
+          return res.status(404).json({ 
+            error: 'المستخدم غير موجود', 
+            code: 'USER_NOT_FOUND',
+            message: `لا يوجد مستخدم بالمعرف ${userId}`
+          });
+        }
+      } catch (userError) {
+        console.error(`📊 Notifications: Error checking user ${userId}:`, userError);
+        return res.status(500).json({ 
+          error: 'خطأ في التحقق من المستخدم', 
+          code: 'USER_CHECK_ERROR',
+          message: 'حدث خطأ أثناء التحقق من وجود المستخدم'
+        });
+      }
+
+      // جلب عدد الإشعارات غير المقروءة
+      try {
+        const count = await storage.getUnreadNotificationCount(userId);
+        const safeCount = typeof count === 'number' && count >= 0 ? count : 0;
+        
+        console.log(`📊 Notifications: User ${userId} has ${safeCount} unread notifications`);
+        res.json({ 
+          count: safeCount,
+          userId: userId,
+          timestamp: new Date().toISOString(),
+          success: true
+        });
+      } catch (countError) {
+        console.error(`📊 Notifications: Error getting count for user ${userId}:`, countError);
+        return res.status(500).json({ 
+          error: 'خطأ في جلب عدد الإشعارات', 
+          code: 'COUNT_ERROR',
+          message: 'حدث خطأ أثناء جلب عدد الإشعارات غير المقروءة'
+        });
+      }
     } catch (error) {
-      console.error('Error in notifications/unread-count:', error);
-      res.status(500).json({ error: 'خطأ في جلب عدد الإشعارات' });
+      console.error('📊 Notifications: Unexpected error:', error);
+      res.status(500).json({ 
+        error: 'خطأ في الخادم', 
+        code: 'SERVER_ERROR',
+        message: 'حدث خطأ غير متوقع في الخادم'
+      });
     }
   });
 
