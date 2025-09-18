@@ -86,9 +86,9 @@ export async function initializeDatabase(): Promise<boolean> {
         if (!Number.isNaN(env) && env > 0) return env;
         return 20;
       })(),
-      idle_timeout: 30, // تقليل timeout إلى 30 ثانية لتحرير الاتصالات بشكل أسرع
-      connect_timeout: 30, // تقليل timeout الاتصال إلى 30 ثانية
-      max_lifetime: 60 * 10, // إعادة تدوير الاتصالات كل 10 دقائق لمنع التراكم
+      idle_timeout: 60, // زيادة timeout إلى 60 ثانية
+      connect_timeout: 60, // زيادة timeout الاتصال إلى 60 ثانية
+      max_lifetime: 60 * 15, // إعادة تدوير الاتصالات كل 15 دقيقة لمنع التراكم
       prepare: true, // تفعيل prepared statements لتحسين الأداء
       onnotice: () => {}, // تجاهل الإشعارات
       // إضافة إعدادات إضافية للأداء
@@ -96,7 +96,7 @@ export async function initializeDatabase(): Promise<boolean> {
       types: false, // تحسين الأداء
       connection: {
         application_name: 'chat-app',
-        statement_timeout: 30000, // 30 ثانية كحد أقصى لكل استعلام
+        statement_timeout: 60000, // زيادة إلى 60 ثانية كحد أقصى لكل استعلام
       },
     });
 
