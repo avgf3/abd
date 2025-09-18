@@ -283,9 +283,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/voice', voiceRoutes);
   // مسارات الرسائل الخاصة مفصولة بالكامل
   app.use('/api/private-messages', (await import('./routes/privateMessages')).default);
-  
-  // مسارات فحص محددات قاعدة البيانات
-  app.use('/api/database', (await import('./routes/databaseConstraints')).default);
 
   // Unified download routes under /api + legacy redirect
   setupDownloadRoute(app);
