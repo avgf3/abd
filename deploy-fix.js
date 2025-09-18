@@ -16,7 +16,12 @@ if (!DATABASE_URL) {
 console.log('🚀 تطبيق إصلاحات قاعدة البيانات للنشر...');
 
 async function applyDeploymentFixes() {
-  const sql = postgres(DATABASE_URL);
+  const sql = postgres(DATABASE_URL, {
+    idle_timeout: 60, // زيادة timeout إلى 60 ثانية
+    connect_timeout: 60, // زيادة timeout الاتصال إلى 60 ثانية
+    max_lifetime: 60 * 30, // إعادة تدوير الاتصالات كل 30 دقيقة
+    statement_timeout: 120000, // 2 دقيقة لكل استعلام
+  });
   
   try {
     console.log('🔍 التحقق من أعمدة chat_lock...');
@@ -43,10 +48,31 @@ async function applyDeploymentFixes() {
       await sql`ALTER TABLE "rooms" ADD COLUMN IF NOT EXISTS "chat_lock_visitors" boolean DEFAULT false`;
     }
     
-    // Update any NULL values to false
+    // Update any NULL values to false with retry mechanism
     console.log('🔄 تحديث القيم الفارغة...');
-    await sql`UPDATE "rooms" SET "chat_lock_all" = false WHERE "chat_lock_all" IS NULL`;
-    await sql`UPDATE "rooms" SET "chat_lock_visitors" = false WHERE "chat_lock_visitors" IS NULL`;
+    const updateWithRetry = async (query, description) => {
+      let attempts = 0;
+      const maxAttempts = 3;
+      while (attempts < maxAttempts) {
+        try {
+          await sql.unsafe(query);
+          console.log(`✅ ${description} - نجح`);
+          break;
+        } catch (error) {
+          attempts++;
+          if (attempts < maxAttempts) {
+            console.log(`⚠️ ${description} - محاولة ${attempts}/${maxAttempts}: ${error.message}`);
+            await new Promise(resolve => setTimeout(resolve, 2000 * attempts));
+          } else {
+            console.error(`❌ ${description} - فشل بعد ${maxAttempts} محاولات:`, error.message);
+            throw error;
+          }
+        }
+      }
+    };
+    
+    await updateWithRetry('UPDATE "rooms" SET "chat_lock_all" = false WHERE "chat_lock_all" IS NULL', 'تحديث chat_lock_all');
+    await updateWithRetry('UPDATE "rooms" SET "chat_lock_visitors" = false WHERE "chat_lock_visitors" IS NULL', 'تحديث chat_lock_visitors');
     
     // Add indexes if they don't exist
     console.log('📇 إضافة الفهارس...');
@@ -173,10 +199,15 @@ async function applyDeploymentFixes() {
     
   } catch (error) {
     console.error('❌ خطأ في إصلاح قاعدة البيانات:', error);
-    // Don't exit with error - let the app try to start anyway
     console.log('⚠️ سيتم محاولة تشغيل التطبيق رغم الخطأ...');
+    // إرجاع false بدلاً من رمي الخطأ
+    return false;
   } finally {
-    await sql.end();
+    try {
+      await sql.end();
+    } catch (endError) {
+      console.warn('⚠️ خطأ في إغلاق الاتصال:', endError.message);
+    }
   }
 }
 
