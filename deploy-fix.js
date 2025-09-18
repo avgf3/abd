@@ -20,7 +20,7 @@ async function applyDeploymentFixes() {
     idle_timeout: 60, // زيادة timeout إلى 60 ثانية
     connect_timeout: 60, // زيادة timeout الاتصال إلى 60 ثانية
     max_lifetime: 60 * 30, // إعادة تدوير الاتصالات كل 30 دقيقة
-    statement_timeout: 300000, // 5 دقائق لكل استعلام
+    statement_timeout: 120000, // 2 دقيقة لكل استعلام
   });
   
   try {
