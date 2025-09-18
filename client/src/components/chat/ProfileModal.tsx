@@ -51,9 +51,27 @@ export default function ProfileModal({
 
   // حالة محلية للمستخدم للتحديث الفوري
   const [localUser, setLocalUser] = useState<ChatUser | null>(user);
-  // مزامنة حالة المستخدم المحلي عند تغيّر الخصائص القادمة من الأعلى
+  // مزامنة حالة المستخدم المحلي عند تغيّر الخصائص القادمة من الأعلى مع الحفاظ على التحديثات المحلية
   useEffect(() => {
-    setLocalUser(user);
+    if (user) {
+      setLocalUser((prev) => {
+        // إذا كان هناك مستخدم محلي موجود، ندمج البيانات الجديدة مع المحلية
+        if (prev && prev.id === user.id) {
+          return {
+            ...prev,
+            ...user,
+            // الحفاظ على التحديثات المحلية المهمة
+            lastSeen: prev.lastSeen || user.lastSeen,
+            isOnline: prev.isOnline !== undefined ? prev.isOnline : user.isOnline,
+            currentRoom: prev.currentRoom || user.currentRoom,
+          };
+        }
+        // إذا لم يكن هناك مستخدم محلي، نستخدم البيانات الجديدة
+        return user;
+      });
+    } else {
+      setLocalUser(null);
+    }
   }, [user]);
   const [selectedTheme, setSelectedTheme] = useState(user?.profileBackgroundColor || '');
   const [selectedEffect, setSelectedEffect] = useState(user?.profileEffect || 'none');
@@ -108,12 +126,19 @@ export default function ProfileModal({
 
   const resolvedRoomId = (localUser as any)?.currentRoom || localUser?.roomId || 'general';
   let resolvedRoomName = 'الدردشة العامة';
+  
+  // تحسين البحث عن اسم الغرفة مع معالجة أفضل للحالات الفارغة
   if (resolvedRoomId && resolvedRoomId !== 'general') {
     const found = rooms.find((r) => String((r as any).id) === String(resolvedRoomId));
-    resolvedRoomName = (found && (found as any).name) || String(resolvedRoomId);
+    if (found && (found as any).name) {
+      resolvedRoomName = (found as any).name;
+    } else {
+      // إذا لم نجد الغرفة في القائمة، نحاول استخدام المعرف كاسم مؤقت
+      resolvedRoomName = `غرفة ${resolvedRoomId}`;
+    }
   }
   
-  // دالة تنسيق آخر تواجد
+  // دالة تنسيق آخر تواجد مع معالجة أفضل للأخطاء
   const formatLastSeenWithRoom = (lastSeen?: string | Date | null, roomName?: string): string => {
     if (!lastSeen) return '';
     
@@ -186,7 +211,7 @@ export default function ProfileModal({
       fetchAndUpdateUser(uid).catch(() => {});
     };
 
-    // الاستماع لتحديثات userUpdated لتحديث lastSeen و currentRoom فورياً في نافذة البروفايل
+    // الاستماع لتحديثات userUpdated لتحديث جميع البيانات فورياً في نافذة البروفايل
     const handleUserUpdated = (payload: any) => {
       try {
         const u = payload?.user || payload;
@@ -194,9 +219,31 @@ export default function ProfileModal({
         setLocalUser((prev) => {
           if (!prev) return prev;
           const next: any = { ...prev };
+          
+          // تحديث جميع البيانات المهمة
           if (u.lastSeen) next.lastSeen = u.lastSeen;
           if (typeof u.currentRoom !== 'undefined') next.currentRoom = u.currentRoom;
           if (typeof u.isOnline !== 'undefined') next.isOnline = u.isOnline;
+          
+          // تحديث بيانات الملف الشخصي
+          if (u.profileImage) next.profileImage = u.profileImage;
+          if (u.profileBanner) next.profileBanner = u.profileBanner;
+          if (u.username) next.username = u.username;
+          if (u.usernameColor) next.usernameColor = u.usernameColor;
+          if (u.profileBackgroundColor) next.profileBackgroundColor = u.profileBackgroundColor;
+          if (u.profileEffect) next.profileEffect = u.profileEffect;
+          
+          // تحديث بيانات الموسيقى
+          if (u.profileMusicUrl) next.profileMusicUrl = u.profileMusicUrl;
+          if (u.profileMusicTitle) next.profileMusicTitle = u.profileMusicTitle;
+          if (typeof u.profileMusicEnabled !== 'undefined') next.profileMusicEnabled = u.profileMusicEnabled;
+          if (typeof u.profileMusicVolume !== 'undefined') next.profileMusicVolume = u.profileMusicVolume;
+          
+          // تحديث بيانات المستخدم الأساسية
+          if (u.points !== undefined) next.points = u.points;
+          if (u.level !== undefined) next.level = u.level;
+          if (u.userType) next.userType = u.userType;
+          
           return next;
         });
       } catch {}
@@ -356,16 +403,33 @@ export default function ProfileModal({
   }, [localUser?.profileMusicUrl]);
   
 
-  // تحديث الحالة المحلية عند تغيير المستخدم
+  // تحديث الحالة المحلية عند تغيير المستخدم مع الحفاظ على التحديثات المحلية
   useEffect(() => {
     if (user) {
-      setLocalUser(user);
+      setLocalUser((prev) => {
+        // إذا كان هناك مستخدم محلي موجود، ندمج البيانات الجديدة مع المحلية
+        if (prev && prev.id === user.id) {
+          return {
+            ...prev,
+            ...user,
+            // الحفاظ على التحديثات المحلية المهمة
+            lastSeen: prev.lastSeen || user.lastSeen,
+            isOnline: prev.isOnline !== undefined ? prev.isOnline : user.isOnline,
+            currentRoom: prev.currentRoom || user.currentRoom,
+          };
+        }
+        // إذا لم يكن هناك مستخدم محلي، نستخدم البيانات الجديدة
+        return user;
+      });
+      
+      // تحديث الحالات المحلية الأخرى
       setSelectedTheme(user.profileBackgroundColor || '');
       setSelectedEffect(user.profileEffect || 'none');
       setMusicTitle(user.profileMusicTitle || '');
       setMusicEnabled(user.profileMusicEnabled ?? true);
       setMusicVolume(typeof user.profileMusicVolume === 'number' ? user.profileMusicVolume : 70);
-      
+    } else {
+      setLocalUser(null);
     }
   }, [user]);
 
@@ -427,7 +491,22 @@ export default function ProfileModal({
   const fetchAndUpdateUser = async (userId: number) => {
     try {
       const userData = await apiRequest(`/api/users/${userId}`);
-      setLocalUser(userData);
+      
+      // تحديث البيانات المحلية مع الحفاظ على التحديثات المحلية المهمة
+      setLocalUser((prev) => {
+        if (prev && prev.id === userId) {
+          return {
+            ...prev,
+            ...userData,
+            // الحفاظ على التحديثات المحلية المهمة
+            lastSeen: prev.lastSeen || userData.lastSeen,
+            isOnline: prev.isOnline !== undefined ? prev.isOnline : userData.isOnline,
+            currentRoom: prev.currentRoom || userData.currentRoom,
+          };
+        }
+        return userData;
+      });
+      
       if (onUpdate) onUpdate(userData);
 
       // تحديث لون الخلفية والتأثير المحلي
@@ -437,6 +516,18 @@ export default function ProfileModal({
       if (userData.profileEffect) {
         setSelectedEffect(userData.profileEffect);
       }
+      
+      // تحديث بيانات الموسيقى
+      if (userData.profileMusicTitle) {
+        setMusicTitle(userData.profileMusicTitle);
+      }
+      if (typeof userData.profileMusicEnabled !== 'undefined') {
+        setMusicEnabled(userData.profileMusicEnabled);
+      }
+      if (typeof userData.profileMusicVolume !== 'undefined') {
+        setMusicVolume(userData.profileMusicVolume);
+      }
+      
     } catch (err: any) {
       console.error('❌ خطأ في جلب بيانات المستخدم:', err);
       toast({
@@ -505,6 +596,17 @@ export default function ProfileModal({
     }
     if (updates.profileEffect) {
       setSelectedEffect(updates.profileEffect);
+    }
+    
+    // تحديث بيانات الموسيقى إذا تم تغييرها
+    if (updates.profileMusicTitle) {
+      setMusicTitle(updates.profileMusicTitle);
+    }
+    if (typeof updates.profileMusicEnabled !== 'undefined') {
+      setMusicEnabled(updates.profileMusicEnabled);
+    }
+    if (typeof updates.profileMusicVolume !== 'undefined') {
+      setMusicVolume(updates.profileMusicVolume);
     }
     if (Object.prototype.hasOwnProperty.call(updates, 'profileMusicTitle')) {
       setMusicTitle(updates.profileMusicTitle as any);
