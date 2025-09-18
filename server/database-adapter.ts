@@ -68,11 +68,9 @@ export async function initializeDatabase(): Promise<boolean> {
       return false;
     }
 
-    // إعدادات محسنة للاتصال بقاعدة البيانات على Render
     const sslRequired =
       /\bsslmode=require\b/.test(databaseUrl) || process.env.NODE_ENV === 'production';
     
-    // إضافة معاملات SSL إذا لم تكن موجودة في production
     let connectionString = databaseUrl;
     if (process.env.NODE_ENV === 'production' && !connectionString.includes('sslmode=')) {
       connectionString += connectionString.includes('?') ? '&sslmode=require' : '?sslmode=require';
@@ -91,7 +89,6 @@ export async function initializeDatabase(): Promise<boolean> {
 
     const drizzleDb = drizzle(client, { schema, logger: false });
 
-    // محاولة الاتصال مع إعادة المحاولة
     let connected = false;
     let attempts = 0;
     const maxAttempts = 3;
