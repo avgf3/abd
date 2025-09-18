@@ -80,7 +80,15 @@ export async function initializeDatabase(): Promise<boolean> {
     
     const client = postgres(connectionString, {
       ssl: sslRequired ? 'require' : undefined,
-      // إزالة جميع القيود على قاعدة البيانات
+      // إعدادات محسنة للاتصال بقاعدة البيانات على Render
+      max: (() => {
+        const env = Number(process.env.DB_MAX_CONNECTIONS);
+        if (!Number.isNaN(env) && env > 0) return env;
+        return 20;
+      })(),
+      idle_timeout: 30, // تقليل timeout إلى 30 ثانية لتحرير الاتصالات بشكل أسرع
+      connect_timeout: 30, // تقليل timeout الاتصال إلى 30 ثانية
+      max_lifetime: 60 * 10, // إعادة تدوير الاتصالات كل 10 دقائق لمنع التراكم
       prepare: true, // تفعيل prepared statements لتحسين الأداء
       onnotice: () => {}, // تجاهل الإشعارات
       // إضافة إعدادات إضافية للأداء
@@ -88,6 +96,7 @@ export async function initializeDatabase(): Promise<boolean> {
       types: false, // تحسين الأداء
       connection: {
         application_name: 'chat-app',
+        statement_timeout: 30000, // 30 ثانية كحد أقصى لكل استعلام
       },
     });
 

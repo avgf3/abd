@@ -1,9 +1,9 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-import { Pool } from '@neondatabase/serverless';
-import { drizzle } from 'drizzle-orm/neon-serverless';
-import { migrate } from 'drizzle-orm/neon-serverless/migrator';
+import postgres from 'postgres';
+import { drizzle } from 'drizzle-orm/postgres-js';
+import { migrate } from 'drizzle-orm/postgres-js/migrator';
 
 async function runMigrations() {
   const databaseUrl = process.env.DATABASE_URL;
@@ -16,15 +16,34 @@ async function runMigrations() {
   console.log('🔄 Running production migrations...');
 
   try {
-    const pool = new Pool({ connectionString: databaseUrl });
-    const db = drizzle(pool);
+    // إعدادات محسنة للاتصال بقاعدة البيانات على Render
+    const sslRequired = /\bsslmode=require\b/.test(databaseUrl) || process.env.NODE_ENV === 'production';
+    
+    // إضافة معاملات SSL إذا لم تكن موجودة في production
+    let connectionString = databaseUrl;
+    if (process.env.NODE_ENV === 'production' && !connectionString.includes('sslmode=')) {
+      connectionString += connectionString.includes('?') ? '&sslmode=require' : '?sslmode=require';
+    }
+    
+    const client = postgres(connectionString, {
+      ssl: sslRequired ? 'require' : undefined,
+      prepare: true,
+      onnotice: () => {},
+      fetch_types: false,
+      types: false,
+      connection: {
+        application_name: 'chat-app-migrations',
+      },
+    });
+
+    const db = drizzle(client);
 
     // Run migrations
     await migrate(db, { migrationsFolder: './migrations' });
 
     console.log('✅ Migrations completed successfully!');
 
-    await pool.end();
+    await client.end();
   } catch (error) {
     console.error('❌ Migration failed:', error);
     process.exit(1);
