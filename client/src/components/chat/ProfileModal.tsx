@@ -156,27 +156,13 @@ export default function ProfileModal({
   };
   
   const formattedLastSeen = formatLastSeenWithRoom(localUser?.lastSeen, resolvedRoomName);
-  // تحديث ذكي لآخر تواجد بدون ضغط على السيرفر
+  // تحديث حي لنص "آخر تواجد" كل 30 ثانية لعرض أكثر دقة
   const [, forceRerenderTick] = useState(0);
   useEffect(() => {
-    // تحديث فقط عند تغيير التركيز أو إعادة تحميل الصفحة
-    const handleVisibilityChange = () => {
-      if (!document.hidden) {
-        forceRerenderTick((t) => (t + 1) % 1000);
-      }
-    };
-    
-    const handleFocus = () => {
+    const intervalId = window.setInterval(() => {
       forceRerenderTick((t) => (t + 1) % 1000);
-    };
-    
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('focus', handleFocus);
-    
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('focus', handleFocus);
-    };
+    }, 30000); // تحديث كل 30 ثانية بدلاً من 60 ثانية
+    return () => clearInterval(intervalId);
   }, []);
 
   // الاشتراك في أحداث السوكِت لتحديث آخر تواجد للمستخدمين الآخرين أيضاً
