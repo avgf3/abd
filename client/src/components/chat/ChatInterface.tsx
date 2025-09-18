@@ -81,22 +81,6 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   const [profileUser, setProfileUser] = useState<ChatUser | null>(null);
   // 🔊 مشغل موسيقى البروفايل العالمي
   const profileAudioRef = useRef<HTMLAudioElement | null>(null);
-  
-  // تنظيف الذاكرة عند إغلاق المكون
-  useEffect(() => {
-    return () => {
-      if (profileAudioRef.current) {
-        try {
-          profileAudioRef.current.pause();
-          profileAudioRef.current.src = '';
-          profileAudioRef.current.load();
-          console.log('✅ تم تنظيف مشغل الصوت العالمي عند إغلاق المكون');
-        } catch (cleanupErr) {
-          console.warn('⚠️ تعذر تنظيف مشغل الصوت العالمي عند إغلاق المكون:', cleanupErr);
-        }
-      }
-    };
-  }, []);
   const [showSettings, setShowSettings] = useState(false);
   const [selectedPrivateUser, setSelectedPrivateUser] = useState<ChatUser | null>(null);
   const [showReportModal, setShowReportModal] = useState(false);
@@ -1303,17 +1287,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                 onClose={() => {
                   setShowProfile(false);
                   setProfileUser(null);
-                  // تنظيف أفضل للذاكرة
-                  try { 
-                    if (profileAudioRef.current) {
-                      profileAudioRef.current.pause();
-                      profileAudioRef.current.src = '';
-                      profileAudioRef.current.load();
-                      console.log('✅ تم تنظيف مشغل الصوت العالمي بنجاح');
-                    }
-                  } catch (cleanupErr) {
-                    console.warn('⚠️ تعذر تنظيف مشغل الصوت العالمي:', cleanupErr);
-                  }
+                  try { profileAudioRef.current?.pause(); } catch {}
                 }}
                 onUpdate={(updatedUser) => {
                   // تحديث بيانات المستخدم في قائمة المتصلون
@@ -1335,17 +1309,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                 onClose={() => {
                   setShowProfile(false);
                   setProfileUser(null);
-                  // تنظيف أفضل للذاكرة
-                  try { 
-                    if (profileAudioRef.current) {
-                      profileAudioRef.current.pause();
-                      profileAudioRef.current.src = '';
-                      profileAudioRef.current.load();
-                      console.log('✅ تم تنظيف مشغل الصوت العالمي بنجاح');
-                    }
-                  } catch (cleanupErr) {
-                    console.warn('⚠️ تعذر تنظيف مشغل الصوت العالمي:', cleanupErr);
-                  }
+                  try { profileAudioRef.current?.pause(); } catch {}
                 }}
                 onUpdate={(updatedUser) => {
                   // تحديث بيانات المستخدم الحالي في قائمة المتصلون
@@ -1777,12 +1741,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                   <div key={id} className="flex items-center justify-between p-2 border rounded">
                     <div className="flex items-center gap-2">
                       {user ? (
-                        <ProfileImage user={{
-                          ...user,
-                          role: (user as any).role || 'member',
-                          isOnline: (user as any).isOnline ?? true,
-                          userType: (user as any).userType || 'member'
-                        }} size="small" />
+                        <ProfileImage user={user} size="small" />
                       ) : (
                         <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-500">
                           👤
