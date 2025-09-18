@@ -80,11 +80,11 @@ export async function initializeDatabase(): Promise<boolean> {
     
     const client = postgres(connectionString, {
       ssl: sslRequired ? 'require' : undefined,
-      // ضبط الحد الأقصى للاتصالات: متغير بيئة أو افتراضي 20 لتوافق الخطط المحدودة
+      // ضبط الحد الأقصى للاتصالات: متغير بيئة أو افتراضي 100 لتجنب timeout
       max: (() => {
         const env = Number(process.env.DB_MAX_CONNECTIONS);
         if (!Number.isNaN(env) && env > 0) return env;
-        return 20;
+        return 100;
       })(),
       idle_timeout: 30, // تقليل timeout إلى 30 ثانية لتحرير الاتصالات بشكل أسرع
       connect_timeout: 30, // تقليل timeout الاتصال إلى 30 ثانية
