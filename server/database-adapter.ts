@@ -86,8 +86,6 @@ export async function initializeDatabase(): Promise<boolean> {
         if (!Number.isNaN(env) && env > 0) return env;
         return undefined; // بدون حد أقصى
       })(),
-      connect_timeout: 15, // timeout قصير للاتصال
-      max_lifetime: 60 * 5, // إعادة تدوير الاتصالات كل 5 دقائق لمنع التراكم
       prepare: true, // تفعيل prepared statements لتحسين الأداء
       onnotice: () => {}, // تجاهل الإشعارات
       // إضافة إعدادات إضافية للأداء
@@ -95,7 +93,6 @@ export async function initializeDatabase(): Promise<boolean> {
       types: false, // تحسين الأداء
       connection: {
         application_name: 'chat-app',
-        statement_timeout: Number(process.env.DB_STATEMENT_TIMEOUT) || 30000, // timeout قابل للتخصيص
       },
     });
 
