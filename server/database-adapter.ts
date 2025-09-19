@@ -89,6 +89,16 @@ export async function initializeDatabase(): Promise<boolean> {
       connection: {
         application_name: 'chat-app',
       },
+      // إضافة إعدادات timeout لمنع انقطاع الاتصال
+      idle_timeout: 20, // 20 ثانية timeout للاتصالات الخاملة
+      max_lifetime: 60 * 30, // 30 دقيقة كحد أقصى لعمر الاتصال
+      connect_timeout: 30, // 30 ثانية timeout للاتصال الأولي
+      // إعدادات إضافية لتحسين الاستقرار
+      max: 20, // حد أقصى 20 اتصال متزامن
+      min: 2, // حد أدنى 2 اتصال دائماً
+      // إعدادات إعادة المحاولة
+      retry_delay: 1000, // تأخير ثانية واحدة بين المحاولات
+      max_attempts: 3, // محاولة 3 مرات
     });
 
     const drizzleDb = drizzle(client, { schema, logger: false });

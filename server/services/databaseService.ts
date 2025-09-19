@@ -2,6 +2,7 @@ import { sql, eq, desc, asc, and, or, like, count, isNull, gte, lt, inArray } fr
 
 import * as schema from '../../shared/schema';
 import { dbAdapter, dbType } from '../database-adapter';
+import { withTimeout, safeDbOperation } from '../utils/database-timeout';
 
 // Type definitions for database operations
 export interface User {
@@ -169,22 +170,26 @@ export class DatabaseService {
   async getUserById(id: number): Promise<User | null> {
     if (!this.isConnected()) return null;
 
-    try {
-      if (this.type === 'postgresql') {
-        const result = await (this.db as any)
-          .select()
-          .from(schema.users)
-          .where(eq(schema.users.id, id))
-          .limit(1);
-        return result[0] || null;
-      } else {
-        // SQLite has no users table, so this will return null
-        return null;
-      }
-    } catch (error) {
-      console.error('Error getting user by ID:', error);
-      return null;
-    }
+    return safeDbOperation(
+      async () => {
+        if (this.type === 'postgresql') {
+          const result = await withTimeout(
+            () => (this.db as any)
+              .select()
+              .from(schema.users)
+              .where(eq(schema.users.id, id))
+              .limit(1),
+            { timeout: 8000, retries: 1 }
+          );
+          return result?.[0] || null;
+        } else {
+          // SQLite has no users table, so this will return null
+          return null;
+        }
+      },
+      null,
+      { timeout: 8000 }
+    );
   }
 
   async getUserByUsername(username: string): Promise<User | null> {
@@ -294,39 +299,43 @@ export class DatabaseService {
   async updateUser(id: number, updates: Partial<User>): Promise<User | null> {
     if (!this.isConnected()) return null;
 
-    try {
-      // التحقق من صحة المعرف
-      if (!id || typeof id !== 'number' || id <= 0) {
-        console.error('Invalid user ID provided to updateUser:', id);
-        return null;
-      }
-
-      // Filter out undefined/null values and ensure we have valid updates
-      const validUpdates = Object.fromEntries(
-        Object.entries(updates).filter(([_, value]) => value !== undefined && value !== null)
-      );
-
-      // If no valid updates, return the current user without updating
-      if (Object.keys(validUpdates).length === 0) {
-        console.warn('No valid updates provided to updateUser for user:', id);
-        return await this.getUserById(id);
-      }
-
-      if (this.type === 'postgresql') {
-        const result = await (this.db as any)
-          .update(schema.users)
-          .set(validUpdates)
-          .where(eq(schema.users.id, id))
-          .returning();
-        return result[0] || null;
-      } else {
-        // SQLite has no users table, so this will return null
-        return null;
-      }
-    } catch (error) {
-      console.error('Error updating user:', error);
+    // التحقق من صحة المعرف
+    if (!id || typeof id !== 'number' || id <= 0) {
+      console.error('Invalid user ID provided to updateUser:', id);
       return null;
     }
+
+    // Filter out undefined/null values and ensure we have valid updates
+    const validUpdates = Object.fromEntries(
+      Object.entries(updates).filter(([_, value]) => value !== undefined && value !== null)
+    );
+
+    // If no valid updates, return the current user without updating
+    if (Object.keys(validUpdates).length === 0) {
+      console.warn('No valid updates provided to updateUser for user:', id);
+      return await this.getUserById(id);
+    }
+
+    return safeDbOperation(
+      async () => {
+        if (this.type === 'postgresql') {
+          const result = await withTimeout(
+            () => (this.db as any)
+              .update(schema.users)
+              .set(validUpdates)
+              .where(eq(schema.users.id, id))
+              .returning(),
+            { timeout: 8000, retries: 1 }
+          );
+          return result?.[0] || null;
+        } else {
+          // SQLite has no users table, so this will return null
+          return null;
+        }
+      },
+      null,
+      { timeout: 8000 }
+    );
   }
 
   async updateUserPoints(userId: number, updates: Partial<User>): Promise<User | null> {
