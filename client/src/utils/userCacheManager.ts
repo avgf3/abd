@@ -31,8 +31,10 @@ class UserCacheManager {
 
   private constructor() {
     this.loadFromLocalStorage();
-    // تنظيف الكاش القديم كل ساعة
-    setInterval(() => this.cleanupOldEntries(), 60 * 60 * 1000);
+    // ✅ تنظيف الكاش القديم كل 5 دقائق لتحسين الأداء
+    setInterval(() => this.cleanupOldEntries(), 5 * 60 * 1000);
+    // ✅ تنظيف شامل كل ساعة
+    setInterval(() => this.deepCleanup(), 60 * 60 * 1000);
   }
 
   static getInstance(): UserCacheManager {
@@ -230,6 +232,45 @@ class UserCacheManager {
   }
 
   /**
+   * ✅ تنظيف شامل للذاكرة
+   */
+  private deepCleanup(): void {
+    const now = Date.now();
+    let changed = false;
+    let removedCount = 0;
+
+    // تنظيف البيانات القديمة جداً
+    this.memoryCache.forEach((user, id) => {
+      const age = now - user.lastUpdated;
+      const maxAge = this.isPriorityUser(user) ? this.PRIORITY_CACHE_DURATION : this.CACHE_DURATION;
+      
+      if (age > maxAge) {
+        this.memoryCache.delete(id);
+        changed = true;
+        removedCount++;
+      }
+    });
+
+    // إذا كان الكاش كبير جداً، احتفظ فقط بأحدث المستخدمين
+    if (this.memoryCache.size > this.MAX_CACHE_SIZE) {
+      const sorted = Array.from(this.memoryCache.entries())
+        .sort((a, b) => b[1].lastUpdated - a[1].lastUpdated)
+        .slice(0, this.MAX_CACHE_SIZE);
+      
+      this.memoryCache.clear();
+      sorted.forEach(([id, user]) => {
+        this.memoryCache.set(id, user);
+      });
+      changed = true;
+    }
+
+    if (changed) {
+      this.saveToLocalStorage();
+      console.log(`تم تنظيف الكاش: حذف ${removedCount} مستخدم، الحجم الحالي: ${this.memoryCache.size}`);
+    }
+  }
+
+  /**
    * مسح الكاش بالكامل
    */
   clearCache(): void {
@@ -276,6 +317,32 @@ class UserCacheManager {
       this.saveToLocalStorage();
     }
   }
+
+  /**
+   * ✅ تحديث حالة مستخدم واحد
+   */
+  updateUserStatus(userId: number, isOnline: boolean): void {
+    const cached = this.memoryCache.get(userId);
+    if (cached) {
+      cached.isOnline = isOnline;
+      cached.lastUpdated = Date.now();
+      this.memoryCache.set(userId, cached);
+      this.saveToLocalStorage();
+    }
+  }
+
+  /**
+   * ✅ تحديث غرفة مستخدم
+   */
+  updateUserRoom(userId: number, roomId: string): void {
+    const cached = this.memoryCache.get(userId);
+    if (cached) {
+      cached.currentRoom = roomId;
+      cached.lastUpdated = Date.now();
+      this.memoryCache.set(userId, cached);
+      this.saveToLocalStorage();
+    }
+  }
 }
 
 // تصدير instance واحد فقط
@@ -296,4 +363,13 @@ export const getCachedUser = (userId: number): CachedUser | null => {
 
 export const getCachedUserWithMerge = (userId: number, partialData?: Partial<ChatUser>): ChatUser => {
   return userCache.getUserWithMerge(userId, partialData);
+};
+
+// ✅ دوال التحديث الجديدة
+export const updateCachedUserStatus = (userId: number, isOnline: boolean): void => {
+  userCache.updateUserStatus(userId, isOnline);
+};
+
+export const updateCachedUserRoom = (userId: number, roomId: string): void => {
+  userCache.updateUserRoom(userId, roomId);
 };
