@@ -46,22 +46,39 @@ try {
 
 createRoot(document.getElementById('root')!).render(<App />);
 
-// Register/cleanup Service Worker (production only, opt-in via VITE_ENABLE_SW)
+// 🔥 تسجيل Service Worker للحفاظ على الاتصال في الخلفية
 try {
-	if ('serviceWorker' in navigator && !((import.meta as any).env?.DEV)) {
-		const enableSw = !!((import.meta as any).env?.VITE_ENABLE_SW);
+	if ('serviceWorker' in navigator) {
 		window.addEventListener('load', async () => {
 			try {
-				if (enableSw) {
-					await navigator.serviceWorker.register('/sw.js');
-				} else {
-					const swAny = (navigator as any).serviceWorker;
-					const regs = (await swAny?.getRegistrations?.()) || [];
-					for (const reg of regs) {
-						try { await reg.unregister(); } catch {}
-					}
+				const registration = await navigator.serviceWorker.register('/sw.js');
+				console.log('🚀 Service Worker مسجل بنجاح:', registration.scope);
+				
+				// إرسال رسالة تهيئة للـ Service Worker
+				if (registration.active) {
+					registration.active.postMessage({
+						type: 'init-background-sync',
+						data: { serverUrl: window.location.origin }
+					});
 				}
-			} catch {}
+				
+				// الاستماع لرسائل Service Worker
+				navigator.serviceWorker.addEventListener('message', (event) => {
+					const { type, data } = event.data;
+					
+					switch (type) {
+						case 'background-ping-success':
+							console.log('✅ Service Worker: ping نجح في الخلفية');
+							break;
+						case 'background-ping-failed':
+							console.warn('⚠️ Service Worker: ping فشل في الخلفية');
+							break;
+					}
+				});
+				
+			} catch (error) {
+				console.error('❌ فشل تسجيل Service Worker:', error);
+			}
 		});
 	}
 } catch {}

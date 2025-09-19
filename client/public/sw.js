@@ -37,8 +37,8 @@ async function handleBackgroundSync() {
 	try {
 		console.log('📡 Service Worker: إرسال ping للخادم');
 		
-		// إرسال ping للخادم
-		const response = await fetch(`${serverUrl}/api/ping`, {
+		// إرسال ping للخادم عبر Socket.IO endpoint
+		const response = await fetch(`${serverUrl}/socket.io/?EIO=4&transport=polling&t=${Date.now()}`, {
 			method: 'GET',
 			headers: {
 				'Content-Type': 'application/json',
@@ -57,9 +57,25 @@ async function handleBackgroundSync() {
 			});
 		} else {
 			console.warn('⚠️ Service Worker: ping فشل');
+			// إشعار التطبيق الرئيسي بالفشل
+			const clients = await self.clients.matchAll();
+			clients.forEach(client => {
+				client.postMessage({
+					type: 'background-ping-failed',
+					data: { timestamp: Date.now() }
+				});
+			});
 		}
 	} catch (error) {
 		console.error('❌ Service Worker: خطأ في ping:', error);
+		// إشعار التطبيق الرئيسي بالخطأ
+		const clients = await self.clients.matchAll();
+		clients.forEach(client => {
+			client.postMessage({
+				type: 'background-ping-failed',
+				data: { timestamp: Date.now(), error: error.message }
+			});
+		});
 	}
 }
 

@@ -1247,6 +1247,42 @@ export function setupRealtime(httpServer: HttpServer): IOServer<ClientToServerEv
       }
     });
 
+    // 🔥 معالج جمع الرسائل المفقودة عند العودة للمقدمة
+    socket.on('getMissedMessages', async (data) => {
+      try {
+        if (!socket.userId || !data?.roomId) return;
+        
+        const { roomId, timestamp } = data;
+        const cutoffTime = timestamp ? new Date(timestamp) : new Date(Date.now() - 300000); // آخر 5 دقائق افتراضياً
+        
+        console.log(`📨 جمع الرسائل المفقودة للمستخدم ${socket.userId} في الغرفة ${roomId}`);
+        
+        // جلب الرسائل المفقودة من قاعدة البيانات
+        const missedMessages = await roomMessageService.getRoomMessagesAfter(roomId, cutoffTime);
+        
+        if (missedMessages && missedMessages.length > 0) {
+          // إرسال الرسائل المفقودة للمستخدم
+          socket.emit('message', {
+            type: 'missedMessages',
+            roomId,
+            messages: missedMessages,
+            count: missedMessages.length
+          });
+          
+          console.log(`📨 تم إرسال ${missedMessages.length} رسالة مفقودة للمستخدم ${socket.userId}`);
+        } else {
+          // إرسال تأكيد أنه لا توجد رسائل مفقودة
+          socket.emit('message', {
+            type: 'noMissedMessages',
+            roomId,
+            count: 0
+          });
+        }
+      } catch (error) {
+        console.error('❌ خطأ في جمع الرسائل المفقودة:', error);
+      }
+    });
+
     socket.on('disconnect', async (reason) => {
       try {
         const userId = socket.userId;

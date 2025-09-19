@@ -42,6 +42,11 @@ self.addEventListener('message', function(event) {
       isConnected = data?.connected || false;
       break;
       
+    case 'send-direct-ping':
+      // إرسال ping مباشر للخادم
+      sendDirectPing();
+      break;
+      
     case 'cleanup':
       // تنظيف الموارد
       cleanup();
@@ -108,6 +113,40 @@ function startPing(interval = pingIntervalMs) {
     self.postMessage({
       type: 'ping-error',
       data: { error: error.message }
+    });
+  }
+}
+
+/**
+ * إرسال ping مباشر للخادم (fallback)
+ */
+async function sendDirectPing() {
+  try {
+    const response = await fetch(`${self.location.origin}/socket.io/?EIO=4&transport=polling&t=${Date.now()}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    
+    if (response.ok) {
+      console.log('✅ Web Worker: ping مباشر نجح');
+      self.postMessage({
+        type: 'direct-ping-success',
+        data: { timestamp: Date.now() }
+      });
+    } else {
+      console.warn('⚠️ Web Worker: ping مباشر فشل');
+      self.postMessage({
+        type: 'direct-ping-failed',
+        data: { timestamp: Date.now() }
+      });
+    }
+  } catch (error) {
+    console.error('❌ Web Worker: خطأ في ping مباشر:', error);
+    self.postMessage({
+      type: 'direct-ping-failed',
+      data: { timestamp: Date.now(), error: error.message }
     });
   }
 }
