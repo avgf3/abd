@@ -328,7 +328,7 @@ export async function buildOnlineUsersForRoom(roomId: string) {
             // التحقق من صحة البيانات قبل التحديث
             if (u.id && roomId && typeof roomId === 'string' && roomId.trim() !== '') {
               isUpdatingRoom = true;
-              await storage.updateUser(u.id, { currentRoom: roomId });
+              // تحديث الغرفة الحالية في الذاكرة المحلية فقط (لا يوجد حقل currentRoom في جدول users)
               entry.user.currentRoom = roomId;
               connectedUsers.set(u.id, entry);
               (next as any).currentRoom = roomId;
@@ -352,7 +352,7 @@ export async function buildOnlineUsersForRoom(roomId: string) {
             // التحقق من صحة البيانات قبل التحديث
             if (u.id && roomId && typeof roomId === 'string' && roomId.trim() !== '') {
               isUpdatingRoom = true;
-              await storage.updateUser(u.id, { currentRoom: roomId });
+              // تحديث الغرفة الحالية في الذاكرة المحلية فقط (لا يوجد حقل currentRoom في جدول users)
               entry.user.currentRoom = roomId;
               connectedUsers.set(u.id, entry);
               isUpdatingRoom = false;
@@ -482,10 +482,9 @@ async function joinRoom(
     entry.sockets.set(socket.id, { room: roomId, lastSeen: now });
     await updateUserLastSeen(userId, now);
     
-    // تحديث غرفة المستخدم في قاعدة البيانات إذا لزم الأمر
+    // تحديث غرفة المستخدم في الذاكرة المحلية فقط (لا يوجد حقل currentRoom في جدول users)
     if (entry.user.currentRoom !== roomId) {
       try {
-        await storage.updateUser(userId, { currentRoom: roomId });
         entry.user.currentRoom = roomId;
         connectedUsers.set(userId, entry);
       } catch (updateError) {
