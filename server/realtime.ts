@@ -273,6 +273,9 @@ export async function updateConnectedUserCache(userOrId: any, maybeUser?: any) {
 }
 
 // بناء قائمة المتصلين بكفاءة اعتماداً على sockets المسجلة
+// متغير لمنع التحديثات المتكررة
+let isUpdatingRoom = false;
+
 export async function buildOnlineUsersForRoom(roomId: string) {
 
   const userMap = new Map<number, any>();
@@ -314,22 +317,50 @@ export async function buildOnlineUsersForRoom(roomId: string) {
       // - للبوتات: نحترم غرفتهم الحقيقية من قاعدة البيانات
       // - للمستخدمين العاديين: نستخدم غرفتهم الحالية أو الغرفة المطلوبة
       if (u.userType === 'bot') {
-        // البوتات: نحترم غرفتهم الحقيقية فقط
-        (next as any).currentRoom = u.currentRoom && u.currentRoom.trim() !== '' ? u.currentRoom : 'general';
+        // البوتات: نحترم غرفتهم الحقيقية فقط، لكن نسمح بالتحديث إذا كانت مختلفة
+        const botCurrentRoom = u.currentRoom && u.currentRoom.trim() !== '' ? u.currentRoom : 'general';
+        (next as any).currentRoom = botCurrentRoom;
+        
+        // تحديث غرفة البوت في قاعدة البيانات إذا لزم الأمر
+        const entry = connectedUsers.get(u.id);
+        if (entry && entry.user.currentRoom !== roomId && roomId !== 'general' && !isUpdatingRoom) {
+          try {
+            // التحقق من صحة البيانات قبل التحديث
+            if (u.id && roomId && typeof roomId === 'string' && roomId.trim() !== '') {
+              isUpdatingRoom = true;
+              await storage.updateUser(u.id, { currentRoom: roomId });
+              entry.user.currentRoom = roomId;
+              connectedUsers.set(u.id, entry);
+              (next as any).currentRoom = roomId;
+              isUpdatingRoom = false;
+            }
+          } catch (updateError) {
+            console.error(`❌ فشل تحديث غرفة البوت ${u.id}:`, updateError);
+            isUpdatingRoom = false;
+          }
+        }
       } else {
         // المستخدمون العاديون: يمكن تحديث غرفتهم
         (next as any).currentRoom = u.currentRoom || roomId;
       }
       
       // تحديث الغرفة الحالية في قاعدة البيانات إذا لزم الأمر (للمستخدمين العاديين فقط)
-      const entry = connectedUsers.get(u.id);
-      if (entry && entry.user.userType !== 'bot' && entry.user.currentRoom !== roomId) {
-        try {
-          await storage.updateUser(u.id, { currentRoom: roomId });
-          entry.user.currentRoom = roomId;
-          connectedUsers.set(u.id, entry);
-        } catch (updateError) {
-          console.error(`❌ فشل تحديث الغرفة الحالية للمستخدم ${u.id}:`, updateError);
+      if (u.userType !== 'bot') {
+        const entry = connectedUsers.get(u.id);
+        if (entry && entry.user.currentRoom !== roomId && !isUpdatingRoom) {
+          try {
+            // التحقق من صحة البيانات قبل التحديث
+            if (u.id && roomId && typeof roomId === 'string' && roomId.trim() !== '') {
+              isUpdatingRoom = true;
+              await storage.updateUser(u.id, { currentRoom: roomId });
+              entry.user.currentRoom = roomId;
+              connectedUsers.set(u.id, entry);
+              isUpdatingRoom = false;
+            }
+          } catch (updateError) {
+            console.error(`❌ فشل تحديث الغرفة الحالية للمستخدم ${u.id}:`, updateError);
+            isUpdatingRoom = false;
+          }
         }
       }
       
@@ -450,6 +481,17 @@ async function joinRoom(
     const now = new Date();
     entry.sockets.set(socket.id, { room: roomId, lastSeen: now });
     await updateUserLastSeen(userId, now);
+    
+    // تحديث غرفة المستخدم في قاعدة البيانات إذا لزم الأمر
+    if (entry.user.currentRoom !== roomId) {
+      try {
+        await storage.updateUser(userId, { currentRoom: roomId });
+        entry.user.currentRoom = roomId;
+        connectedUsers.set(userId, entry);
+      } catch (updateError) {
+        console.error(`❌ فشل تحديث غرفة المستخدم ${userId}:`, updateError);
+      }
+    }
   }
 
   // 🔥 استخدام النظام المحسّن لتحديث قائمة المستخدمين
