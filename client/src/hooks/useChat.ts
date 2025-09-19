@@ -418,22 +418,113 @@ export const useChat = () => {
 
   // Track ping interval to avoid leaks
   const pingIntervalRef = useRef<number | null>(null);
+  const backgroundPingIntervalRef = useRef<number | null>(null);
+  const isBackgroundRef = useRef<boolean>(false);
+  const socketWorkerRef = useRef<Worker | null>(null);
+  const serviceWorkerRef = useRef<ServiceWorker | null>(null);
 
   // 🔥 SIMPLIFIED Socket event handling - حذف التضارب
   const setupSocketListeners = useCallback((socketInstance: Socket) => {
+    // 🔥 تهيئة Service Worker للحفاظ على الاتصال في الخلفية
+    const initServiceWorker = async () => {
+      try {
+        if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+          serviceWorkerRef.current = navigator.serviceWorker.controller;
+          
+          // إعداد معالج رسائل Service Worker
+          navigator.serviceWorker.addEventListener('message', (event) => {
+            const { type, data } = event.data;
+            
+            switch (type) {
+              case 'background-ping-success':
+                console.log('✅ Service Worker: ping نجح في الخلفية');
+                break;
+            }
+          });
+          
+          // تهيئة Service Worker
+          serviceWorkerRef.current.postMessage({
+            type: 'init-background-sync',
+            data: { serverUrl: window.location.origin }
+          });
+          
+          console.log('🚀 تم تهيئة Service Worker للـ Socket.IO');
+        }
+      } catch (error) {
+        console.warn('⚠️ لا يمكن تهيئة Service Worker:', error);
+      }
+    };
+    
+    // تهيئة Service Worker
+    initServiceWorker();
+    
+    // 🔥 تهيئة Web Worker للحفاظ على الاتصال في الخلفية
+    const initSocketWorker = () => {
+      try {
+        if (typeof Worker !== 'undefined' && !socketWorkerRef.current) {
+          socketWorkerRef.current = new Worker('/socket-worker.js');
+          
+          // معالجة رسائل Web Worker
+          socketWorkerRef.current.onmessage = (event) => {
+            const { type, data } = event.data;
+            
+            switch (type) {
+              case 'send-ping':
+                // إرسال ping للخادم
+                if (socketInstance.connected) {
+                  socketInstance.emit('client_ping');
+                }
+                break;
+                
+              case 'worker-ready':
+                console.log('🔧 Web Worker جاهز للعمل');
+                break;
+                
+              case 'worker-error':
+                console.error('❌ خطأ في Web Worker:', data.error);
+                break;
+            }
+          };
+          
+          // تهيئة Web Worker
+          socketWorkerRef.current.postMessage({
+            type: 'init',
+            data: { pingInterval: 20000 }
+          });
+          
+          console.log('🚀 تم تهيئة Web Worker للـ Socket.IO');
+        }
+      } catch (error) {
+        console.warn('⚠️ لا يمكن تهيئة Web Worker:', error);
+      }
+    };
+    
+    // تهيئة Web Worker
+    initSocketWorker();
+    
     // 🔥 حافظ على الاتصال عبر ping/pong محسّن مع قياس الكمون
     if (pingIntervalRef.current) {
       clearInterval(pingIntervalRef.current);
     }
+    if (backgroundPingIntervalRef.current) {
+      clearInterval(backgroundPingIntervalRef.current);
+    }
     
     let lastPingTime = 0;
-    const pingId = window.setInterval(() => {
-      if (socketInstance.connected) {
-        lastPingTime = Date.now();
-        socketInstance.emit('client_ping');
-      }
-    }, 20000);
-    pingIntervalRef.current = pingId;
+    
+    // 🔥 نظام ping/pong ذكي يتكيف مع حالة الصفحة
+    const startPing = (interval: number) => {
+      const pingId = window.setInterval(() => {
+        if (socketInstance.connected) {
+          lastPingTime = Date.now();
+          socketInstance.emit('client_ping');
+        }
+      }, interval);
+      return pingId;
+    };
+    
+    // بدء ping عادي (كل 20 ثانية)
+    pingIntervalRef.current = startPing(20000);
     
     // 🔥 قياس الكمون وتسجيل حالة الاتصال
     socketInstance.on('client_pong', (data: any) => {
@@ -445,6 +536,95 @@ export const useChat = () => {
         }
       }
     });
+
+    // 🔥 معالجات Page Visibility API للحفاظ على الاتصال في الخلفية
+    const handleVisibilityChange = () => {
+      if (document.hidden && !isBackgroundRef.current) {
+        // الصفحة أصبحت في الخلفية - استخدام Web Worker للping
+        isBackgroundRef.current = true;
+        console.log('🔄 الصفحة في الخلفية - تفعيل Web Worker للping');
+        
+        if (pingIntervalRef.current) {
+          clearInterval(pingIntervalRef.current);
+        }
+        
+        // تفعيل Web Worker و Service Worker للping في الخلفية
+        if (socketWorkerRef.current) {
+          socketWorkerRef.current.postMessage({
+            type: 'start-ping',
+            data: { interval: 60000 } // ping كل 60 ثانية في الخلفية
+          });
+        }
+        
+        if (serviceWorkerRef.current) {
+          serviceWorkerRef.current.postMessage({
+            type: 'start-background-ping',
+            data: { interval: 60000 } // ping كل 60 ثانية في الخلفية
+          });
+        }
+        
+        if (!socketWorkerRef.current && !serviceWorkerRef.current) {
+          // fallback إلى ping أبطأ إذا لم يتوفر Web Worker أو Service Worker
+          backgroundPingIntervalRef.current = startPing(60000);
+        }
+        
+      } else if (!document.hidden && isBackgroundRef.current) {
+        // الصفحة عادت للمقدمة - إيقاف Web Worker واستعادة ping العادي
+        isBackgroundRef.current = false;
+        console.log('🔄 الصفحة في المقدمة - إيقاف Web Worker واستعادة ping العادي');
+        
+        // إيقاف Web Worker و Service Worker
+        if (socketWorkerRef.current) {
+          socketWorkerRef.current.postMessage({
+            type: 'stop-ping',
+            data: {}
+          });
+        }
+        
+        if (serviceWorkerRef.current) {
+          serviceWorkerRef.current.postMessage({
+            type: 'stop-background-ping',
+            data: {}
+          });
+        }
+        
+        if (backgroundPingIntervalRef.current) {
+          clearInterval(backgroundPingIntervalRef.current);
+        }
+        // ping عادي في المقدمة (كل 20 ثانية)
+        pingIntervalRef.current = startPing(20000);
+      }
+    };
+
+    // إضافة معالج Page Visibility
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    // تنظيف معالج Page Visibility عند إغلاق Socket
+    const originalDisconnect = socketInstance.disconnect;
+    socketInstance.disconnect = function() {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      if (pingIntervalRef.current) {
+        clearInterval(pingIntervalRef.current);
+      }
+      if (backgroundPingIntervalRef.current) {
+        clearInterval(backgroundPingIntervalRef.current);
+      }
+      // تنظيف Web Worker و Service Worker
+      if (socketWorkerRef.current) {
+        socketWorkerRef.current.postMessage({ type: 'cleanup' });
+        socketWorkerRef.current.terminate();
+        socketWorkerRef.current = null;
+      }
+      
+      if (serviceWorkerRef.current) {
+        serviceWorkerRef.current.postMessage({
+          type: 'stop-background-ping',
+          data: {}
+        });
+        serviceWorkerRef.current = null;
+      }
+      return originalDisconnect.call(this);
+    };
 
     // بعد المصادقة الناجحة من الخادم، انضم للغرفة المطلوبة إن وُجدت
     socketInstance.on('authenticated', () => {
@@ -1168,7 +1348,24 @@ export const useChat = () => {
         clearInterval(pingIntervalRef.current);
         pingIntervalRef.current = null;
       }
-      // no more secondary intervals to clear
+      if (backgroundPingIntervalRef.current) {
+        clearInterval(backgroundPingIntervalRef.current);
+        backgroundPingIntervalRef.current = null;
+      }
+      // تنظيف Web Worker و Service Worker
+      if (socketWorkerRef.current) {
+        socketWorkerRef.current.postMessage({ type: 'cleanup' });
+        socketWorkerRef.current.terminate();
+        socketWorkerRef.current = null;
+      }
+      
+      if (serviceWorkerRef.current) {
+        serviceWorkerRef.current.postMessage({
+          type: 'stop-background-ping',
+          data: {}
+        });
+        serviceWorkerRef.current = null;
+      }
       // clear typing timers
       typingTimersRef.current.forEach((id) => {
         try {
