@@ -23,6 +23,7 @@ import { ensureRoomsColumns } from './database-adapter';
 import { ensureBotsTable } from './database-adapter';
 import { ensureChatLockColumns } from './database-adapter';
 import { ensureUserPreferencesColumns } from './database-adapter';
+import { optimizeDatabaseIndexes } from './utils/database-optimization';
 
 // إعادة تصدير دالة التهيئة من المحول
 export { initializeDatabase } from './database-adapter';
@@ -292,6 +293,13 @@ export async function initializeSystem(): Promise<boolean> {
       await ensureRoomsColumns();
     } catch (e) {
       console.warn('⚠️ تعذر ضمان أعمدة الغرف:', (e as any)?.message || e);
+    }
+
+    // تحسين أداء قاعدة البيانات بإنشاء الفهارس
+    try {
+      await optimizeDatabaseIndexes();
+    } catch (e) {
+      console.warn('⚠️ تعذر تحسين أداء قاعدة البيانات:', (e as any)?.message || e);
     }
 
     // إنشاء الغرف الافتراضية إذا كانت غير موجودة (بعد الهجرات)

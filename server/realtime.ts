@@ -717,7 +717,7 @@ export function setupRealtime(httpServer: HttpServer): IOServer<ClientToServerEv
     connectTimeout: 60000, // زيادة timeout للاتصال الأولي لدعم الاتصالات البطيئة
     cleanupEmptyChildNamespaces: true, // تنظيف namespaces الفارغة
     // 🔥 إعدادات إضافية لدعم العمل في الخلفية
-    transports: ['websocket', 'polling'], // التأكد من دعم polling كـ fallback
+    // transports: ['websocket', 'polling'], // التأكد من دعم polling كـ fallback - تم حذف التكرار
     forceBase64: false, // استخدام binary للأداء الأفضل
     multiplex: true, // تمكين multiplexing للأداء الأفضل
     allowRequest: (req, callback) => {
