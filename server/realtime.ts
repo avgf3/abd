@@ -697,10 +697,10 @@ export function setupRealtime(httpServer: HttpServer): IOServer<ClientToServerEv
       ? ['polling']
       : ['websocket', 'polling'],
     allowEIO3: true,
-    // 🔥 تحسين أوقات الاستجابة - تقليل timeout لتحسين الأداء
-    pingTimeout: (process?.env?.NODE_ENV === 'production') ? 60000 : 30000, // دقيقة واحدة في الإنتاج، 30 ثانية في التطوير
-    pingInterval: (process?.env?.NODE_ENV === 'production') ? 20000 : 15000, // ping كل 20 ثانية في الإنتاج، 15 في التطوير
-    upgradeTimeout: 30000, // تقليل timeout للترقية لتحسين الاستجابة
+    // 🔥 تحسين أوقات الاستجابة لدعم العمل في الخلفية
+    pingTimeout: (process?.env?.NODE_ENV === 'production') ? 120000 : 60000, // دقيقتان في الإنتاج، دقيقة في التطوير (زيادة لدعم الخلفية)
+    pingInterval: (process?.env?.NODE_ENV === 'production') ? 30000 : 20000, // ping كل 30 ثانية في الإنتاج، 20 في التطوير (أبطأ لدعم الخلفية)
+    upgradeTimeout: 45000, // زيادة timeout للترقية لدعم الاتصالات البطيئة
     allowUpgrades: (process?.env?.SOCKET_IO_POLLING_ONLY !== 'true'),
     cookie: false,
     serveClient: false,
@@ -713,9 +713,13 @@ export function setupRealtime(httpServer: HttpServer): IOServer<ClientToServerEv
       memLevel: 7, // توفير ذاكرة
     },
     httpCompression: true, // تفعيل ضغط HTTP للأداء الأفضل
-    // 🔥 إعدادات جديدة لتحسين الأداء
-    connectTimeout: 45000, // timeout للاتصال الأولي
+    // 🔥 إعدادات جديدة لتحسين الأداء ودعم العمل في الخلفية
+    connectTimeout: 60000, // زيادة timeout للاتصال الأولي لدعم الاتصالات البطيئة
     cleanupEmptyChildNamespaces: true, // تنظيف namespaces الفارغة
+    // 🔥 إعدادات إضافية لدعم العمل في الخلفية
+    transports: ['websocket', 'polling'], // التأكد من دعم polling كـ fallback
+    forceBase64: false, // استخدام binary للأداء الأفضل
+    multiplex: true, // تمكين multiplexing للأداء الأفضل
     allowRequest: (req, callback) => {
       try {
         const originHeader = req.headers.origin || '';
