@@ -5,7 +5,7 @@ import { friends as friendsTable } from '../shared/schema';
 
 import { SecurityManager } from './auth/security';
 import { db } from './database-adapter';
-import { connectedUsers } from './realtime';
+// تم إزالة استيراد connectedUsers - النظام يعتمد على قاعدة البيانات فقط
 import {
   databaseService,
   type User,

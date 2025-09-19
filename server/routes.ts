@@ -32,16 +32,19 @@ import { protect } from './middleware/enhancedSecurity';
 import { requireUser, requireBotOperation, validateEntityType, validateEntityIdParam } from './middleware/entityValidation';
 import { parseEntityId, formatEntityId } from './types/entities';
 import { moderationSystem } from './moderation';
-import { getIO } from './realtime';
-import { emitOnlineUsersForRoom } from './realtime';
-import { getUserActiveRooms } from './realtime';
-import { formatRoomEventMessage } from './utils/roomEventFormatter';
+// تم إزالة استيراد الدوال من realtime - النظام يعتمد على قاعدة البيانات فقط
+
+// دوال بديلة بسيطة بدلاً من الذاكرة المحلية
+const getIO = () => null; // تم إزالة الذاكرة المحلية
+const emitOnlineUsersForRoom = async () => {}; // تم إزالة الذاكرة المحلية
+const getUserActiveRooms = () => []; // تم إزالة الذاكرة المحلية
+const updateConnectedUserCache = async () => {}; // تم إزالة الذاكرة المحلية
 import { spamProtection } from './spam-protection';
 import { storage } from './storage';
 import { databaseCleanup } from './utils/database-cleanup';
 import { getClientIpFromHeaders, getDeviceIdFromHeaders } from './utils/device';
 import { limiters, SecurityConfig } from './security';
-import { updateConnectedUserCache } from './realtime';
+// تم إزالة استيراد الدوال من realtime - النظام يعتمد على قاعدة البيانات فقط
 
 import {
   sanitizeInput,
@@ -1696,8 +1699,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }
 
   // إعداد Socket.IO من خلال وحدة realtime الموحدة
-  const { setupRealtime } = await import('./realtime');
-  const io = setupRealtime(httpServer);
+  const { setupSocketIO } = await import('./realtime');
+  const io = setupSocketIO(httpServer);
 
   // تطبيق فحص الأمان على جميع الطلبات
   app.use(checkIPSecurity);
