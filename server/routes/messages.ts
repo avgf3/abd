@@ -639,4 +639,29 @@ router.post('/cache/clear', async (req, res) => {
   }
 });
 
+// 🔥 endpoint للرسائل الحديثة (للاستخدام في الخلفية)
+router.get('/recent', async (req: Request, res: Response) => {
+  try {
+    const since = req.query.since ? new Date(Number(req.query.since)) : new Date(Date.now() - 300000); // آخر 5 دقائق افتراضياً
+    const roomId = req.query.roomId as string || 'general';
+    
+    // جلب الرسائل الحديثة
+    const recentMessages = await roomMessageService.getRoomMessagesAfter(roomId, since);
+    
+    res.json({
+      success: true,
+      messages: recentMessages,
+      count: recentMessages.length,
+      since: since.toISOString(),
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('❌ خطأ في جلب الرسائل الحديثة:', error);
+    res.status(500).json({
+      success: false,
+      error: 'فشل في جلب الرسائل الحديثة'
+    });
+  }
+});
+
 export default router;

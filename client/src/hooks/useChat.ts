@@ -1463,12 +1463,65 @@ export const useChat = () => {
       dispatch({ type: 'SET_CONNECTION_STATUS', payload: false });
     };
 
+    // 🔥 معالج الرسائل من الخلفية
+    const handleBackgroundMessages = (event: CustomEvent) => {
+      const { messages, count, timestamp } = event.detail;
+      
+      if (Array.isArray(messages) && messages.length > 0) {
+        console.log(`📨 استقبال ${count} رسالة من الخلفية`);
+        
+        // إضافة الرسائل للغرف المناسبة
+        messages.forEach((message: any) => {
+          if (message.roomId) {
+            const chatMessage: ChatMessage = {
+              id: message.id,
+              content: message.content,
+              senderId: message.senderId,
+              timestamp: message.timestamp || new Date().toISOString(),
+              messageType: message.messageType || 'text',
+              sender: message.sender,
+              roomId: message.roomId,
+              isPrivate: Boolean(message.isPrivate),
+              reactions: message.reactions || { like: 0, dislike: 0, heart: 0 },
+              myReaction: message.myReaction ?? null,
+              attachments: message.attachments || [],
+            };
+
+            dispatch({
+              type: 'ADD_ROOM_MESSAGE',
+              payload: { roomId: message.roomId, message: chatMessage },
+            });
+          }
+        });
+        
+        // إشعار المستخدم
+        if ((currentUserRef.current as any)?.globalSoundEnabled !== false) {
+          playNotificationSound();
+        }
+        
+        // إظهار إشعار مرئي
+        dispatch({
+          type: 'ADD_NOTIFICATION',
+          payload: {
+            id: `background-${timestamp}`,
+            type: 'info',
+            title: 'رسائل جديدة',
+            message: `تم استقبال ${count} رسالة جديدة`,
+            timestamp: new Date().toISOString(),
+            read: false,
+          } as any,
+        });
+      }
+    };
+
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
+    window.addEventListener('backgroundMessagesReceived', handleBackgroundMessages as EventListener);
 
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
+      window.removeEventListener('backgroundMessagesReceived', handleBackgroundMessages as EventListener);
     };
   }, []);
 

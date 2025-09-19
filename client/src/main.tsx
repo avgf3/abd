@@ -73,6 +73,19 @@ try {
 						case 'background-ping-failed':
 							console.warn('⚠️ Service Worker: ping فشل في الخلفية');
 							break;
+						case 'background-messages':
+							// 🔥 معالجة الرسائل الجديدة من الخلفية
+							console.log(`📨 Service Worker: ${data.count} رسالة جديدة في الخلفية`);
+							
+							// إرسال حدث للواجهة الرئيسية
+							window.dispatchEvent(new CustomEvent('backgroundMessagesReceived', {
+								detail: {
+									messages: data.messages,
+									count: data.count,
+									timestamp: data.timestamp
+								}
+							}));
+							break;
 					}
 				});
 				
