@@ -311,12 +311,14 @@ export async function buildOnlineUsersForRoom(roomId: string) {
       }
       // تأكيد وجود حقول الحالة والزمن بشكل متناسق
       next.isOnline = true;
-      // جلب lastSeen من قاعدة البيانات بدلاً من الذاكرة المحلية
+      // جلب lastSeen و currentRoom من قاعدة البيانات بدلاً من الذاكرة المحلية
       try {
         const dbUser = await storage.getUser(u.id);
         next.lastSeen = dbUser?.lastSeen || (u as any).createdAt || new Date();
+        next.currentRoom = dbUser?.currentRoom || u.currentRoom || 'general';
       } catch (error) {
         next.lastSeen = (u as any).lastSeen || (u as any).createdAt || new Date();
+        next.currentRoom = u.currentRoom || 'general';
       }
       
       // ✅ منطق ذكي للغرفة الحالية:
@@ -515,9 +517,13 @@ async function joinRoom(
 
   // بث userUpdated للمستخدم نفسه وللغرفة لتحديث currentRoom و lastSeen فوراً على الواجهة
   try {
-    // جلب lastSeen من قاعدة البيانات
+    // جلب lastSeen و currentRoom من قاعدة البيانات
     const dbUser = await storage.getUser(userId);
-    const updatedUser = { ...user, currentRoom: roomId, lastSeen: dbUser?.lastSeen || new Date() } as any;
+    const updatedUser = { 
+      ...user, 
+      currentRoom: dbUser?.currentRoom || roomId, 
+      lastSeen: dbUser?.lastSeen || new Date() 
+    } as any;
     // حدث موجه للمستخدم ذاته بجميع أجهزته
     io.to(userId.toString()).emit('message', { type: 'userUpdated', user: updatedUser });
     // حدث عام داخل الغرفة الحالية ليراها الآخرون في نافذة البروفايل
@@ -588,9 +594,13 @@ async function leaveRoom(
     const entry = connectedUsers.get(userId);
     const baseUser = entry?.user || (await storage.getUser(userId));
     if (baseUser) {
-      // جلب lastSeen من قاعدة البيانات
+      // جلب lastSeen و currentRoom من قاعدة البيانات
       const dbUser = await storage.getUser(userId);
-      const updatedUser = { ...baseUser, currentRoom: null, lastSeen: dbUser?.lastSeen || new Date() } as any;
+      const updatedUser = { 
+        ...baseUser, 
+        currentRoom: dbUser?.currentRoom || null, 
+        lastSeen: dbUser?.lastSeen || new Date() 
+      } as any;
       io.to(userId.toString()).emit('message', { type: 'userUpdated', user: updatedUser });
       io.to(`room_${roomId}`).emit('message', { type: 'userUpdated', user: updatedUser });
     }
@@ -1262,7 +1272,11 @@ export function setupRealtime(httpServer: HttpServer): IOServer<ClientToServerEv
                 
                 // بث تحديث آخر تواجد للمستخدم المنفصل للواجهة فوراً
                 const dbUser = await storage.getUser(userId);
-                const updatedUser = { ...(entry.user || {}), lastSeen: dbUser?.lastSeen || new Date(), currentRoom: null } as any;
+                const updatedUser = { 
+                  ...(entry.user || {}), 
+                  lastSeen: dbUser?.lastSeen || new Date(), 
+                  currentRoom: dbUser?.currentRoom || null 
+                } as any;
                 io.to(`room_${lastRoom}`).emit('message', { type: 'userUpdated', user: updatedUser });
                 io.to(userId.toString()).emit('message', { type: 'userUpdated', user: updatedUser });
                 
@@ -1372,9 +1386,15 @@ async function updateLastSeenForConnectedUsers() {
         for (const [userId, entry] of connectedUsers.entries()) {
           if (entry.sockets.size === 0) continue;
           try {
-            // جلب lastSeen من قاعدة البيانات
+            // جلب lastSeen و currentRoom من قاعدة البيانات
             const dbUser = await storage.getUser(userId);
-            const updatedUser = { ...(entry.user || {}), id: userId, lastSeen: dbUser?.lastSeen || now, isOnline: true } as any;
+            const updatedUser = { 
+              ...(entry.user || {}), 
+              id: userId, 
+              lastSeen: dbUser?.lastSeen || now, 
+              currentRoom: dbUser?.currentRoom || entry.user?.currentRoom,
+              isOnline: true 
+            } as any;
             // إرسال للمستخدم ذاته (كل أجهزته)
             ioInstance.to(userId.toString()).emit('message', { type: 'userUpdated', user: updatedUser });
             // إرسال لكل الغرف التي يشارك فيها حالياً
