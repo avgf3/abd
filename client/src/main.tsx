@@ -46,52 +46,22 @@ try {
 
 createRoot(document.getElementById('root')!).render(<App />);
 
-// 🔥 تسجيل Service Worker للحفاظ على الاتصال في الخلفية
+// Register/cleanup Service Worker (production only, opt-in via VITE_ENABLE_SW)
 try {
-	if ('serviceWorker' in navigator) {
+	if ('serviceWorker' in navigator && !((import.meta as any).env?.DEV)) {
+		const enableSw = !!((import.meta as any).env?.VITE_ENABLE_SW);
 		window.addEventListener('load', async () => {
 			try {
-				const registration = await navigator.serviceWorker.register('/sw.js');
-				console.log('🚀 Service Worker مسجل بنجاح:', registration.scope);
-				
-				// إرسال رسالة تهيئة للـ Service Worker
-				if (registration.active) {
-					registration.active.postMessage({
-						type: 'init-background-sync',
-						data: { serverUrl: window.location.origin }
-					});
-				}
-				
-				// الاستماع لرسائل Service Worker
-				navigator.serviceWorker.addEventListener('message', (event) => {
-					const { type, data } = event.data;
-					
-					switch (type) {
-						case 'background-ping-success':
-							console.log('✅ Service Worker: ping نجح في الخلفية');
-							break;
-						case 'background-ping-failed':
-							console.warn('⚠️ Service Worker: ping فشل في الخلفية');
-							break;
-						case 'background-messages':
-							// 🔥 معالجة الرسائل الجديدة من الخلفية
-							console.log(`📨 Service Worker: ${data.count} رسالة جديدة في الخلفية`);
-							
-							// إرسال حدث للواجهة الرئيسية
-							window.dispatchEvent(new CustomEvent('backgroundMessagesReceived', {
-								detail: {
-									messages: data.messages,
-									count: data.count,
-									timestamp: data.timestamp
-								}
-							}));
-							break;
+				if (enableSw) {
+					await navigator.serviceWorker.register('/sw.js');
+				} else {
+					const swAny = (navigator as any).serviceWorker;
+					const regs = (await swAny?.getRegistrations?.()) || [];
+					for (const reg of regs) {
+						try { await reg.unregister(); } catch {}
 					}
-				});
-				
-			} catch (error) {
-				console.error('❌ فشل تسجيل Service Worker:', error);
-			}
+				}
+			} catch {}
 		});
 	}
 } catch {}

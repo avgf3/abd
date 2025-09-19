@@ -42,11 +42,6 @@ self.addEventListener('message', function(event) {
       isConnected = data?.connected || false;
       break;
       
-    case 'send-direct-ping':
-      // إرسال ping مباشر للخادم
-      sendDirectPing();
-      break;
-      
     case 'cleanup':
       // تنظيف الموارد
       cleanup();

@@ -32,19 +32,13 @@ self.addEventListener('sync', (event) => {
 	}
 });
 
-// 🔥 متغيرات للاتصال المستمر
-let backgroundSocket = null;
-let backgroundPingInterval = null;
-let isBackgroundConnected = false;
-let lastMessageCheck = Date.now();
-
 // معالجة Background Sync
 async function handleBackgroundSync() {
 	try {
 		console.log('📡 Service Worker: إرسال ping للخادم');
 		
-		// إرسال ping للخادم عبر Socket.IO endpoint
-		const response = await fetch(`${serverUrl}/socket.io/?EIO=4&transport=polling&t=${Date.now()}`, {
+		// إرسال ping للخادم
+		const response = await fetch(`${serverUrl}/api/ping`, {
 			method: 'GET',
 			headers: {
 				'Content-Type': 'application/json',
@@ -53,11 +47,6 @@ async function handleBackgroundSync() {
 		
 		if (response.ok) {
 			console.log('✅ Service Worker: ping نجح');
-			isBackgroundConnected = true;
-			
-			// 🔥 فحص الرسائل الجديدة في الخلفية
-			await checkForNewMessages();
-			
 			// إشعار التطبيق الرئيسي
 			const clients = await self.clients.matchAll();
 			clients.forEach(client => {
@@ -68,74 +57,9 @@ async function handleBackgroundSync() {
 			});
 		} else {
 			console.warn('⚠️ Service Worker: ping فشل');
-			isBackgroundConnected = false;
-			
-			// إشعار التطبيق الرئيسي بالفشل
-			const clients = await self.clients.matchAll();
-			clients.forEach(client => {
-				client.postMessage({
-					type: 'background-ping-failed',
-					data: { timestamp: Date.now() }
-				});
-			});
 		}
 	} catch (error) {
 		console.error('❌ Service Worker: خطأ في ping:', error);
-		isBackgroundConnected = false;
-		
-		// إشعار التطبيق الرئيسي بالخطأ
-		const clients = await self.clients.matchAll();
-		clients.forEach(client => {
-			client.postMessage({
-				type: 'background-ping-failed',
-				data: { timestamp: Date.now(), error: error.message }
-			});
-		});
-	}
-}
-
-// 🔥 فحص الرسائل الجديدة في الخلفية
-async function checkForNewMessages() {
-	try {
-		const response = await fetch(`${serverUrl}/api/messages/recent?since=${lastMessageCheck}`, {
-			method: 'GET',
-			headers: {
-				'Content-Type': 'application/json',
-			},
-		});
-		
-		if (response.ok) {
-			const data = await response.json();
-			if (data.messages && data.messages.length > 0) {
-				console.log(`📨 Service Worker: ${data.messages.length} رسالة جديدة في الخلفية`);
-				
-				// إشعار التطبيق الرئيسي بالرسائل الجديدة
-				const clients = await self.clients.matchAll();
-				clients.forEach(client => {
-					client.postMessage({
-						type: 'background-messages',
-						data: { 
-							messages: data.messages,
-							count: data.messages.length,
-							timestamp: Date.now()
-						}
-					});
-				});
-				
-				// إظهار إشعار للمستخدم
-				if (data.messages.length > 0) {
-					self.registration.showNotification('رسائل جديدة', {
-						body: `لديك ${data.messages.length} رسالة جديدة`,
-						icon: '/favicon.ico',
-						tag: 'new-messages',
-						requireInteraction: true
-					});
-				}
-			}
-			lastMessageCheck = Date.now();
-		}
-	} catch (error) {
-		console.error('❌ Service Worker: خطأ في فحص الرسائل:', error);
 	}
 }
 
@@ -186,14 +110,7 @@ function startBackgroundPing(interval = 60000) {
 			}
 		}, interval);
 		
-		// 🔥 فحص الرسائل كل 10 ثوان في الخلفية
-		backgroundPingInterval = setInterval(async () => {
-			if (isBackgroundConnected) {
-				await checkForNewMessages();
-			}
-		}, 10000); // كل 10 ثوان
-		
-		console.log(`🚀 Service Worker: بدء ping في الخلفية كل ${interval}ms + فحص الرسائل كل 10 ثوان`);
+		console.log(`🚀 Service Worker: بدء ping في الخلفية كل ${interval}ms`);
 	} catch (error) {
 		console.error('❌ Service Worker: خطأ في بدء ping:', error);
 	}
@@ -205,12 +122,8 @@ function stopBackgroundPing() {
 		if (pingInterval) {
 			clearInterval(pingInterval);
 			pingInterval = null;
+			console.log('⏹️ Service Worker: إيقاف ping في الخلفية');
 		}
-		if (backgroundPingInterval) {
-			clearInterval(backgroundPingInterval);
-			backgroundPingInterval = null;
-		}
-		console.log('⏹️ Service Worker: إيقاف ping وفحص الرسائل في الخلفية');
 	} catch (error) {
 		console.error('❌ Service Worker: خطأ في إيقاف ping:', error);
 	}
