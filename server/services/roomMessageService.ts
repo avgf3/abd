@@ -250,7 +250,7 @@ class RoomMessageService {
           
           if (result.messages.length > 0) {
             // تحويل النتائج إلى التنسيق المطلوب
-            const messages: RoomMessage[] = result.messages.map(msg => ({
+            const messages: RoomMessage[] = await Promise.all(result.messages.map(async msg => ({
               id: msg.id,
               senderId: msg.senderId,
               roomId: msg.roomId,
@@ -264,7 +264,7 @@ class RoomMessageService {
               senderAvatar: msg.sender?.profileImage || null,
               sender: msg.sender,
               attachments: msg.attachments || [],
-            }));
+            })));
 
             return {
               messages,
