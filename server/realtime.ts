@@ -27,6 +27,9 @@ import { createUserListOptimizer, getUserListOptimizer, optimizedUserJoin, optim
 let updateQueue = new Set<string>();
 let updateTimeout: NodeJS.Timeout | null = null;
 
+// متغير لتتبع interval تحديث lastSeen
+let lastSeenUpdateInterval: NodeJS.Timeout | null = null;
+
 // ✅ دالة التحديث المجمع
 function scheduleUserListUpdate(roomId: string): void {
   updateQueue.add(roomId);
