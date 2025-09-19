@@ -310,11 +310,11 @@ export async function buildOnlineUsersForRoom(roomId: string) {
       next.isOnline = true;
       next.lastSeen = (u as any).lastSeen || (u as any).createdAt || new Date();
       // تضمين الغرفة الحالية لتمكين تحديث نافذة البروفايل فوراً
-      (next as any).currentRoom = roomId;
+      (next as any).currentRoom = u.currentRoom || roomId;
       
-      // تحديث الغرفة الحالية في قاعدة البيانات إذا لزم الأمر
+      // تحديث الغرفة الحالية في قاعدة البيانات إذا لزم الأمر (للمستخدمين العاديين فقط)
       const entry = connectedUsers.get(u.id);
-      if (entry && entry.user.currentRoom !== roomId) {
+      if (entry && entry.user.userType !== 'bot' && entry.user.currentRoom !== roomId) {
         try {
           await storage.updateUser(u.id, { currentRoom: roomId });
           entry.user.currentRoom = roomId;
@@ -1266,7 +1266,7 @@ async function loadActiveBots() {
         totalPoints: bot.totalPoints,
         levelProgress: bot.levelProgress,
         isOnline: true,
-        currentRoom: bot.currentRoom || GENERAL_ROOM,
+        currentRoom: (bot.currentRoom && bot.currentRoom.trim() !== '') ? bot.currentRoom : GENERAL_ROOM,
         joinDate: bot.createdAt,
         lastSeen: bot.lastActivity,
       };
