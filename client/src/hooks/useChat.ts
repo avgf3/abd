@@ -594,22 +594,6 @@ export const useChat = () => {
         // ping عادي في المقدمة (كل 20 ثانية)
         pingIntervalRef.current = startPing(20000);
         
-        // 🔥 جمع الرسائل المفقودة عند العودة للمقدمة
-        setTimeout(() => {
-          try {
-            if (socketInstance.connected && currentUserRef.current) {
-              // إرسال طلب لجمع الرسائل المفقودة
-              socketInstance.emit('getMissedMessages', {
-                userId: currentUserRef.current.id,
-                roomId: currentRoomIdRef.current,
-                timestamp: Date.now() - 300000 // آخر 5 دقائق
-              });
-              console.log('📨 طلب جمع الرسائل المفقودة');
-            }
-          } catch (error) {
-            console.error('❌ خطأ في طلب الرسائل المفقودة:', error);
-          }
-        }, 1000);
       }
     };
 
@@ -1092,63 +1076,6 @@ export const useChat = () => {
             break;
           }
 
-          case 'missedMessages': {
-            // معالجة الرسائل المفقودة عند العودة للمقدمة
-            const { roomId, messages, count } = envelope as any;
-            if (Array.isArray(messages) && messages.length > 0) {
-              console.log(`📨 تم استقبال ${count} رسالة مفقودة للغرفة ${roomId}`);
-              
-              // تحويل الرسائل لتنسيق ChatMessage وإضافتها للغرفة
-              const formattedMessages = mapDbMessagesToChatMessages(messages, roomId);
-              
-              // إضافة الرسائل المفقودة للغرفة
-              const existingMessages = roomMessagesRef.current[roomId] || [];
-              const newMessages = [...existingMessages, ...formattedMessages];
-              
-              // ترتيب الرسائل حسب الوقت
-              newMessages.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
-              
-              dispatch({
-                type: 'SET_ROOM_MESSAGES',
-                payload: { roomId, messages: newMessages },
-              });
-              
-              // إشعار المستخدم بوجود رسائل مفقودة
-              if (roomId === currentRoomIdRef.current) {
-                try {
-                  window.dispatchEvent(new CustomEvent('missedMessagesReceived', { 
-                    detail: { count, roomId }
-                  }));
-                  
-                  // تشغيل صوت إشعار للرسائل المفقودة
-                  if ((currentUserRef.current as any)?.globalSoundEnabled !== false) {
-                    playNotificationSound();
-                  }
-                  
-                  // إظهار إشعار مرئي
-                  dispatch({
-                    type: 'ADD_NOTIFICATION',
-                    payload: {
-                      id: `missed-${Date.now()}`,
-                      type: 'info',
-                      title: 'رسائل مفقودة',
-                      message: `تم استقبال ${count} رسالة مفقودة`,
-                      timestamp: new Date().toISOString(),
-                      read: false,
-                    } as any,
-                  });
-                } catch {}
-              }
-            }
-            break;
-          }
-          
-          case 'noMissedMessages': {
-            // تأكيد أنه لا توجد رسائل مفقودة
-            const { roomId } = envelope as any;
-            console.log(`✅ لا توجد رسائل مفقودة للغرفة ${roomId}`);
-            break;
-          }
 
           case 'error':
           case 'warning': {
@@ -1463,65 +1390,12 @@ export const useChat = () => {
       dispatch({ type: 'SET_CONNECTION_STATUS', payload: false });
     };
 
-    // 🔥 معالج الرسائل من الخلفية
-    const handleBackgroundMessages = (event: CustomEvent) => {
-      const { messages, count, timestamp } = event.detail;
-      
-      if (Array.isArray(messages) && messages.length > 0) {
-        console.log(`📨 استقبال ${count} رسالة من الخلفية`);
-        
-        // إضافة الرسائل للغرف المناسبة
-        messages.forEach((message: any) => {
-          if (message.roomId) {
-            const chatMessage: ChatMessage = {
-              id: message.id,
-              content: message.content,
-              senderId: message.senderId,
-              timestamp: message.timestamp || new Date().toISOString(),
-              messageType: message.messageType || 'text',
-              sender: message.sender,
-              roomId: message.roomId,
-              isPrivate: Boolean(message.isPrivate),
-              reactions: message.reactions || { like: 0, dislike: 0, heart: 0 },
-              myReaction: message.myReaction ?? null,
-              attachments: message.attachments || [],
-            };
-
-            dispatch({
-              type: 'ADD_ROOM_MESSAGE',
-              payload: { roomId: message.roomId, message: chatMessage },
-            });
-          }
-        });
-        
-        // إشعار المستخدم
-        if ((currentUserRef.current as any)?.globalSoundEnabled !== false) {
-          playNotificationSound();
-        }
-        
-        // إظهار إشعار مرئي
-        dispatch({
-          type: 'ADD_NOTIFICATION',
-          payload: {
-            id: `background-${timestamp}`,
-            type: 'info',
-            title: 'رسائل جديدة',
-            message: `تم استقبال ${count} رسالة جديدة`,
-            timestamp: new Date().toISOString(),
-            read: false,
-          } as any,
-        });
-      }
-    };
-
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
-    window.addEventListener('backgroundMessagesReceived', handleBackgroundMessages as EventListener);
 
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
-      window.removeEventListener('backgroundMessagesReceived', handleBackgroundMessages as EventListener);
     };
   }, []);
 
