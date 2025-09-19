@@ -1,0 +1,317 @@
+/* Reset and Base Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Cairo', sans-serif;
+    background: #000;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.container {
+    width: 100%;
+    max-width: 500px;
+    position: relative;
+}
+
+/* Profile Card with Organic Shape */
+.profile-card {
+    background: linear-gradient(135deg, 
+        #d4af8c 0%,     /* Light beige/tan */
+        #b8860b 25%,    /* Golden brown */
+        #8b4513 50%,    /* Saddle brown */
+        #654321 75%,    /* Dark brown */
+        #2f1b14 100%    /* Very dark brown */
+    );
+    
+    /* Organic blob shape */
+    border-radius: 60% 40% 70% 30% / 40% 60% 30% 70%;
+    padding: 0;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+    min-height: 600px;
+}
+
+/* Alternative gradient for horizontal effect */
+.profile-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg,
+        #f4e4bc 0%,     /* Light beige */
+        #d4af8c 20%,    /* Tan */
+        #b8860b 40%,    /* Golden brown */
+        #8b4513 60%,    /* Saddle brown */
+        #654321 80%,    /* Dark brown */
+        #4a1a0a 100%    /* Very dark brown */
+    );
+    z-index: -1;
+}
+
+/* Navigation Tabs */
+.nav-tabs {
+    display: flex;
+    background: linear-gradient(135deg, #2f1b14, #4a1a0a);
+    border-radius: 60% 40% 0% 0% / 40% 60% 0% 0%;
+    padding: 15px 20px 10px;
+    margin-bottom: 0;
+}
+
+.tab {
+    padding: 10px 20px;
+    margin: 0 5px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    background: rgba(0, 0, 0, 0.3);
+    color: #f4e4bc;
+    border: 1px solid rgba(244, 228, 188, 0.2);
+}
+
+.tab.active {
+    background: #f4e4bc;
+    color: #2f1b14;
+    box-shadow: 0 2px 10px rgba(244, 228, 188, 0.3);
+}
+
+.tab:hover:not(.active) {
+    background: rgba(244, 228, 188, 0.1);
+    color: #f4e4bc;
+}
+
+/* Profile Content */
+.profile-content {
+    padding: 25px 30px;
+    position: relative;
+    z-index: 1;
+}
+
+/* Profile Info Items */
+.profile-info {
+    margin-bottom: 30px;
+}
+
+.info-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(244, 228, 188, 0.2);
+    margin-bottom: 8px;
+}
+
+.info-item:last-child {
+    border-bottom: none;
+}
+
+.label {
+    color: #f4e4bc;
+    font-weight: 600;
+    font-size: 14px;
+    opacity: 0.9;
+}
+
+.value {
+    color: #ffffff;
+    font-weight: 400;
+    font-size: 14px;
+    text-align: left;
+    direction: ltr;
+}
+
+/* Bio Section */
+.bio-section {
+    margin-top: 25px;
+}
+
+.bio-section h3 {
+    color: #f4e4bc;
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+.bio-text {
+    color: #ffffff;
+    font-size: 14px;
+    line-height: 1.6;
+    text-align: center;
+    font-weight: 400;
+}
+
+.signature {
+    font-family: 'Cairo', cursive;
+    font-style: italic;
+    font-weight: 600;
+    color: #f4e4bc;
+    font-size: 16px;
+    display: block;
+    margin-top: 10px;
+}
+
+/* Emoji styling */
+.bio-text::before {
+    content: '💜';
+    margin-right: 5px;
+}
+
+.bio-text::after {
+    content: '👍';
+    margin-left: 5px;
+}
+
+/* Input Section */
+.input-section {
+    padding: 20px 30px 25px;
+    background: linear-gradient(135deg, rgba(0, 0, 0, 0.2), rgba(47, 27, 20, 0.3));
+    border-radius: 0% 0% 60% 40% / 0% 0% 40% 60%;
+}
+
+.message-input {
+    width: 100%;
+    padding: 12px 15px;
+    border: 2px solid #d4af8c;
+    border-radius: 25px;
+    background: rgba(244, 228, 188, 0.1);
+    color: #ffffff;
+    font-family: 'Cairo', sans-serif;
+    font-size: 14px;
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+.message-input::placeholder {
+    color: #d4af8c;
+    opacity: 0.7;
+}
+
+.message-input:focus {
+    border-color: #f4e4bc;
+    background: rgba(244, 228, 188, 0.15);
+    box-shadow: 0 0 15px rgba(244, 228, 188, 0.2);
+}
+
+/* Scrollbar Styling */
+.profile-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.profile-content::-webkit-scrollbar-track {
+    background: rgba(244, 228, 188, 0.1);
+    border-radius: 4px;
+}
+
+.profile-content::-webkit-scrollbar-thumb {
+    background: rgba(244, 228, 188, 0.3);
+    border-radius: 4px;
+}
+
+.profile-content::-webkit-scrollbar-thumb:hover {
+    background: rgba(244, 228, 188, 0.5);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .container {
+        max-width: 90%;
+        padding: 10px;
+    }
+    
+    .profile-card {
+        border-radius: 50% 30% 60% 40% / 30% 50% 20% 60%;
+    }
+    
+    .nav-tabs {
+        padding: 12px 15px 8px;
+    }
+    
+    .tab {
+        padding: 8px 15px;
+        font-size: 12px;
+    }
+    
+    .profile-content {
+        padding: 20px 25px;
+    }
+    
+    .info-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
+    }
+    
+    .label {
+        font-size: 12px;
+    }
+    
+    .value {
+        font-size: 13px;
+    }
+    
+    .bio-section h3 {
+        font-size: 16px;
+    }
+    
+    .bio-text {
+        font-size: 13px;
+    }
+    
+    .input-section {
+        padding: 15px 25px 20px;
+    }
+}
+
+/* Animation Effects */
+@keyframes float {
+    0%, 100% {
+        transform: translateY(0px);
+    }
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+.profile-card {
+    animation: float 6s ease-in-out infinite;
+}
+
+/* Hover Effects */
+.info-item:hover {
+    background: rgba(244, 228, 188, 0.05);
+    border-radius: 8px;
+    padding: 12px 8px;
+    transition: all 0.3s ease;
+}
+
+/* Additional Organic Shape Variations */
+.profile-card:nth-child(odd) {
+    border-radius: 70% 30% 50% 50% / 30% 70% 50% 50%;
+}
+
+/* Purple accent for hearts */
+.bio-text {
+    position: relative;
+}
+
+.bio-text::before {
+    color: #8b0080; /* Deep purple */
+}
+
+/* Yellow accent for thumbs up */
+.bio-text::after {
+    color: #ffa500; /* Orange */
+}
