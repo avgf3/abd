@@ -45,6 +45,8 @@ export interface User {
   profileMusicTitle?: string | null;
   profileMusicEnabled?: boolean;
   profileMusicVolume?: number;
+  // الغرفة الحالية
+  currentRoom?: string | null;
 }
 
 export interface Message {
