@@ -5,6 +5,7 @@ import { friends as friendsTable } from '../shared/schema';
 
 import { SecurityManager } from './auth/security';
 import { db } from './database-adapter';
+import { connectedUsers } from './realtime';
 import {
   databaseService,
   type User,

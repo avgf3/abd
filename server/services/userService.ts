@@ -3,6 +3,7 @@ import { eq, desc, and } from 'drizzle-orm';
 
 import { users, type User, type InsertUser } from '../../shared/schema';
 import { db } from '../database-adapter';
+import { connectedUsers } from '../realtime';
 
 export class UserService {
   // إنشاء مستخدم جديد

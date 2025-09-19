@@ -293,10 +293,20 @@ export class DatabaseService {
     if (!this.isConnected()) return null;
 
     try {
+      // Filter out undefined/null values and ensure we have valid updates
+      const validUpdates = Object.fromEntries(
+        Object.entries(updates).filter(([_, value]) => value !== undefined && value !== null)
+      );
+
+      // If no valid updates, return the current user without updating
+      if (Object.keys(validUpdates).length === 0) {
+        return await this.getUserById(id);
+      }
+
       if (this.type === 'postgresql') {
         const result = await (this.db as any)
           .update(schema.users)
-          .set(updates)
+          .set(validUpdates)
           .where(eq(schema.users.id, id))
           .returning();
         return result[0] || null;

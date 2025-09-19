@@ -56,7 +56,7 @@ function scheduleUserListUpdate(roomId: string): void {
 const GENERAL_ROOM = 'general';
 
 // Track connected users and their sockets/rooms with improved synchronization
-const connectedUsers = new Map<
+export const connectedUsers = new Map<
   number,
   {
     user: any;
