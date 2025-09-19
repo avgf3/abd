@@ -169,7 +169,7 @@ export async function updateConnectedUserCache(userOrId: any, maybeUser?: any) {
         if (userObj.userType === 'bot') {
           for (const [socketId, socketMeta] of existing.sockets.entries()) {
             if (socketId.startsWith('bot:')) {
-              socketMeta.room = userObj.currentRoom || socketMeta.room || GENERAL_ROOM;
+              socketMeta.room = (userObj.currentRoom && userObj.currentRoom.trim() !== '') ? userObj.currentRoom : (socketMeta.room || GENERAL_ROOM);
               socketMeta.lastSeen = now;
               existing.sockets.set(socketId, socketMeta);
             }
@@ -180,7 +180,7 @@ export async function updateConnectedUserCache(userOrId: any, maybeUser?: any) {
         const sockets = new Map<string, { room: string; lastSeen: Date }>();
         if (userObj.userType === 'bot') {
           sockets.set(`bot:${userObj.id}`, {
-            room: userObj.currentRoom || GENERAL_ROOM,
+            room: (userObj.currentRoom && userObj.currentRoom.trim() !== '') ? userObj.currentRoom : GENERAL_ROOM,
             lastSeen: now,
           });
         }

@@ -4591,6 +4591,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...(body.settings || {}),
         ...(typeof ageVal !== 'undefined' && ageVal !== '' ? { age: Number(ageVal) } : {}),
       };
+      
+      // التحقق من صحة الغرفة المحددة
+      let currentRoom = body.currentRoom;
+      if (!currentRoom || currentRoom.trim() === '') {
+        currentRoom = 'general';
+      }
+      
+      // التحقق من وجود الغرفة
+      try {
+        const roomExists = await roomService.getRoom(currentRoom);
+        if (!roomExists) {
+          currentRoom = 'general';
+        }
+      } catch (error) {
+        console.warn('خطأ في التحقق من وجود الغرفة:', error);
+        currentRoom = 'general';
+      }
+      
       const [newBot] = await db.insert(bots).values({
         ...body,
         // حقول بسيطة تُخزن مباشرة
@@ -4599,6 +4617,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         settings,
         password: hashedPassword,
         createdBy: req.user?.id,
+        currentRoom: currentRoom, // استخدام الغرفة المحققة
       }).returning();
 
       // إضافة البوت لقائمة المتصلين - تضمين الحقول التعريفية كالدولة والجنس وغيرها
@@ -4747,9 +4766,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const oldRoom = currentBot.currentRoom;
 
+      // التحقق من صحة الغرفة المحددة
+      let validRoomId = roomId;
+      if (!validRoomId || validRoomId.trim() === '') {
+        validRoomId = 'general';
+      }
+      
+      // التحقق من وجود الغرفة
+      try {
+        const roomExists = await roomService.getRoom(validRoomId);
+        if (!roomExists) {
+          validRoomId = 'general';
+        }
+      } catch (error) {
+        console.warn('خطأ في التحقق من وجود الغرفة:', error);
+        validRoomId = 'general';
+      }
+      
       // تحديث الغرفة
       const [updatedBot] = await db.update(bots)
-        .set({ currentRoom: roomId, lastActivity: new Date() })
+        .set({ currentRoom: validRoomId, lastActivity: new Date() })
         .where(eq(bots.id, botId))
         .returning();
 

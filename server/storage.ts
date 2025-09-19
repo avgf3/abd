@@ -560,7 +560,7 @@ export const storage: LegacyStorage = {
         level: bot.level,
         totalPoints: bot.totalPoints,
         levelProgress: bot.levelProgress,
-        currentRoom: bot.currentRoom || 'general', // ضمان وجود غرفة افتراضية
+        currentRoom: bot.currentRoom && bot.currentRoom.trim() !== '' ? bot.currentRoom : 'general',
         // خصائص خاصة بالبوت
         isActive: bot.isActive,
         botType: bot.botType,
@@ -649,7 +649,7 @@ export const storage: LegacyStorage = {
         level: bot.level,
         totalPoints: bot.totalPoints,
         levelProgress: bot.levelProgress,
-        currentRoom: bot.currentRoom || 'general', // ضمان وجود غرفة افتراضية
+        currentRoom: bot.currentRoom && bot.currentRoom.trim() !== '' ? bot.currentRoom : 'general',
       }));
     } catch (e) {
       console.error('Error fetching bots by IDs:', e);
