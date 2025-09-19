@@ -273,8 +273,10 @@ export async function updateConnectedUserCache(userOrId: any, maybeUser?: any) {
 }
 
 // بناء قائمة المتصلين بكفاءة اعتماداً على sockets المسجلة
-// متغير لمنع التحديثات المتكررة
+// متغير محسن لمنع التحديثات المتكررة مع timestamp
 let isUpdatingRoom = false;
+let lastRoomUpdateTime = 0;
+const ROOM_UPDATE_COOLDOWN = 1000; // ثانية واحدة بين التحديثات
 
 export async function buildOnlineUsersForRoom(roomId: string) {
 
@@ -329,13 +331,16 @@ export async function buildOnlineUsersForRoom(roomId: string) {
         const botCurrentRoom = u.currentRoom && u.currentRoom.trim() !== '' ? u.currentRoom : 'general';
         (next as any).currentRoom = botCurrentRoom;
         
-        // تحديث غرفة البوت في قاعدة البيانات إذا لزم الأمر
+        // تحديث غرفة البوت في قاعدة البيانات إذا لزم الأمر مع تحسين التزامن
         const entry = connectedUsers.get(u.id);
-        if (entry && entry.user.currentRoom !== roomId && roomId !== 'general' && !isUpdatingRoom) {
+        const now = Date.now();
+        if (entry && entry.user.currentRoom !== roomId && roomId !== 'general' && 
+            !isUpdatingRoom && (now - lastRoomUpdateTime) > ROOM_UPDATE_COOLDOWN) {
           try {
             // التحقق من صحة البيانات قبل التحديث
             if (u.id && roomId && typeof roomId === 'string' && roomId.trim() !== '') {
               isUpdatingRoom = true;
+              lastRoomUpdateTime = now;
               await storage.updateUser(u.id, { currentRoom: roomId });
               entry.user.currentRoom = roomId;
               connectedUsers.set(u.id, entry);
@@ -355,11 +360,14 @@ export async function buildOnlineUsersForRoom(roomId: string) {
       // تحديث الغرفة الحالية في قاعدة البيانات إذا لزم الأمر (للمستخدمين العاديين فقط)
       if (u.userType !== 'bot') {
         const entry = connectedUsers.get(u.id);
-        if (entry && entry.user.currentRoom !== roomId && !isUpdatingRoom) {
+        const now = Date.now();
+        if (entry && entry.user.currentRoom !== roomId && 
+            !isUpdatingRoom && (now - lastRoomUpdateTime) > ROOM_UPDATE_COOLDOWN) {
           try {
             // التحقق من صحة البيانات قبل التحديث
             if (u.id && roomId && typeof roomId === 'string' && roomId.trim() !== '') {
               isUpdatingRoom = true;
+              lastRoomUpdateTime = now;
               await storage.updateUser(u.id, { currentRoom: roomId });
               entry.user.currentRoom = roomId;
               connectedUsers.set(u.id, entry);
@@ -1303,6 +1311,9 @@ export function setupRealtime(httpServer: HttpServer): IOServer<ClientToServerEv
   // بدء نظام التحديث الدوري لـ lastSeen
   startLastSeenUpdater();
 
+  // بدء نظام التحديث الدوري للبوتات
+  startBotUpdater();
+
   return io;
 }
 
@@ -1344,7 +1355,7 @@ async function loadActiveBots() {
         isOnline: true,
         currentRoom: (bot.currentRoom && bot.currentRoom.trim() !== '') ? bot.currentRoom : GENERAL_ROOM,
         joinDate: bot.createdAt,
-        lastSeen: bot.lastActivity,
+        lastSeen: bot.lastActivity || new Date(),
       };
       
       // إضافة البوت لقائمة المستخدمين المتصلين
@@ -1357,8 +1368,83 @@ async function loadActiveBots() {
   }
 }
 
-// ===== نظام تحديث دوري لـ lastSeen =====
-let lastSeenUpdateInterval: NodeJS.Timeout | null = null;
+// ===== نظام تحديث دوري محسن للبوتات =====
+let botUpdateInterval: NodeJS.Timeout | null = null;
+
+// دالة تحديث البوتات بشكل دوري
+async function updateBotsPeriodically() {
+  try {
+    const { db } = await import('./database-adapter');
+    const { bots } = await import('../shared/schema');
+    const drizzleOrm = await import('drizzle-orm');
+    const { eq } = drizzleOrm;
+    
+    if (!db) return;
+    
+    // جلب البوتات النشطة وتحديث lastActivity
+    const activeBots = await db.select().from(bots).where(eq(bots.isActive, true));
+    const now = new Date();
+    
+    for (const bot of activeBots) {
+      // تحديث lastActivity للبوتات النشطة
+      await db.update(bots)
+        .set({ lastActivity: now })
+        .where(eq(bots.id, bot.id));
+      
+      // تحديث cache المستخدمين المتصلين
+      const botUser = {
+        id: bot.id,
+        username: bot.username,
+        userType: 'bot',
+        role: 'bot',
+        profileImage: bot.profileImage,
+        profileBanner: bot.profileBanner,
+        profileBackgroundColor: bot.profileBackgroundColor,
+        status: bot.status,
+        gender: bot.gender,
+        country: bot.country,
+        relation: bot.relation,
+        bio: bot.bio,
+        usernameColor: bot.usernameColor,
+        profileEffect: bot.profileEffect,
+        points: bot.points,
+        level: bot.level,
+        totalPoints: bot.totalPoints,
+        levelProgress: bot.levelProgress,
+        isOnline: true,
+        currentRoom: (bot.currentRoom && bot.currentRoom.trim() !== '') ? bot.currentRoom : GENERAL_ROOM,
+        joinDate: bot.createdAt,
+        lastSeen: now, // استخدام نفس الوقت لـ lastSeen
+      };
+      
+      await updateConnectedUserCache(bot.id, botUser);
+    }
+    
+    console.log(`تم تحديث ${activeBots.length} بوت بنجاح`);
+  } catch (error) {
+    console.error('خطأ في التحديث الدوري للبوتات:', error);
+  }
+}
+
+// بدء نظام التحديث الدوري للبوتات
+export function startBotUpdater() {
+  if (botUpdateInterval) {
+    clearInterval(botUpdateInterval);
+  }
+  
+  // تحديث كل 30 ثانية للبوتات
+  botUpdateInterval = setInterval(updateBotsPeriodically, 30000);
+  console.log('تم بدء نظام التحديث الدوري للبوتات كل 30 ثانية');
+}
+
+// إيقاف نظام التحديث الدوري للبوتات
+export function stopBotUpdater() {
+  if (botUpdateInterval) {
+    clearInterval(botUpdateInterval);
+    botUpdateInterval = null;
+    console.log('تم إيقاف نظام التحديث الدوري للبوتات');
+  }
+}
 
 // دالة تحديث lastSeen للمستخدمين المتصلين
 async function updateLastSeenForConnectedUsers() {

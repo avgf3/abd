@@ -45,7 +45,8 @@ class RoomService {
   // 🚀 إدارة موحدة ومحسنة للغرف مع منع التكرار
   private connectedRooms = new Map<string, Set<number>>(); // roomId -> Set of userIds
   private userRooms = new Map<number, string>(); // userId -> current roomId
-  private operationLocks = new Map<string, boolean>(); // منع العمليات المتكررة
+  // 🔒 كاش للعمليات مع timestamp لمنع التكرار
+  private operationLocks = new Map<string, { locked: boolean; timestamp: number }>(); // منع العمليات المتكررة مع timestamp
   // 💾 كاش للغرف مع نسخة للتعامل مع ETag
   private roomsCache?: { data: Room[]; expiresAt: number };
   private roomsVersion = 1;
@@ -209,13 +210,16 @@ class RoomService {
    */
   async joinRoom(userId: number, roomId: string): Promise<void> {
     const lockKey = `join_${userId}_${roomId}`;
+    const now = Date.now();
+    const LOCK_TIMEOUT = 5000; // 5 ثواني timeout للقفل
 
-    // 🚫 منع العمليات المتكررة
-    if (this.operationLocks.get(lockKey)) {
+    // 🚫 منع العمليات المتكررة مع تحسين التزامن
+    const existingLock = this.operationLocks.get(lockKey);
+    if (existingLock && existingLock.locked && (now - existingLock.timestamp) < LOCK_TIMEOUT) {
       return;
     }
 
-    this.operationLocks.set(lockKey, true);
+    this.operationLocks.set(lockKey, { locked: true, timestamp: now });
 
     try {
       if (!db || dbType === 'disabled') {
@@ -282,13 +286,16 @@ class RoomService {
    */
   async leaveRoom(userId: number, roomId: string): Promise<void> {
     const lockKey = `leave_${userId}_${roomId}`;
+    const now = Date.now();
+    const LOCK_TIMEOUT = 5000; // 5 ثواني timeout للقفل
 
-    // 🚫 منع العمليات المتكررة
-    if (this.operationLocks.get(lockKey)) {
+    // 🚫 منع العمليات المتكررة مع تحسين التزامن
+    const existingLock = this.operationLocks.get(lockKey);
+    if (existingLock && existingLock.locked && (now - existingLock.timestamp) < LOCK_TIMEOUT) {
       return;
     }
 
-    this.operationLocks.set(lockKey, true);
+    this.operationLocks.set(lockKey, { locked: true, timestamp: now });
 
     try {
       // ✅ فحص مسبق - هل المستخدم في الغرفة أصلاً؟
@@ -583,9 +590,10 @@ class RoomService {
     const now = Date.now();
     const fiveMinutesAgo = now - 5 * 60 * 1000;
 
-    for (const [lockKey] of this.operationLocks.entries()) {
-      // يمكن إضافة timestamp للـ locks في المستقبل
-      // للآن نحذف جميع locks عند التنظيف
+    for (const [lockKey, lockData] of this.operationLocks.entries()) {
+      if (lockData.timestamp < fiveMinutesAgo) {
+        this.operationLocks.delete(lockKey);
+      }
     }
   }
 
