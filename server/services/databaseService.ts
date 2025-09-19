@@ -293,6 +293,12 @@ export class DatabaseService {
     if (!this.isConnected()) return null;
 
     try {
+      // التحقق من صحة المعرف
+      if (!id || typeof id !== 'number' || id <= 0) {
+        console.error('Invalid user ID provided to updateUser:', id);
+        return null;
+      }
+
       // Filter out undefined/null values and ensure we have valid updates
       const validUpdates = Object.fromEntries(
         Object.entries(updates).filter(([_, value]) => value !== undefined && value !== null)
@@ -300,6 +306,7 @@ export class DatabaseService {
 
       // If no valid updates, return the current user without updating
       if (Object.keys(validUpdates).length === 0) {
+        console.warn('No valid updates provided to updateUser for user:', id);
         return await this.getUserById(id);
       }
 
