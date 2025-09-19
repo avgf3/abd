@@ -376,7 +376,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // تحديث cache المستخدمين المتصلين
         try {
-          updateConnectedUserCache(updatedUser);
+          await updateConnectedUserCache(updatedUser);
         } catch {}
 
         // بث فوري عبر Socket لتحديث الأفاتار في جميع الواجهات
@@ -511,7 +511,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // تحديث cache المستخدمين المتصلين
         try {
-          updateConnectedUserCache(updatedUser);
+          await updateConnectedUserCache(updatedUser);
         } catch {}
 
         // إرسال الاستجابة (بدون ترويسات كاش طويلة على JSON)
@@ -1866,7 +1866,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // اعتمد على الغرف النشطة المتصلة حالياً لتفادي إرسال الرسالة لغرف قديمة محفوظة في DB
             const roomIds = getUserActiveRooms(verified.userId);
             // إزالة من كاش المتصلين فوراً
-            try { updateConnectedUserCache(verified.userId, null); } catch {}
+            try { await updateConnectedUserCache(verified.userId, null); } catch {}
 
             if (Array.isArray(roomIds)) {
               for (const roomId of roomIds) {
@@ -3172,7 +3172,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Update connected cache copy in realtime module if needed (no-op here)
       try {
-        updateConnectedUserCache(user);
+        await updateConnectedUserCache(user);
       } catch {}
 
       // بث خفيف للجميع + بث كامل لصاحب التعديل
@@ -4624,7 +4624,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
 
       // تحديث cache المستخدمين المتصلين
-      updateConnectedUserCache(newBot.id, botUser);
+      await updateConnectedUserCache(newBot.id, botUser);
 
       // رسالة نظامية لدخول البوت
       try {
@@ -4713,7 +4713,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         currentRoom: updatedBot.currentRoom,
       };
 
-      updateConnectedUserCache(updatedBot.id, botUser);
+      await updateConnectedUserCache(updatedBot.id, botUser);
 
       res.json({ ...updatedBot, entityId: formatEntityId(updatedBot.id, 'bot') });
     } catch (error) {
@@ -4816,7 +4816,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } catch {}
 
       // تحديث cache المستخدمين المتصلين بالبيانات الجديدة
-      updateConnectedUserCache(updatedBot.id, botUser);
+      await updateConnectedUserCache(updatedBot.id, botUser);
 
       // تنظيف cache الرسائل للغرف المتأثرة لضمان عرض البيانات الصحيحة
       try {
@@ -4893,7 +4893,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           currentRoom: updatedBot.currentRoom,
         };
 
-        updateConnectedUserCache(updatedBot.id, botUser);
+        await updateConnectedUserCache(updatedBot.id, botUser);
 
         // رسالة نظامية: دخول بوت
         try {
@@ -4919,7 +4919,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         try { await emitOnlineUsersForRoom(updatedBot.currentRoom); } catch {}
       } else {
         // إزالة البوت من قائمة المتصلين
-        updateConnectedUserCache(updatedBot.id, null);
+        await updateConnectedUserCache(updatedBot.id, null);
 
         // رسالة نظامية: المستخدم غادر الموقع (تعطيل البوت)
         try {
@@ -4973,7 +4973,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await db.delete(bots).where(eq(bots.id, botId));
 
       // إزالة البوت من قائمة المتصلين
-      updateConnectedUserCache(botId, null);
+      await updateConnectedUserCache(botId, null);
       // رسالة نظامية: المستخدم غادر الموقع (حذف البوت)
       try {
         const content = formatRoomEventMessage('site_leave', {
@@ -5105,7 +5105,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             isOnline: updatedBot.isActive,
             currentRoom: updatedBot.currentRoom,
           };
-          updateConnectedUserCache(updatedBot.id, botUser);
+          await updateConnectedUserCache(updatedBot.id, botUser);
         } catch {}
         
         return res.json({
@@ -5200,7 +5200,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             currentRoom: newBot.currentRoom,
           };
 
-          updateConnectedUserCache(newBot.id, botUser);
+          await updateConnectedUserCache(newBot.id, botUser);
 
           // إرسال إشعار بدخول البوت (متوافق مع الواجهة)
           getIO().to(`room_${newBot.currentRoom}`).emit('message', {

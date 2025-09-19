@@ -220,8 +220,14 @@ export default function ProfileModal({
           if (!prev) return prev;
           const next: any = { ...prev };
           
-          // تحديث جميع البيانات المهمة
-          if (u.lastSeen) next.lastSeen = u.lastSeen;
+          // تحديث جميع البيانات المهمة مع التحقق من صحة البيانات
+          if (u.lastSeen) {
+            // التحقق من أن lastSeen هو تاريخ صحيح
+            const lastSeenDate = u.lastSeen instanceof Date ? u.lastSeen : new Date(u.lastSeen);
+            if (!isNaN(lastSeenDate.getTime())) {
+              next.lastSeen = lastSeenDate;
+            }
+          }
           if (typeof u.currentRoom !== 'undefined') next.currentRoom = u.currentRoom;
           if (typeof u.isOnline !== 'undefined') next.isOnline = u.isOnline;
           
