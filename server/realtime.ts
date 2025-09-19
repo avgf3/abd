@@ -55,15 +55,43 @@ function scheduleUserListUpdate(roomId: string): void {
 
 const GENERAL_ROOM = 'general';
 
-// Track connected users and their sockets/rooms
+// Track connected users and their sockets/rooms with improved synchronization
 const connectedUsers = new Map<
   number,
   {
     user: any;
     sockets: Map<string, { room: string; lastSeen: Date }>;
     lastSeen: Date;
+    mutex: Promise<void>; // إضافة mutex للتزامن
   }
 >();
+
+// دالة مساعدة لتحديث lastSeen بشكل آمن
+async function updateUserLastSeen(userId: number, lastSeen: Date): Promise<void> {
+  const entry = connectedUsers.get(userId);
+  if (entry) {
+    // انتظار انتهاء العمليات السابقة
+    await entry.mutex;
+    
+    // إنشاء mutex جديد للعملية الحالية
+    let resolveMutex: () => void;
+    entry.mutex = new Promise<void>((resolve) => {
+      resolveMutex = resolve;
+    });
+    
+    try {
+      entry.lastSeen = lastSeen;
+      // تحديث جميع sockets للمستخدم
+      for (const [socketId, socketMeta] of entry.sockets.entries()) {
+        socketMeta.lastSeen = lastSeen;
+        entry.sockets.set(socketId, socketMeta);
+      }
+      connectedUsers.set(userId, entry);
+    } finally {
+      resolveMutex!();
+    }
+  }
+}
 
 // Utility: get online user counts per room based on active sockets
 export function getOnlineUserCountsForRooms(roomIds: string[]): Record<string, number> {
@@ -124,22 +152,25 @@ export function getUserActiveRooms(userId: number): string[] {
 
 // إزالة كاش قائمة المتصلين للغرف للاعتماد الكامل على أحداث Socket.IO
 
-export function updateConnectedUserCache(userOrId: any, maybeUser?: any) {
+export async function updateConnectedUserCache(userOrId: any, maybeUser?: any) {
   try {
     // Overload 1: update by full user object
     if (typeof userOrId === 'object' && userOrId) {
       const userObj = userOrId as any;
       if (!userObj.id) return;
       const existing = connectedUsers.get(userObj.id);
+      const now = new Date();
+      
       if (existing) {
         existing.user = { ...existing.user, ...userObj };
-        existing.lastSeen = new Date();
+        await updateUserLastSeen(userObj.id, now);
+        
         // إذا كان بوتاً ولديه socket اصطناعي، حدّث الغرفة
         if (userObj.userType === 'bot') {
           for (const [socketId, socketMeta] of existing.sockets.entries()) {
             if (socketId.startsWith('bot:')) {
-              socketMeta.room = userObj.currentRoom || socketMeta.room || GENERAL_ROOM;
-              socketMeta.lastSeen = new Date();
+              socketMeta.room = (userObj.currentRoom && userObj.currentRoom.trim() !== '') ? userObj.currentRoom : (socketMeta.room || GENERAL_ROOM);
+              socketMeta.lastSeen = now;
               existing.sockets.set(socketId, socketMeta);
             }
           }
@@ -149,14 +180,15 @@ export function updateConnectedUserCache(userOrId: any, maybeUser?: any) {
         const sockets = new Map<string, { room: string; lastSeen: Date }>();
         if (userObj.userType === 'bot') {
           sockets.set(`bot:${userObj.id}`, {
-            room: userObj.currentRoom || GENERAL_ROOM,
-            lastSeen: new Date(),
+            room: (userObj.currentRoom && userObj.currentRoom.trim() !== '') ? userObj.currentRoom : GENERAL_ROOM,
+            lastSeen: now,
           });
         }
         connectedUsers.set(userObj.id, {
           user: userObj,
           sockets,
-          lastSeen: new Date(),
+          lastSeen: now,
+          mutex: Promise.resolve(), // تهيئة mutex
         });
       }
       return;
@@ -176,9 +208,12 @@ export function updateConnectedUserCache(userOrId: any, maybeUser?: any) {
 
     const userData = maybeUser as any;
     const existing = connectedUsers.get(userId);
+    const now = new Date();
+    
     if (existing) {
       existing.user = { ...existing.user, ...userData };
-      existing.lastSeen = new Date();
+      await updateUserLastSeen(userId, now);
+      
       if (userData.userType === 'bot') {
         // تأكد من وجود socket اصطناعي للبوت وتحديث غرفته
         let hasBotSocket = false;
@@ -190,12 +225,12 @@ export function updateConnectedUserCache(userOrId: any, maybeUser?: any) {
         }
         const room = userData.currentRoom || GENERAL_ROOM;
         if (!hasBotSocket) {
-          existing.sockets.set(`bot:${userId}`, { room, lastSeen: new Date() });
+          existing.sockets.set(`bot:${userId}`, { room, lastSeen: now });
         } else {
           for (const [socketId, meta] of existing.sockets.entries()) {
             if (socketId.startsWith('bot:')) {
               meta.room = room;
-              meta.lastSeen = new Date();
+              meta.lastSeen = now;
               existing.sockets.set(socketId, meta);
             }
           }
@@ -206,15 +241,35 @@ export function updateConnectedUserCache(userOrId: any, maybeUser?: any) {
       const sockets = new Map<string, { room: string; lastSeen: Date }>();
       const room = userData.currentRoom || GENERAL_ROOM;
       if (userData.userType === 'bot') {
-        sockets.set(`bot:${userId}`, { room, lastSeen: new Date() });
+        sockets.set(`bot:${userId}`, { room, lastSeen: now });
       }
       connectedUsers.set(userId, {
         user: { id: userId, ...userData },
         sockets,
-        lastSeen: new Date(),
+        lastSeen: now,
+        mutex: Promise.resolve(), // تهيئة mutex
       });
     }
-  } catch {}
+  } catch (error) {
+    console.error('❌ خطأ في تحديث المستخدم المتصل:', error);
+    // إعادة المحاولة مرة واحدة
+    try {
+      if (typeof userOrId === 'object' && userOrId) {
+        const userObj = userOrId as any;
+        if (userObj.id) {
+          const now = new Date();
+          const existing = connectedUsers.get(userObj.id);
+          if (existing) {
+            existing.user = { ...existing.user, ...userObj };
+            existing.lastSeen = now;
+            connectedUsers.set(userObj.id, existing);
+          }
+        }
+      }
+    } catch (retryError) {
+      console.error('❌ فشل إعادة المحاولة في تحديث المستخدم المتصل:', retryError);
+    }
+  }
 }
 
 // بناء قائمة المتصلين بكفاءة اعتماداً على sockets المسجلة
@@ -238,7 +293,7 @@ export async function buildOnlineUsersForRoom(roomId: string) {
   }
   const { sanitizeUsersArray } = await import('./utils/data-sanitizer');
   const sanitized = sanitizeUsersArray(Array.from(userMap.values()));
-  const users = sanitized.map((u: any) => {
+  const users = await Promise.all(sanitized.map(async (u: any) => {
     try {
       const versionTag = (u as any).avatarHash || (u as any).avatarVersion;
       let next = u as any;
@@ -254,12 +309,36 @@ export async function buildOnlineUsersForRoom(roomId: string) {
       // تأكيد وجود حقول الحالة والزمن بشكل متناسق
       next.isOnline = true;
       next.lastSeen = (u as any).lastSeen || (u as any).createdAt || new Date();
-      // تضمين الغرفة الحالية لتمكين تحديث نافذة البروفايل فوراً
-      (next as any).currentRoom = roomId;
+      
+      // ✅ منطق ذكي للغرفة الحالية:
+      // - للبوتات: نحترم غرفتهم الحقيقية من قاعدة البيانات
+      // - للمستخدمين العاديين: نستخدم غرفتهم الحالية أو الغرفة المطلوبة
+      if (u.userType === 'bot') {
+        // البوتات: نحترم غرفتهم الحقيقية فقط
+        (next as any).currentRoom = u.currentRoom && u.currentRoom.trim() !== '' ? u.currentRoom : 'general';
+      } else {
+        // المستخدمون العاديون: يمكن تحديث غرفتهم
+        (next as any).currentRoom = u.currentRoom || roomId;
+      }
+      
+      // تحديث الغرفة الحالية في قاعدة البيانات إذا لزم الأمر (للمستخدمين العاديين فقط)
+      const entry = connectedUsers.get(u.id);
+      if (entry && entry.user.userType !== 'bot' && entry.user.currentRoom !== roomId) {
+        try {
+          await storage.updateUser(u.id, { currentRoom: roomId });
+          entry.user.currentRoom = roomId;
+          connectedUsers.set(u.id, entry);
+        } catch (updateError) {
+          console.error(`❌ فشل تحديث الغرفة الحالية للمستخدم ${u.id}:`, updateError);
+        }
+      }
+      
       return next;
-    } catch {}
+    } catch (error) {
+      console.error('❌ خطأ في بناء بيانات المستخدم:', error);
+    }
     return { ...u, isOnline: true, lastSeen: (u as any).lastSeen || (u as any).createdAt || new Date() };
-  });
+  }));
 
   return users;
 }
@@ -368,9 +447,9 @@ async function joinRoom(
   // Update connectedUsers room for this socket
   const entry = connectedUsers.get(userId);
   if (entry) {
-    entry.sockets.set(socket.id, { room: roomId, lastSeen: new Date() });
-    entry.lastSeen = new Date();
-    connectedUsers.set(userId, entry);
+    const now = new Date();
+    entry.sockets.set(socket.id, { room: roomId, lastSeen: now });
+    await updateUserLastSeen(userId, now);
   }
 
   // 🔥 استخدام النظام المحسّن لتحديث قائمة المستخدمين
@@ -1056,7 +1135,7 @@ export function setupRealtime(httpServer: HttpServer): IOServer<ClientToServerEv
             avatarVersion: avatarVersion || (user as any).avatarVersion,
           };
 
-          updateConnectedUserCache(updatedUser);
+          await updateConnectedUserCache(updatedUser);
 
           // بث التحديث لجميع الغرف التي ينتمي إليها المستخدم
           const entry = connectedUsers.get(socket.userId);
@@ -1091,41 +1170,63 @@ export function setupRealtime(httpServer: HttpServer): IOServer<ClientToServerEv
       }
     });
 
-    socket.on('disconnect', async () => {
+    socket.on('disconnect', async (reason) => {
       try {
         const userId = socket.userId;
         if (!userId) return;
+        
+        console.log(`🔌 المستخدم ${userId} قطع الاتصال - السبب: ${reason}`);
+        
         const entry = connectedUsers.get(userId);
         if (entry) {
+          // إزالة socket من قائمة sockets
           entry.sockets.delete(socket.id);
-          entry.lastSeen = new Date();
+          
+          // إذا لم يعد هناك sockets، قم بتحديث حالة الاتصال في قاعدة البيانات
           if (entry.sockets.size === 0) {
-            connectedUsers.delete(userId);
             try {
+              // تحديث آخر تواجد في قاعدة البيانات قبل إزالة المستخدم
               await storage.setUserOnlineStatus(userId, false);
-            } catch {}
-            // Update any room the user was in last (best effort)
+              console.log(`📝 تم تحديث آخر تواجد للمستخدم ${userId} في قاعدة البيانات`);
+            } catch (dbError) {
+              console.error(`❌ فشل تحديث آخر تواجد للمستخدم ${userId}:`, dbError);
+            }
+            
+            // إزالة المستخدم من الذاكرة المحلية
+            connectedUsers.delete(userId);
+            console.log(`🗑️ تم إزالة المستخدم ${userId} من الذاكرة المحلية`);
+            
+            // إشعار جميع الغرف بأن المستخدم انقطع
             const lastRoom = socket.currentRoom;
             if (lastRoom) {
-              const users = await buildOnlineUsersForRoom(lastRoom);
-              io.to(`room_${lastRoom}`).emit('message', {
-                type: 'onlineUsers',
-                users,
-                roomId: lastRoom,
-                source: 'disconnect',
-              });
-              // بث تحديث آخر تواجد للمستخدم المنفصل للواجهة فوراً
               try {
+                const users = await buildOnlineUsersForRoom(lastRoom);
+                io.to(`room_${lastRoom}`).emit('message', {
+                  type: 'onlineUsers',
+                  users,
+                  roomId: lastRoom,
+                  source: 'disconnect',
+                });
+                
+                // بث تحديث آخر تواجد للمستخدم المنفصل للواجهة فوراً
                 const updatedUser = { ...(entry.user || {}), lastSeen: new Date(), currentRoom: null } as any;
                 io.to(`room_${lastRoom}`).emit('message', { type: 'userUpdated', user: updatedUser });
                 io.to(userId.toString()).emit('message', { type: 'userUpdated', user: updatedUser });
-              } catch {}
+                
+                console.log(`📡 تم إشعار الغرفة ${lastRoom} بانقطاع المستخدم ${userId}`);
+              } catch (emitError) {
+                console.error(`❌ فشل إشعار الغرفة ${lastRoom}:`, emitError);
+              }
             }
           } else {
+            // المستخدم لا يزال متصلاً عبر sockets أخرى
+            console.log(`👤 المستخدم ${userId} لا يزال متصلاً عبر ${entry.sockets.size} socket(s)`);
             connectedUsers.set(userId, entry);
           }
         }
-      } catch {}
+      } catch (error) {
+        console.error('❌ خطأ في معالجة انقطاع الاتصال:', error);
+      }
     });
   });
 
@@ -1174,13 +1275,13 @@ async function loadActiveBots() {
         totalPoints: bot.totalPoints,
         levelProgress: bot.levelProgress,
         isOnline: true,
-        currentRoom: bot.currentRoom || GENERAL_ROOM,
+        currentRoom: (bot.currentRoom && bot.currentRoom.trim() !== '') ? bot.currentRoom : GENERAL_ROOM,
         joinDate: bot.createdAt,
         lastSeen: bot.lastActivity,
       };
       
       // إضافة البوت لقائمة المستخدمين المتصلين
-      updateConnectedUserCache(bot.id, botUser);
+      await updateConnectedUserCache(bot.id, botUser);
       
       }
     

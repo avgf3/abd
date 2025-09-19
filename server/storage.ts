@@ -546,7 +546,7 @@ export const storage: LegacyStorage = {
         bio: bot.bio,
         isOnline: !!bot.isOnline,
         isHidden: false,
-        lastSeen: bot.lastActivity,
+        lastSeen: bot.lastActivity || new Date(), // استخدام lastActivity أو التاريخ الحالي
         joinDate: bot.createdAt,
         createdAt: bot.createdAt,
         isMuted: false,
@@ -560,7 +560,7 @@ export const storage: LegacyStorage = {
         level: bot.level,
         totalPoints: bot.totalPoints,
         levelProgress: bot.levelProgress,
-        currentRoom: bot.currentRoom,
+        currentRoom: bot.currentRoom && bot.currentRoom.trim() !== '' ? bot.currentRoom : 'general',
         // خصائص خاصة بالبوت
         isActive: bot.isActive,
         botType: bot.botType,
@@ -635,7 +635,7 @@ export const storage: LegacyStorage = {
         bio: bot.bio,
         isOnline: !!bot.isOnline,
         isHidden: false,
-        lastSeen: bot.lastActivity,
+        lastSeen: bot.lastActivity || new Date(), // استخدام lastActivity أو التاريخ الحالي
         joinDate: bot.createdAt,
         createdAt: bot.createdAt,
         isMuted: false,
@@ -649,7 +649,7 @@ export const storage: LegacyStorage = {
         level: bot.level,
         totalPoints: bot.totalPoints,
         levelProgress: bot.levelProgress,
-        currentRoom: bot.currentRoom,
+        currentRoom: bot.currentRoom && bot.currentRoom.trim() !== '' ? bot.currentRoom : 'general',
       }));
     } catch (e) {
       console.error('Error fetching bots by IDs:', e);
@@ -677,7 +677,15 @@ export const storage: LegacyStorage = {
   },
 
   async setUserOnlineStatus(id: number, isOnline: boolean) {
-    await databaseService.updateUser(id, { isOnline, lastSeen: new Date() });
+    const now = new Date();
+    await databaseService.updateUser(id, { isOnline, lastSeen: now });
+    
+    // تحديث الذاكرة المحلية
+    const entry = connectedUsers.get(id);
+    if (entry) {
+      entry.lastSeen = now;
+      connectedUsers.set(id, entry);
+    }
   },
 
   async createMessage(message: any) {

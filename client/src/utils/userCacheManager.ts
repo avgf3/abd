@@ -326,6 +326,10 @@ class UserCacheManager {
       const shouldBeOnline = onlineSet.has(id);
       if (user.isOnline !== shouldBeOnline) {
         user.isOnline = shouldBeOnline;
+        // تحديث lastSeen عند تغيير حالة الاتصال
+        if (!shouldBeOnline) {
+          user.lastSeen = new Date();
+        }
         user.lastUpdated = Date.now();
         changed = true;
       }

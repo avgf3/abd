@@ -80,15 +80,36 @@ export class UserService {
   // تعيين حالة الاتصال
   async setUserOnlineStatus(id: number, isOnline: boolean): Promise<void> {
     try {
+      const now = new Date();
       await db
         .update(users)
         .set({
           isOnline,
-          lastSeen: new Date(), // تحديث lastSeen دائماً سواء كان متصل أو غير متصل
+          lastSeen: now, // تحديث lastSeen دائماً سواء كان متصل أو غير متصل
         } as any)
         .where(eq(users.id, id));
+      
+      // تحديث الذاكرة المحلية أيضاً
+      const entry = connectedUsers.get(id);
+      if (entry) {
+        entry.lastSeen = now;
+        connectedUsers.set(id, entry);
+      }
     } catch (error) {
       console.error('خطأ في تعيين حالة الاتصال:', error);
+      // إعادة المحاولة مرة واحدة
+      try {
+        const now = new Date();
+        await db
+          .update(users)
+          .set({
+            isOnline,
+            lastSeen: now,
+          } as any)
+          .where(eq(users.id, id));
+      } catch (retryError) {
+        console.error('فشل إعادة المحاولة في تعيين حالة الاتصال:', retryError);
+      }
     }
   }
 
