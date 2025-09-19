@@ -54,6 +54,8 @@ export const users = pgTable('users', {
   profileMusicTitle: text('profile_music_title'),
   profileMusicEnabled: boolean('profile_music_enabled').default(true),
   profileMusicVolume: integer('profile_music_volume').default(70),
+  // الغرفة الحالية
+  currentRoom: text('current_room').default('general'),
   // إعداد خصوصية الرسائل الخاصة: all | friends | none
   dmPrivacy: text('dm_privacy').notNull().default('all'),
   // تفضيلات عامة
