@@ -147,22 +147,40 @@ class UserCacheManager {
   }
 
   /**
-   * الحصول على اسم المستخدم مع fallback ذكي
+   * الحصول على اسم المستخدم مع إعادة المحاولة
    */
-  getUsername(userId: number, fallback?: string): string {
-    const cached = this.getUser(userId);
-    if (cached?.username) {
-      return cached.username;
+  async getUsernameWithRetry(userId: number, maxRetries = 3): Promise<string | null> {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        const cached = this.getUser(userId);
+        if (cached?.username) {
+          return cached.username;
+        }
+        
+        // محاولة جلب البيانات من الخادم
+        const response = await fetch(`/api/users/${userId}`);
+        if (response.ok) {
+          const userData = await response.json();
+          if (userData?.username) {
+            this.setUser(userData);
+            return userData.username;
+          }
+        }
+        
+        // انتظار قصير قبل المحاولة التالية
+        if (attempt < maxRetries) {
+          await new Promise(resolve => setTimeout(resolve, 200 * attempt));
+        }
+      } catch (error) {
+        console.error(`محاولة ${attempt} فشلت لجلب المستخدم ${userId}:`, error);
+        if (attempt < maxRetries) {
+          await new Promise(resolve => setTimeout(resolve, 200 * attempt));
+        }
+      }
     }
     
-    // إذا تم توفير اسم احتياطي معقول، نستخدمه ونحفظه
-    if (fallback && !fallback.includes('#')) {
-      this.setUser({ id: userId, username: fallback });
-      return fallback;
-    }
-    
-    // آخر خيار: نعيد الاسم الافتراضي
-    return `مستخدم #${userId}`;
+    console.error(`فشل في جلب اسم المستخدم ${userId} بعد ${maxRetries} محاولات`);
+    return null;
   }
 
   /**
@@ -170,12 +188,12 @@ class UserCacheManager {
    */
   getUserWithMerge(userId: number, partialData?: Partial<ChatUser>): ChatUser {
     const cached = this.getUser(userId);
-    const base: Partial<CachedUser> = cached || { id: userId, username: `مستخدم #${userId}` };
+    const base: Partial<CachedUser> = cached || { id: userId, username: null };
     
     // دمج البيانات مع إعطاء الأولوية للبيانات الجديدة
     const merged: ChatUser = {
       id: userId,
-      username: partialData?.username || base.username || `مستخدم #${userId}`,
+      username: partialData?.username || base.username || null,
       userType: partialData?.userType || base.userType || 'member',
       role: partialData?.role || base.role || 'member',
       profileImage: partialData?.profileImage || base.profileImage,

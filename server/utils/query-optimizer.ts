@@ -1,6 +1,33 @@
 import { db } from '../database-adapter';
 import { messages, users } from '../../shared/schema';
 import { desc, eq, and, gte, lte, sql as drizzleSql } from 'drizzle-orm';
+import { storage } from '../storage';
+
+// دالة إعادة المحاولة لجلب بيانات المستخدم
+async function getUserWithRetry(userId: number, maxRetries = 3): Promise<any> {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const user = await storage.getUser(userId);
+      if (user && user.username) {
+        return user;
+      }
+      
+      // إذا لم نجد المستخدم، نحاول مرة أخرى بعد انتظار قصير
+      if (attempt < maxRetries) {
+        await new Promise(resolve => setTimeout(resolve, 100 * attempt));
+      }
+    } catch (error) {
+      console.error(`محاولة ${attempt} فشلت لجلب المستخدم ${userId}:`, error);
+      if (attempt < maxRetries) {
+        await new Promise(resolve => setTimeout(resolve, 100 * attempt));
+      }
+    }
+  }
+  
+  // إذا فشلت جميع المحاولات، نعيد null بدلاً من fallback مزعج
+  console.error(`فشل في جلب بيانات المستخدم ${userId} بعد ${maxRetries} محاولات`);
+  return null;
+}
 
 /**
  * استعلام محسّن لجلب الرسائل مع معلومات المرسل
@@ -48,10 +75,10 @@ export async function getOptimizedRoomMessages(
     const total = totalResult[0]?.count || 0;
 
     return {
-      messages: messagesWithSenders.map(({ message, sender }) => ({
+      messages: await Promise.all(messagesWithSenders.map(async ({ message, sender }) => ({
         ...message,
-        sender: sender || { id: message.senderId, username: `مستخدم #${message.senderId}`, userType: 'user' },
-      })),
+        sender: sender || await getUserWithRetry(message.senderId),
+      }))),
       total,
       hasMore: offset + limit < total,
     };
@@ -186,10 +213,10 @@ export async function searchMessages(
       .orderBy(desc(messages.timestamp))
       .limit(limit);
 
-    return results.map(({ message, sender }) => ({
+    return await Promise.all(results.map(async ({ message, sender }) => ({
       ...message,
-      sender: sender || { id: message.senderId, username: `مستخدم #${message.senderId}`, userType: 'user' },
-    }));
+      sender: sender || await getUserWithRetry(message.senderId),
+    })));
   } catch (error) {
     console.error('خطأ في البحث:', error);
     return [];

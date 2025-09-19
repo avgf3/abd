@@ -574,7 +574,7 @@ export default function MessageArea({
                         className="font-semibold hover:underline transition-colors duration-200 truncate"
                         style={{ color: getFinalUsernameColor(message.sender) }}
                       >
-                        {message.sender?.username}
+                        {message.sender?.username || 'جاري التحميل...'}
                       </button>
                       <div className={`text-red-600 break-words flex-1 min-w-0 message-content-fix ${isMobile && !isMessageExpanded(message.id) ? 'line-clamp-2' : !isMobile ? 'truncate' : ''}`}>
                         <span dir="auto" className={`${isMobile && !isMessageExpanded(message.id) ? 'line-clamp-2' : !isMobile ? 'truncate' : ''}`}>
@@ -610,7 +610,7 @@ export default function MessageArea({
                         className="font-semibold hover:underline transition-colors duration-200 truncate"
                         style={{ color: getFinalUsernameColor(message.sender) }}
                       >
-                        {message.sender?.username}
+                        {message.sender?.username || 'جاري التحميل...'}
                       </button>
 
                       <div className={`text-gray-800 break-words flex-1 min-w-0 message-content-fix ${isMobile && !isMessageExpanded(message.id) ? 'line-clamp-2' : !isMobile ? 'truncate' : ''}`}>
