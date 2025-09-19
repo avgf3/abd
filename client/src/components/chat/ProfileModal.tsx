@@ -905,6 +905,31 @@ export default function ProfileModal({
       preview: 'linear-gradient(135deg, #228B22, #32CD32, #90EE90, #98FB98)',
       emoji: '🌲',
     },
+    // الألوان الجديدة المطابقة للصور
+    {
+      value: 'theme-purple-majesty',
+      name: 'العظمة البنفسجية',
+      preview: 'linear-gradient(to bottom, #4A148C 0%, #E91E63 50%, #6A1B9A 100%)',
+      emoji: '👑',
+    },
+    {
+      value: 'theme-warm-earth',
+      name: 'الأرض الدافئة',
+      preview: 'linear-gradient(to bottom, #8B4513 0%, #2C2018 100%)',
+      emoji: '🌰',
+    },
+    {
+      value: 'theme-soft-blush',
+      name: 'الوردي الناعم',
+      preview: 'linear-gradient(to right, #F8DCDC 0%, #E0A0A0 100%)',
+      emoji: '🌸',
+    },
+    {
+      value: 'theme-horizontal-earth',
+      name: 'الأرض الأفقية',
+      preview: 'linear-gradient(to right, #B08C6C 0%, #20150F 100%)',
+      emoji: '🏔️',
+    },
   ];
 
   // Complete effects collection from original code
