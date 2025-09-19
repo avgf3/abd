@@ -31,22 +31,52 @@ import type {
 } from '@/types/chat';
 import { normalizeBroadcastInfo } from '@/utils/roomUtils';
 
-// ICE servers helper with optional TURN support via env
+// ICE servers helper with enhanced TURN support and fallbacks
 const getIceServers = (): RTCIceServer[] => {
   const servers: RTCIceServer[] = [
+    // STUN servers - للاكتشاف الأساسي
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' },
+    { urls: 'stun:stun2.l.google.com:19302' },
     { urls: 'stun:global.stun.twilio.com:3478?transport=udp' },
+    { urls: 'stun:stun.cloudflare.com:3478' },
   ];
+  
   try {
     const env = (import.meta as any)?.env || {};
+    
+    // TURN servers من متغيرات البيئة
     const turnUrl = env?.VITE_TURN_URL || (window as any)?.__TURN_URL__;
     const turnUsername = env?.VITE_TURN_USERNAME || (window as any)?.__TURN_USERNAME__;
     const turnCredential = env?.VITE_TURN_CREDENTIAL || (window as any)?.__TURN_CREDENTIAL__;
+    
     if (turnUrl && turnUsername && turnCredential) {
-      servers.push({ urls: turnUrl, username: turnUsername, credential: turnCredential });
+      servers.push({ 
+        urls: turnUrl, 
+        username: turnUsername, 
+        credential: turnCredential 
+      });
     }
-  } catch {}
+    
+    // TURN servers مجانية كـ fallback
+    const freeTurnServers = [
+      'turn:openrelay.metered.ca:80',
+      'turn:openrelay.metered.ca:443',
+      'turn:openrelay.metered.ca:443?transport=tcp'
+    ];
+    
+    freeTurnServers.forEach(url => {
+      servers.push({ 
+        urls: url,
+        username: 'openrelayproject',
+        credential: 'openrelayproject'
+      });
+    });
+    
+  } catch (error) {
+    console.warn('خطأ في إعداد ICE servers:', error);
+  }
+  
   return servers;
 };
 
@@ -258,10 +288,47 @@ export default function BroadcastRoomInterface({
   // Environment and permission helpers for microphone
   const isSecureContext = () => {
     try {
-      if (window.isSecureContext) return true;
+      // التحقق من السياق الآمن
+      if (window.isSecureContext) {
+        console.log('✅ السياق آمن (HTTPS أو localhost)');
+        return true;
+      }
+      
       const host = window.location.hostname;
-      return host === 'localhost' || host === '127.0.0.1';
-    } catch {
+      const isLocalhost = host === 'localhost' || host === '127.0.0.1' || host === '0.0.0.0';
+      
+      if (isLocalhost) {
+        console.log('✅ السياق آمن (localhost)');
+        return true;
+      }
+      
+      console.warn('⚠️ السياق غير آمن - قد لا يعمل WebRTC');
+      return false;
+    } catch (error) {
+      console.error('خطأ في التحقق من السياق الآمن:', error);
+      return false;
+    }
+  };
+
+  const checkWebRTCSupport = () => {
+    try {
+      // التحقق من دعم WebRTC
+      if (!window.RTCPeerConnection) {
+        throw new Error('المتصفح لا يدعم RTCPeerConnection');
+      }
+      
+      if (!navigator.mediaDevices) {
+        throw new Error('المتصفح لا يدعم mediaDevices');
+      }
+      
+      if (!navigator.mediaDevices.getUserMedia) {
+        throw new Error('المتصفح لا يدعم getUserMedia');
+      }
+      
+      console.log('✅ المتصفح يدعم WebRTC');
+      return true;
+    } catch (error) {
+      console.error('❌ المتصفح لا يدعم WebRTC:', error);
       return false;
     }
   };
@@ -295,60 +362,122 @@ export default function BroadcastRoomInterface({
       throw new Error('المتصفح لا يدعم الوصول للميكروفون (getUserMedia غير متوفر)');
     }
 
+    // قائمة constraints متدرجة من الأفضل للأبسط
     const constraintsList: MediaStreamConstraints[] = [
+      // جودة عالية مع معالجة متقدمة
+      {
+        audio: {
+          deviceId: undefined, // استخدام الجهاز الافتراضي
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+          sampleRate: 48000,
+          channelCount: 1,
+          latency: 0.01,
+        } as MediaTrackConstraints,
+        video: false,
+      },
+      // جودة متوسطة
       {
         audio: {
           echoCancellation: true,
           noiseSuppression: true,
           autoGainControl: true,
+          channelCount: 1,
+          sampleRate: 44100,
         } as MediaTrackConstraints,
         video: false,
       },
-      { audio: { channelCount: 1, sampleRate: 44100 } as MediaTrackConstraints, video: false },
+      // جودة منخفضة
+      {
+        audio: {
+          channelCount: 1,
+          sampleRate: 16000,
+        } as MediaTrackConstraints,
+        video: false,
+      },
+      // أبسط constraint ممكن
       { audio: true, video: false },
     ];
 
     let lastError: any = null;
-    for (const constraints of constraintsList) {
+    
+    for (let i = 0; i < constraintsList.length; i++) {
+      const constraints = constraintsList[i];
       try {
+        console.log(`محاولة الحصول على الميكروفون بمستوى ${i + 1}:`, constraints);
+        
         const stream = await navigator.mediaDevices.getUserMedia(constraints);
-        // Ensure all audio tracks are enabled
-        stream.getAudioTracks().forEach((t) => (t.enabled = true));
+        
+        // التحقق من صحة الـ stream
+        if (!stream || stream.getAudioTracks().length === 0) {
+          throw new Error('لم يتم الحصول على مسارات صوتية صحيحة');
+        }
+        
+        // تأكد من تفعيل جميع المسارات الصوتية
+        stream.getAudioTracks().forEach((track) => {
+          track.enabled = true;
+          console.log(`تم تفعيل المسار الصوتي:`, {
+            id: track.id,
+            label: track.label,
+            enabled: track.enabled,
+            muted: track.muted,
+            readyState: track.readyState
+          });
+        });
+        
+        console.log('✅ تم الحصول على الميكروفون بنجاح');
         return stream;
+        
       } catch (err: any) {
         lastError = err;
-        // Overconstrained → try next; Permission denied/NotAllowed may be final
-        const name = err?.name || '';
-        if (name === 'NotAllowedError' || name === 'SecurityError') break;
-        // If device busy or not found, try next fallback too
+        console.warn(`فشل في المستوى ${i + 1}:`, err.name, err.message);
+        
+        // إذا كان الخطأ نهائي (مثل NotAllowedError)، توقف عن المحاولة
+        const errorName = err?.name || '';
+        if (errorName === 'NotAllowedError' || errorName === 'SecurityError') {
+          break;
+        }
+        
+        // إذا كان الخطأ بسبب عدم وجود جهاز، توقف
+        if (errorName === 'NotFoundError' || errorName === 'DevicesNotFoundError') {
+          break;
+        }
+        
+        // استمر في المحاولة مع constraint أبسط
       }
     }
 
-    // Rethrow the last error with a friendlier message
-    const name = lastError?.name || 'Error';
-    const message = lastError?.message || '';
-    if (name === 'NotAllowedError') {
-      throw new Error('تم رفض إذن الميكروفون. افتح إعدادات الموقع ومنح الإذن ثم أعد تحميل الصفحة.');
+    // معالجة الأخطاء مع رسائل واضحة
+    const errorName = lastError?.name || 'Error';
+    const errorMessage = lastError?.message || '';
+    
+    switch (errorName) {
+      case 'NotAllowedError':
+        throw new Error('تم رفض إذن الميكروفون. يرجى السماح بالوصول للميكروفون في إعدادات المتصفح ثم إعادة تحميل الصفحة.');
+      
+      case 'NotFoundError':
+      case 'DevicesNotFoundError':
+        throw new Error('لم يتم العثور على جهاز ميكروفون متاح. تأكد من توصيل الميكروفون أو اختيار الجهاز الصحيح في إعدادات المتصفح.');
+      
+      case 'NotReadableError':
+        throw new Error('يتعذر الوصول إلى الميكروفون (قد يكون مشغولاً بتطبيق آخر). أغلق التطبيقات الأخرى التي تستخدم الميكروفون وحاول مجدداً.');
+      
+      case 'OverconstrainedError':
+        throw new Error('إعدادات الميكروفون غير مدعومة على هذا الجهاز. سيتم استخدام إعدادات أبسط.');
+      
+      case 'SecurityError':
+        throw new Error('لا يمكن الوصول إلى الميكروفون بسبب إعدادات الأمان. تأكد من استخدام اتصال آمن (HTTPS) أو localhost.');
+      
+      case 'AbortError':
+        throw new Error('تم إلغاء طلب الميكروفون. حاول مرة أخرى.');
+      
+      case 'TypeError':
+        throw new Error('خطأ في نوع البيانات. تأكد من أن المتصفح يدعم WebRTC.');
+      
+      default:
+        throw new Error(`تعذر الحصول على صوت من الميكروفون: ${errorMessage || errorName}`);
     }
-    if (name === 'NotFoundError' || name === 'DevicesNotFoundError') {
-      throw new Error(
-        'لم يتم العثور على جهاز ميكروفون متاح. تأكد من توصيل الميكروفون أو اختيار الجهاز الصحيح.'
-      );
-    }
-    if (name === 'NotReadableError') {
-      throw new Error(
-        'يتعذر الوصول إلى الميكروفون (قد يكون مشغولاً بتطبيق آخر). أغلق التطبيقات الأخرى وحاول مجدداً.'
-      );
-    }
-    if (name === 'OverconstrainedError') {
-      throw new Error('إعدادات الميكروفون غير مدعومة على هذا الجهاز. حاول مرة أخرى.');
-    }
-    if (name === 'SecurityError') {
-      throw new Error(
-        'لا يمكن الوصول إلى الميكروفون بسبب إعدادات الأمان. تأكد من استخدام اتصال آمن (HTTPS).'
-      );
-    }
-    throw new Error(message || 'تعذر الحصول على صوت من الميكروفون.');
   };
 
   const explainStartBroadcastError = (error: unknown) => {
@@ -363,73 +492,107 @@ export default function BroadcastRoomInterface({
 
   const startBroadcast = useCallback(async () => {
     if (!currentUser || !room.id) return;
+    
     try {
+      console.log('🚀 بدء عملية البث الصوتي...');
+      
+      // 1. فحص السياق الآمن
       if (!isSecureContext()) {
-        throw new Error(
-          'يتطلب الميكروفون اتصالاً آمناً. افتح الموقع عبر HTTPS (أو محلياً على localhost).'
-        );
+        throw new Error('يتطلب الميكروفون اتصالاً آمناً. افتح الموقع عبر HTTPS (أو محلياً على localhost).');
       }
-
+      
+      // 2. فحص دعم WebRTC
+      if (!checkWebRTCSupport()) {
+        throw new Error('المتصفح لا يدعم WebRTC. يرجى استخدام متصفح حديث.');
+      }
+      
+      // 3. فحص أذونات الميكروفون
       const perm = await queryMicrophonePermission();
       if (perm === 'denied') {
-        throw new Error(
-          'تم رفض إذن الميكروفون. افتح إعدادات الموقع ومنح الإذن ثم أعد تحميل الصفحة.'
-        );
+        throw new Error('تم رفض إذن الميكروفون. افتح إعدادات الموقع ومنح الإذن ثم أعد تحميل الصفحة.');
       }
-
+      
+      // 4. فحص وجود جهاز ميكروفون
       const hasInput = await hasAudioInputDevice();
       if (!hasInput) {
         throw new Error('لا يوجد جهاز ميكروفون متاح على هذا الجهاز.');
       }
-
+      
+      console.log('✅ جميع الفحوصات نجحت، بدء الحصول على الميكروفون...');
+      
+      // 5. الحصول على الميكروفون
       const stream = await getUserMediaWithFallbacks();
       setLocalStream(stream);
       setIsBroadcasting(true);
-
-      // Create peer connections per listener (lazy: on offer request)
-      // Actively send offers to currently online listeners (non-speakers)
+      
+      console.log('✅ تم الحصول على الميكروفون، بدء إنشاء الاتصالات...');
+      
+      // 6. إنشاء اتصالات مع المستمعين
       const listeners = onlineUsers.filter(
         (u) => u.id !== currentUser.id && !speakers.includes(u.id) && u.id !== broadcastInfo?.hostId
       );
+      
+      console.log(`📡 إنشاء اتصالات مع ${listeners.length} مستمع...`);
+      
       for (const listener of listeners) {
-        const pc = new RTCPeerConnection({ iceServers: getIceServers() });
-
-        // Add connection state monitoring
-        pc.onconnectionstatechange = () => {
-          if (pc.connectionState === 'failed') {
-            toast({
-              title: 'مشكلة في الاتصال',
-              description: `فشل الاتصال مع ${listener.username}`,
-              variant: 'destructive',
-            });
-          }
-        };
-
-        pc.oniceconnectionstatechange = () => {};
-
-        stream.getTracks().forEach((track) => {
-          pc.addTrack(track, stream);
-        });
-
-        pc.onicecandidate = (event) => {
-          if (event.candidate) {
-            chat.sendWebRTCIceCandidate?.(listener.id, room.id, event.candidate);
-          }
-        };
-
-        peersRef.current.set(listener.id, pc);
-
-        const offer = await pc.createOffer({ offerToReceiveAudio: false });
-        await pc.setLocalDescription(offer);
-        chat.sendWebRTCOffer?.(listener.id, room.id, offer);
+        try {
+          const pc = new RTCPeerConnection({ iceServers: getIceServers() });
+          
+          // إضافة مراقبة حالة الاتصال
+          pc.onconnectionstatechange = () => {
+            console.log(`🔗 حالة الاتصال مع ${listener.username}:`, pc.connectionState);
+            if (pc.connectionState === 'failed') {
+              toast({
+                title: 'مشكلة في الاتصال',
+                description: `فشل الاتصال مع ${listener.username}`,
+                variant: 'destructive',
+              });
+            } else if (pc.connectionState === 'connected') {
+              console.log(`✅ تم الاتصال بنجاح مع ${listener.username}`);
+            }
+          };
+          
+          pc.oniceconnectionstatechange = () => {
+            console.log(`🧊 حالة ICE مع ${listener.username}:`, pc.iceConnectionState);
+          };
+          
+          // إضافة مسارات الصوت
+          stream.getTracks().forEach((track) => {
+            pc.addTrack(track, stream);
+            console.log(`➕ تم إضافة مسار صوتي للاتصال مع ${listener.username}:`, track.id);
+          });
+          
+          // إرسال ICE candidates
+          pc.onicecandidate = (event) => {
+            if (event.candidate) {
+              console.log(`🧊 إرسال ICE candidate إلى ${listener.username}`);
+              chat.sendWebRTCIceCandidate?.(listener.id, room.id, event.candidate);
+            }
+          };
+          
+          peersRef.current.set(listener.id, pc);
+          
+          // إنشاء وإرسال العرض
+          const offer = await pc.createOffer({ offerToReceiveAudio: false });
+          await pc.setLocalDescription(offer);
+          
+          console.log(`📤 إرسال عرض WebRTC إلى ${listener.username}`);
+          chat.sendWebRTCOffer?.(listener.id, room.id, offer);
+          
+        } catch (error) {
+          console.error(`❌ خطأ في إنشاء اتصال مع ${listener.username}:`, error);
+        }
       }
-
+      
       toast({
         title: 'بدأ البث الصوتي',
-        description: 'تم بدء البث الصوتي بنجاح',
+        description: `تم بدء البث الصوتي بنجاح لـ ${listeners.length} مستمع`,
       });
+      
+      console.log('🎉 تم بدء البث الصوتي بنجاح!');
+      
     } catch (err) {
-      console.error('❌ startBroadcast error:', err);
+      console.error('❌ خطأ في بدء البث:', err);
       explainStartBroadcastError(err);
     }
   }, [currentUser, room.id, onlineUsers, speakers, broadcastInfo?.hostId, chat, toast]);
@@ -485,28 +648,76 @@ export default function BroadcastRoomInterface({
           pc.oniceconnectionstatechange = () => {};
 
           pc.ontrack = (event) => {
-            // Play the first audio track
+            console.log('🎵 استقبال مسار صوتي جديد:', event);
+            
+            // التحقق من وجود العنصر الصوتي
             if (!audioRef.current) {
-              console.warn('⚠️ Audio element not ready');
+              console.warn('⚠️ العنصر الصوتي غير جاهز');
               return;
             }
+            
             const [remoteStream] = event.streams;
+            if (!remoteStream) {
+              console.warn('⚠️ لم يتم استقبال stream صحيح');
+              return;
+            }
+            
+            // التحقق من وجود مسارات صوتية
+            const audioTracks = remoteStream.getAudioTracks();
+            if (audioTracks.length === 0) {
+              console.warn('⚠️ لا توجد مسارات صوتية في الـ stream');
+              return;
+            }
+            
+            console.log('🎵 تم استقبال مسارات صوتية:', audioTracks.map(track => ({
+              id: track.id,
+              label: track.label,
+              enabled: track.enabled,
+              muted: track.muted,
+              readyState: track.readyState
+            })));
+            
+            // تعيين الـ stream للعنصر الصوتي
             audioRef.current.srcObject = remoteStream;
-            audioRef.current.muted = isMuted;
-            audioRef.current
-              .play()
-              .then(() => {
-                setPlaybackBlocked(false);
-              })
-              .catch((err) => {
-                console.error('❌ Audio playback blocked:', err);
-                setPlaybackBlocked(true);
-                toast({
-                  title: 'تشغيل الصوت محظور',
-                  description: 'اضغط على زر "تشغيل الصوت" للسماح بالتشغيل',
-                  variant: 'default',
+            
+            // تأكد من عدم كتم الصوت افتراضياً
+            audioRef.current.muted = false;
+            audioRef.current.volume = 1.0;
+            
+            // محاولة تشغيل الصوت مع معالجة الأخطاء
+            const playPromise = audioRef.current.play();
+            
+            if (playPromise !== undefined) {
+              playPromise
+                .then(() => {
+                  console.log('✅ تم تشغيل الصوت بنجاح');
+                  setPlaybackBlocked(false);
+                  
+                  // إضافة مستمع لتغييرات حالة التشغيل
+                  audioRef.current?.addEventListener('canplay', () => {
+                    console.log('🎵 الصوت جاهز للتشغيل');
+                  });
+                  
+                  audioRef.current?.addEventListener('playing', () => {
+                    console.log('🎵 الصوت يعمل الآن');
+                  });
+                  
+                  audioRef.current?.addEventListener('error', (e) => {
+                    console.error('❌ خطأ في تشغيل الصوت:', e);
+                  });
+                })
+                .catch((err) => {
+                  console.error('❌ فشل في تشغيل الصوت:', err);
+                  setPlaybackBlocked(true);
+                  
+                  // عرض رسالة للمستخدم
+                  toast({
+                    title: 'تشغيل الصوت محظور',
+                    description: 'اضغط على زر "تشغيل الصوت" للسماح بالتشغيل',
+                    variant: 'default',
+                  });
                 });
-              });
+            }
           };
           pc.onicecandidate = (event) => {
             if (event.candidate) {
@@ -955,6 +1166,13 @@ export default function BroadcastRoomInterface({
               autoPlay
               controlsList="nodownload noplaybackrate"
               className="w-0 h-0 opacity-0 pointer-events-none"
+              onLoadedMetadata={() => console.log('🎵 تم تحميل بيانات الصوت')}
+              onCanPlay={() => console.log('🎵 الصوت جاهز للتشغيل')}
+              onPlay={() => console.log('🎵 بدء تشغيل الصوت')}
+              onPause={() => console.log('🎵 توقف تشغيل الصوت')}
+              onError={(e) => console.error('❌ خطأ في العنصر الصوتي:', e)}
+              onVolumeChange={() => console.log('🔊 تغيير مستوى الصوت:', audioRef.current?.volume)}
+              onMuteChange={() => console.log('🔇 تغيير حالة الكتم:', audioRef.current?.muted)}
             />
           </div>
         </div>
