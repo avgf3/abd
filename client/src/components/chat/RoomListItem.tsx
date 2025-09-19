@@ -96,28 +96,6 @@ export default function RoomListItem({
               {room.userCount || 0} متصل
             </span>
             
-            {/* زر الصوت */}
-            {onVoiceJoin && onVoiceLeave && (
-              <Button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (isVoiceConnected && currentVoiceRoom === room.id) {
-                    onVoiceLeave();
-                  } else {
-                    onVoiceJoin(room.id);
-                  }
-                }}
-                variant={isVoiceConnected && currentVoiceRoom === room.id ? "default" : "ghost"}
-                size="sm"
-                className="h-6 w-6 p-0"
-              >
-                {isVoiceConnected && currentVoiceRoom === room.id ? (
-                  <PhoneOff className="w-3 h-3" />
-                ) : (
-                  <Phone className="w-3 h-3" />
-                )}
-              </Button>
-            )}
             
             {(canModerate || canDelete) && (
               <div className="relative" ref={menuRef}>
