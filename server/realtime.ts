@@ -341,6 +341,13 @@ async function joinRoom(
     entry.sockets.set(socket.id, { room: roomId, lastSeen: new Date() });
     entry.lastSeen = new Date();
     connectedUsers.set(userId, entry);
+    
+    // تحديث الغرفة في قاعدة البيانات أيضاً
+    try {
+      await storage.updateUser(userId, { currentRoom: roomId });
+    } catch (error) {
+      console.error('خطأ في تحديث الغرفة في قاعدة البيانات:', error);
+    }
   }
 
   // 🔥 استخدام النظام المحسّن لتحديث قائمة المستخدمين
@@ -797,19 +804,32 @@ export function setupRealtime(httpServer: HttpServer): IOServer<ClientToServerEv
             await storage.setUserOnlineStatus(user.id, true);
           } catch {}
 
-          // Track connection - لا نضع المستخدم في أي غرفة تلقائياً
+          // Track connection - إضافة المستخدم إلى قائمة المتصلين الفعليين
           const existing = connectedUsers.get(user.id);
           if (!existing) {
             connectedUsers.set(user.id, {
               user,
-              sockets: new Map([[socket.id, { room: null, lastSeen: new Date() }]]),
+              sockets: new Map([[socket.id, { room: 'general', lastSeen: new Date() }]]),
               lastSeen: new Date(),
             });
           } else {
             existing.user = user;
-            existing.sockets.set(socket.id, { room: null, lastSeen: new Date() });
+            existing.sockets.set(socket.id, { room: 'general', lastSeen: new Date() });
             existing.lastSeen = new Date();
             connectedUsers.set(user.id, existing);
+          }
+
+          // إرسال تحديث فوري لقائمة المستخدمين للغرفة العامة
+          try {
+            const generalUsers = await buildOnlineUsersForRoom('general');
+            io.to('room_general').emit('message', {
+              type: 'onlineUsers',
+              users: generalUsers,
+              roomId: 'general',
+              source: 'user_connected',
+            });
+          } catch (error) {
+            console.error('خطأ في إرسال تحديث قائمة المستخدمين:', error);
           }
 
           // لا ننضم تلقائياً لأي غرفة - المستخدم يختار بنفسه
@@ -1086,6 +1106,7 @@ export function setupRealtime(httpServer: HttpServer): IOServer<ClientToServerEv
               } catch {}
             }
           } else {
+            // المستخدم لا يزال متصلاً من أجهزة أخرى، فقط نحدث lastSeen
             connectedUsers.set(userId, entry);
           }
         }
@@ -1098,8 +1119,46 @@ export function setupRealtime(httpServer: HttpServer): IOServer<ClientToServerEv
 
   // بدء نظام التحديث الدوري لـ lastSeen
   startLastSeenUpdater();
+  
+  // بدء نظام تنظيف المستخدمين المنقطعين كل دقيقة
+  setInterval(() => {
+    cleanupDisconnectedUsers();
+  }, 60000); // كل دقيقة
 
   return io;
+}
+
+// دالة تنظيف المستخدمين المنقطعين
+async function cleanupDisconnectedUsers() {
+  try {
+    const now = new Date();
+    const timeout = 5 * 60 * 1000; // 5 دقائق
+    
+    for (const [userId, entry] of connectedUsers.entries()) {
+      // تنظيف السوكيتات المنقطعة
+      for (const [socketId, socketMeta] of entry.sockets.entries()) {
+        if (now.getTime() - socketMeta.lastSeen.getTime() > timeout) {
+          entry.sockets.delete(socketId);
+        }
+      }
+      
+      // إذا لم يعد هناك سوكيتات نشطة، احذف المستخدم
+      if (entry.sockets.size === 0) {
+        connectedUsers.delete(userId);
+        try {
+          await storage.setUserOnlineStatus(userId, false);
+        } catch (error) {
+          console.error('خطأ في تحديث حالة المستخدم:', error);
+        }
+      } else {
+        // تحديث lastSeen للمستخدم
+        entry.lastSeen = now;
+        connectedUsers.set(userId, entry);
+      }
+    }
+  } catch (error) {
+    console.error('خطأ في تنظيف المستخدمين المنقطعين:', error);
+  }
 }
 
 // دالة لتحميل البوتات النشطة

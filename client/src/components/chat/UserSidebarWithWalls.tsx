@@ -110,35 +110,39 @@ export default function UnifiedSidebar({
 
   // 🚀 تحسين: استخدام useMemo لفلترة وترتيب المستخدمين لتحسين الأداء
   const validUsers = useMemo(() => {
-    const filtered = users.filter((user) => {
+    // تحسين الأداء: استخدام Map للبحث السريع
+    const seenIds = new Set<number>();
+    const filtered: ChatUser[] = [];
+    
+    for (const user of users) {
       // فلترة صارمة للمستخدمين الصالحين
       if (!user?.id || !user?.username || !user?.userType) {
         console.warn('🚫 مستخدم بيانات غير صالحة في القائمة:', user);
-        return false;
+        continue;
       }
 
       // رفض الأسماء العامة
       if (user.username === 'مستخدم' || user.username === 'User' || user.username.trim() === '') {
-        return false;
+        continue;
       }
 
       // رفض المعرفات غير الصالحة
       if (user.id <= 0) {
-        return false;
+        continue;
       }
 
-      return true;
-    });
-
-    // إزالة التكرارات حسب id
-    const dedup = new Map<number, ChatUser>();
-    for (const u of filtered) {
-      if (!dedup.has(u.id)) dedup.set(u.id, u);
+      // تجنب التكرارات
+      if (seenIds.has(user.id)) {
+        continue;
+      }
+      
+      seenIds.add(user.id);
+      filtered.push(user);
     }
 
     // ترتيب المستخدمين حسب الرتب: المالك أولاً، ثم الإدمن، ثم المشرف، ثم الأعضاء، ثم الضيوف
     // وداخل كل رتبة ترتيب أبجدي بالاسم
-    const sorted = Array.from(dedup.values()).sort((a, b) => {
+    const sorted = filtered.sort((a, b) => {
       const rankA = getRankOrder(a.userType);
       const rankB = getRankOrder(b.userType);
 
@@ -150,10 +154,6 @@ export default function UnifiedSidebar({
       // إذا كانت الرتب متساوية، رتب أبجدياً بالاسم
       return a.username.localeCompare(b.username, 'ar');
     });
-
-    // طباعة الترتيب للتحقق من صحته (فقط في وضع التطوير)
-    if (process.env.NODE_ENV === 'development' && sorted.length > 0) {
-    }
 
     return sorted;
   }, [users]);
@@ -483,13 +483,22 @@ export default function UnifiedSidebar({
 
   // تم نقل دالة formatTimeAgo إلى utils/timeUtils.ts (تستخدم من الاستيراد أعلاه)
 
-  // عنصر مستخدم فرعي معزول لتحسين الأداء
+  // عنصر مستخدم فرعي معزول لتحسين الأداء مع virtualization محسن
   const UserListItem = useMemo(
     () =>
       React.memo(({ user }: { user: ChatUser }) => {
         if (!user?.username || !user?.userType) return null;
+        
         return (
-          <div key={user.id} className="relative" role="listitem">
+          <div 
+            key={user.id} 
+            className="relative" 
+            role="listitem"
+            style={{ 
+              minHeight: '48px', // ارتفاع ثابت للـ virtualization
+              contain: 'layout style paint' // تحسين الأداء
+            }}
+          >
             <SimpleUserMenu
               targetUser={user}
               currentUser={currentUser}
@@ -501,11 +510,11 @@ export default function UnifiedSidebar({
                 onClick={(e) => handleUserClick(e as any, user)}
               >
                 <ProfileImage user={user} size="small" className="" hideRoleBadgeOverlay={true} />
-                <div className="flex-1">
+                <div className="flex-1 min-w-0"> {/* min-w-0 لمنع overflow */}
                   <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
                       <span
-                        className="text-base font-medium transition-colors duration-300"
+                        className="text-base font-medium transition-colors duration-300 truncate"
                         style={{
                           color: getFinalUsernameColor(user),
                         }}
@@ -513,9 +522,9 @@ export default function UnifiedSidebar({
                       >
                         {user.username}
                       </span>
-                      {user.isMuted && <span className="text-yellow-400 text-xs">🔇</span>}
+                      {user.isMuted && <span className="text-yellow-400 text-xs flex-shrink-0">🔇</span>}
                     </div>
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1 flex-shrink-0">
                       {renderUserBadge(user)}
                       {renderCountryFlag(user)}
                     </div>
@@ -590,6 +599,24 @@ export default function UnifiedSidebar({
                     const user = filteredUsers[index];
                     return <UserListItem key={user.id} user={user} />;
                   }}
+                  // تحسينات الأداء
+                  overscan={5} // عدد العناصر الإضافية للعرض
+                  increaseViewportBy={200} // زيادة منطقة العرض
+                  followOutput="smooth" // متابعة سلسة للتحديثات
+                  // تحسينات الذاكرة
+                  components={{
+                    List: React.forwardRef<HTMLDivElement>(({ style, children }, ref) => (
+                      <div ref={ref} style={style} className="h-full">
+                        {children}
+                      </div>
+                    )),
+                  }}
+                  // تحسينات التمرير
+                  fixedItemHeight={48} // ارتفاع ثابت للعناصر
+                  // تحسينات الأداء
+                  useWindowScroll={false}
+                  // تحسينات الذاكرة
+                  itemSize={(index) => 48} // حجم ثابت للعناصر
                 />
               </div>
             )}

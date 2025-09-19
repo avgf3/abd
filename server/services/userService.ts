@@ -1,5 +1,5 @@
 import bcrypt from 'bcrypt';
-import { eq, desc, and } from 'drizzle-orm';
+import { eq, desc, and, sql } from 'drizzle-orm';
 
 import { users, type User, type InsertUser } from '../../shared/schema';
 import { db } from '../database-adapter';
@@ -58,9 +58,23 @@ export class UserService {
     }
   }
 
-  // تحديث بيانات المستخدم
-  async updateUser(id: number, updates: Partial<User>): Promise<User | undefined> {
+  // تحديث بيانات المستخدم مع التحقق من الصلاحيات والبيانات
+  async updateUser(id: number, updates: Partial<User>, requesterId?: number): Promise<User | undefined> {
     try {
+      // التحقق من الصلاحيات إذا كان هناك طالب
+      if (requesterId && requesterId !== id) {
+        const hasPermission = await this.checkUserPermissions(requesterId, 'edit_profile');
+        if (!hasPermission) {
+          throw new Error('ليس لديك صلاحية لتعديل بيانات هذا المستخدم');
+        }
+      }
+
+      // التحقق من صحة البيانات
+      const validation = await this.validateUserUpdate(id, updates);
+      if (!validation.isValid) {
+        throw new Error(validation.error || 'بيانات غير صحيحة');
+      }
+
       // إزالة المعرف من التحديثات
       const { id: userId, ...updateData } = updates as any;
 
@@ -73,7 +87,7 @@ export class UserService {
       return updatedUser;
     } catch (error) {
       console.error('خطأ في تحديث المستخدم:', error);
-      return undefined;
+      throw error;
     }
   }
 
@@ -104,13 +118,14 @@ export class UserService {
     }
   }
 
-  // الحصول على جميع المستخدمين المتصلين
+  // الحصول على جميع المستخدمين المتصلين مع تحسين الأداء
   async getOnlineUsers(): Promise<User[]> {
     try {
       const onlineUsers = await db
         .select()
         .from(users)
-        .where(and(eq(users.isOnline, true), eq(users.isHidden, false)));
+        .where(and(eq(users.isOnline, true), eq(users.isHidden, false)))
+        .orderBy(desc(users.lastSeen)); // ترتيب حسب آخر تواجد
 
       return onlineUsers;
     } catch (error) {
@@ -119,13 +134,111 @@ export class UserService {
     }
   }
 
-  // الحصول على جميع المستخدمين
-  async getAllUsers(): Promise<User[]> {
+  // الحصول على جميع المستخدمين مع تحسين الأداء
+  async getAllUsers(limit?: number, offset?: number): Promise<User[]> {
     try {
-      const allUsers = await db.select().from(users).orderBy(desc(users.joinDate));
+      let query = db
+        .select()
+        .from(users)
+        .orderBy(desc(users.joinDate));
+
+      if (limit) {
+        query = query.limit(limit);
+      }
+      
+      if (offset) {
+        query = query.offset(offset);
+      }
+
+      const allUsers = await query;
       return allUsers;
     } catch (error) {
       console.error('خطأ في الحصول على جميع المستخدمين:', error);
+      return [];
+    }
+  }
+
+  // البحث في المستخدمين مع تحسين الأداء
+  async searchUsers(searchTerm: string, limit: number = 20): Promise<User[]> {
+    try {
+      if (!searchTerm.trim()) {
+        return [];
+      }
+
+      const searchPattern = `%${searchTerm.trim()}%`;
+      
+      const searchResults = await db
+        .select()
+        .from(users)
+        .where(
+          and(
+            // البحث في اسم المستخدم
+            sql`${users.username} ILIKE ${searchPattern}`,
+            // استبعاد المستخدمين المحجوبين
+            eq(users.isBlocked, false)
+          )
+        )
+        .orderBy(desc(users.isOnline), desc(users.lastSeen))
+        .limit(limit);
+
+      return searchResults;
+    } catch (error) {
+      console.error('خطأ في البحث في المستخدمين:', error);
+      return [];
+    }
+  }
+
+  // الحصول على المستخدمين حسب البلد مع تحسين الأداء
+  async getUsersByCountry(country: string, limit: number = 50): Promise<User[]> {
+    try {
+      const usersByCountry = await db
+        .select()
+        .from(users)
+        .where(
+          and(
+            eq(users.country, country),
+            eq(users.isBlocked, false)
+          )
+        )
+        .orderBy(desc(users.isOnline), desc(users.lastSeen))
+        .limit(limit);
+
+      return usersByCountry;
+    } catch (error) {
+      console.error('خطأ في الحصول على المستخدمين حسب البلد:', error);
+      return [];
+    }
+  }
+
+  // الحصول على المستخدمين حسب المستوى مع تحسين الأداء
+  async getUsersByLevel(minLevel: number, maxLevel?: number, limit: number = 50): Promise<User[]> {
+    try {
+      let levelCondition;
+      
+      if (maxLevel) {
+        levelCondition = and(
+          sql`${users.level} >= ${minLevel}`,
+          sql`${users.level} <= ${maxLevel}`
+        );
+      } else {
+        levelCondition = sql`${users.level} >= ${minLevel}`;
+      }
+
+      const usersByLevel = await db
+        .select()
+        .from(users)
+        .where(
+          and(
+            levelCondition,
+            eq(users.isBlocked, false)
+          )
+        )
+        .orderBy(desc(users.level), desc(users.points))
+        .limit(limit);
+
+      return usersByLevel;
+    } catch (error) {
+      console.error('خطأ في الحصول على المستخدمين حسب المستوى:', error);
       return [];
     }
   }
@@ -205,25 +318,108 @@ export class UserService {
     }
   }
 
-  // الحصول على تفاصيل المستخدمين المتجاهلين (للعرض)
-  async getIgnoredUsersDetailed(userId: number): Promise<Array<{ id: number; username: string }>> {
+  // التحقق من صلاحيات المستخدم
+  async checkUserPermissions(userId: number, action: string): Promise<boolean> {
     try {
-      const ids = await this.getIgnoredUsers(userId);
-      if (!Array.isArray(ids) || ids.length === 0) return [];
+      const user = await this.getUserById(userId);
+      if (!user) return false;
 
-      const result: Array<{ id: number; username: string }> = [];
-      for (const id of ids) {
-        try {
-          const u = await this.getUserById(id);
-          if (u && (u as any).id && (u as any).username) {
-            result.push({ id: (u as any).id, username: (u as any).username });
-          }
-        } catch {}
+      switch (action) {
+        case 'upload_profile_image':
+          return user.userType !== 'guest';
+          
+        case 'upload_profile_banner':
+          return ['owner', 'admin', 'moderator'].includes(user.userType) || (user.level || 1) >= 20;
+          
+        case 'edit_profile':
+          return user.userType !== 'guest';
+          
+        case 'send_points':
+          return user.userType !== 'guest' && (user.points || 0) > 0;
+          
+        case 'moderate_users':
+          return ['owner', 'admin', 'moderator'].includes(user.userType);
+          
+        case 'manage_rooms':
+          return ['owner', 'admin'].includes(user.userType);
+          
+        case 'view_admin_panel':
+          return ['owner', 'admin'].includes(user.userType);
+          
+        default:
+          return false;
       }
-      return result;
     } catch (error) {
-      console.error('خطأ في الحصول على تفاصيل المستخدمين المتجاهلين:', error);
-      return [];
+      console.error('خطأ في التحقق من الصلاحيات:', error);
+      return false;
+    }
+  }
+
+  // التحقق من صحة البيانات قبل التحديث
+  async validateUserUpdate(userId: number, updates: Partial<User>): Promise<{ isValid: boolean; error?: string }> {
+    try {
+      // التحقق من وجود المستخدم
+      const user = await this.getUserById(userId);
+      if (!user) {
+        return { isValid: false, error: 'المستخدم غير موجود' };
+      }
+
+      // التحقق من اسم المستخدم
+      if (updates.username) {
+        if (!updates.username.trim() || updates.username.length < 2) {
+          return { isValid: false, error: 'اسم المستخدم يجب أن يكون على الأقل حرفين' };
+        }
+        
+        if (updates.username.length > 50) {
+          return { isValid: false, error: 'اسم المستخدم طويل جداً' };
+        }
+
+        // التحقق من عدم تكرار اسم المستخدم
+        const existingUser = await this.getUserByUsername(updates.username);
+        if (existingUser && existingUser.id !== userId) {
+          return { isValid: false, error: 'اسم المستخدم مستخدم بالفعل' };
+        }
+      }
+
+      // التحقق من العمر
+      if (updates.age !== undefined) {
+        if (updates.age < 13 || updates.age > 120) {
+          return { isValid: false, error: 'العمر يجب أن يكون بين 13 و 120 سنة' };
+        }
+      }
+
+      // التحقق من الجنس
+      if (updates.gender) {
+        if (!['ذكر', 'أنثى'].includes(updates.gender)) {
+          return { isValid: false, error: 'الجنس يجب أن يكون ذكر أو أنثى' };
+        }
+      }
+
+      // التحقق من البلد
+      if (updates.country) {
+        const validCountries = [
+          'السعودية', 'الإمارات', 'الكويت', 'قطر', 'البحرين', 'عُمان',
+          'الأردن', 'لبنان', 'سوريا', 'العراق', 'مصر', 'السودان',
+          'ليبيا', 'تونس', 'الجزائر', 'المغرب', 'اليمن', 'الصومال',
+          'جيبوتي', 'جزر القمر', 'موريتانيا', 'فلسطين', 'أخرى'
+        ];
+        
+        if (!validCountries.includes(updates.country)) {
+          return { isValid: false, error: 'البلد غير صحيح' };
+        }
+      }
+
+      // التحقق من السيرة الذاتية
+      if (updates.bio) {
+        if (updates.bio.length > 500) {
+          return { isValid: false, error: 'السيرة الذاتية يجب أن تكون أقل من 500 حرف' };
+        }
+      }
+
+      return { isValid: true };
+    } catch (error) {
+      console.error('خطأ في التحقق من صحة البيانات:', error);
+      return { isValid: false, error: 'خطأ في التحقق من البيانات' };
     }
   }
 }

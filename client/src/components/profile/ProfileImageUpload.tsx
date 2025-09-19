@@ -62,6 +62,7 @@ export default function ProfileImageUpload({
     if (!validateProfileImage(file)) return;
 
     setUploading(true);
+    setUploadProgress(0);
 
     try {
       // إنشاء معاينة للصورة
@@ -72,7 +73,6 @@ export default function ProfileImageUpload({
       reader.readAsDataURL(file);
 
       // رفع الصورة للخادم باستخدام API الموحد
-      // إنشاء FormData لرفع الصورة
       const formData = new FormData();
       formData.append('profileImage', file);
       formData.append('userId', currentUser.id.toString());
@@ -93,11 +93,14 @@ export default function ProfileImageUpload({
       if (onImageUpdate && result.imageUrl) {
         onImageUpdate(result.imageUrl);
       }
+      
       // تحديث نسخة/هاش الصورة محلياً إن عاد من السيرفر
       if ((result as any).avatarHash && currentUser?.id) {
         try {
           await api.put(`/api/users/${currentUser.id}`, { avatarHash: (result as any).avatarHash });
-        } catch {}
+        } catch (error) {
+          console.warn('تحذير: فشل في تحديث avatarHash:', error);
+        }
       }
 
       toast({
@@ -111,9 +114,24 @@ export default function ProfileImageUpload({
     } catch (error: any) {
       console.error('❌ خطأ في رفع الصورة:', error);
 
+      // معالجة أخطاء محددة
+      let errorMessage = 'حدث خطأ أثناء رفع الصورة';
+      
+      if (error.message?.includes('timeout')) {
+        errorMessage = 'انتهت مهلة الرفع، يرجى المحاولة مرة أخرى';
+      } else if (error.message?.includes('network')) {
+        errorMessage = 'مشكلة في الاتصال، تحقق من الإنترنت';
+      } else if (error.message?.includes('size')) {
+        errorMessage = 'حجم الصورة كبير جداً';
+      } else if (error.message?.includes('format')) {
+        errorMessage = 'نوع الملف غير مدعوم';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
       toast({
         title: 'خطأ في رفع الصورة',
-        description: error.message || 'حدث خطأ أثناء رفع الصورة',
+        description: errorMessage,
         variant: 'destructive',
       });
 
