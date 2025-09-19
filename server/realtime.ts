@@ -309,8 +309,17 @@ export async function buildOnlineUsersForRoom(roomId: string) {
       // تأكيد وجود حقول الحالة والزمن بشكل متناسق
       next.isOnline = true;
       next.lastSeen = (u as any).lastSeen || (u as any).createdAt || new Date();
-      // تضمين الغرفة الحالية لتمكين تحديث نافذة البروفايل فوراً
-      (next as any).currentRoom = u.currentRoom || roomId;
+      
+      // ✅ منطق ذكي للغرفة الحالية:
+      // - للبوتات: نحترم غرفتهم الحقيقية من قاعدة البيانات
+      // - للمستخدمين العاديين: نستخدم غرفتهم الحالية أو الغرفة المطلوبة
+      if (u.userType === 'bot') {
+        // البوتات: نحترم غرفتهم الحقيقية فقط
+        (next as any).currentRoom = u.currentRoom && u.currentRoom.trim() !== '' ? u.currentRoom : 'general';
+      } else {
+        // المستخدمون العاديون: يمكن تحديث غرفتهم
+        (next as any).currentRoom = u.currentRoom || roomId;
+      }
       
       // تحديث الغرفة الحالية في قاعدة البيانات إذا لزم الأمر (للمستخدمين العاديين فقط)
       const entry = connectedUsers.get(u.id);
