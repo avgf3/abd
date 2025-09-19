@@ -3,6 +3,32 @@ import { storage } from '../storage';
 import { moderationSystem } from '../moderation';
 import { spamProtection } from '../spam-protection';
 
+// دالة إعادة المحاولة لجلب بيانات المستخدم
+async function getUserWithRetry(userId: number, maxRetries = 3): Promise<any> {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const user = await storage.getUser(userId);
+      if (user && user.username) {
+        return user;
+      }
+      
+      // إذا لم نجد المستخدم، نحاول مرة أخرى بعد انتظار قصير
+      if (attempt < maxRetries) {
+        await new Promise(resolve => setTimeout(resolve, 100 * attempt));
+      }
+    } catch (error) {
+      console.error(`محاولة ${attempt} فشلت لجلب المستخدم ${userId}:`, error);
+      if (attempt < maxRetries) {
+        await new Promise(resolve => setTimeout(resolve, 100 * attempt));
+      }
+    }
+  }
+  
+  // إذا فشلت جميع المحاولات، نعيد null بدلاً من fallback مزعج
+  console.error(`فشل في جلب بيانات المستخدم ${userId} بعد ${maxRetries} محاولات`);
+  return null;
+}
+
 export interface RoomMessage {
   id: number;
   senderId: number;
@@ -233,7 +259,7 @@ class RoomMessageService {
               timestamp: new Date(msg.timestamp),
               isPrivate: msg.isPrivate || false,
               receiverId: msg.receiverId || null,
-              senderUsername: msg.sender?.username || `مستخدم #${msg.senderId}`,
+              senderUsername: msg.sender?.username || (await getUserWithRetry(msg.senderId))?.username || null,
               senderUserType: msg.sender?.userType || 'user',
               senderAvatar: msg.sender?.profileImage || null,
               sender: msg.sender,
@@ -276,7 +302,7 @@ class RoomMessageService {
               timestamp: new Date(msg.timestamp),
               isPrivate: msg.isPrivate || false,
               receiverId: msg.receiverId || null,
-              senderUsername: sender?.username || `مستخدم #${msg.senderId}`,
+              senderUsername: sender?.username || (await getUserWithRetry(msg.senderId))?.username || null,
               senderUserType: sender?.userType || 'user',
               senderAvatar: (sender as any)?.profileImage || null,
               sender,
@@ -430,7 +456,7 @@ class RoomMessageService {
             timestamp: new Date(msg.timestamp),
             isPrivate: msg.isPrivate || false,
             receiverId: msg.receiverId || null,
-            senderUsername: sender?.username || `مستخدم #${msg.senderId}`,
+            senderUsername: sender?.username || (await getUserWithRetry(msg.senderId))?.username || null,
             senderUserType: sender?.userType || 'user',
             senderAvatar: (sender as any)?.profileImage || null,
             sender,

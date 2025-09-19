@@ -366,7 +366,7 @@ export default function PrivateMessageBox({
                       }}
                       title={user.username}
                     >
-                      {user.username}
+                      {user.username || 'جاري التحميل...'}
                     </span>
                     <UserRoleBadge user={user} size={20} />
                   </div>
@@ -451,7 +451,7 @@ export default function PrivateMessageBox({
                             className="font-semibold text-sm truncate"
                             style={{ color: getFinalUsernameColor(m.sender || user) }}
                           >
-                            {m.sender?.username || (isMe ? (currentUser?.username || '') : (user.username || ''))}
+                      {m.sender?.username || (isMe ? (currentUser?.username || '') : (user.username || '')) || 'جاري التحميل...'}
                           </span>
                           <span className="text-xs text-gray-500 whitespace-nowrap">
                             {formatTime(m.timestamp)}
