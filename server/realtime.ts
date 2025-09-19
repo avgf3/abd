@@ -23,6 +23,36 @@ import { verifyAuthToken } from './utils/auth-token';
 import { setupSocketMonitoring, socketPerformanceMonitor } from './utils/socket-performance';
 import { createUserListOptimizer, getUserListOptimizer, optimizedUserJoin, optimizedUserLeave } from './utils/user-list-optimizer';
 
+// 🔥 نظام التحديث المجمع لقائمة المستخدمين
+let updateQueue = new Set<string>();
+let updateTimeout: NodeJS.Timeout | null = null;
+
+// ✅ دالة التحديث المجمع
+function scheduleUserListUpdate(roomId: string): void {
+  updateQueue.add(roomId);
+  
+  if (updateTimeout) {
+    clearTimeout(updateTimeout);
+  }
+  
+  updateTimeout = setTimeout(async () => {
+    for (const room of updateQueue) {
+      const users = await buildOnlineUsersForRoom(room);
+      if (ioInstance) {
+        ioInstance.to(`room_${room}`).emit('message', {
+          type: 'onlineUsers',
+          users,
+          roomId: room,
+          source: 'batched_update',
+          timestamp: Date.now(),
+        });
+      }
+    }
+    updateQueue.clear();
+    updateTimeout = null;
+  }, 100); // تحديث كل 100ms
+}
+
 const GENERAL_ROOM = 'general';
 
 // Track connected users and their sockets/rooms
@@ -202,7 +232,7 @@ export async function buildOnlineUsersForRoom(roomId: string) {
         entry.user.userType
       ) {
         userMap.set(entry.user.id, entry.user);
-        break;
+        // ✅ إزالة break للسماح بجمع جميع المستخدمين
       }
     }
   }
@@ -349,7 +379,10 @@ async function joinRoom(
     optimizedUserJoin(roomId, userId, user);
   }
 
-  // إرسال التأكيد للمستخدم المنضم فقط (القائمة ستُرسل عبر النظام المحسّن)
+  // ✅ استخدام التحديث المجمع بدلاً من التحديث الفوري
+  scheduleUserListUpdate(roomId);
+
+  // إرسال التأكيد للمستخدم المنضم فقط
   const users = await buildOnlineUsersForRoom(roomId);
   socket.emit('message', { type: 'roomJoined', roomId, users });
 
@@ -417,6 +450,9 @@ async function leaveRoom(
   
   // 🔥 استخدام النظام المحسّن لتحديث قائمة المستخدمين
   optimizedUserLeave(roomId, userId);
+
+  // ✅ استخدام التحديث المجمع
+  scheduleUserListUpdate(roomId);
 
   // بث userUpdated بتفريغ currentRoom وتحديث lastSeen ليظهر فوراً في الواجهة
   try {
