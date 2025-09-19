@@ -120,7 +120,6 @@ export default function UsernameColorPicker({
               disabled={isLoading}
               title={colorOption.name}
             >
-              <div className="font-bold text-xs">{colorOption.name}</div>
               {selectedColor === colorOption.value && <div className="text-xs">✓</div>}
             </Button>
           ))}
