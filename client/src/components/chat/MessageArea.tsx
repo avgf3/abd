@@ -77,6 +77,7 @@ export default function MessageArea({
   const [showLottieEmoji, setShowLottieEmoji] = useState(false);
   const [showEnhancedEmoji, setShowEnhancedEmoji] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
+  const [isMultiLine, setIsMultiLine] = useState(false);
   const isMobile = useIsMobile();
   const { textColor: composerTextColor, bold: composerBold } = useComposerStyle();
 
@@ -85,7 +86,7 @@ export default function MessageArea({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
   const lastTypingTime = useRef<number>(0);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const virtuosoRef = useRef<VirtuosoHandle>(null);
   const prevMessagesLenRef = useRef<number>(0);
 
@@ -344,15 +345,16 @@ export default function MessageArea({
       // إرسال الرسالة
       onSendMessage(trimmedMessage);
       setMessageText('');
+      setIsMultiLine(false);
 
       // Focus back to input
       inputRef.current?.focus();
     }
   }, [messageText, currentUser, onSendMessage]);
 
-  // Key press handler - محسن
+  // Key press handler - محسن للـ textarea
   const handleKeyPress = useCallback(
-    (e: React.KeyboardEvent) => {
+    (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
         handleSendMessage();
@@ -365,51 +367,72 @@ export default function MessageArea({
   );
 
   // Message text change handler
-  const handleMessageChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setMessageText(e.target.value);
+  const handleMessageChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const text = e.target.value;
+    setMessageText(text);
+    
+    // تتبع عدد الأسطر لتحديد موضع الأزرار
+    const lines = text.split('\n').length;
+    setIsMultiLine(lines > 1);
   }, []);
 
   // Emoji select handler
   const handleEmojiSelect = useCallback((emoji: string) => {
-    setMessageText((prev) => prev + emoji);
+    const newText = messageText + emoji;
+    setMessageText(newText);
+    const lines = newText.split('\n').length;
+    setIsMultiLine(lines > 1);
     setShowEmojiPicker(false);
     inputRef.current?.focus();
-  }, []);
+  }, [messageText]);
 
   // Animated Emoji select handler
   const handleAnimatedEmojiSelect = useCallback((emoji: { id: string; url: string; name: string; code: string }) => {
     // إدراج كود السمايل في الرسالة
-    setMessageText((prev) => prev + ` [[emoji:${emoji.id}:${emoji.url}]] `);
+    const newText = messageText + ` [[emoji:${emoji.id}:${emoji.url}]] `;
+    setMessageText(newText);
+    const lines = newText.split('\n').length;
+    setIsMultiLine(lines > 1);
     setShowAnimatedEmojiPicker(false);
     inputRef.current?.focus();
-  }, []);
+  }, [messageText]);
 
   // Emoji Mart handler
   const handleEmojiMartSelect = useCallback((emoji: any) => {
+    let newText;
     if (emoji.src) {
       // إيموجي مخصص (GIF)
-      setMessageText((prev) => prev + ` [[emoji:${emoji.id}:${emoji.src}]] `);
+      newText = messageText + ` [[emoji:${emoji.id}:${emoji.src}]] `;
     } else {
       // إيموجي عادي
-      setMessageText((prev) => prev + emoji.native);
+      newText = messageText + emoji.native;
     }
+    setMessageText(newText);
+    const lines = newText.split('\n').length;
+    setIsMultiLine(lines > 1);
     setShowEmojiMart(false);
     inputRef.current?.focus();
-  }, []);
+  }, [messageText]);
 
   // Lottie Emoji handler
   const handleLottieEmojiSelect = useCallback((emoji: { id: string; name: string; url: string }) => {
-    setMessageText((prev) => prev + ` [[lottie:${emoji.id}:${emoji.url}]] `);
+    const newText = messageText + ` [[lottie:${emoji.id}:${emoji.url}]] `;
+    setMessageText(newText);
+    const lines = newText.split('\n').length;
+    setIsMultiLine(lines > 1);
     setShowLottieEmoji(false);
     inputRef.current?.focus();
-  }, []);
+  }, [messageText]);
 
   // Enhanced Emoji handler
   const handleEnhancedEmojiSelect = useCallback((emoji: { id: string; emoji: string; name: string; code: string }) => {
-    setMessageText((prev) => prev + emoji.emoji);
+    const newText = messageText + emoji.emoji;
+    setMessageText(newText);
+    const lines = newText.split('\n').length;
+    setIsMultiLine(lines > 1);
     setShowEnhancedEmoji(false);
     inputRef.current?.focus();
-  }, []);
+  }, [messageText]);
 
   // File upload handler - محسن
   const handleFileUpload = useCallback(
@@ -477,15 +500,18 @@ export default function MessageArea({
       event.stopPropagation();
 
       // إدراج اسم المستخدم في مربع النص بدون رمز @
-      setMessageText((prev) => {
-        const separator = prev.trim() ? ' ' : '';
-        return prev + separator + user.username + ' ';
-      });
+      const separator = messageText.trim() ? ' ' : '';
+      const newText = messageText + separator + user.username + ' ';
+      setMessageText(newText);
+      
+      // تحديث حالة الأسطر المتعددة
+      const lines = newText.split('\n').length;
+      setIsMultiLine(lines > 1);
 
       // التركيز على مربع النص
       inputRef.current?.focus();
     },
-    []
+    [messageText]
   );
 
   // Format typing users display
@@ -943,149 +969,163 @@ export default function MessageArea({
         )}
 
         <div
-          className={`flex ${isMobile ? 'gap-2 p-3' : 'gap-3 p-4'} items-end max-w-full mx-auto bg-white/80 backdrop-blur-sm border-t border-gray-200`}
+          className={`flex ${isMobile ? 'gap-2 p-3' : 'gap-3 p-4'} ${isMultiLine ? 'flex-col items-start' : 'items-end'} max-w-full mx-auto bg-white/80 backdrop-blur-sm border-t border-gray-200 transition-all duration-300`}
           style={{ paddingBottom: isMobile ? 'calc(env(safe-area-inset-bottom) + 0.75rem)' : '1rem' }}
         >
-          {/* Emoji Picker */}
-          <div className="relative">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-              disabled={isChatRestricted}
-              className={`aspect-square mobile-touch-button ${isMobile ? 'min-w-[44px] min-h-[44px]' : ''} ${isChatRestricted ? 'opacity-60 cursor-not-allowed' : ''}`}
-            >
-              <Smile className="w-4 h-4" />
-            </Button>
-            {showEmojiPicker && (
-              <div className="absolute bottom-full mb-2 z-30">
-                <React.Suspense fallback={null}>
-                  <EmojiPicker
-                    onEmojiSelect={handleEmojiSelect}
-                    onClose={() => setShowEmojiPicker(false)}
-                  />
-                </React.Suspense>
-              </div>
-            )}
-          </div>
+          {/* First row: Emoji buttons and textarea */}
+          <div className={`flex ${isMultiLine ? 'w-full' : 'flex-1'} items-end gap-2`}>
+            {/* Emoji Picker */}
+            <div className="relative">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                disabled={isChatRestricted}
+                className={`aspect-square mobile-touch-button ${isMobile ? 'min-w-[44px] min-h-[44px]' : ''} ${isChatRestricted ? 'opacity-60 cursor-not-allowed' : ''}`}
+              >
+                <Smile className="w-4 h-4" />
+              </Button>
+              {showEmojiPicker && (
+                <div className="absolute bottom-full mb-2 z-30">
+                  <React.Suspense fallback={null}>
+                    <EmojiPicker
+                      onEmojiSelect={handleEmojiSelect}
+                      onClose={() => setShowEmojiPicker(false)}
+                    />
+                  </React.Suspense>
+                </div>
+              )}
+            </div>
 
-          {/* Animated Emoji Options */}
-          <div className="relative">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                // إغلاق جميع المنتقات الأخرى
-                setShowEmojiPicker(false);
-                setShowAnimatedEmojiPicker(false);
-                setShowEmojiMart(false);
-                setShowLottieEmoji(false);
-                // فتح المنتقي المحسن
-                setShowEnhancedEmoji(!showEnhancedEmoji);
-              }}
-              disabled={isChatRestricted}
-              className={`aspect-square mobile-touch-button ${isMobile ? 'min-w-[44px] min-h-[44px]' : ''} ${isChatRestricted ? 'opacity-60 cursor-not-allowed' : ''}`}
-              title="سمايلات متحركة متقدمة"
-            >
-              <Sparkles className="w-4 h-4" />
-            </Button>
-            
-            {/* Enhanced Emoji Picker (Default) */}
-            {showEnhancedEmoji && (
-              <div className="absolute bottom-full mb-2 z-30">
-                <React.Suspense fallback={null}>
-                  <AnimatedEmojiEnhanced
-                    onEmojiSelect={handleEnhancedEmojiSelect}
-                    onClose={() => setShowEnhancedEmoji(false)}
-                  />
-                </React.Suspense>
-              </div>
-            )}
-            
-            {/* Original Animated Emoji Picker */}
-            {showAnimatedEmojiPicker && (
-              <div className="absolute bottom-full mb-2 z-30">
-                <React.Suspense fallback={null}>
-                  <AnimatedEmojiPicker
-                    onEmojiSelect={handleAnimatedEmojiSelect}
-                    onClose={() => setShowAnimatedEmojiPicker(false)}
-                  />
-                </React.Suspense>
-              </div>
-            )}
-            
-            {/* Emoji Mart Picker */}
-            {showEmojiMart && (
-              <div className="absolute bottom-full mb-2 z-30">
-                <React.Suspense fallback={null}>
-                  <EmojiMartPicker
-                    onEmojiSelect={handleEmojiMartSelect}
-                    onClose={() => setShowEmojiMart(false)}
-                  />
-                </React.Suspense>
-              </div>
-            )}
-            
-            {/* Lottie Emoji Picker */}
-            {showLottieEmoji && (
-              <div className="absolute bottom-full mb-2 z-30">
-                <React.Suspense fallback={null}>
-                  <LottieEmojiPicker
-                    onEmojiSelect={handleLottieEmojiSelect}
-                    onClose={() => setShowLottieEmoji(false)}
-                  />
-                </React.Suspense>
-              </div>
-            )}
-          </div>
+            {/* Animated Emoji Options */}
+            <div className="relative">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  // إغلاق جميع المنتقات الأخرى
+                  setShowEmojiPicker(false);
+                  setShowAnimatedEmojiPicker(false);
+                  setShowEmojiMart(false);
+                  setShowLottieEmoji(false);
+                  // فتح المنتقي المحسن
+                  setShowEnhancedEmoji(!showEnhancedEmoji);
+                }}
+                disabled={isChatRestricted}
+                className={`aspect-square mobile-touch-button ${isMobile ? 'min-w-[44px] min-h-[44px]' : ''} ${isChatRestricted ? 'opacity-60 cursor-not-allowed' : ''}`}
+                title="سمايلات متحركة متقدمة"
+              >
+                <Sparkles className="w-4 h-4" />
+              </Button>
+              
+              {/* Enhanced Emoji Picker (Default) */}
+              {showEnhancedEmoji && (
+                <div className="absolute bottom-full mb-2 z-30">
+                  <React.Suspense fallback={null}>
+                    <AnimatedEmojiEnhanced
+                      onEmojiSelect={handleEnhancedEmojiSelect}
+                      onClose={() => setShowEnhancedEmoji(false)}
+                    />
+                  </React.Suspense>
+                </div>
+              )}
+              
+              {/* Original Animated Emoji Picker */}
+              {showAnimatedEmojiPicker && (
+                <div className="absolute bottom-full mb-2 z-30">
+                  <React.Suspense fallback={null}>
+                    <AnimatedEmojiPicker
+                      onEmojiSelect={handleAnimatedEmojiSelect}
+                      onClose={() => setShowAnimatedEmojiPicker(false)}
+                    />
+                  </React.Suspense>
+                </div>
+              )}
+              
+              {/* Emoji Mart Picker */}
+              {showEmojiMart && (
+                <div className="absolute bottom-full mb-2 z-30">
+                  <React.Suspense fallback={null}>
+                    <EmojiMartPicker
+                      onEmojiSelect={handleEmojiMartSelect}
+                      onClose={() => setShowEmojiMart(false)}
+                    />
+                  </React.Suspense>
+                </div>
+              )}
+              
+              {/* Lottie Emoji Picker */}
+              {showLottieEmoji && (
+                <div className="absolute bottom-full mb-2 z-30">
+                  <React.Suspense fallback={null}>
+                    <LottieEmojiPicker
+                      onEmojiSelect={handleLottieEmojiSelect}
+                      onClose={() => setShowLottieEmoji(false)}
+                    />
+                  </React.Suspense>
+                </div>
+              )}
+            </div>
 
-          {/* Composer Plus Menu */}
-          <React.Suspense fallback={null}>
-            <ComposerPlusMenu
-              onOpenImagePicker={() => fileInputRef.current?.click()}
+            {/* Composer Plus Menu */}
+            <React.Suspense fallback={null}>
+              <ComposerPlusMenu
+                onOpenImagePicker={() => fileInputRef.current?.click()}
+                disabled={!currentUser || isChatRestricted}
+                isMobile={isMobile}
+                currentUser={currentUser}
+              />
+            </React.Suspense>
+
+            {/* Message Input - Textarea with 2 lines */}
+            <textarea
+              ref={inputRef}
+              value={messageText}
+              onChange={handleMessageChange}
+              onKeyPress={handleKeyPress}
+              placeholder={isChatRestricted ? getRestrictionMessage : "اكتب رسالتك هنا..."}
+              className={`flex-1 resize-none bg-white placeholder:text-gray-500 ring-offset-white border border-gray-300 rounded-md px-3 py-2 min-h-[2.5rem] max-h-[5rem] transition-all duration-200 ${isMobile ? 'mobile-text' : ''} ${isChatRestricted ? 'cursor-not-allowed opacity-60' : ''}`}
               disabled={!currentUser || isChatRestricted}
-              isMobile={isMobile}
-              currentUser={currentUser}
+              maxLength={1000}
+              autoComplete="off"
+              rows={2}
+              style={{
+                ...(isMobile ? { fontSize: '16px' } : {}),
+                color: composerTextColor,
+                fontWeight: composerBold ? 600 : undefined,
+              }}
             />
-          </React.Suspense>
 
-          {/* Message Input */}
-          <Input
-            ref={inputRef}
-            value={messageText}
-            onChange={handleMessageChange}
-            onKeyPress={handleKeyPress}
-            placeholder={isChatRestricted ? getRestrictionMessage : "اكتب رسالتك هنا..."}
-            className={`flex-1 resize-none bg-white placeholder:text-gray-500 ring-offset-white ${isMobile ? 'mobile-text' : ''} ${isChatRestricted ? 'cursor-not-allowed opacity-60' : ''}`}
-            disabled={!currentUser || isChatRestricted}
-            maxLength={1000}
-            autoComplete="off"
-            style={{
-              ...(isMobile ? { fontSize: '16px' } : {}),
-              color: composerTextColor,
-              fontWeight: composerBold ? 600 : undefined,
-            }}
-          />
+            {/* Send Button */}
+            <Button
+              onClick={handleSendMessage}
+              disabled={!messageText.trim() || !currentUser || isChatRestricted}
+              className={`aspect-square bg-primary hover:bg-primary/90 mobile-touch-button ${isMobile ? 'min-w-[44px] min-h-[44px]' : ''} ${isChatRestricted ? 'opacity-60 cursor-not-allowed' : ''}`}
+            >
+              <Send className="w-4 h-4" />
+            </Button>
+          </div>
 
-          {/* Send Button */}
-          <Button
-            onClick={handleSendMessage}
-            disabled={!messageText.trim() || !currentUser || isChatRestricted}
-            className={`aspect-square bg-primary hover:bg-primary/90 mobile-touch-button ${isMobile ? 'min-w-[44px] min-h-[44px]' : ''} ${isChatRestricted ? 'opacity-60 cursor-not-allowed' : ''}`}
-          >
-            <Send className="w-4 h-4" />
-          </Button>
+          {/* Second row: Additional buttons when multi-line */}
+          {isMultiLine && (
+            <div className="flex items-center gap-2 mt-2 w-full justify-end opacity-75">
+              <span className="text-xs text-gray-500">السطر الثاني نشط</span>
+              {/* يمكن إضافة أزرار إضافية هنا في المستقبل */}
+            </div>
+          )}
 
-          {/* Hidden File Input */}
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            onChange={handleFileUpload}
-            className="hidden"
-          />
+          {/* Hidden File Input for single line mode */}
+          {!isMultiLine && (
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleFileUpload}
+              className="hidden"
+            />
+          )}
         </div>
 
         {/* Character Counter */}
