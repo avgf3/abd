@@ -45,6 +45,16 @@ export default function RichestModal({ isOpen, onClose, currentUser, onUserClick
 
   const renderCountryFlag = useCallback((user: ChatUser) => <CountryFlag country={user.country} size={14} />, []);
 
+  // تحميل مسبق للصور لتحسين الأداء
+  const preloadImages = useCallback((users: ChatUser[]) => {
+    users.forEach(user => {
+      if (user.profileImage) {
+        const img = new Image();
+        img.src = getImageSrc(user.profileImage);
+      }
+    });
+  }, []);
+
   // تطبيع بيانات المستخدم: إزالة قيم نصية غير صالحة لحقول الألوان/التأثير
   const normalizeUser = useCallback((u: any): ChatUser => {
     const cleaned: any = { ...u };
@@ -72,21 +82,39 @@ export default function RichestModal({ isOpen, onClose, currentUser, onUserClick
     let ignore = false;
     const controller = new AbortController();
 
-    // Prefill from cache to avoid loading flash
+    // تحميل فوري من الـ cache المحلي أولاً
     try {
       // جلب من localStorage أولاً لتجربة تحميل فوري
       const lsVip = localStorage.getItem('vip_cache');
       if (lsVip && !ignore) {
-        try { setVipUsers(normalizeUsers(JSON.parse(lsVip))); } catch {}
+        try { 
+          const parsedVip = JSON.parse(lsVip);
+          if (Array.isArray(parsedVip) && parsedVip.length > 0) {
+            const normalized = normalizeUsers(parsedVip);
+            setVipUsers(normalized);
+            preloadImages(normalized);
+          }
+        } catch {}
       }
+      
+      // جلب من React Query cache
       const cachedVip = queryClient.getQueryData<{ users: ChatUser[] }>(['/api/vip']);
       if (cachedVip?.users && !ignore) {
-        setVipUsers(normalizeUsers(cachedVip.users));
+        const normalized = normalizeUsers(cachedVip.users);
+        setVipUsers(normalized);
+        preloadImages(normalized);
       }
+      
+      // جلب المرشحين للأدمن
       if (canManage) {
         const lsCand = localStorage.getItem('vip_candidates_cache');
         if (lsCand && !ignore) {
-          try { setCandidates(normalizeUsers(JSON.parse(lsCand))); } catch {}
+          try { 
+            const parsedCand = JSON.parse(lsCand);
+            if (Array.isArray(parsedCand)) {
+              setCandidates(normalizeUsers(parsedCand)); 
+            }
+          } catch {}
         }
         const cachedCand = queryClient.getQueryData<{ users: ChatUser[] }>(['/api/vip/candidates']);
         if (cachedCand?.users && !ignore) {
@@ -95,14 +123,18 @@ export default function RichestModal({ isOpen, onClose, currentUser, onUserClick
       }
     } catch {}
 
+    // تحديث البيانات من الخادم في الخلفية
     const fetchVip = async () => {
       setError(null);
+      // لا نعرض loading إذا كانت البيانات موجودة بالفعل
       if (!vipUsers.length) setLoading(true);
+      
       try {
         const res = await apiRequest<{ users: ChatUser[] }>(`/api/vip?limit=10`, { signal: controller.signal });
         if (!ignore) {
           const normalized = normalizeUsers(res.users || []);
           setVipUsers(normalized);
+          preloadImages(normalized);
           queryClient.setQueryData(['/api/vip'], { users: normalized });
           try { localStorage.setItem('vip_cache', JSON.stringify(normalized)); } catch {}
         }
@@ -123,7 +155,9 @@ export default function RichestModal({ isOpen, onClose, currentUser, onUserClick
         if (!ignore) setLoading(false);
       }
     };
-    fetchVip();
+    
+    // تشغيل fetch في الخلفية مع تأخير قصير للسماح بالعرض الفوري
+    setTimeout(fetchVip, 50);
 
     // Listen to realtime vipUpdated
     const handleVipMessage = (payload: any) => {
@@ -151,7 +185,7 @@ export default function RichestModal({ isOpen, onClose, currentUser, onUserClick
         socketRef.current = null;
       }
     };
-  }, [isOpen, canManage, normalizeUsers, queryClient, vipUsers.length]);
+  }, [isOpen, canManage, normalizeUsers, queryClient, vipUsers.length, preloadImages]);
 
   const handleAddVip = async (userId: number) => {
     try {
@@ -197,7 +231,7 @@ export default function RichestModal({ isOpen, onClose, currentUser, onUserClick
         </div>
 
         <div className="max-h-[70vh] overflow-y-auto bg-background">
-          {loading && <ListLoader items={8} itemHeight="h-12" className="p-3" />}
+          {loading && vipUsers.length === 0 && <ListLoader items={8} itemHeight="h-12" className="p-3" />}
           {error && (
             <div className="text-center text-destructive py-2 text-sm">
               {error}

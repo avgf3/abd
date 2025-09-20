@@ -708,35 +708,40 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   }, []);
 
   useEffect(() => {
-    const runOnIdle = (cb: () => void, timeout = 1200) => {
+    // تحميل فوري للمكون والبيانات عند تحميل الصفحة
+    const preloadImmediately = async () => {
       try {
-        if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
-          (window as any).requestIdleCallback(cb, { timeout });
-          return;
-        }
-      } catch {}
-      setTimeout(cb, timeout);
-    };
-
-    runOnIdle(async () => {
-      try {
+        // تحميل المكون فوراً
         preloadRichestModule();
-        await queryClient.prefetchQuery({
-          queryKey: ['/api/vip'],
-          queryFn: () => apiRequest('/api/vip?limit=10'),
-          staleTime: 5 * 60 * 1000,
-          gcTime: 10 * 60 * 1000,
-        });
-        if (isOwnerOrAdmin) {
+        
+        // تحميل البيانات فوراً مع إعطاء الأولوية للبيانات المحفوظة محلياً
+        const cachedData = queryClient.getQueryData(['/api/vip']);
+        if (!cachedData) {
+          // إذا لم تكن البيانات محفوظة، احملها فوراً
           await queryClient.prefetchQuery({
-            queryKey: ['/api/vip/candidates'],
-            queryFn: () => apiRequest('/api/vip/candidates'),
+            queryKey: ['/api/vip'],
+            queryFn: () => apiRequest('/api/vip?limit=10'),
             staleTime: 5 * 60 * 1000,
             gcTime: 10 * 60 * 1000,
           });
         }
+        
+        if (isOwnerOrAdmin) {
+          const cachedCandidates = queryClient.getQueryData(['/api/vip/candidates']);
+          if (!cachedCandidates) {
+            await queryClient.prefetchQuery({
+              queryKey: ['/api/vip/candidates'],
+              queryFn: () => apiRequest('/api/vip/candidates'),
+              staleTime: 5 * 60 * 1000,
+              gcTime: 10 * 60 * 1000,
+            });
+          }
+        }
       } catch {}
-    }, 400);
+    };
+
+    // تشغيل فوري بدلاً من انتظار idle
+    preloadImmediately();
   }, [preloadRichestModule, queryClient, isOwnerOrAdmin]);
 
   const prefetchVip = useCallback(async () => {
@@ -1686,20 +1691,16 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
         fallback={
           <div className="fixed inset-0 z-50 flex items-center justify-center">
             <div className="absolute inset-0 modal-overlay" />
-            <div className="relative w-[90vw] max-w-[20rem] sm:max-w-[22rem] bg-card rounded-xl overflow-hidden shadow-2xl">
+            <div className="relative w-[90vw] max-w-[20rem] sm:max-w-[22rem] bg-card rounded-xl overflow-hidden shadow-2xl animate-fade-in">
               <div className="bg-primary p-3 text-primary-foreground flex items-center justify-center">
-                <div className="animate-spin rounded-full h-6 w-6 border-2 border-primary-foreground border-t-transparent mr-2" />
+                <div className="animate-pulse h-4 w-4 bg-primary-foreground/30 rounded mr-2" />
                 <span className="text-sm font-medium">جاري التحميل...</span>
               </div>
-              <div className="p-3 space-y-2">
-                <div className="animate-pulse h-10 bg-muted rounded" />
-                <div className="animate-pulse h-10 bg-muted rounded" />
-                <div className="animate-pulse h-10 bg-muted rounded" />
-                <div className="animate-pulse h-10 bg-muted rounded" />
-                <div className="animate-pulse h-10 bg-muted rounded" />
-                <div className="animate-pulse h-10 bg-muted rounded" />
-                <div className="animate-pulse h-10 bg-muted rounded" />
-                <div className="animate-pulse h-10 bg-muted rounded" />
+              <div className="p-3 space-y-1">
+                <div className="animate-pulse h-8 bg-muted/50 rounded" />
+                <div className="animate-pulse h-8 bg-muted/50 rounded" />
+                <div className="animate-pulse h-8 bg-muted/50 rounded" />
+                <div className="animate-pulse h-8 bg-muted/50 rounded" />
               </div>
             </div>
           </div>
