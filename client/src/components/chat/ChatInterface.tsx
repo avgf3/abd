@@ -1687,8 +1687,9 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           <div className="fixed inset-0 z-50 flex items-center justify-center">
             <div className="absolute inset-0 modal-overlay" />
             <div className="relative w-[90vw] max-w-[20rem] sm:max-w-[22rem] bg-card rounded-xl overflow-hidden shadow-2xl">
-              <div className="bg-primary p-3">
-                <div className="animate-pulse h-6 w-32 bg-white/30 rounded" />
+              <div className="bg-primary p-3 text-primary-foreground flex items-center justify-center">
+                <div className="animate-spin rounded-full h-6 w-6 border-2 border-primary-foreground border-t-transparent mr-2" />
+                <span className="text-sm font-medium">جاري التحميل...</span>
               </div>
               <div className="p-3 space-y-2">
                 <div className="animate-pulse h-10 bg-muted rounded" />
