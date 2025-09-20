@@ -800,6 +800,8 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
         <div className={`flex gap-1 sm:gap-2 overflow-x-auto max-w-full ${isMobile ? 'justify-evenly w-full' : ''}`}>
           <Button
             className={`glass-effect rounded-lg hover:bg-accent transition-all duration-200 flex items-center ${
+              showSettings ? 'bg-accent/30' : ''
+            } ${
               isMobile ? 'flex-1 px-2 py-2 text-xs gap-1.5' : 'px-3 py-2 gap-2'
             }`}
             onClick={() => setShowSettings(!showSettings)}
