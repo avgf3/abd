@@ -593,6 +593,7 @@ export const useChat = () => {
         }
         // ping عادي في المقدمة (كل 20 ثانية)
         pingIntervalRef.current = startPing(20000);
+        
       }
     };
 
@@ -1074,6 +1075,7 @@ export const useChat = () => {
             }
             break;
           }
+
 
           case 'error':
           case 'warning': {
