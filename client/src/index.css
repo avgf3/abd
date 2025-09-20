@@ -201,28 +201,26 @@
   }
 }
 
-/* Modern Animations System */
+/* Modern Animations System - Optimized for Performance */
 @keyframes fade-in {
   from {
     opacity: 0;
-    transform: translateY(-10px);
-    filter: blur(5px);
+    transform: translateY(-5px);
   }
   to {
     opacity: 1;
     transform: translateY(0);
-    filter: blur(0);
   }
 }
 
 @keyframes slide-up {
   from {
     opacity: 0;
-    transform: translateY(20px) scale(0.95);
+    transform: translateY(10px);
   }
   to {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: translateY(0);
   }
 }
 
@@ -283,11 +281,38 @@
 
 /* تمت إزالة جميع تحسينات الجوال لإبقاء الموقع على الوضع الافتراضي لسطح المكتب */
 
-/* تحسينات الأداء */
+/* تحسينات الأداء - محسّن للتبويبات والقوائم */
 .performance-optimized {
-  will-change: transform;
+  will-change: transform, opacity;
   transform: translateZ(0);
   backface-visibility: hidden;
+}
+
+/* تحسينات خاصة للقوائم المنسدلة */
+[data-radix-dropdown-menu-content],
+[data-radix-navigation-menu-content],
+[data-radix-menubar-content] {
+  will-change: transform, opacity;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* تحسينات للتبويبات */
+[data-radix-tabs-trigger] {
+  will-change: background-color, color;
+  transition-duration: 0.15s;
+}
+
+/* تقليل الحركة للأجهزة الضعيفة */
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in,
+  .animate-slide-up,
+  [data-radix-dropdown-menu-content],
+  [data-radix-navigation-menu-content],
+  [data-radix-menubar-content] {
+    animation: none !important;
+    transition: opacity 0.1s ease !important;
+  }
 }
 
 /* تحسينات التحميل */
@@ -316,13 +341,15 @@
   }
 }
 
-/* Custom classes */
+/* Custom classes - Optimized for Performance */
 .animate-fade-in {
-  animation: fade-in 0.4s ease-out;
+  animation: fade-in 0.2s ease-out;
+  will-change: opacity, transform;
 }
 
 .animate-slide-up {
-  animation: slide-up 0.3s ease-out;
+  animation: slide-up 0.15s ease-out;
+  will-change: opacity, transform;
 }
 
 .animate-pulse-slow {

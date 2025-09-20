@@ -151,18 +151,43 @@ export class PerformanceManager {
     }
   }
 
-  // تحسين الرسوم البيانية
+  // تحسين الرسوم البيانية - محسّن للتبويبات والقوائم
   async optimizeAnimations() {
     // تقليل معدل الإطارات للعتاد الضعيف
     const fps = await this.detectFrameRate();
 
     const fpsValue = await fps;
     if (fpsValue < 30) {
-      document.documentElement.style.setProperty('--animation-duration', '0.5s');
+      // للأجهزة الضعيفة - إلغاء الرسوم المتحركة
+      document.documentElement.style.setProperty('--animation-duration', '0.1s');
       document.documentElement.classList.add('reduce-motion');
+      this.disableComplexAnimations();
     } else if (fpsValue < 50) {
-      document.documentElement.style.setProperty('--animation-duration', '0.3s');
+      // للأجهزة المتوسطة - تقليل مدة الرسوم المتحركة
+      document.documentElement.style.setProperty('--animation-duration', '0.15s');
+    } else {
+      // للأجهزة القوية - الرسوم المتحركة العادية
+      document.documentElement.style.setProperty('--animation-duration', '0.2s');
     }
+  }
+
+  // إلغاء الرسوم المتحركة المعقدة للأجهزة الضعيفة
+  private disableComplexAnimations() {
+    const style = document.createElement('style');
+    style.textContent = `
+      [data-radix-dropdown-menu-content],
+      [data-radix-navigation-menu-content],
+      [data-radix-menubar-content],
+      [data-radix-tabs-content] {
+        animation: none !important;
+        transition: opacity 0.1s ease !important;
+      }
+      .glass-effect {
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+      }
+    `;
+    document.head.appendChild(style);
   }
 
   // اكتشاف معدل الإطارات
