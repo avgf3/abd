@@ -11,7 +11,7 @@ interface UsernameColorPickerProps {
   onColorUpdate: (color: string) => void;
 }
 
-// 30 لون جميل ومتنوع
+// 40 لون جميل ومتنوع - يتضمن ألوان النيون القوية والمتوهجة
 const USERNAME_COLORS = [
   { name: 'أبيض', value: '#FFFFFF', bg: 'bg-white' },
   { name: 'أحمر', value: '#FF4444', bg: 'bg-red-500' },
@@ -43,6 +43,18 @@ const USERNAME_COLORS = [
   { name: 'بحري', value: '#1E90FF', bg: 'bg-blue-600' },
   { name: 'أرجواني', value: '#8A2BE2', bg: 'bg-violet-600' },
   { name: 'مرجاني', value: '#FF7F50', bg: 'bg-orange-400' },
+  
+  // ألوان النيون والتوهج القوية - 10 ألوان جديدة
+  { name: 'نيون أخضر سايبر', value: '#39FF14', bg: 'bg-green-400' }, // Cyber Green Neon
+  { name: 'توهج ناري', value: '#FF4500', bg: 'bg-orange-600' }, // Fire Glow Orange-Red
+  { name: 'نيون وردي كهربائي', value: '#FF10F0', bg: 'bg-pink-500' }, // Electric Pink Neon
+  { name: 'بنفسجي كوني', value: '#9D00FF', bg: 'bg-purple-600' }, // Cosmic Purple
+  { name: 'أزرق ليزر', value: '#00D4FF', bg: 'bg-cyan-400' }, // Laser Blue
+  { name: 'برتقالي لافا', value: '#FF6600', bg: 'bg-orange-500' }, // Lava Orange
+  { name: 'أصفر نيون', value: '#FFFF00', bg: 'bg-yellow-400' }, // Neon Yellow
+  { name: 'أحمر توهج', value: '#FF0040', bg: 'bg-red-500' }, // Glowing Red
+  { name: 'فيروزي كهربائي', value: '#00FFFF', bg: 'bg-cyan-300' }, // Electric Cyan
+  { name: 'ماجنتا متوهج', value: '#FF00FF', bg: 'bg-fuchsia-500' }, // Glowing Magenta
 ];
 
 export default function UsernameColorPicker({
@@ -112,7 +124,10 @@ export default function UsernameColorPicker({
                 color:
                   colorOption.value === '#FFFFFF' ||
                   colorOption.value === '#F1C40F' ||
-                  colorOption.value === '#FFD700'
+                  colorOption.value === '#FFD700' ||
+                  colorOption.value === '#FFFF00' || // أصفر نيون
+                  colorOption.value === '#00FFFF' || // فيروزي كهربائي
+                  colorOption.value === '#39FF14'    // نيون أخضر سايبر
                     ? '#000'
                     : '#FFF',
               }}
