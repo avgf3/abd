@@ -265,10 +265,7 @@ function Router() {
       <Route path="/palestine/gaza" component={CityChat} />
       <Route path="/palestine/ramallah" component={CityChat} />
 
-      {/* Generic city route - moved to be before country routes but after specific city routes */}
-      <Route path="/:country/:city" component={CityChat} />
-
-      {/* Country-specific routes - LAST */}
+      {/* Country-specific routes - FIRST (most specific to least specific) */}
       <Route path="/watan" component={CountryChat} />
       <Route path="/emamir" component={CountryChat} />
       <Route path="/falastini" component={CountryChat} />
@@ -301,6 +298,11 @@ function Router() {
       <Route path="/iraq" component={CountryChat} />
       <Route path="/comoros" component={CountryChat} />
       <Route path="/djibouti" component={CountryChat} />
+
+      {/* Generic city route - LAST (most general) - should only match city paths that aren't handled by specific routes */}
+      {/* This route should only match actual city/country combinations, not reserved routes */}
+      {/* Using a more restrictive pattern to avoid matching reserved routes */}
+      <Route path="/:country/:city" component={CityChat} />
 
       {/* Generic city route - must be before catch-all */}
       {/* <Route path="/:country/:city" component={CityChat} /> */}

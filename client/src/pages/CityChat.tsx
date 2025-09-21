@@ -59,13 +59,21 @@ export default function CityChat() {
   const [match, params] = useRoute('/:country/:city');
   const [, setLocation] = useLocation();
 
+  // Early validation of params
+  if (!params || !params.country || !params.city) {
+    console.log('CityChat: Invalid params, redirecting to home');
+    setLocation('/');
+    return null;
+  }
+
   // Enhanced debug logging
   console.log('CityChat Debug Info:', {
     currentPath: window.location.pathname,
     match: match,
     params: params,
     paramsType: typeof params,
-    paramsKeys: params ? Object.keys(params) : 'null'
+    paramsKeys: params ? Object.keys(params) : 'null',
+    cityPath: cityPath
   });
 
   // Test mode for Universal City System
@@ -80,10 +88,16 @@ export default function CityChat() {
   let cityPath = '/';
 
   if (params && typeof params === 'object' && params.country && params.city) {
+    // Standard params format: { country: "jordan", city: "amman" }
     cityPath = `/${params.country}/${params.city}`;
   } else if (typeof params === 'object' && params[0] && params[1]) {
-    // Fallback for array-style params
+    // Array-style params: ["jordan", "amman"]
     cityPath = `/${params[0]}/${params[1]}`;
+  } else if (params && typeof params === 'object' && params.country && !params.city) {
+    // Only country provided, redirect to home or show error
+    console.log('CityChat: Only country provided, redirecting to home');
+    setLocation('/');
+    return null;
   }
 
   const cityData = getCityByPath(cityPath);
@@ -122,12 +136,24 @@ export default function CityChat() {
     systemStatus: '✅ النظام المتكامل يعمل بنجاح'
   } : null;
 
-  // If city not found, redirect to home
+  // Check if we have valid country and city parameters
   useEffect(() => {
-    if (!match || !cityData) {
+    // Reserved routes that should not be handled by CityChat
+    const reservedRoutes = ['privacy', 'terms', 'arabic'];
+
+    if (!match || !params?.city) {
+      console.log('CityChat: Redirecting to home due to missing city data');
       setLocation('/');
+      return;
     }
-  }, [match, cityData, setLocation]);
+
+    // Check if country or city is a reserved route
+    if (reservedRoutes.includes(params.country) || reservedRoutes.includes(params.city)) {
+      console.log('CityChat: Redirecting due to reserved route');
+      setLocation('/');
+      return;
+    }
+  }, [match, params, setLocation]);
   
   // Initialize session state
   const initialSession = (() => {
