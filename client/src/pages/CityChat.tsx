@@ -191,7 +191,22 @@ export default function CityChat() {
   };
 
   if (!cityData) {
-    return null;
+    return (
+      <div className="min-h-[100dvh] bg-gradient-to-br from-red-50 to-red-100 flex items-center justify-center">
+        <div className="text-center p-8 bg-white rounded-xl shadow-lg">
+          <div className="text-6xl mb-4">❌</div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">المدينة غير موجودة</h2>
+          <p className="text-gray-600 mb-4">
+            عذراً، لم نتمكن من العثور على بيانات هذه المدينة.
+          </p>
+          <div className="space-y-2 text-sm text-gray-500">
+            <div>📍 المسار المطلوب: {cityPath}</div>
+            <div>🔍 params: {JSON.stringify(params)}</div>
+            <div>⚡ match: {match ? 'true' : 'false'}</div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
