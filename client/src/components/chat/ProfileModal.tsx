@@ -658,6 +658,44 @@ export default function ProfileModal({
 
   // Complete themes collection from original code
   const themes = [
+    // الألوان الستة الجديدة من الصور
+    {
+      value: 'theme-orange-brown',
+      name: 'البرتقالي البني',
+      preview: 'linear-gradient(135deg, #3d2817 0%, #8b4513 20%, #cd853f 40%, #ff8c42 60%, #ffa366 80%, #ffb380 100%)',
+      emoji: '🔥',
+    },
+    {
+      value: 'theme-pink-red',
+      name: 'الوردي الأحمر',
+      preview: 'linear-gradient(135deg, #8b4c6a 0%, #b85c8a 20%, #d97aa8 40%, #ff99c8 60%, #ffb3d0 80%, #ffc8dd 100%)',
+      emoji: '❤️',
+    },
+    {
+      value: 'theme-purple-violet',
+      name: 'البنفسجي الأرجواني',
+      preview: 'linear-gradient(135deg, #2d1b69 0%, #4a2d8b 20%, #6b46c1 40%, #9b72cf 60%, #b794f6 80%, #d6bcfa 100%)',
+      emoji: '🌹',
+    },
+    {
+      value: 'theme-black-yellow',
+      name: 'الأسود الأصفر',
+      preview: 'linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 20%, #4a4a4a 40%, #ffd700 60%, #ffed4e 80%, #fff59d 100%)',
+      emoji: '⭐',
+    },
+    {
+      value: 'theme-blue-light-purple',
+      name: 'الأزرق البنفسجي الفاتح',
+      preview: 'linear-gradient(135deg, #00bcd4 0%, #40c4ff 20%, #7c4dff 40%, #b388ff 60%, #d1c4e9 80%, #e1bee7 100%)',
+      emoji: '🌊',
+    },
+    {
+      value: 'theme-red-black',
+      name: 'الأحمر الأسود',
+      preview: 'linear-gradient(135deg, #ff0000 0%, #cc0000 20%, #990000 40%, #660000 60%, #330000 80%, #000000 100%)',
+      emoji: '💥',
+    },
+    // الثيمات الموجودة مسبقاً
     {
       value: 'theme-sunset-glow',
       name: 'توهج الغروب',
@@ -1497,6 +1535,75 @@ export default function ProfileModal({
         }
 
         /* أنماط الألوان العصرية مع التدريج المائي */
+        
+        /* الألوان الستة الجديدة من الصور */
+        .theme-orange-brown {
+          --card-bg: linear-gradient(135deg, 
+            #3d2817 0%, 
+            #8b4513 20%, 
+            #cd853f 40%, 
+            #ff8c42 60%, 
+            #ffa366 80%, 
+            #ffb380 100%);
+          --accent-color: #ff8c42;
+        }
+        
+        .theme-pink-red {
+          --card-bg: linear-gradient(135deg, 
+            #8b4c6a 0%, 
+            #b85c8a 20%, 
+            #d97aa8 40%, 
+            #ff99c8 60%, 
+            #ffb3d0 80%, 
+            #ffc8dd 100%);
+          --accent-color: #ff99c8;
+        }
+        
+        .theme-purple-violet {
+          --card-bg: linear-gradient(135deg, 
+            #2d1b69 0%, 
+            #4a2d8b 20%, 
+            #6b46c1 40%, 
+            #9b72cf 60%, 
+            #b794f6 80%, 
+            #d6bcfa 100%);
+          --accent-color: #9b72cf;
+        }
+        
+        .theme-black-yellow {
+          --card-bg: linear-gradient(135deg, 
+            #1a1a1a 0%, 
+            #2d2d2d 20%, 
+            #4a4a4a 40%, 
+            #ffd700 60%, 
+            #ffed4e 80%, 
+            #fff59d 100%);
+          --accent-color: #ffd700;
+        }
+        
+        .theme-blue-light-purple {
+          --card-bg: linear-gradient(135deg, 
+            #00bcd4 0%, 
+            #40c4ff 20%, 
+            #7c4dff 40%, 
+            #b388ff 60%, 
+            #d1c4e9 80%, 
+            #e1bee7 100%);
+          --accent-color: #7c4dff;
+        }
+        
+        .theme-red-black {
+          --card-bg: linear-gradient(135deg, 
+            #ff0000 0%, 
+            #cc0000 20%, 
+            #990000 40%, 
+            #660000 60%, 
+            #330000 80%, 
+            #000000 100%);
+          --accent-color: #ff0000;
+        }
+        
+        /* الثيمات الموجودة مسبقاً */
         .theme-sunset-glow {
           --card-bg: linear-gradient(135deg, 
             #2c1810, 
