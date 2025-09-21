@@ -5,12 +5,24 @@ import App from './App';
 import './index.css';
 // import { getSocket } from '@/lib/socket'; // defer dynamic import instead
 import { applyThemeById } from '@/utils/applyTheme';
+import { apiRequest } from '@/lib/queryClient';
 
 // تطبيق الثيم المحفوظ عند بدء التطبيق
 try {
 	const saved = localStorage.getItem('selectedTheme');
 	if (saved) applyThemeById(saved, false);
 } catch {}
+
+// جلب ثيم الموقع الرسمي وتطبيقه للجميع عند الإقلاع
+(async () => {
+	try {
+		const data = await apiRequest<{ siteTheme: string }>(`/api/settings/site-theme`);
+		if ((data as any)?.siteTheme) {
+			applyThemeById((data as any).siteTheme, false);
+			try { localStorage.setItem('selectedTheme', (data as any).siteTheme); } catch {}
+		}
+	} catch {}
+})();
 
 // الاستماع لتحديثات الثيم فقط (بدون طلب مبكر يحجب الرسم)
 (async () => {
