@@ -91,10 +91,16 @@ export default function MessageArea({
         el.value = nextValue;
         el.style.height = 'auto';
         const computed = window.getComputedStyle(el);
-        const lineHeight = parseFloat(computed.lineHeight || '20');
-        const maxHeight = lineHeight * MAX_LINES;
-        const scrollH = el.scrollHeight;
-        return scrollH > Math.ceil(maxHeight + 1);
+        const parsedLineHeight = parseFloat(computed.lineHeight || '');
+        const fontSize = parseFloat(computed.fontSize || '16');
+        const lineHeight = Number.isFinite(parsedLineHeight) && parsedLineHeight > 0
+          ? parsedLineHeight
+          : (Number.isFinite(fontSize) && fontSize > 0 ? fontSize * 1.4 : 20);
+        const paddingTop = parseFloat(computed.paddingTop || '0') || 0;
+        const paddingBottom = parseFloat(computed.paddingBottom || '0') || 0;
+        const allowedHeight = lineHeight * MAX_LINES + paddingTop + paddingBottom;
+        const scrollH = el.scrollHeight; // includes padding
+        return scrollH > Math.ceil(allowedHeight + 1);
       } catch {
         return false;
       } finally {
@@ -1081,11 +1087,11 @@ export default function MessageArea({
               onKeyPress={handleKeyPress}
               onPaste={handlePaste}
               placeholder={isChatRestricted ? getRestrictionMessage : "اكتب رسالتك هنا..."}
-              className={`flex-1 resize-none bg-white placeholder:text-gray-500 ring-offset-white border border-gray-300 rounded-md px-3 py-2 min-h-[2.5rem] max-h-[5rem] transition-all duration-200 ${isMobile ? 'mobile-text' : ''} ${isChatRestricted ? 'cursor-not-allowed opacity-60' : ''}`}
+              className={`flex-1 resize-none bg-white placeholder:text-gray-500 ring-offset-white border border-gray-300 rounded-md px-3 ${isMobile ? 'h-11 py-2' : 'h-8 py-1'} transition-all duration-200 ${isMobile ? 'mobile-text' : ''} ${isChatRestricted ? 'cursor-not-allowed opacity-60' : ''}`}
               disabled={!currentUser || isChatRestricted}
               maxLength={1000}
               autoComplete="off"
-              rows={2}
+              rows={1}
               style={{
                 ...(isMobile ? { fontSize: '16px' } : {}),
                 color: composerTextColor,
