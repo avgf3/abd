@@ -1,6 +1,6 @@
-THIS SHOULD BE A LINTER ERRORimport { lazy, Suspense, useState, useEffect } from 'react';
+import { lazy, Suspense, useState, useEffect } from 'react';
 import { useRoute, useLocation } from 'wouter';
-import { getCityByPath, CitiesSystem, getAllCities, getCitiesByCountry } from '@/data/cityChats';
+import { getCityByPath, CitiesSystem } from '@/data/cityChats';
 
 const ChatInterface = lazy(() => import('@/components/chat/ChatInterface'));
 const CityWelcomeScreen = lazy(() => import('@/components/chat/CityWelcomeScreen'));
@@ -140,18 +140,6 @@ export default function CityChat() {
   };
 
   if (!cityData) {
-    console.log('CityChat ERROR - cityData is null/undefined:', {
-      currentPath: window.location.pathname,
-      match,
-      params,
-      cityPath,
-      cityData,
-      availableCities: getAllCities().length,
-      cityExists: getAllCities().some(c => c.path === cityPath),
-      allCities: getAllCities().map(c => ({ path: c.path, name: c.nameAr })).slice(0, 5),
-      countryCities: getCitiesByCountry(params?.country || '').map(c => ({ path: c.path, name: c.nameAr }))
-    });
-
     return (
       <div className="min-h-[100dvh] bg-gradient-to-br from-red-50 to-red-100 flex items-center justify-center">
         <div className="text-center p-8 bg-white rounded-xl shadow-lg">
