@@ -300,7 +300,7 @@ function Router() {
       <Route path="/djibouti" component={CountryChat} />
 
       {/* Generic city route - must be before catch-all */}
-      <Route path="/:country/:city" component={CityChat} />
+      {/* <Route path="/:country/:city" component={CityChat} /> */}
 
       <Route component={ChatPage} />
     </Switch>

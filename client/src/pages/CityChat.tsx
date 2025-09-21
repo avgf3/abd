@@ -59,6 +59,14 @@ export default function CityChat() {
   const [match, params] = useRoute('/:country/:city');
   const [, setLocation] = useLocation();
 
+  // Debug logging
+  console.log('CityChat Debug Info:', {
+    currentPath: window.location.pathname,
+    match: match,
+    params: params,
+    userAgent: navigator.userAgent
+  });
+
   // Test mode for Universal City System
   const testMode = params?.city === 'test-universal-system';
 
@@ -71,12 +79,14 @@ export default function CityChat() {
   const cityPath = params ? `/${(params as any).country}/${(params as any).city}` : '/';
   const cityData = getCityByPath(cityPath);
 
-  // Debug logging
-  console.log('CityChat Debug:', {
+  // Enhanced debug logging
+  console.log('CityChat Debug Info:', {
+    currentPath: window.location.pathname,
     match,
-    params,
+    params: params ? params : 'null/undefined',
     cityPath,
-    cityData: cityData ? 'FOUND' : 'NOT FOUND'
+    cityData: cityData ? 'FOUND' : 'NOT FOUND',
+    cityDataDetails: cityData
   });
 
   // Enhanced city data with additional information using CitiesSystem
@@ -191,6 +201,14 @@ export default function CityChat() {
   };
 
   if (!cityData) {
+    console.log('CityChat ERROR - cityData is null/undefined:', {
+      currentPath: window.location.pathname,
+      match,
+      params,
+      cityPath,
+      cityData
+    });
+
     return (
       <div className="min-h-[100dvh] bg-gradient-to-br from-red-50 to-red-100 flex items-center justify-center">
         <div className="text-center p-8 bg-white rounded-xl shadow-lg">
