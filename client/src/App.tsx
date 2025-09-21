@@ -265,7 +265,7 @@ function Router() {
       <Route path="/palestine/gaza" component={CityChat} />
       <Route path="/palestine/ramallah" component={CityChat} />
 
-      {/* Generic city route - moved to be before country routes but after specific city routes */}
+      {/* Generic city route - MUST be before country routes */}
       <Route path="/:country/:city" component={CityChat} />
 
       {/* Country-specific routes - LAST */}
@@ -301,9 +301,6 @@ function Router() {
       <Route path="/iraq" component={CountryChat} />
       <Route path="/comoros" component={CountryChat} />
       <Route path="/djibouti" component={CountryChat} />
-
-      {/* Generic city route - must be before catch-all */}
-      {/* <Route path="/:country/:city" component={CityChat} /> */}
 
       <Route component={ChatPage} />
     </Switch>
