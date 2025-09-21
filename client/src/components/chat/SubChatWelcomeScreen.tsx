@@ -6,11 +6,6 @@ import UserRegistration from './UserRegistration';
 import StructuredData from '@/components/SEO/StructuredData';
 import { getCityLinkFromName } from '@/utils/cityUtils';
 
-interface CityWelcomeScreenProps {
-  onUserLogin: (user: any) => void;
-  cityData: any;
-}
-
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -18,14 +13,14 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser } from '@/types/chat';
-import type { CityChat } from '@/data/cityChats';
+import type { SubChat } from '@/data/subChats';
 
-interface CityWelcomeScreenProps {
+interface SubChatWelcomeScreenProps {
   onUserLogin: (user: ChatUser) => void;
-  cityData: CityChat;
+  subChatData: SubChat;
 }
 
-export default function CityWelcomeScreen({ onUserLogin, cityData }: CityWelcomeScreenProps) {
+export default function SubChatWelcomeScreen({ onUserLogin, subChatData }: SubChatWelcomeScreenProps) {
   const [showGuestModal, setShowGuestModal] = useState(false);
   const [showMemberModal, setShowMemberModal] = useState(false);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
@@ -38,7 +33,7 @@ export default function CityWelcomeScreen({ onUserLogin, cityData }: CityWelcome
   const [confirmPassword, setConfirmPassword] = useState('');
   const [registerGender, setRegisterGender] = useState('male');
   const [registerAge, setRegisterAge] = useState('');
-  const [registerCountry, setRegisterCountry] = useState(cityData.nameAr.replace('شات ', ''));
+  const [registerCountry, setRegisterCountry] = useState(subChatData.nameAr.replace('شات ', ''));
   const [registerStatus, setRegisterStatus] = useState('');
   const [registerRelation, setRegisterRelation] = useState('');
   const [loading, setLoading] = useState(false);
@@ -48,12 +43,12 @@ export default function CityWelcomeScreen({ onUserLogin, cityData }: CityWelcome
 
   // تحديث العنوان والوصف للصفحة
   useEffect(() => {
-    document.title = cityData.title;
+    document.title = subChatData.title;
     const metaDescription = document.querySelector("meta[name='description']");
     if (metaDescription) {
-      metaDescription.setAttribute('content', cityData.metaDescription);
+      metaDescription.setAttribute('content', subChatData.metaDescription);
     }
-    
+
     // إضافة الكلمات المفتاحية
     let metaKeywords = document.querySelector("meta[name='keywords']");
     if (!metaKeywords) {
@@ -61,8 +56,8 @@ export default function CityWelcomeScreen({ onUserLogin, cityData }: CityWelcome
       metaKeywords.setAttribute('name', 'keywords');
       document.head.appendChild(metaKeywords);
     }
-    metaKeywords.setAttribute('content', cityData.keywords.join(', '));
-  }, [cityData]);
+    metaKeywords.setAttribute('content', subChatData.keywords.join(', '));
+  }, [subChatData]);
 
   const handleGuestLogin = async () => {
     if (!guestName.trim()) {
@@ -81,7 +76,7 @@ export default function CityWelcomeScreen({ onUserLogin, cityData }: CityWelcome
         body: {
           username: guestName.trim(),
           gender: guestGender,
-          country: cityData.nameAr.replace('شات ', ''),
+          country: subChatData.nameAr.replace('شات ', ''),
         },
       });
       onUserLogin(data.user);
@@ -195,9 +190,9 @@ export default function CityWelcomeScreen({ onUserLogin, cityData }: CityWelcome
       <StructuredData
         type="WebPage"
         data={{
-          name: cityData.title,
-          url: `https://www.arabya.chat${cityData.path}`,
-          description: cityData.metaDescription,
+          name: subChatData.title,
+          url: `https://www.arabya.chat${subChatData.path}`,
+          description: subChatData.metaDescription,
           breadcrumbs: [
             {
               "@type": "ListItem",
@@ -208,14 +203,20 @@ export default function CityWelcomeScreen({ onUserLogin, cityData }: CityWelcome
             {
               "@type": "ListItem",
               "position": 2,
-              "name": cityData.nameAr,
-              "item": `https://www.arabya.chat${cityData.path}`
+              "name": subChatData.parentPath.replace('/', ''),
+              "item": `https://www.arabya.chat${subChatData.parentPath}`
+            },
+            {
+              "@type": "ListItem",
+              "position": 3,
+              "name": subChatData.nameAr,
+              "item": `https://www.arabya.chat${subChatData.path}`
             }
           ],
-          appName: cityData.nameAr
+          appName: subChatData.nameAr
         }}
       />
-      
+
       {/* شريط العنوان */}
       <div className="bg-gray-900 text-white py-3 px-4">
         <div className="max-w-6xl mx-auto flex justify-between items-center">
@@ -255,13 +256,13 @@ export default function CityWelcomeScreen({ onUserLogin, cityData }: CityWelcome
           {/* Header Section */}
           <div className="text-center mb-8">
             <h1 className="text-5xl md:text-7xl font-bold mb-4 bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500 bg-clip-text text-transparent animate-gradient">
-              {cityData.nameAr}
+              {subChatData.nameAr}
             </h1>
             <p className="text-xl md:text-2xl text-gray-200 mb-2">
-              دردشة {cityData.nameAr.replace('شات ', '')} الرسمية 🌟
+              غرفة {subChatData.nameAr} الرسمية 🌟
             </p>
             <p className="text-lg text-gray-300">
-              تعارف وتواصل مع أهل {cityData.nameAr.replace('شات ', '')} في غرف دردشة متنوعة
+              تعارف وتواصل في {subChatData.nameAr}
             </p>
           </div>
 
@@ -316,55 +317,34 @@ export default function CityWelcomeScreen({ onUserLogin, cityData }: CityWelcome
             </div>
           </div>
 
-          {/* City Specific Chat Links */}
+          {/* Sub Chat Specific Links */}
           <div className="glass-effect p-8 rounded-2xl border border-white/20 mb-8">
             <h2 className="text-3xl font-bold text-center mb-6 text-white">
-              غرف دردشة {cityData.nameAr.replace('شات ', '')} المتخصصة
+              غرف {subChatData.nameAr} المتخصصة
             </h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {cityData.chatLinks.map((link, index) => {
-                const cityLink = getCityLinkFromName(link.name, cityData.countryPath);
-
-                if (cityLink) {
-                  // رابط حقيقي للمدينة أو الغرفة الفرعية
-                  return (
-                    <a
-                      key={index}
-                      href={cityLink}
-                      className="bg-gradient-to-r from-blue-600/20 to-purple-600/20 hover:from-blue-600/30 hover:to-purple-600/30 p-3 rounded-xl text-white transition-all duration-300 hover:transform hover:scale-105 border border-white/10 hover:border-white/30 block"
-                    >
-                      <p className="font-semibold">{link.name}</p>
-                      {link.description && (
-                        <p className="text-xs text-gray-300 mt-1">{link.description}</p>
-                      )}
-                    </a>
-                  );
-                } else {
-                  // تبويب عادي (للمدعوات الأخرى)
-                  return (
-                    <button
-                      key={index}
-                      onClick={() => toast({
-                        title: link.name,
-                        description: link.description || 'جاري تحميل الغرفة...',
-                      })}
-                      className="bg-gradient-to-r from-blue-600/20 to-purple-600/20 hover:from-blue-600/30 hover:to-purple-600/30 p-3 rounded-xl text-white transition-all duration-300 hover:transform hover:scale-105 border border-white/10 hover:border-white/30"
-                    >
-                      <p className="font-semibold">{link.name}</p>
-                      {link.description && (
-                        <p className="text-xs text-gray-300 mt-1">{link.description}</p>
-                      )}
-                    </button>
-                  );
-                }
-              })}
+              {subChatData.chatLinks.map((link, index) => (
+                <button
+                  key={index}
+                  onClick={() => toast({
+                    title: link.name,
+                    description: link.description || 'جاري تحميل الغرفة...',
+                  })}
+                  className="bg-gradient-to-r from-blue-600/20 to-purple-600/20 hover:from-blue-600/30 hover:to-purple-600/30 p-3 rounded-xl text-white transition-all duration-300 hover:transform hover:scale-105 border border-white/10 hover:border-white/30"
+                >
+                  <p className="font-semibold">{link.name}</p>
+                  {link.description && (
+                    <p className="text-xs text-gray-300 mt-1">{link.description}</p>
+                  )}
+                </button>
+              ))}
             </div>
           </div>
 
-          {/* Other Cities Links */}
+          {/* Other Links */}
           <div className="glass-effect p-6 rounded-2xl border border-white/20">
             <h3 className="text-2xl font-bold text-center mb-4 text-white">
-              دردشات عربية أخرى
+              دردشات أخرى
             </h3>
             <div className="flex flex-wrap justify-center gap-3">
               <a href="/" className="text-blue-300 hover:text-blue-200 transition-colors">الرئيسية</a>
@@ -401,7 +381,7 @@ export default function CityWelcomeScreen({ onUserLogin, cityData }: CityWelcome
           <DialogHeader>
             <DialogTitle className="text-center text-2xl font-bold text-white flex items-center justify-center gap-2">
               <span>👤</span>
-              دخول كزائر - {cityData.nameAr}
+              دخول كزائر - {subChatData.nameAr}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
@@ -457,7 +437,7 @@ export default function CityWelcomeScreen({ onUserLogin, cityData }: CityWelcome
           <DialogHeader>
             <DialogTitle className="text-center text-2xl font-bold text-white flex items-center justify-center gap-2">
               <span>⭐</span>
-              دخول الأعضاء - {cityData.nameAr}
+              دخول الأعضاء - {subChatData.nameAr}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
@@ -493,7 +473,7 @@ export default function CityWelcomeScreen({ onUserLogin, cityData }: CityWelcome
           <DialogHeader>
             <DialogTitle className="text-center text-2xl font-bold text-white flex items-center justify-center gap-2">
               <span>📝</span>
-              تسجيل عضوية جديدة - {cityData.nameAr}
+              تسجيل عضوية جديدة - {subChatData.nameAr}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
