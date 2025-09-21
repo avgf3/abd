@@ -570,3 +570,30 @@ export function getCountryByPath(path: string): CountryChat | undefined {
 export function getCountryById(id: string): CountryChat | undefined {
   return countryChats.find(country => country.id === id);
 }
+
+// دالة للحصول على جميع الدول
+export function getAllCountries(): CountryChat[] {
+  return countryChats;
+}
+
+// دالة للبحث عن دولة بواسطة الاسم
+export function searchCountries(query: string): CountryChat[] {
+  const lowerQuery = query.toLowerCase();
+  return countryChats.filter(country =>
+    country.nameAr.toLowerCase().includes(lowerQuery) ||
+    country.nameEn.toLowerCase().includes(lowerQuery) ||
+    country.title.toLowerCase().includes(lowerQuery)
+  );
+}
+
+// دالة للحصول على إحصائيات الدول
+export function getCountriesStats() {
+  return {
+    total: countryChats.length,
+    byRegion: {
+      middleEast: countryChats.filter(c => ['oman', 'egypt', 'saudi', 'algeria', 'bahrain', 'uae', 'jordan', 'kuwait', 'libya', 'tunisia', 'morocco', 'sudan', 'palestine', 'qatar', 'yemen', 'lebanon', 'syria', 'iraq'].includes(c.id)).length,
+      africa: countryChats.filter(c => ['comoros', 'djibouti'].includes(c.id)).length,
+      general: countryChats.filter(c => !['comoros', 'djibouti'].includes(c.id) && !['oman', 'egypt', 'saudi', 'algeria', 'bahrain', 'uae', 'jordan', 'kuwait', 'libya', 'tunisia', 'morocco', 'sudan', 'palestine', 'qatar', 'yemen', 'lebanon', 'syria', 'iraq'].includes(c.id)).length
+    }
+  };
+}
