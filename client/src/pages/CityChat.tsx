@@ -1,6 +1,6 @@
 import { lazy, Suspense, useState, useEffect } from 'react';
 import { useRoute, useLocation } from 'wouter';
-import { getCityByPath, CitiesSystem } from '@/data/cityChats';
+import { getCityByPath, CitiesSystem, getAllCities } from '@/data/cityChats';
 
 // Universal City System Component
 function UniversalCitySystem({ cityPath }: { cityPath: string }) {
@@ -96,15 +96,18 @@ export default function CityChat() {
     cityPath,
     cityData: cityData ? 'FOUND' : 'NOT FOUND',
     cityDataDetails: cityData,
-    availableCitiesCount: getAllCities ? getAllCities().length : 'getAllCities not available'
+    availableCitiesCount: getAllCities().length,
+    allCityPaths: getAllCities().map(c => c.path).slice(0, 10), // Show first 10 city paths for debugging
+    searchingFor: cityPath,
+    foundInData: getAllCities().some(c => c.path === cityPath) ? 'YES' : 'NO'
   });
 
-  // Import getAllCities for debugging
-  import('@/data/cityChats').then(module => {
-    const { getAllCities } = module;
-    console.log('Available cities:', getAllCities().slice(0, 5)); // First 5 cities
-    console.log('City found for', cityPath, ':', getAllCities().find(c => c.path === cityPath));
-  }).catch(err => console.log('Error importing cityChats:', err));
+  // Import getAllCities for debugging - Remove this problematic async import
+  // import('@/data/cityChats').then(module => {
+  //   const { getAllCities } = module;
+  //   console.log('Available cities:', getAllCities().slice(0, 5)); // First 5 cities
+  //   console.log('City found for', cityPath, ':', getAllCities().find(c => c.path === cityPath));
+  // }).catch(err => console.log('Error importing cityChats:', err));
 
   // Enhanced city data with additional information using CitiesSystem
   const cityInfo = cityData ? CitiesSystem.getCitiesWithCountryInfo(cityData.countryPath) : null;
@@ -223,7 +226,11 @@ export default function CityChat() {
       match,
       params,
       cityPath,
-      cityData
+      cityData,
+      availableCities: getAllCities().length,
+      cityExists: getAllCities().some(c => c.path === cityPath),
+      allCities: getAllCities().map(c => ({ path: c.path, name: c.nameAr })).slice(0, 5),
+      countryCities: getCitiesByCountry(params?.country || '').map(c => ({ path: c.path, name: c.nameAr }))
     });
 
     return (
@@ -238,6 +245,10 @@ export default function CityChat() {
             <div>📍 المسار المطلوب: {cityPath}</div>
             <div>🔍 params: {JSON.stringify(params)}</div>
             <div>⚡ match: {match ? 'true' : 'false'}</div>
+            <div>📊 عدد المدن المتاحة: {getAllCities().length}</div>
+            <div>🔍 هل المدينة موجودة في البيانات: {getAllCities().some(c => c.path === cityPath) ? 'نعم' : 'لا'}</div>
+            <div>🏛️ الدولة: {params?.country}</div>
+            <div>🏙️ عدد المدن في هذه الدولة: {getCitiesByCountry(params?.country || '').length}</div>
           </div>
         </div>
       </div>
@@ -258,7 +269,15 @@ export default function CityChat() {
         </div>
       )}
 
-      <Suspense fallback={<div className="p-6 text-center">...جاري التحميل</div>}>
+      <Suspense fallback={
+        <div className="min-h-[100dvh] bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+          <div className="text-center p-8 bg-white rounded-xl shadow-lg">
+            <div className="text-6xl mb-4">⏳</div>
+            <h2 className="text-2xl font-bold text-gray-800 mb-2">جاري التحميل...</h2>
+            <p className="text-gray-600">يرجى الانتظار قليلاً</p>
+          </div>
+        </div>
+      }>
         {isRestoring ? (
           <div className="p-6 text-center">...جاري استعادة الجلسة</div>
         ) : showWelcome ? (
