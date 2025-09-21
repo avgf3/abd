@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState, useEffect } from 'react';
+THIS SHOULD BE A LINTER ERRORimport { lazy, Suspense, useState, useEffect } from 'react';
 import { useRoute, useLocation } from 'wouter';
 import { getCityByPath, CitiesSystem, getAllCities, getCitiesByCountry } from '@/data/cityChats';
 

@@ -235,8 +235,7 @@ function Router() {
       <Route path="/oman/nizwa" component={CityChat} />
       <Route path="/oman/sohar" component={CityChat} />
 
-      {/* Test Route for Universal City System */}
-      <Route path="/:country/test-universal-system" component={CityChat} />
+      
 
       {/* Egypt Cities */}
       <Route path="/egypt/cairo" component={CityChat} />
