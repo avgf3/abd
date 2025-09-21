@@ -66,7 +66,7 @@ export default function NotificationPanel({
     queryKey: ['/api/notifications/unread-count', currentUser?.id],
     queryFn: async () => {
       if (!currentUser?.id) throw new Error('No user ID');
-      return await apiRequest(`/api/notifications/unread-count?userId=${currentUser.id}`);
+      return await apiRequest(`/api/notifications/${currentUser.id}/unread-count`);
     },
     enabled: !!currentUser?.id,
     // لا حاجة لـ polling، سيتم تحديث العداد عبر invalidate من useNotificationManager

@@ -1522,7 +1522,7 @@ export const useChat = () => {
                 // Prefetch notifications count
                 queryClient.prefetchQuery({
                   queryKey: ['/api/notifications/unread-count', user.id],
-                  queryFn: async () => apiRequest(`/api/notifications/unread-count?userId=${user.id}`),
+                  queryFn: async () => apiRequest(`/api/notifications/${user.id}/unread-count`),
                   staleTime: 60_000,
                 });
                 // Prefetch friends list (if endpoint supported)
