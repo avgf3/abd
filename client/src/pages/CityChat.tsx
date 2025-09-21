@@ -59,6 +59,15 @@ export default function CityChat() {
   const [match, params] = useRoute('/:country/:city');
   const [, setLocation] = useLocation();
 
+  // Enhanced debug logging
+  console.log('CityChat Debug Info:', {
+    currentPath: window.location.pathname,
+    match: match,
+    params: params,
+    paramsType: typeof params,
+    paramsKeys: params ? Object.keys(params) : 'null'
+  });
+
   // Test mode for Universal City System
   const testMode = params?.city === 'test-universal-system';
 
@@ -68,8 +77,34 @@ export default function CityChat() {
   }
   
   // Get city data based on URL using the unified system
-  const cityPath = params ? `/${(params as any).country}/${(params as any).city}` : '/';
+  let cityPath = '/';
+
+  if (params && typeof params === 'object' && params.country && params.city) {
+    cityPath = `/${params.country}/${params.city}`;
+  } else if (typeof params === 'object' && params[0] && params[1]) {
+    // Fallback for array-style params
+    cityPath = `/${params[0]}/${params[1]}`;
+  }
+
   const cityData = getCityByPath(cityPath);
+
+  // Enhanced debug logging
+  console.log('CityChat Debug Info:', {
+    currentPath: window.location.pathname,
+    match,
+    params: params ? params : 'null/undefined',
+    cityPath,
+    cityData: cityData ? 'FOUND' : 'NOT FOUND',
+    cityDataDetails: cityData,
+    availableCitiesCount: getAllCities ? getAllCities().length : 'getAllCities not available'
+  });
+
+  // Import getAllCities for debugging
+  import('./data/cityChats').then(module => {
+    const { getAllCities } = module;
+    console.log('Available cities:', getAllCities().slice(0, 5)); // First 5 cities
+    console.log('City found for', cityPath, ':', getAllCities().find(c => c.path === cityPath));
+  }).catch(err => console.log('Error importing cityChats:', err));
 
   // Enhanced city data with additional information using CitiesSystem
   const cityInfo = cityData ? CitiesSystem.getCitiesWithCountryInfo(cityData.countryPath) : null;
@@ -183,7 +218,30 @@ export default function CityChat() {
   };
 
   if (!cityData) {
-    return null;
+    console.log('CityChat ERROR - cityData is null/undefined:', {
+      currentPath: window.location.pathname,
+      match,
+      params,
+      cityPath,
+      cityData
+    });
+
+    return (
+      <div className="min-h-[100dvh] bg-gradient-to-br from-red-50 to-red-100 flex items-center justify-center">
+        <div className="text-center p-8 bg-white rounded-xl shadow-lg">
+          <div className="text-6xl mb-4">❌</div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">المدينة غير موجودة</h2>
+          <p className="text-gray-600 mb-4">
+            عذراً، لم نتمكن من العثور على بيانات هذه المدينة.
+          </p>
+          <div className="space-y-2 text-sm text-gray-500">
+            <div>📍 المسار المطلوب: {cityPath}</div>
+            <div>🔍 params: {JSON.stringify(params)}</div>
+            <div>⚡ match: {match ? 'true' : 'false'}</div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
