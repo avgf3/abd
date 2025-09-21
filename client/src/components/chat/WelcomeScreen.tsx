@@ -489,32 +489,32 @@ export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto mt-6">
             <div className="space-y-2">
               <a href="/watan" className="block text-yellow-300 hover:text-yellow-200 transition-colors">دردشه الوطن</a>
-              <a href="/algeria" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات الجزائر</a>
-              <a href="/bahrain" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات البحرين</a>
-              <a href="/uae" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات الإمارات</a>
-              <a href="/jordan" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات الأردن</a>
-              <a href="/kuwait" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات الكويت</a>
+              <a href="/algeria/algiers" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات الجزائر</a>
+              <a href="/bahrain/bahrain-mobile" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات البحرين</a>
+              <a href="/uae/abudhabi" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات الإمارات</a>
+              <a href="/jordan/amman" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات الأردن</a>
+              <a href="/kuwait/kuwait-mobile" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات الكويت</a>
             </div>
             <div className="space-y-2">
-              <a href="/libya" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات ليبيا</a>
-              <a href="/tunisia" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات تونس</a>
-              <a href="/morocco" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات المغرب</a>
-              <a href="/oman" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات عمان</a>
-              <a href="/sudan" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات السودان</a>
+              <a href="/libya/libya-mobile" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات ليبيا</a>
+              <a href="/tunisia/tunisia-mobile" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات تونس</a>
+              <a href="/morocco/morocco-mobile" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات المغرب</a>
+              <a href="/oman/muscat" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات عمان</a>
+              <a href="/sudan/sudan-mobile" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات السودان</a>
             </div>
             <div className="space-y-2">
-              <a href="/palestine" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات فلسطين</a>
-              <a href="/qatar" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات قطر</a>
-              <a href="/comoros" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات جزر القمر</a>
-              <a href="/yemen" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات اليمن</a>
-              <a href="/djibouti" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات جيبوتي</a>
+              <a href="/palestine/jerusalem" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات فلسطين</a>
+              <a href="/qatar/qatar-mobile" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات قطر</a>
+              <a href="/comoros/comoros-mobile" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات جزر القمر</a>
+              <a href="/yemen/yemen-mobile" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات اليمن</a>
+              <a href="/djibouti/djibouti-mobile" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات جيبوتي</a>
             </div>
             <div className="space-y-2">
-              <a href="/egypt" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات مصر</a>
-              <a href="/saudi" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات السعودية</a>
-              <a href="/lebanon" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات لبنان</a>
-              <a href="/syria" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات سوريا</a>
-              <a href="/iraq" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات العراق</a>
+              <a href="/egypt/cairo" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات مصر</a>
+              <a href="/saudi/riyadh" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات السعودية</a>
+              <a href="/lebanon/lebanon-mobile" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات لبنان</a>
+              <a href="/syria/syria-mobile" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات سوريا</a>
+              <a href="/iraq/iraq-mobile" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات العراق</a>
             </div>
           </div>
           <div className="mt-8 space-y-2">

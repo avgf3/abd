@@ -123,11 +123,7 @@ export default function CountryChat() {
           <p className="text-gray-600 mb-4">
             عذراً، لم نتمكن من العثور على بيانات هذه الدولة.
           </p>
-          <div className="space-y-2 text-sm text-gray-500">
-            <div>📍 المسار المطلوب: {countryPath}</div>
-            <div>🔍 params: {JSON.stringify(params)}</div>
-            <div>⚡ match: {match ? 'true' : 'false'}</div>
-          </div>
+          
         </div>
       </div>
     );

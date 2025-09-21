@@ -356,7 +356,7 @@ export default function CountryWelcomeScreen({ onUserLogin, countryData }: Count
             </div>
           </div>
 
-          {/* Other Countries Links */}
+          {/* Other Cities Links */}
           <div className="glass-effect p-6 rounded-2xl border border-white/20">
             <h3 className="text-2xl font-bold text-center mb-4 text-white">
               دردشات عربية أخرى
@@ -364,27 +364,27 @@ export default function CountryWelcomeScreen({ onUserLogin, countryData }: Count
             <div className="flex flex-wrap justify-center gap-3">
               <a href="/" className="text-blue-300 hover:text-blue-200 transition-colors">الرئيسية</a>
               <span className="text-gray-500">|</span>
-              <a href="/oman" className="text-blue-300 hover:text-blue-200 transition-colors">شات عمان</a>
+              <a href="/oman/muscat" className="text-blue-300 hover:text-blue-200 transition-colors">شات عمان</a>
               <span className="text-gray-500">|</span>
-              <a href="/egypt" className="text-blue-300 hover:text-blue-200 transition-colors">شات مصر</a>
+              <a href="/egypt/cairo" className="text-blue-300 hover:text-blue-200 transition-colors">شات مصر</a>
               <span className="text-gray-500">|</span>
-              <a href="/saudi" className="text-blue-300 hover:text-blue-200 transition-colors">شات السعودية</a>
+              <a href="/saudi/riyadh" className="text-blue-300 hover:text-blue-200 transition-colors">شات السعودية</a>
               <span className="text-gray-500">|</span>
-              <a href="/algeria" className="text-blue-300 hover:text-blue-200 transition-colors">شات الجزائر</a>
+              <a href="/algeria/algiers" className="text-blue-300 hover:text-blue-200 transition-colors">شات الجزائر</a>
               <span className="text-gray-500">|</span>
-              <a href="/bahrain" className="text-blue-300 hover:text-blue-200 transition-colors">شات البحرين</a>
+              <a href="/bahrain/bahrain-mobile" className="text-blue-300 hover:text-blue-200 transition-colors">شات البحرين</a>
               <span className="text-gray-500">|</span>
-              <a href="/uae" className="text-blue-300 hover:text-blue-200 transition-colors">شات الإمارات</a>
+              <a href="/uae/abudhabi" className="text-blue-300 hover:text-blue-200 transition-colors">شات الإمارات</a>
               <span className="text-gray-500">|</span>
-              <a href="/jordan" className="text-blue-300 hover:text-blue-200 transition-colors">شات الأردن</a>
+              <a href="/jordan/amman" className="text-blue-300 hover:text-blue-200 transition-colors">شات الأردن</a>
               <span className="text-gray-500">|</span>
-              <a href="/kuwait" className="text-blue-300 hover:text-blue-200 transition-colors">شات الكويت</a>
+              <a href="/kuwait/kuwait-mobile" className="text-blue-300 hover:text-blue-200 transition-colors">شات الكويت</a>
               <span className="text-gray-500">|</span>
-              <a href="/libya" className="text-blue-300 hover:text-blue-200 transition-colors">شات ليبيا</a>
+              <a href="/libya/libya-mobile" className="text-blue-300 hover:text-blue-200 transition-colors">شات ليبيا</a>
               <span className="text-gray-500">|</span>
-              <a href="/tunisia" className="text-blue-300 hover:text-blue-200 transition-colors">شات تونس</a>
+              <a href="/tunisia/tunisia-mobile" className="text-blue-300 hover:text-blue-200 transition-colors">شات تونس</a>
               <span className="text-gray-500">|</span>
-              <a href="/morocco" className="text-blue-300 hover:text-blue-200 transition-colors">شات المغرب</a>
+              <a href="/morocco/morocco-mobile" className="text-blue-300 hover:text-blue-200 transition-colors">شات المغرب</a>
             </div>
           </div>
         </div>

@@ -235,8 +235,7 @@ function Router() {
       <Route path="/oman/nizwa" component={CityChat} />
       <Route path="/oman/sohar" component={CityChat} />
 
-      {/* Test Route for Universal City System */}
-      <Route path="/:country/test-universal-system" component={CityChat} />
+      
 
       {/* Egypt Cities */}
       <Route path="/egypt/cairo" component={CityChat} />
@@ -268,7 +267,7 @@ function Router() {
       {/* Generic city route - MUST be before country routes */}
       <Route path="/:country/:city" component={CityChat} />
 
-      {/* Country-specific routes - LAST */}
+      {/* Country-specific routes - LAST (categories only) */}
       <Route path="/watan" component={CountryChat} />
       <Route path="/emamir" component={CountryChat} />
       <Route path="/falastini" component={CountryChat} />
@@ -281,26 +280,6 @@ function Router() {
       <Route path="/ahla-lamma" component={CountryChat} />
       <Route path="/beautiful-chat" component={CountryChat} />
       <Route path="/no-signup" component={CountryChat} />
-      <Route path="/oman" component={CountryChat} />
-      <Route path="/egypt" component={CountryChat} />
-      <Route path="/saudi" component={CountryChat} />
-      <Route path="/algeria" component={CountryChat} />
-      <Route path="/bahrain" component={CountryChat} />
-      <Route path="/uae" component={CountryChat} />
-      <Route path="/jordan" component={CountryChat} />
-      <Route path="/kuwait" component={CountryChat} />
-      <Route path="/libya" component={CountryChat} />
-      <Route path="/tunisia" component={CountryChat} />
-      <Route path="/morocco" component={CountryChat} />
-      <Route path="/sudan" component={CountryChat} />
-      <Route path="/palestine" component={CountryChat} />
-      <Route path="/qatar" component={CountryChat} />
-      <Route path="/yemen" component={CountryChat} />
-      <Route path="/lebanon" component={CountryChat} />
-      <Route path="/syria" component={CountryChat} />
-      <Route path="/iraq" component={CountryChat} />
-      <Route path="/comoros" component={CountryChat} />
-      <Route path="/djibouti" component={CountryChat} />
 
       <Route component={ChatPage} />
     </Switch>
