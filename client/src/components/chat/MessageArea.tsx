@@ -80,6 +80,31 @@ export default function MessageArea({
   const [isMultiLine, setIsMultiLine] = useState(false);
   const isMobile = useIsMobile();
   const { textColor: composerTextColor, bold: composerBold } = useComposerStyle();
+  const MAX_LINES = 2;
+  // Helper: فحص تجاوز سطرين بصريًا (مع احتساب الالتفاف)
+  const wouldExceedTwoLines = useCallback(
+    (el: HTMLTextAreaElement | null, nextValue: string): boolean => {
+      if (!el) return false;
+      const previousValue = el.value;
+      const previousHeight = el.style.height;
+      try {
+        el.value = nextValue;
+        el.style.height = 'auto';
+        const computed = window.getComputedStyle(el);
+        const lineHeight = parseFloat(computed.lineHeight || '20');
+        const maxHeight = lineHeight * MAX_LINES;
+        const scrollH = el.scrollHeight;
+        return scrollH > Math.ceil(maxHeight + 1);
+      } catch {
+        return false;
+      } finally {
+        el.value = previousValue;
+        el.style.height = previousHeight;
+      }
+    },
+    []
+  );
+
 
   // Refs
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -352,29 +377,59 @@ export default function MessageArea({
     }
   }, [messageText, currentUser, onSendMessage]);
 
-  // Key press handler - محسن للـ textarea
+  // Key press handler - منع تجاوز سطرين
   const handleKeyPress = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        handleSendMessage();
-      } else if (e.key !== 'Enter') {
+      if (e.key === 'Enter') {
+        if (!e.shiftKey) {
+          e.preventDefault();
+          handleSendMessage();
+          return;
+        }
+        // منع إنشاء سطر ثالث
+        const currentLines = (messageText.match(/\n/g)?.length || 0) + 1;
+        if (currentLines >= MAX_LINES) {
+          e.preventDefault();
+          return;
+        }
+      } else {
         // إرسال إشعار الكتابة فقط عند الكتابة الفعلية
         handleTypingThrottled();
       }
     },
-    [handleSendMessage, handleTypingThrottled]
+    [handleSendMessage, handleTypingThrottled, messageText]
   );
 
-  // Message text change handler
+  // Message text change handler مع منع تجاوز سطرين
   const handleMessageChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const text = e.target.value;
+    const linesCount = (text.match(/\n/g)?.length || 0) + 1;
+    // منع تجاوز السطور الفعلية أو البصرية (مع الالتفاف)
+    if (linesCount > MAX_LINES || wouldExceedTwoLines(inputRef.current, text)) {
+      // أوقف التغيير ليبقى النص كما هو (بدون ملاحظات أو اقتطاع)
+      // عنصر textarea مُتحكم به بالقيمة الحالية messageText، فلا نحدث الحالة هنا
+      return;
+    }
     setMessageText(text);
-    
-    // تتبع عدد الأسطر لتحديد موضع الأزرار
-    const lines = text.split('\n').length;
-    setIsMultiLine(lines > 1);
-  }, []);
+    setIsMultiLine(linesCount > 1);
+  }, [wouldExceedTwoLines]);
+
+  // Paste handler لمنع تجاوز سطرين عند اللصق
+  const handlePaste = useCallback((e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    try {
+      const paste = e.clipboardData.getData('text');
+      const el = e.currentTarget;
+      const selectionStart = el.selectionStart ?? messageText.length;
+      const selectionEnd = el.selectionEnd ?? messageText.length;
+      const nextValue = messageText.slice(0, selectionStart) + paste + messageText.slice(selectionEnd);
+      const nextLines = (nextValue.match(/\n/g)?.length || 0) + 1;
+      if (nextLines > MAX_LINES || wouldExceedTwoLines(inputRef.current, nextValue)) {
+        e.preventDefault();
+      }
+    } catch {
+      // ignore
+    }
+  }, [messageText, wouldExceedTwoLines]);
 
   // Emoji select handler
   const handleEmojiSelect = useCallback((emoji: string) => {
@@ -708,115 +763,26 @@ export default function MessageArea({
                         )}
                       </div>
 
-                      {/* Right side: time and report flag */}
-                      <span className="text-xs text-gray-500 whitespace-nowrap ml-2">
+                      {/* Right side: time */}
+                      <span className="text-xs text-gray-500 whitespace-nowrap ml-2 self-start">
                         {formatTime(message.timestamp)}
                       </span>
 
-                      {onReportMessage &&
-                        message.sender &&
-                        currentUser &&
-                        message.sender.id !== currentUser.id && (
-                          <button
-                            onClick={() =>
-                              onReportMessage(message.sender!, message.content, message.id)
-                            }
-                            className="text-sm hover:opacity-80"
-                            title="تبليغ"
-                          >
-                            🚩
-                          </button>
-                        )}
-
-                      {currentUser &&
-                        message.sender &&
-                        (() => {
-                          const isOwner = currentUser.userType === 'owner';
-                          const isAdmin = currentUser.userType === 'admin';
-                          const isSender = currentUser.id === message.sender.id;
-                          const canDelete = isSender || isOwner || isAdmin;
-                          if (!canDelete) return null;
-                          const handleDelete = async () => {
-                            try {
-                              await apiRequest(`/api/messages/${message.id}`, {
-                                method: 'DELETE',
-                                body: {
-                                  userId: currentUser.id,
-                                  roomId: message.roomId || 'general',
-                                },
-                              });
-                            } catch (e) {
-                              console.error('خطأ في حذف الرسالة', e);
-                            }
-                          };
-                          return (
-                            <button
-                              onClick={handleDelete}
-                              className="text-xs text-gray-500 hover:text-gray-700 transition-colors duration-200"
-                              title="حذف الرسالة"
-                            >
-                              🗑️
-                            </button>
-                          );
-                        })()}
-                      {/* Reactions (like/dislike/heart) */}
-                      {currentUser && !message.isPrivate && !isMobile && (
-                        <div className="flex items-center gap-1 ml-2">
-                          {(['like', 'dislike', 'heart'] as const).map((r) => {
-                            const isMine = message.myReaction === r;
-                            const count = message.reactions?.[r] ?? 0;
-                            const label = r === 'like' ? '👍' : r === 'dislike' ? '👎' : '❤️';
-                            const toggle = async () => {
-                              try {
-                                if (isMine) {
-                                  await apiRequest(
-                                    `/api/messages/${message.id}/reactions`,
-                                    {
-                                      method: 'DELETE',
-                                    }
-                                  );
-                                } else {
-                                  await apiRequest(
-                                    `/api/messages/${message.id}/reactions`,
-                                    {
-                                      method: 'POST',
-                                      body: { type: r },
-                                    }
-                                  );
-                                }
-                              } catch (e) {
-                                console.error('reaction error', e);
-                              }
-                            };
-                            return (
-                              <button
-                                key={r}
-                                onClick={toggle}
-                                className={`text-xs px-1 py-0.5 rounded ${isMine ? 'bg-primary/10 text-primary' : 'text-gray-600 hover:text-gray-800'}`}
-                                title={r}
-                              >
-                                <span className="mr-0.5">{label}</span>
-                                <span>{count}</span>
-                              </button>
-                            );
-                          })}
-                        </div>
-                      )}
-
-                      {/* Mobile: reactions in a three-dots menu */}
-                      {currentUser && !message.isPrivate && isMobile && (
+                      {/* قائمة ثلاث نقاط موحدة للجوال وسطح المكتب */}
+                      {currentUser && (
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <button
-                              className="h-6 w-6 p-0 text-gray-600 hover:text-gray-900"
+                              className="h-6 w-6 p-0 text-gray-600 hover:text-gray-900 self-start ml-1"
                               title="المزيد"
                               aria-label="المزيد"
                             >
                               <MoreVertical className="w-4 h-4" />
                             </button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="start" sideOffset={6} className="min-w-[160px]">
-                            {(['like', 'dislike', 'heart'] as const).map((r) => {
+                          <DropdownMenuContent align="start" sideOffset={6} className="min-w-[180px]">
+                            {/* Reactions */}
+                            {!message.isPrivate && (["like","dislike","heart"] as const).map((r) => {
                               const isMine = message.myReaction === r;
                               const count = message.reactions?.[r] ?? 0;
                               const label = r === 'like' ? '👍 إعجاب' : r === 'dislike' ? '👎 عدم إعجاب' : '❤️ قلب';
@@ -838,6 +804,34 @@ export default function MessageArea({
                                 </DropdownMenuItem>
                               );
                             })}
+                            {/* Report */}
+                            {onReportMessage && message.sender && currentUser && message.sender.id !== currentUser.id && (
+                              <DropdownMenuItem onClick={() => onReportMessage(message.sender!, message.content, message.id)}>
+                                🚩 تبليغ
+                              </DropdownMenuItem>
+                            )}
+                            {/* Delete */}
+                            {(() => {
+                              if (!message.sender || !currentUser) return null;
+                              const isOwner = currentUser.userType === 'owner';
+                              const isAdmin = currentUser.userType === 'admin';
+                              const isSender = currentUser.id === message.sender.id;
+                              const canDelete = isSender || isOwner || isAdmin;
+                              if (!canDelete) return null;
+                              const handleDelete = async () => {
+                                try {
+                                  await apiRequest(`/api/messages/${message.id}`, {
+                                    method: 'DELETE',
+                                    body: { userId: currentUser.id, roomId: message.roomId || 'general' },
+                                  });
+                                } catch (e) {
+                                  console.error('خطأ في حذف الرسالة', e);
+                                }
+                              };
+                              return (
+                                <DropdownMenuItem onClick={handleDelete}>🗑️ حذف</DropdownMenuItem>
+                              );
+                            })()}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       )}
@@ -1085,6 +1079,7 @@ export default function MessageArea({
               value={messageText}
               onChange={handleMessageChange}
               onKeyPress={handleKeyPress}
+              onPaste={handlePaste}
               placeholder={isChatRestricted ? getRestrictionMessage : "اكتب رسالتك هنا..."}
               className={`flex-1 resize-none bg-white placeholder:text-gray-500 ring-offset-white border border-gray-300 rounded-md px-3 py-2 min-h-[2.5rem] max-h-[5rem] transition-all duration-200 ${isMobile ? 'mobile-text' : ''} ${isChatRestricted ? 'cursor-not-allowed opacity-60' : ''}`}
               disabled={!currentUser || isChatRestricted}
@@ -1108,13 +1103,7 @@ export default function MessageArea({
             </Button>
           </div>
 
-          {/* Second row: Additional buttons when multi-line */}
-          {isMultiLine && (
-            <div className="flex items-center gap-2 mt-2 w-full justify-end opacity-75">
-              <span className="text-xs text-gray-500">السطر الثاني نشط</span>
-              {/* يمكن إضافة أزرار إضافية هنا في المستقبل */}
-            </div>
-          )}
+          {/* تم إزالة الملاحظة الخاصة بالسطر الثاني بناءً على الطلب */}
 
           {/* Hidden File Input for single line mode */}
           {!isMultiLine && (
