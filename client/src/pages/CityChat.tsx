@@ -66,6 +66,12 @@ export default function CityChat() {
     return null;
   }
 
+  // Check if city is 'test-universal-system' (special case)
+  if (params.city === 'test-universal-system') {
+    console.log('CityChat: Test mode activated');
+    // This is a special test route, don't redirect
+  }
+
   // Enhanced debug logging
   console.log('CityChat Debug Info:', {
     currentPath: window.location.pathname,
@@ -150,6 +156,13 @@ export default function CityChat() {
     // Check if country or city is a reserved route
     if (reservedRoutes.includes(params.country) || reservedRoutes.includes(params.city)) {
       console.log('CityChat: Redirecting due to reserved route');
+      setLocation('/');
+      return;
+    }
+
+    // Check if this is just a country without a city (should go to CountryChat instead)
+    if (!params.city) {
+      console.log('CityChat: No city specified, redirecting to home');
       setLocation('/');
       return;
     }
