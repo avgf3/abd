@@ -1,11 +1,7 @@
 (function () {
   try {
     var t = localStorage.getItem('selectedTheme');
-    if (!t) {
-      t = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)
-        ? 'dark'
-        : 'default';
-    }
+    if (!t) return; // لا تطبق أي شيء إن لم يُحدَّد ثيم مسبقاً
     var themes = {
       default: {
         '--primary': '#667eea',

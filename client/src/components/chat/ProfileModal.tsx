@@ -1789,6 +1789,7 @@ export default function ProfileModal({
           position: relative;
           transition: transform 0.3s ease, box-shadow 0.3s ease;
           height: fit-content;
+          color: #fff;
         }
 
         .profile-card:hover {
@@ -2059,6 +2060,7 @@ export default function ProfileModal({
           width: 90%;
           max-width: 350px;
           box-shadow: 0 10px 30px rgba(0,0,0,0.9);
+          color: #fff;
         }
         
         .edit-content h3 {
@@ -2131,7 +2133,7 @@ export default function ProfileModal({
 
         .theme-option.selected {
           background: var(--accent-color);
-          color: #000;
+          color: inherit;
           font-weight: bold;
           transform: scale(1.05);
           box-shadow: 0 4px 15px rgba(255,193,7,0.4);
