@@ -40,7 +40,8 @@ export default function ComposerPlusMenu({ onOpenImagePicker, disabled, isMobile
           variant="outline"
           size="sm"
           disabled={disabled}
-          className={`aspect-square mobile-touch-button ${isMobile ? 'min-w-[44px] min-h-[44px]' : ''}`}
+          className={`aspect-square mobile-touch-button ${isMobile ? 'min-w-[44px] min-h-[44px]' : ''} bg-primary/10 text-primary border-primary/20 hover:bg-primary/15`}
+          title="خيارات"
         >
           <Plus className="w-4 h-4" />
         </Button>
