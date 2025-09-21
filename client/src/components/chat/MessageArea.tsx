@@ -619,7 +619,7 @@ export default function MessageArea({
 
       {/* Messages Container - Virtualized */}
       <div
-        className={`relative flex-1 ${isMobile ? 'p-2' : 'p-4'} bg-gradient-to-b from-gray-50 to-white`}
+        className={`relative flex-1 p-2 bg-gradient-to-b from-gray-50 to-white`}
       >
         {validMessages.length === 0 ? (
           <div className="h-full"></div>
@@ -636,7 +636,7 @@ export default function MessageArea({
             itemContent={(index, message) => (
               <div
                 key={message.id}
-                className={`flex ${isMobile ? 'items-start' : 'items-center'} gap-2 p-2 rounded-lg border-r-4 bg-white shadow-sm hover:shadow-md transition-all duration-300 room-message-pulse soft-entrance`}
+                className={`flex ${isMobile ? 'items-start' : 'items-center'} gap-2 py-1.5 px-2 rounded-lg border-r-4 bg-white shadow-sm hover:shadow-md transition-all duration-300 room-message-pulse soft-entrance`}
                 style={{ borderRightColor: getDynamicBorderColor(message.sender) }}
               >
                 {/* System message: one-line red without avatar/badge */}
@@ -982,7 +982,7 @@ export default function MessageArea({
                 size="sm"
                 onClick={() => setShowEmojiPicker(!showEmojiPicker)}
                 disabled={isChatRestricted}
-                className={`aspect-square mobile-touch-button ${isMobile ? 'min-w-[44px] min-h-[44px]' : ''} ${isChatRestricted ? 'opacity-60 cursor-not-allowed' : ''}`}
+                className={`aspect-square mobile-touch-button ${isMobile ? 'min-w-[44px] min-h-[44px]' : ''} ${isChatRestricted ? 'opacity-60 cursor-not-allowed' : ''} bg-primary/10 text-primary border-primary/20 hover:bg-primary/15`}
               >
                 <Smile className="w-4 h-4" />
               </Button>
@@ -1014,7 +1014,7 @@ export default function MessageArea({
                   setShowEnhancedEmoji(!showEnhancedEmoji);
                 }}
                 disabled={isChatRestricted}
-                className={`aspect-square mobile-touch-button ${isMobile ? 'min-w-[44px] min-h-[44px]' : ''} ${isChatRestricted ? 'opacity-60 cursor-not-allowed' : ''}`}
+                className={`aspect-square mobile-touch-button ${isMobile ? 'min-w-[44px] min-h-[44px]' : ''} ${isChatRestricted ? 'opacity-60 cursor-not-allowed' : ''} bg-primary/10 text-primary border-primary/20 hover:bg-primary/15`}
                 title="سمايلات متحركة متقدمة"
               >
                 <Sparkles className="w-4 h-4" />
@@ -1069,15 +1069,15 @@ export default function MessageArea({
               )}
             </div>
 
-            {/* Composer Plus Menu */}
-            <React.Suspense fallback={null}>
-              <ComposerPlusMenu
-                onOpenImagePicker={() => fileInputRef.current?.click()}
-                disabled={!currentUser || isChatRestricted}
-                isMobile={isMobile}
-                currentUser={currentUser}
-              />
-            </React.Suspense>
+            {/* Send Button moved next to emoji buttons (in place of +) */}
+            <Button
+              onClick={handleSendMessage}
+              disabled={!messageText.trim() || !currentUser || isChatRestricted}
+              className={`aspect-square bg-primary hover:bg-primary/90 text-primary-foreground rounded-full mobile-touch-button ${isMobile ? 'min-w-[44px] min-h-[44px]' : ''} ${isChatRestricted ? 'opacity-60 cursor-not-allowed' : ''}`}
+              title="إرسال"
+            >
+              <Send className="w-4 h-4" />
+            </Button>
 
             {/* Message Input - Textarea with 2 lines */}
             <textarea
@@ -1087,7 +1087,7 @@ export default function MessageArea({
               onKeyPress={handleKeyPress}
               onPaste={handlePaste}
               placeholder={isChatRestricted ? getRestrictionMessage : "اكتب رسالتك هنا..."}
-              className={`flex-1 resize-none bg-white placeholder:text-gray-500 ring-offset-white border border-gray-300 rounded-md px-3 ${isMobile ? 'h-11 py-2' : 'h-8 py-1'} transition-all duration-200 ${isMobile ? 'mobile-text' : ''} ${isChatRestricted ? 'cursor-not-allowed opacity-60' : ''}`}
+              className={`flex-1 resize-none bg-white placeholder:text-gray-500 ring-offset-white border border-gray-300 rounded-full px-4 ${isMobile ? 'h-12 py-3' : 'h-11 py-3'} transition-all duration-200 ${isMobile ? 'mobile-text' : ''} ${isChatRestricted ? 'cursor-not-allowed opacity-60' : ''}`}
               disabled={!currentUser || isChatRestricted}
               maxLength={1000}
               autoComplete="off"
@@ -1099,14 +1099,15 @@ export default function MessageArea({
               }}
             />
 
-            {/* Send Button */}
-            <Button
-              onClick={handleSendMessage}
-              disabled={!messageText.trim() || !currentUser || isChatRestricted}
-              className={`aspect-square bg-primary hover:bg-primary/90 mobile-touch-button ${isMobile ? 'min-w-[44px] min-h-[44px]' : ''} ${isChatRestricted ? 'opacity-60 cursor-not-allowed' : ''}`}
-            >
-              <Send className="w-4 h-4" />
-            </Button>
+            {/* Composer Plus Menu moved to the end */}
+            <React.Suspense fallback={null}>
+              <ComposerPlusMenu
+                onOpenImagePicker={() => fileInputRef.current?.click()}
+                disabled={!currentUser || isChatRestricted}
+                isMobile={isMobile}
+                currentUser={currentUser}
+              />
+            </React.Suspense>
           </div>
 
           {/* تم إزالة الملاحظة الخاصة بالسطر الثاني بناءً على الطلب */}
