@@ -61,9 +61,9 @@ export default function ProfileModal({
             ...prev,
             ...user,
             // الحفاظ على التحديثات المحلية المهمة
-            lastSeen: prev.lastSeen || user.lastSeen,
-            isOnline: prev.isOnline !== undefined ? prev.isOnline : user.isOnline,
-            currentRoom: prev.currentRoom || user.currentRoom,
+            lastSeen: pickLatestValidDate(prev.lastSeen as any, user.lastSeen as any),
+            isOnline: typeof user.isOnline !== 'undefined' ? user.isOnline : prev.isOnline,
+            currentRoom: (user as any).hasOwnProperty('currentRoom') ? (user as any).currentRoom : prev.currentRoom,
           };
         }
         // إذا لم يكن هناك مستخدم محلي، نستخدم البيانات الجديدة
@@ -75,6 +75,22 @@ export default function ProfileModal({
   }, [user]);
   const [selectedTheme, setSelectedTheme] = useState(user?.profileBackgroundColor || '');
   const [selectedEffect, setSelectedEffect] = useState(user?.profileEffect || 'none');
+
+  // Helper: return the most recent valid date between two values
+  const pickLatestValidDate = (
+    a?: string | Date | null,
+    b?: string | Date | null
+  ): Date | null => {
+    const toDate = (v: any): Date | null => {
+      if (!v) return null;
+      const d = v instanceof Date ? v : new Date(v);
+      return isNaN(d.getTime()) ? null : d;
+    };
+    const da = toDate(a);
+    const db = toDate(b);
+    if (da && db) return da.getTime() >= db.getTime() ? da : db;
+    return da || db || null;
+  };
 
   // توحيد لون خلفية الملف الشخصي للأعضاء والزوار ليطابق لون البوت فقط داخل نافذة البروفايل
   const isMemberOrGuest =
@@ -205,7 +221,9 @@ export default function ProfileModal({
       setLocalUser((prev) => {
         if (!prev) return prev;
         const next: any = { ...prev, isOnline: true };
-        if (incoming.currentRoom) next.currentRoom = incoming.currentRoom;
+        if (Object.prototype.hasOwnProperty.call(incoming, 'currentRoom')) {
+          next.currentRoom = incoming.currentRoom;
+        }
         return next;
       });
     };
@@ -227,14 +245,8 @@ export default function ProfileModal({
           const next: any = { ...prev };
           
           // تحديث جميع البيانات المهمة مع التحقق من صحة البيانات
-          if (u.lastSeen) {
-            // التحقق من أن lastSeen هو تاريخ صحيح
-            const lastSeenDate = u.lastSeen instanceof Date ? u.lastSeen : new Date(u.lastSeen);
-            if (!isNaN(lastSeenDate.getTime())) {
-              next.lastSeen = lastSeenDate;
-            }
-          }
-          if (typeof u.currentRoom !== 'undefined') next.currentRoom = u.currentRoom;
+          next.lastSeen = pickLatestValidDate(prev.lastSeen as any, (u as any).lastSeen as any) || prev.lastSeen || null;
+          if (Object.prototype.hasOwnProperty.call(u, 'currentRoom')) next.currentRoom = u.currentRoom;
           if (typeof u.isOnline !== 'undefined') next.isOnline = u.isOnline;
           
           // تحديث بيانات الملف الشخصي
@@ -511,9 +523,9 @@ export default function ProfileModal({
             ...prev,
             ...userData,
             // الحفاظ على التحديثات المحلية المهمة
-            lastSeen: prev.lastSeen || userData.lastSeen,
-            isOnline: prev.isOnline !== undefined ? prev.isOnline : userData.isOnline,
-            currentRoom: prev.currentRoom || userData.currentRoom,
+            lastSeen: pickLatestValidDate(prev.lastSeen as any, (userData as any).lastSeen as any),
+            isOnline: typeof (userData as any).isOnline !== 'undefined' ? (userData as any).isOnline : prev.isOnline,
+            currentRoom: (userData as any).hasOwnProperty('currentRoom') ? (userData as any).currentRoom : prev.currentRoom,
           };
         }
         return userData;
@@ -549,6 +561,17 @@ export default function ProfileModal({
       });
     }
   };
+
+  // عند فتح بروفايل مستخدم آخر، اجلب نسخة محدثة دائماً لضمان صحة آخر تواجد والغرفة
+  useEffect(() => {
+    try {
+      if (!localUser?.id) return;
+      if (currentUser?.id === localUser.id) return;
+      fetchAndUpdateUser(localUser.id).catch(() => {});
+    } catch {}
+    // نعتمد فقط على تغيير معرف المستخدم المفتوح
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [localUser?.id]);
 
   // تحديث إعداد خصوصية الرسائل الخاصة
   const updateDmPrivacy = async (value: 'all' | 'friends' | 'none') => {
