@@ -55,50 +55,6 @@ import { clearSession, getSession } from '@/lib/socket';
 import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser } from '@/types/chat';
 
-// Universal City System Component
-function UniversalCitySystem({ cityPath }: { cityPath: string }) {
-  const cityData = getCityByPath(cityPath);
-
-  if (!cityData) {
-    return (
-      <div className="min-h-[100dvh] bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
-        <div className="text-center p-8 bg-white rounded-xl shadow-lg">
-          <div className="text-6xl mb-4">🏙️</div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">المدينة غير موجودة</h2>
-          <p className="text-gray-600 mb-4">
-            عذراً، المدينة التي تبحث عنها غير متوفرة في النظام المتكامل.
-          </p>
-          <div className="space-y-2 text-sm text-gray-500">
-            <div>📍 المسار المطلوب: {cityPath}</div>
-            <div>🔍 النظام المتكامل يحاول البحث...</div>
-            <div>⚡ يتم إعادة التوجيه إلى الصفحة الرئيسية</div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  const cityInfo = CitiesSystem.getCitiesWithCountryInfo(cityData.countryPath);
-
-  return (
-    <div className="min-h-[100dvh] bg-gradient-to-br from-green-50 to-emerald-100 flex items-center justify-center">
-      <div className="text-center p-8 bg-white rounded-xl shadow-lg max-w-md">
-        <div className="text-6xl mb-4">✅</div>
-        <h2 className="text-2xl font-bold text-gray-800 mb-2">النظام المتكامل يعمل!</h2>
-        <div className="space-y-2 text-sm text-gray-600">
-          <div>🏙️ المدينة: {cityData.nameAr}</div>
-          <div>🏛️ الدولة: {cityInfo.country?.nameAr || 'غير محدد'}</div>
-          <div>📊 عدد المدن في الدولة: {cityInfo.stats.totalCities}</div>
-          <div>🔗 روابط الدردشة: {cityData.chatLinks.length}</div>
-          <div className="pt-4 text-green-600 font-semibold">
-            ✅ جميع المدن تعمل بنجاح
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export default function CityChat() {
   const [match, params] = useRoute('/:country/:city');
   const [, setLocation] = useLocation();

@@ -1905,8 +1905,6 @@ export class CitiesSystem {
   }
 }
 
-// تصدير النظام المتكامل
-export { CitiesSystem };
 
 // إضافة countryId تلقائياً لجميع المدن
 // هذا السكريبت يضيف countryId بناءً على countryPath
