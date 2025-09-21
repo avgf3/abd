@@ -59,12 +59,13 @@ export default function CityChat() {
   const [match, params] = useRoute('/:country/:city');
   const [, setLocation] = useLocation();
 
-  // Debug logging
+  // Enhanced debug logging
   console.log('CityChat Debug Info:', {
     currentPath: window.location.pathname,
     match: match,
     params: params,
-    userAgent: navigator.userAgent
+    paramsType: typeof params,
+    paramsKeys: params ? Object.keys(params) : 'null'
   });
 
   // Test mode for Universal City System
@@ -76,7 +77,15 @@ export default function CityChat() {
   }
   
   // Get city data based on URL using the unified system
-  const cityPath = params ? `/${(params as any).country}/${(params as any).city}` : '/';
+  let cityPath = '/';
+
+  if (params && typeof params === 'object' && params.country && params.city) {
+    cityPath = `/${params.country}/${params.city}`;
+  } else if (typeof params === 'object' && params[0] && params[1]) {
+    // Fallback for array-style params
+    cityPath = `/${params[0]}/${params[1]}`;
+  }
+
   const cityData = getCityByPath(cityPath);
 
   // Enhanced debug logging
@@ -86,8 +95,16 @@ export default function CityChat() {
     params: params ? params : 'null/undefined',
     cityPath,
     cityData: cityData ? 'FOUND' : 'NOT FOUND',
-    cityDataDetails: cityData
+    cityDataDetails: cityData,
+    availableCitiesCount: getAllCities ? getAllCities().length : 'getAllCities not available'
   });
+
+  // Import getAllCities for debugging
+  import('./data/cityChats').then(module => {
+    const { getAllCities } = module;
+    console.log('Available cities:', getAllCities().slice(0, 5)); // First 5 cities
+    console.log('City found for', cityPath, ':', getAllCities().find(c => c.path === cityPath));
+  }).catch(err => console.log('Error importing cityChats:', err));
 
   // Enhanced city data with additional information using CitiesSystem
   const cityInfo = cityData ? CitiesSystem.getCitiesWithCountryInfo(cityData.countryPath) : null;

@@ -265,6 +265,9 @@ function Router() {
       <Route path="/palestine/gaza" component={CityChat} />
       <Route path="/palestine/ramallah" component={CityChat} />
 
+      {/* Generic city route - moved to be before country routes but after specific city routes */}
+      <Route path="/:country/:city" component={CityChat} />
+
       {/* Country-specific routes - LAST */}
       <Route path="/watan" component={CountryChat} />
       <Route path="/emamir" component={CountryChat} />
