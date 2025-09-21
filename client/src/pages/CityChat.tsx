@@ -257,17 +257,6 @@ export default function CityChat() {
 
   return (
     <div className="min-h-[100dvh] bg-background text-foreground font-['Cairo'] overflow-hidden" dir="rtl" style={{ minHeight: '100dvh' }}>
-      {/* Debug Information - Remove this in production */}
-      {cityStats && (
-        <div className="fixed top-0 left-0 bg-black/80 text-white p-2 text-xs z-50 max-w-xs">
-          <div>🗺️ النظام المتكامل</div>
-          <div>📍 {cityStats.path}</div>
-          <div>🏙️ {cityStats.id}</div>
-          <div>🏛️ {cityStats.country}</div>
-          <div>🆔 {cityStats.countryId}</div>
-          <div>📊 {cityStats.systemStatus}</div>
-        </div>
-      )}
 
       <Suspense fallback={
         <div className="min-h-[100dvh] bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">

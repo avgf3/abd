@@ -352,7 +352,8 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
     queryKey: ['/api/notifications/unread-count', currentUserId],
     queryFn: async () => {
       if (!currentUserId) return { count: 0 } as any;
-      return await apiRequest(`/api/notifications/unread-count?userId=${currentUserId}`);
+      // استخدم مسار path param المتوافق دائماً، مع إبقاء query endpoint كاحتياطي داخل الخادم
+      return await apiRequest(`/api/notifications/${currentUserId}/unread-count`);
     },
     enabled: !!currentUserId,
     // التحديث يتم عبر أحداث الوقت الحقيقي (invalidate في useNotificationManager)

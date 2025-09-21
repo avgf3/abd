@@ -22,24 +22,7 @@
     <link rel="preload" as="font" type="font/woff2" href="/fonts/SLXVc1nY6HkvangtZmpQdkhzfH5lkSscQyyS4J0.woff2" crossorigin>
     <link rel="preload" as="font" type="font/woff2" href="/fonts/SLXVc1nY6HkvangtZmpQdkhzfH5lkSscRiyS.woff2" crossorigin>
     <link rel="stylesheet" href="/fonts/cairo.css">
-    <script>
-      (function () {
-        try {
-          var t = localStorage.getItem('selectedTheme');
-          if (!t) {
-            t = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'default';
-          }
-          // Minimal theme application to avoid FOUC
-          var themes = {
-            default: { '--primary': '#667eea', '--primary-foreground': '#ffffff', '--background': '#ffffff', '--foreground': '#1a202c' },
-            dark:    { '--primary': '#2c3e50', '--primary-foreground': '#ffffff', '--background': '#1a202c', '--foreground': '#ffffff' }
-          };
-          var cssVars = themes[t] || themes.default;
-          var root = document.documentElement;
-          for (var k in cssVars) root.style.setProperty(k, cssVars[k]);
-        } catch (e) {}
-      })();
-    </script>
+    <script src="/theme-init.js"></script>
     <style>
       body {
         font-family: 'Cairo', Arial, sans-serif;
