@@ -100,7 +100,7 @@ export default function CityChat() {
   });
 
   // Import getAllCities for debugging
-  import('./data/cityChats').then(module => {
+  import('@/data/cityChats').then(module => {
     const { getAllCities } = module;
     console.log('Available cities:', getAllCities().slice(0, 5)); // First 5 cities
     console.log('City found for', cityPath, ':', getAllCities().find(c => c.path === cityPath));
