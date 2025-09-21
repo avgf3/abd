@@ -71,6 +71,14 @@ export default function CityChat() {
   const cityPath = params ? `/${(params as any).country}/${(params as any).city}` : '/';
   const cityData = getCityByPath(cityPath);
 
+  // Debug logging
+  console.log('CityChat Debug:', {
+    match,
+    params,
+    cityPath,
+    cityData: cityData ? 'FOUND' : 'NOT FOUND'
+  });
+
   // Enhanced city data with additional information using CitiesSystem
   const cityInfo = cityData ? CitiesSystem.getCitiesWithCountryInfo(cityData.countryPath) : null;
 
