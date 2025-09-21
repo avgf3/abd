@@ -4,6 +4,12 @@ import { useLocation } from 'wouter';
 
 import UserRegistration from './UserRegistration';
 import StructuredData from '@/components/SEO/StructuredData';
+import { getCityLinkFromName } from '@/utils/cityUtils';
+
+interface CityWelcomeScreenProps {
+  onUserLogin: (user: any) => void;
+  cityData: any;
+}
 
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -316,34 +322,51 @@ export default function CityWelcomeScreen({ onUserLogin, cityData }: CityWelcome
               غرف دردشة {cityData.nameAr.replace('شات ', '')} المتخصصة
             </h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {cityData.chatLinks.map((link, index) => (
-                <button
-                  key={index}
-                  onClick={() => toast({
-                    title: link.name,
-                    description: link.description || 'جاري تحميل الغرفة...',
-                  })}
-                  className="bg-gradient-to-r from-blue-600/20 to-purple-600/20 hover:from-blue-600/30 hover:to-purple-600/30 p-3 rounded-xl text-white transition-all duration-300 hover:transform hover:scale-105 border border-white/10 hover:border-white/30"
-                >
-                  <p className="font-semibold">{link.name}</p>
-                  {link.description && (
-                    <p className="text-xs text-gray-300 mt-1">{link.description}</p>
-                  )}
-                </button>
-              ))}
+              {cityData.chatLinks.map((link, index) => {
+                const cityLink = getCityLinkFromName(link.name, cityData.countryPath);
+
+                if (cityLink) {
+                  // رابط حقيقي للمدينة أو الغرفة الفرعية
+                  return (
+                    <a
+                      key={index}
+                      href={cityLink}
+                      className="bg-gradient-to-r from-blue-600/20 to-purple-600/20 hover:from-blue-600/30 hover:to-purple-600/30 p-3 rounded-xl text-white transition-all duration-300 hover:transform hover:scale-105 border border-white/10 hover:border-white/30 block"
+                    >
+                      <p className="font-semibold">{link.name}</p>
+                      {link.description && (
+                        <p className="text-xs text-gray-300 mt-1">{link.description}</p>
+                      )}
+                    </a>
+                  );
+                } else {
+                  // تبويب عادي (للمدعوات الأخرى)
+                  return (
+                    <button
+                      key={index}
+                      onClick={() => toast({
+                        title: link.name,
+                        description: link.description || 'جاري تحميل الغرفة...',
+                      })}
+                      className="bg-gradient-to-r from-blue-600/20 to-purple-600/20 hover:from-blue-600/30 hover:to-purple-600/30 p-3 rounded-xl text-white transition-all duration-300 hover:transform hover:scale-105 border border-white/10 hover:border-white/30"
+                    >
+                      <p className="font-semibold">{link.name}</p>
+                      {link.description && (
+                        <p className="text-xs text-gray-300 mt-1">{link.description}</p>
+                      )}
+                    </button>
+                  );
+                }
+              })}
             </div>
           </div>
 
           {/* Other Cities Links */}
           <div className="glass-effect p-6 rounded-2xl border border-white/20">
             <h3 className="text-2xl font-bold text-center mb-4 text-white">
-              مدن أخرى في نفس البلد
+              دردشات عربية أخرى
             </h3>
             <div className="flex flex-wrap justify-center gap-3">
-              <a href={cityData.countryPath} className="text-blue-300 hover:text-blue-200 transition-colors">
-                العودة للبلد
-              </a>
-              <span className="text-gray-500">|</span>
               <a href="/" className="text-blue-300 hover:text-blue-200 transition-colors">الرئيسية</a>
               <span className="text-gray-500">|</span>
               <a href="/oman" className="text-blue-300 hover:text-blue-200 transition-colors">شات عمان</a>
@@ -351,6 +374,22 @@ export default function CityWelcomeScreen({ onUserLogin, cityData }: CityWelcome
               <a href="/egypt" className="text-blue-300 hover:text-blue-200 transition-colors">شات مصر</a>
               <span className="text-gray-500">|</span>
               <a href="/saudi" className="text-blue-300 hover:text-blue-200 transition-colors">شات السعودية</a>
+              <span className="text-gray-500">|</span>
+              <a href="/algeria" className="text-blue-300 hover:text-blue-200 transition-colors">شات الجزائر</a>
+              <span className="text-gray-500">|</span>
+              <a href="/bahrain" className="text-blue-300 hover:text-blue-200 transition-colors">شات البحرين</a>
+              <span className="text-gray-500">|</span>
+              <a href="/uae" className="text-blue-300 hover:text-blue-200 transition-colors">شات الإمارات</a>
+              <span className="text-gray-500">|</span>
+              <a href="/jordan" className="text-blue-300 hover:text-blue-200 transition-colors">شات الأردن</a>
+              <span className="text-gray-500">|</span>
+              <a href="/kuwait" className="text-blue-300 hover:text-blue-200 transition-colors">شات الكويت</a>
+              <span className="text-gray-500">|</span>
+              <a href="/libya" className="text-blue-300 hover:text-blue-200 transition-colors">شات ليبيا</a>
+              <span className="text-gray-500">|</span>
+              <a href="/tunisia" className="text-blue-300 hover:text-blue-200 transition-colors">شات تونس</a>
+              <span className="text-gray-500">|</span>
+              <a href="/morocco" className="text-blue-300 hover:text-blue-200 transition-colors">شات المغرب</a>
             </div>
           </div>
         </div>
