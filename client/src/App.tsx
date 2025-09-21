@@ -105,6 +105,10 @@ function Router() {
       <Route path="/saudi/najd" component={CityChat} />
 
       {/* Algeria additional routes */}
+      <Route path="/algeria/algiers" component={CityChat} />
+      <Route path="/algeria/oran" component={CityChat} />
+      <Route path="/algeria/constantine" component={CityChat} />
+      <Route path="/algeria/annaba" component={CityChat} />
       <Route path="/algeria/algeria-mobile" component={CityChat} />
       <Route path="/algeria/kabylie" component={CityChat} />
       <Route path="/algeria/sahara" component={CityChat} />
@@ -294,7 +298,10 @@ function Router() {
       <Route path="/iraq" component={CountryChat} />
       <Route path="/comoros" component={CountryChat} />
       <Route path="/djibouti" component={CountryChat} />
-      
+
+      {/* Generic city route - must be before catch-all */}
+      <Route path="/:country/:city" component={CityChat} />
+
       <Route component={ChatPage} />
     </Switch>
   );

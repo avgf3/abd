@@ -545,6 +545,82 @@ export const cityChats: CityChat[] = [
 
   // مدن إضافية للجزائر
   {
+    id: 'algiers',
+    nameAr: 'شات الجزائر العاصمة',
+    nameEn: 'Algiers Chat',
+    path: '/algeria/algiers',
+    countryPath: '/algeria',
+    countryId: 'algeria',
+    region: 'الجزائر العاصمة',
+    isCapital: true,
+    population: 3500000,
+    coordinates: { lat: 36.7538, lng: 3.0588 },
+    title: 'شات الجزائر العاصمة - دردشة العاصمة الجزائرية',
+    metaDescription: 'شات الجزائر العاصمة للتعارف والدردشة مع شباب وبنات من العاصمة. دردشة جزائرية مجانية بدون تسجيل.',
+    keywords: ['شات الجزائر العاصمة', 'دردشة جزائرية', 'تعارف الجزائر', 'بنات الجزائر'],
+    chatLinks: [
+      { name: 'شات الجزائر العاصمة العام', description: 'دردشة عامة للعاصمة' },
+      { name: 'شات الجزائر العاصمة جوال', description: 'دردشة الجوال الجزائري' }
+    ]
+  },
+  {
+    id: 'oran',
+    nameAr: 'شات وهران',
+    nameEn: 'Oran Chat',
+    path: '/algeria/oran',
+    countryPath: '/algeria',
+    countryId: 'algeria',
+    region: 'وهران',
+    isCapital: false,
+    population: 1200000,
+    coordinates: { lat: 35.6969, lng: -0.6331 },
+    title: 'شات وهران - دردشة مدينة وهران',
+    metaDescription: 'شات وهران للتعارف والدردشة مع شباب وبنات من مدينة وهران. دردشة وهرانية مجانية بدون تسجيل.',
+    keywords: ['شات وهران', 'دردشة وهرانية', 'تعارف وهران', 'بنات وهران'],
+    chatLinks: [
+      { name: 'شات وهران العام', description: 'دردشة عامة لوهران' },
+      { name: 'شات وهران الساحلي', description: 'دردشة الساحل في وهران' }
+    ]
+  },
+  {
+    id: 'constantine',
+    nameAr: 'شات قسنطينة',
+    nameEn: 'Constantine Chat',
+    path: '/algeria/constantine',
+    countryPath: '/algeria',
+    countryId: 'algeria',
+    region: 'قسنطينة',
+    isCapital: false,
+    population: 500000,
+    coordinates: { lat: 36.3650, lng: 6.6147 },
+    title: 'شات قسنطينة - دردشة مدينة قسنطينة',
+    metaDescription: 'شات قسنطينة للتعارف والدردشة مع شباب وبنات من مدينة قسنطينة. دردشة قسنطينية مجانية بدون تسجيل.',
+    keywords: ['شات قسنطينة', 'دردشة قسنطينية', 'تعارف قسنطينة', 'بنات قسنطينة'],
+    chatLinks: [
+      { name: 'شات قسنطينة العام', description: 'دردشة عامة لقسنطينة' },
+      { name: 'شات قسنطينة التاريخي', description: 'دردشة التاريخ في قسنطينة' }
+    ]
+  },
+  {
+    id: 'annaba',
+    nameAr: 'شات عنابة',
+    nameEn: 'Annaba Chat',
+    path: '/algeria/annaba',
+    countryPath: '/algeria',
+    countryId: 'algeria',
+    region: 'عنابة',
+    isCapital: false,
+    population: 350000,
+    coordinates: { lat: 36.9000, lng: 7.7667 },
+    title: 'شات عنابة - دردشة مدينة عنابة',
+    metaDescription: 'شات عنابة للتعارف والدردشة مع شباب وبنات من مدينة عنابة. دردشة عنابية مجانية بدون تسجيل.',
+    keywords: ['شات عنابة', 'دردشة عنابية', 'تعارف عنابة', 'بنات عنابة'],
+    chatLinks: [
+      { name: 'شات عنابة العام', description: 'دردشة عامة لعنابة' },
+      { name: 'شات عنابة الساحلي', description: 'دردشة الساحل في عنابة' }
+    ]
+  },
+  {
     id: 'algeria-mobile',
     nameAr: 'شات جوال الجزائر',
     nameEn: 'Algeria Mobile Chat',
