@@ -1,3 +1,4 @@
+import { getCountryByPath } from '@/data/countryChats';
 // بيانات العواصم والمدن وروابط الشات الخاصة بكل مدينة
 export interface CityChat {
   id: string;
