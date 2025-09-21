@@ -74,6 +74,10 @@ export function getCityLinkFromName(cityName: string, countryPath: string): stri
     'نجد': 'najd',
     
     // روابط الجزائر الإضافية
+    'الجزائر العاصمة': 'algiers',
+    'وهران': 'oran',
+    'قسنطينة': 'constantine',
+    'عنابة': 'annaba',
     'جزائري جوال': 'algeria-mobile',
     'القبائل': 'kabylie',
     'الصحراء': 'sahara',
