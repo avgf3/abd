@@ -119,22 +119,26 @@ export default function ProfileModal({
   // ===== آخر تواجد + اسم الغرفة =====
   const { rooms, fetchRooms } = useRoomManager({ autoRefresh: false });
   useEffect(() => {
+    // جلب مرة واحدة فقط عند فتح البروفايل لتفادي التذبذب
     fetchRooms(false).catch(() => {});
-  }, [fetchRooms, (localUser as any)?.currentRoom]);
+    // لا نعتمد على currentRoom لتكرار الجلب
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetchRooms]);
 
   // تم حذف formatAmPmTime لأنها غير مستخدمة
 
-  const resolvedRoomId = (localUser as any)?.currentRoom || localUser?.roomId || 'general';
-  let resolvedRoomName = 'الدردشة العامة';
+  // الاعتماد على currentRoom فقط كمصدر للحقيقة
+  const resolvedRoomId = (localUser as any)?.currentRoom || null;
+  let resolvedRoomName = '';
   
   // تحسين البحث عن اسم الغرفة مع معالجة أفضل للحالات الفارغة
-  if (resolvedRoomId && resolvedRoomId !== 'general') {
+  if (resolvedRoomId) {
     const found = rooms.find((r) => String((r as any).id) === String(resolvedRoomId));
     if (found && (found as any).name) {
       resolvedRoomName = (found as any).name;
     } else {
-      // إذا لم نجد الغرفة في القائمة، نحاول استخدام المعرف كاسم مؤقت
-      resolvedRoomName = `غرفة ${resolvedRoomId}`;
+      // لا نعرض اسمًا مؤقتًا لتفادي الانعكاسات؛ نترك الحقل فارغًا لحين الجلب
+      resolvedRoomName = '';
     }
   }
   
@@ -173,7 +177,9 @@ export default function ProfileModal({
       }
       
       const finalRoomName = roomName || resolvedRoomName;
-      return `${formattedTime} / غرفة║${finalRoomName}`;
+      return finalRoomName && finalRoomName.trim() !== ''
+        ? `${formattedTime} / غرفة║${finalRoomName}`
+        : `${formattedTime}`;
       
     } catch (error) {
       return '';
