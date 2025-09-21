@@ -59,15 +59,42 @@ export default function CityChat() {
   const [match, params] = useRoute('/:country/:city');
   const [, setLocation] = useLocation();
 
-  // Early validation of params
+  // Extract country and city from URL if params are empty (from specific routes)
+  const urlPath = window.location.pathname;
+  const pathParts = urlPath.split('/').filter(Boolean);
+
+  // Initialize params if they're empty or invalid
+  let finalParams = params;
   if (!params || !params.country || !params.city) {
+    if (pathParts.length === 2) {
+      // Specific route like /jordan/amman - extract params from URL
+      finalParams = { country: pathParts[0], city: pathParts[1] };
+      console.log('CityChat: Extracted params from URL:', finalParams);
+    } else {
+      console.log('CityChat: Invalid URL path, redirecting to home');
+      setLocation('/');
+      return null;
+    }
+  }
+
+  console.log('CityChat Debug Info:', {
+    urlPath: urlPath,
+    pathParts: pathParts,
+    originalParams: params,
+    finalParams: finalParams,
+    paramsType: typeof finalParams,
+    paramsKeys: finalParams ? Object.keys(finalParams) : 'null'
+  });
+
+  // Early validation of params
+  if (!finalParams || !finalParams.country || !finalParams.city) {
     console.log('CityChat: Invalid params, redirecting to home');
     setLocation('/');
     return null;
   }
 
   // Check if city is 'test-universal-system' (special case)
-  if (params.city === 'test-universal-system') {
+  if (finalParams.city === 'test-universal-system') {
     console.log('CityChat: Test mode activated');
     // This is a special test route, don't redirect
   }
@@ -79,7 +106,8 @@ export default function CityChat() {
     params: params,
     paramsType: typeof params,
     paramsKeys: params ? Object.keys(params) : 'null',
-    cityPath: cityPath
+    cityPath: cityPath,
+    cityData: cityData ? 'Found' : 'Not found'
   });
 
   // Test mode for Universal City System
@@ -93,15 +121,11 @@ export default function CityChat() {
   // Get city data based on URL using the unified system
   let cityPath = '/';
 
-  if (params && typeof params === 'object' && params.country && params.city) {
+  if (finalParams && typeof finalParams === 'object' && finalParams.country && finalParams.city) {
     // Standard params format: { country: "jordan", city: "amman" }
-    cityPath = `/${params.country}/${params.city}`;
-  } else if (typeof params === 'object' && params[0] && params[1]) {
-    // Array-style params: ["jordan", "amman"]
-    cityPath = `/${params[0]}/${params[1]}`;
-  } else if (params && typeof params === 'object' && params.country && !params.city) {
-    // Only country provided, redirect to home or show error
-    console.log('CityChat: Only country provided, redirecting to home');
+    cityPath = `/${finalParams.country}/${finalParams.city}`;
+  } else {
+    console.log('CityChat: Invalid final params, redirecting to home');
     setLocation('/');
     return null;
   }
@@ -147,26 +171,19 @@ export default function CityChat() {
     // Reserved routes that should not be handled by CityChat
     const reservedRoutes = ['privacy', 'terms', 'arabic'];
 
-    if (!match || !params?.city) {
+    if (!match || !finalParams?.city) {
       console.log('CityChat: Redirecting to home due to missing city data');
       setLocation('/');
       return;
     }
 
     // Check if country or city is a reserved route
-    if (reservedRoutes.includes(params.country) || reservedRoutes.includes(params.city)) {
+    if (finalParams?.country && (reservedRoutes.includes(finalParams.country) || reservedRoutes.includes(finalParams.city))) {
       console.log('CityChat: Redirecting due to reserved route');
       setLocation('/');
       return;
     }
-
-    // Check if this is just a country without a city (should go to CountryChat instead)
-    if (!params.city) {
-      console.log('CityChat: No city specified, redirecting to home');
-      setLocation('/');
-      return;
-    }
-  }, [match, params, setLocation]);
+  }, [match, finalParams, setLocation, cityData]);
   
   // Initialize session state
   const initialSession = (() => {
