@@ -656,6 +656,18 @@ export const useChat = () => {
         // أبلغ نظام الإشعارات لتحديث الكاش والعداد مباشرة
         const detail = { notification: payload?.notification } as any;
         window.dispatchEvent(new CustomEvent('notificationReceived', { detail }));
+        // زيادة فورية لعداد الإشعارات غير المقروءة في واجهة المستخدم
+        try {
+          const userId = currentUserRef.current?.id;
+          if (userId) {
+            const { queryClient } = require('@/lib/queryClient');
+            const qc = queryClient as import('@tanstack/react-query').QueryClient;
+            const key = ['/api/notifications/unread-count', userId];
+            const old = qc.getQueryData(key) as any;
+            const current = typeof old?.count === 'number' ? old.count : 0;
+            qc.setQueryData(key, { count: current + 1 });
+          }
+        } catch {}
       } catch {}
     });
 

@@ -67,7 +67,7 @@ import { useRoomManager } from '@/hooks/useRoomManager';
 import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser, ChatRoom } from '@/types/chat';
 import { setCachedUser } from '@/utils/userCacheManager';
-import { getPmLastOpened } from '@/utils/messageUtils';
+import { getPmLastOpened, setPmListLastOpened } from '@/utils/messageUtils';
 
 interface ChatInterfaceProps {
   chat: UseChatReturn;
@@ -362,6 +362,16 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   });
   const unreadNotificationsCount = unreadNotifData?.count || 0;
 
+  // When opening notifications panel, optimistically clear the badge immediately
+  const handleOpenNotifications = useCallback(() => {
+    try {
+      if (currentUserId) {
+        queryClient.setQueryData(['/api/notifications/unread-count', currentUserId], { count: 0 });
+      }
+    } catch {}
+    setShowNotifications(true);
+  }, [currentUserId, queryClient]);
+
   // Private messages unread total (local + minimal server data)
   const totalUnreadPrivateMessages = useMemo(() => {
     if (!currentUserId) return 0;
@@ -394,6 +404,25 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
     staleTime: 30000,
   });
   const pendingReportsCount = spamStats?.stats?.pendingReports || 0;
+
+  // Listen for spam stats updates via socket to refresh the reports badge instantly
+  useEffect(() => {
+    try {
+      const { getSocket } = require('@/lib/socket');
+      const s = getSocket();
+      const onMessage = (payload: any) => {
+        if (payload?.type === 'spamStatsUpdated') {
+          try {
+            queryClient.setQueryData(['/api/spam-stats', currentUserId], { stats: payload.stats });
+          } catch {}
+        }
+      };
+      s.on('message', onMessage);
+      return () => {
+        try { s.off('message', onMessage); } catch {}
+      };
+    } catch {}
+  }, [currentUserId, queryClient]);
 
   // تفعيل التنبيه عند وصول رسالة جديدة
   useEffect(() => {
@@ -952,7 +981,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             className={`glass-effect rounded-lg hover:bg-accent transition-all duration-200 flex items-center ${
               isMobile ? 'flex-1 px-2 py-2 text-xs gap-1.5' : 'px-4 py-2 gap-2'
             }`}
-            onClick={() => setShowMessages(true)}
+            onClick={() => { try { if (chat.currentUser?.id) setPmListLastOpened(chat.currentUser.id); } catch {} setShowMessages(true); }}
             title="الرسائل"
           >
             <MessageSquare className={isMobile ? "w-[18px] h-[18px]" : "w-4 h-4"} />
@@ -968,7 +997,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             className={`glass-effect rounded-lg hover:bg-accent transition-all duration-200 flex items-center relative ${
               isMobile ? 'flex-1 px-2 py-2 text-xs gap-1.5' : 'px-4 py-2 gap-2'
             }`}
-            onClick={() => setShowNotifications(true)}
+            onClick={handleOpenNotifications}
           >
             <Bell className={isMobile ? "w-[18px] h-[18px]" : "w-4 h-4"} />
             <span className={`font-medium ${isMobile ? 'tab-text-hide' : ''}`}>إشعارات</span>
