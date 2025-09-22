@@ -269,7 +269,7 @@ export class DatabaseService {
         const isFirstUser = userCount[0]?.count === 0;
 
         // إذا كان هذا أول مستخدم، اجعله المالك
-        const finalUserData = {
+        const finalUserData: any = {
           ...userData,
           userType: isFirstUser ? 'owner' : userData.userType || 'guest',
           role: isFirstUser ? 'owner' : userData.role || userData.userType || 'guest',
@@ -280,6 +280,14 @@ export class DatabaseService {
 
         if (isFirstUser) {
           }
+
+        // Ensure blue username color by default for non-owner, non-bot accounts
+        if (!finalUserData.usernameColor || String(finalUserData.usernameColor).trim() === '') {
+          const t = String(finalUserData.userType || '').toLowerCase();
+          if (t !== 'owner' && t !== 'bot') {
+            finalUserData.usernameColor = '#4A90E2';
+          }
+        }
 
         const result = await (this.db as any)
           .insert(schema.users)

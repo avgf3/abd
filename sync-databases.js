@@ -96,7 +96,9 @@ async function syncDatabases() {
           user.ip_address,
           user.device_id,
           user.ignored_users || '[]',
-          user.username_color || '#FFFFFF',
+          user.username_color && String(user.username_color).trim() !== '' && String(user.username_color).toLowerCase() !== '#ffffff'
+            ? user.username_color
+            : '#4A90E2',
           user.profile_effect || 'none',
           user.points || 0,
           user.level || 1,

@@ -1792,6 +1792,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         password: hashedPassword,
         userType: assignedUserType,
         role: assignedRole,
+        usernameColor: '#4A90E2',
         gender: gender || 'male',
         age: age || undefined,
         country: country?.trim() || undefined,
@@ -1831,6 +1832,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const user = await storage.createUser({
         username,
         userType: 'guest',
+        usernameColor: '#4A90E2',
         gender: gender || 'male',
         profileImage: '/default_avatar.svg',
       });

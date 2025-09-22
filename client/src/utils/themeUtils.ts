@@ -49,7 +49,12 @@ const sanitizeHexColor = (color: string, defaultColor: string = ''): string => {
   if (trimmed === '') return '';
 
   if (isValidHexColor(trimmed)) {
-    return trimmed.startsWith('#') ? trimmed : `#${trimmed}`;
+    const normalized = trimmed.startsWith('#') ? trimmed : `#${trimmed}`;
+    // إزالة الأبيض تمامًا من النظام
+    if (normalized.toLowerCase() === '#ffffff' || normalized.toLowerCase() === '#fff') {
+      return '';
+    }
+    return normalized;
   }
 
   // إن لم يكن صالحاً، لا نُرجع لوناً افتراضياً لتفادي تطبيق تدرجات غير مرغوبة

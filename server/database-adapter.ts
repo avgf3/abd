@@ -388,6 +388,31 @@ export async function ensureUserPreferencesColumns(): Promise<void> {
   }
 }
 
+// Ensure username_color default is blue and backfill existing whites/invalids
+export async function ensureUsernameColorDefaultBlue(): Promise<void> {
+  try {
+    if (!dbAdapter.client) return;
+
+    // Set default to blue
+    await dbAdapter.client.unsafe(
+      `ALTER TABLE IF EXISTS users ALTER COLUMN username_color SET DEFAULT '#4A90E2'`
+    );
+
+    // Backfill empty/invalid/white values to blue for regular users and guests
+    await dbAdapter.client.unsafe(
+      `UPDATE users
+       SET username_color = '#4A90E2'
+       WHERE username_color IS NULL
+          OR username_color = ''
+          OR username_color = 'null'
+          OR username_color = 'undefined'
+          OR LOWER(username_color) IN ('#ffffff', '#fff')`
+    );
+  } catch (e) {
+    console.warn('⚠️ تعذر ضمان اللون الافتراضي للأسماء:', (e as any)?.message || e);
+  }
+}
+
 // Ensure rooms table has required columns like is_locked
 export async function ensureRoomsColumns(): Promise<void> {
   try {
