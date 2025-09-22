@@ -826,6 +826,10 @@ export const storage: LegacyStorage = {
     return await notificationService.getUserNotifications(userId, limit);
   },
 
+  async getUserNotificationsSince(userId: number, after: Date, limit?: number) {
+    return await notificationService.getUserNotificationsSince(userId, after, limit);
+  },
+
   async markNotificationAsRead(notificationId: number) {
     return await notificationService.markNotificationAsRead(notificationId);
   },
