@@ -48,50 +48,56 @@ export default function ChatPage() {
     const roomId = (initialSession as any)?.roomId;
     return roomId && roomId !== 'public' && roomId !== 'friends' ? roomId : null;
   });
-  const [isRestoring, setIsRestoring] = useState<boolean>(hasSavedUser);
+  const [isRestoring, setIsRestoring] = useState<boolean>(false);
   const chat = useChat();
 
-  // استرجاع الجلسة والغرفة بعد إعادة التحميل
+  // استرجاع الجلسة والغرفة بعد إعادة التحميل: ابدأ محلياً فوراً ثم حدث الخلفية
   useEffect(() => {
-    try {
-      const session = getSession();
-      const savedUserId = session?.userId;
-      const proceedWithUser = (user: any) => {
-        if (!user || !user.id || !user.username) return;
-        chat.connect(user);
-        setShowWelcome(false);
-        const roomId = session?.roomId && session.roomId !== 'public' && session.roomId !== 'friends'
-          ? session.roomId
-          : null;
-        if (roomId) {
-          setSelectedRoomId(roomId);
-          chat.joinRoom(roomId);
-        } else {
-          setSelectedRoomId(null);
-        }
-      };
+    const session = getSession();
+    const savedUserId = session?.userId;
+    const roomId = session?.roomId && session.roomId !== 'public' && session.roomId !== 'friends'
+      ? session.roomId
+      : null;
 
-      if (savedUserId) {
-        apiRequest(`/api/users/${savedUserId}`)
-          .then(proceedWithUser)
-          .catch(() => {})
-          .finally(() => setIsRestoring(false));
+    // تشغيل فوري من التخزين المحلي لتجنب وميض "جاري استعادة الجلسة"
+    if (savedUserId) {
+      // وصل السوكت بحساب مخزن مؤقتاً (سنحدّث البيانات لاحقاً من الخادم)
+      chat.connect({ id: savedUserId, username: session?.username || `User#${savedUserId}`, userType: session?.userType || 'member', isOnline: true, role: 'member' } as any);
+      setShowWelcome(false);
+      if (roomId) {
+        setSelectedRoomId(roomId);
+        chat.joinRoom(roomId);
       } else {
-        // لا توجد جلسة محفوظة، جرّب استرجاعها من الكوكي عبر الخادم
-        apiRequest('/api/auth/session')
-          .then((data: any) => {
-            if (data?.user) {
-              proceedWithUser(data.user);
-            } else {
-              setShowWelcome(true);
-            }
-          })
-          .catch(() => setShowWelcome(true))
-          .finally(() => setIsRestoring(false));
+        setSelectedRoomId(null);
       }
-    } catch {
-      setIsRestoring(false);
     }
+
+    // تحديث الخلفية من الخادم أو كوكي
+    (async () => {
+      try {
+        if (savedUserId) {
+          const user = await apiRequest(`/api/users/${savedUserId}`);
+          if (user?.id) {
+            chat.connect(user);
+          }
+        } else {
+          const data = await apiRequest('/api/auth/session');
+          if (data?.user) {
+            chat.connect(data.user);
+            setShowWelcome(false);
+            const r = session?.roomId && session.roomId !== 'public' && session.roomId !== 'friends' ? session.roomId : null;
+            if (r) {
+              setSelectedRoomId(r);
+              chat.joinRoom(r);
+            }
+          } else {
+            setShowWelcome(true);
+          }
+        }
+      } catch {
+        if (!savedUserId) setShowWelcome(true);
+      }
+    })();
   }, []);
 
   const handleUserLogin = (user: ChatUser) => {
