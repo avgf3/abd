@@ -81,3 +81,28 @@ export function setPmLastOpened(
     // ignore storage errors
   }
 }
+
+// Track when the messages list (inbox) itself was last opened to clear the tab badge instantly
+function pmListLastOpenedKey(currentUserId: number): string {
+  return `pm_list_last_opened_${currentUserId}`;
+}
+
+export function getPmListLastOpened(currentUserId: number): number {
+  if (typeof window === 'undefined') return 0;
+  try {
+    const raw = window.localStorage.getItem(pmListLastOpenedKey(currentUserId));
+    const num = raw ? parseInt(raw, 10) : 0;
+    return Number.isFinite(num) ? num : 0;
+  } catch {
+    return 0;
+  }
+}
+
+export function setPmListLastOpened(currentUserId: number, timestamp: number = Date.now()): void {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(pmListLastOpenedKey(currentUserId), String(timestamp));
+  } catch {
+    // ignore
+  }
+}

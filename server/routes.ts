@@ -2985,6 +2985,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const success = spamProtection.reviewReport(reportId, action);
 
       if (success) {
+        // بث تحديث عدد البلاغات المعلقة للمشرفين فورياً
+        try {
+          const stats = spamProtection.getStats();
+          getIO().emit('message', { type: 'spamStatsUpdated', stats });
+        } catch {}
         res.json({ message: 'تمت مراجعة البلاغ' });
       } else {
         res.status(404).json({ error: 'البلاغ غير موجود' });
