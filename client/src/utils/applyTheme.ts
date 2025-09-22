@@ -157,6 +157,17 @@ export function applyThemeById(themeId: string, persist: boolean = false) {
   if (finalCssVars['--primary'] && !finalCssVars['--primary-solid']) {
     finalCssVars['--primary-solid'] = finalCssVars['--primary'];
   }
+
+  // Navigation bar tint variables (exclude dark and berryCool as requested)
+  if (themeId !== 'dark' && themeId !== 'berryCool') {
+    finalCssVars['--nav-tint-start'] = 'color-mix(in srgb, var(--primary-solid) 16%, transparent)';
+    finalCssVars['--nav-tint-end'] = 'color-mix(in srgb, var(--primary-solid) 6%, transparent)';
+    finalCssVars['--nav-border'] = 'color-mix(in srgb, var(--primary-solid) 22%, rgba(255, 255, 255, 0.10))';
+  } else {
+    finalCssVars['--nav-tint-start'] = 'transparent';
+    finalCssVars['--nav-tint-end'] = 'transparent';
+    finalCssVars['--nav-border'] = 'rgba(255, 255, 255, 0.08)';
+  }
   Object.entries(finalCssVars).forEach(([property, value]) => {
     root.style.setProperty(property, value);
   });
