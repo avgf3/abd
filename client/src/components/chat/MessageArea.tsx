@@ -80,7 +80,8 @@ export default function MessageArea({
   const [isMultiLine, setIsMultiLine] = useState(false);
   const isMobile = useIsMobile();
   const { textColor: composerTextColor, bold: composerBold } = useComposerStyle();
-  const MAX_LINES = 2;
+  // الحد الأقصى لأسطر الإدخال: 4 على الهاتف، و 2 على الويب
+  const MAX_LINES = isMobile ? 4 : 2;
   // Helper: فحص تجاوز سطرين بصريًا (مع احتساب الالتفاف)
   const wouldExceedTwoLines = useCallback(
     (el: HTMLTextAreaElement | null, nextValue: string): boolean => {
@@ -108,8 +109,29 @@ export default function MessageArea({
         el.style.height = previousHeight;
       }
     },
-    []
+    [MAX_LINES]
   );
+
+  // ضبط ارتفاع حقل الإدخال تلقائياً عند تعدد الأسطر (حتى الحد الأقصى)
+  const autoResizeTextarea = useCallback((el: HTMLTextAreaElement | null) => {
+    if (!el) return;
+    try {
+      el.style.height = 'auto';
+      const computed = window.getComputedStyle(el);
+      const parsedLineHeight = parseFloat(computed.lineHeight || '');
+      const fontSize = parseFloat(computed.fontSize || '16');
+      const lineHeight = Number.isFinite(parsedLineHeight) && parsedLineHeight > 0
+        ? parsedLineHeight
+        : (Number.isFinite(fontSize) && fontSize > 0 ? fontSize * 1.4 : 20);
+      const paddingTop = parseFloat(computed.paddingTop || '0') || 0;
+      const paddingBottom = parseFloat(computed.paddingBottom || '0') || 0;
+      const maxAllowed = lineHeight * MAX_LINES + paddingTop + paddingBottom;
+      const nextHeight = Math.min(el.scrollHeight, Math.ceil(maxAllowed + 1));
+      el.style.height = `${nextHeight}px`;
+    } catch {
+      // ignore
+    }
+  }, [MAX_LINES]);
 
 
   // Refs
@@ -437,6 +459,18 @@ export default function MessageArea({
     }
   }, [messageText, wouldExceedTwoLines]);
 
+  // إعادة ضبط الارتفاع تلقائياً عند تحديث النص أو تغيير وضع التعدد
+  useEffect(() => {
+    const el = inputRef.current;
+    if (!el) return;
+    if (isMobile && isMultiLine) {
+      autoResizeTextarea(el);
+    } else {
+      // اترك الكلاسات الافتراضية تتحكم بالارتفاع (h-11/h-12)
+      el.style.height = '';
+    }
+  }, [messageText, isMobile, isMultiLine, autoResizeTextarea]);
+
   // Emoji select handler
   const handleEmojiSelect = useCallback((emoji: string) => {
     const newText = messageText + emoji;
@@ -663,8 +697,8 @@ export default function MessageArea({
                       >
                         {message.sender?.username || 'جاري التحميل...'}
                       </button>
-                      <div className={`text-red-600 break-words flex-1 min-w-0 message-content-fix ${isMobile ? 'w-full basis-full' : ''} ${isMobile && !isMessageExpanded(message.id) ? 'line-clamp-4' : 'line-clamp-2'}`}>
-                        <span dir="auto" className={`${isMobile ? 'block w-full' : ''} ${isMobile && !isMessageExpanded(message.id) ? 'line-clamp-4' : 'line-clamp-2'}`}>
+                      <div className={`text-red-600 break-words flex-1 min-w-0 message-content-fix ${isMobile ? 'w-full basis-full line-clamp-4' : 'line-clamp-2'}`}>
+                        <span dir="auto" className={`${isMobile ? 'block w-full line-clamp-4' : 'line-clamp-2'}`}>
                           {message.content}
                         </span>
                       </div>
@@ -700,7 +734,7 @@ export default function MessageArea({
                         {message.sender?.username || 'جاري التحميل...'}
                       </button>
 
-                    <div className={`text-gray-800 break-words flex-1 min-w-0 message-content-fix ${isMobile ? 'w-full basis-full' : ''} ${isMobile && !isMessageExpanded(message.id) ? 'line-clamp-4' : 'line-clamp-2'}`}>
+                    <div className={`text-gray-800 break-words flex-1 min-w-0 message-content-fix ${isMobile ? 'w-full basis-full line-clamp-4' : 'line-clamp-2'}`}>
                         {message.messageType === 'image' ? (
                           <img
                             src={message.content}
@@ -720,10 +754,10 @@ export default function MessageArea({
                             if (ids.length > 0) {
                               const firstId = ids[0];
                               return (
-                                <span dir="auto" className={`${isMobile && !isMessageExpanded(message.id) ? 'line-clamp-4' : 'line-clamp-2'} text-breathe flex items-center gap-2 w-full`} onClick={() => isMobile && toggleMessageExpanded(message.id)}>
+                                <span dir="auto" className={`${isMobile ? 'line-clamp-4' : 'line-clamp-2'} ${!isMobile ? 'text-breathe' : ''} flex items-center gap-2 w-full`} onClick={() => isMobile && toggleMessageExpanded(message.id)}>
                                   {cleaned ? (
                                     <span
-                                      className={`${isMobile && !isMessageExpanded(message.id) ? 'line-clamp-4' : 'line-clamp-2'} w-full`}
+                                      className={`${isMobile ? 'line-clamp-4 w-full' : 'line-clamp-2'}`}
                                       style={
                                         currentUser && message.senderId === currentUser.id
                                           ? { color: composerTextColor, fontWeight: composerBold ? 600 : undefined }
@@ -751,7 +785,7 @@ export default function MessageArea({
                             return (
                               <span
                                 dir="auto"
-                                className={`${isMobile && !isMessageExpanded(message.id) ? 'line-clamp-4' : 'line-clamp-2'} text-breathe w-full block`}
+                                className={`${isMobile ? 'line-clamp-4 w-full block' : 'line-clamp-2 text-breathe'}`}
                                 onClick={() => isMobile && toggleMessageExpanded(message.id)}
                                 style={
                                   currentUser && message.senderId === currentUser.id
@@ -1087,7 +1121,7 @@ export default function MessageArea({
               onKeyPress={handleKeyPress}
               onPaste={handlePaste}
               placeholder={isChatRestricted ? getRestrictionMessage : "اكتب رسالتك هنا..."}
-              className={`flex-1 resize-none bg-white placeholder:text-gray-500 ring-offset-white border border-gray-300 rounded-full px-4 ${isMobile ? 'h-12 py-3' : 'h-11 py-3'} transition-all duration-200 ${isMobile ? 'mobile-text' : ''} ${isChatRestricted ? 'cursor-not-allowed opacity-60' : ''}`}
+              className={`flex-1 resize-none bg-white placeholder:text-gray-500 ring-offset-white border border-gray-300 rounded-full px-4 ${isMultiLine ? 'h-auto py-3' : (isMobile ? 'h-12 py-3' : 'h-11 py-3')} transition-all duration-200 ${isMobile ? 'mobile-text' : ''} ${isChatRestricted ? 'cursor-not-allowed opacity-60' : ''}`}
               disabled={!currentUser || isChatRestricted}
               maxLength={1000}
               autoComplete="off"

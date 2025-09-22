@@ -27,6 +27,7 @@
   overflow: hidden;
 }
 
+/* */
 /* للجوال: قيد 4 أسطر للنصوص الطويلة */
 .line-clamp-4 {
   display: -webkit-box;
