@@ -556,14 +556,15 @@ async function joinRoom(
   const users = await buildOnlineUsersForRoom(roomId);
   socket.emit('message', { type: 'roomJoined', roomId, users });
 
-  // بث userUpdated للمستخدم نفسه وللغرفة لتحديث currentRoom و lastSeen فوراً على الواجهة
+  // بث userUpdated للمستخدم نفسه وللغرفة لتحديث currentRoom و lastSeen و isHidden فوراً على الواجهة
   try {
     // جلب lastSeen و currentRoom من قاعدة البيانات
     const dbUser = await storage.getUser(userId);
     const updatedUser = { 
       ...user, 
       currentRoom: dbUser?.currentRoom || roomId, 
-      lastSeen: dbUser?.lastSeen || new Date() 
+      lastSeen: dbUser?.lastSeen || new Date(),
+      isHidden: (dbUser as any)?.isHidden === true
     } as any;
     // حدث موجه للمستخدم ذاته بجميع أجهزته
     io.to(userId.toString()).emit('message', { type: 'userUpdated', user: updatedUser });
@@ -633,7 +634,7 @@ async function leaveRoom(
   // ✅ استخدام التحديث المجمع
   scheduleUserListUpdate(roomId);
 
-  // بث userUpdated بتفريغ currentRoom وتحديث lastSeen ليظهر فوراً في الواجهة
+  // بث userUpdated بتفريغ currentRoom وتحديث lastSeen و isHidden ليظهر فوراً في الواجهة
   try {
     const entry = connectedUsers.get(userId);
     const baseUser = entry?.user || (await storage.getUser(userId));
@@ -643,7 +644,8 @@ async function leaveRoom(
       const updatedUser = { 
         ...baseUser, 
         currentRoom: dbUser?.currentRoom || null, 
-        lastSeen: dbUser?.lastSeen || new Date() 
+        lastSeen: dbUser?.lastSeen || new Date(),
+        isHidden: (dbUser as any)?.isHidden === true
       } as any;
       io.to(userId.toString()).emit('message', { type: 'userUpdated', user: updatedUser });
       io.to(`room_${roomId}`).emit('message', { type: 'userUpdated', user: updatedUser });
@@ -1513,7 +1515,7 @@ async function updateLastSeenForConnectedUsers() {
     await Promise.all(updatePromises);
     console.log(`تم تحديث lastSeen لـ ${updatePromises.length} مستخدم متصل`);
 
-    // بث userUpdated بشكل خفيف لإبلاغ الواجهة بالتحديث الدوري لـ lastSeen
+    // بث userUpdated بشكل خفيف لإبلاغ الواجهة بالتحديث الدوري لـ lastSeen مع تضمين isHidden من قاعدة البيانات
     try {
       if (ioInstance) {
         for (const [userId, entry] of connectedUsers.entries()) {
@@ -1526,6 +1528,7 @@ async function updateLastSeenForConnectedUsers() {
               id: userId, 
               lastSeen: dbUser?.lastSeen || now, 
               currentRoom: dbUser?.currentRoom || entry.user?.currentRoom,
+              isHidden: (dbUser as any)?.isHidden === true,
               isOnline: true 
             } as any;
             // إرسال للمستخدم ذاته (كل أجهزته)
