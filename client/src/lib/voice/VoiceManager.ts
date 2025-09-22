@@ -122,9 +122,10 @@ export class VoiceManager extends EventEmitter {
    */
   private async initializeSocket(): Promise<void> {
     try {
-      // استيراد Socket.IO من المكتبة الموجودة
+      // استيراد عميل Socket.IO الموحد واستخدام connectSocket
       const socketModule = await import('@/lib/socket');
-      this.socket = (socketModule as any).socket;
+      const connectFn = (socketModule as any).connectSocket || (socketModule as any).getSocket;
+      this.socket = connectFn ? connectFn() : (socketModule as any).socket;
 
       // إعداد معالجات أحداث الصوت
       this.socket.on('voice:room-joined', (data: any) => {
@@ -245,6 +246,9 @@ export class VoiceManager extends EventEmitter {
       });
       
       console.log(`✅ تم إرسال طلب الانضمام للغرفة الصوتية: ${roomId}`);
+
+      // ابدأ التفاوض (Offer) بعد الانضمام
+      await this.startConnection(connection);
       
     } catch (error) {
       console.error('❌ خطأ في الانضمام للغرفة:', error);
@@ -417,7 +421,7 @@ export class VoiceManager extends EventEmitter {
     
     const connection: VoiceConnection = {
       roomId,
-      userId: 0, // سيتم تحديثه
+      userId: (() => { try { return this.getUserId(); } catch { return 0; } })(),
       peerConnection,
       remoteStreams: new Map(),
       connectionState: 'new',
@@ -594,11 +598,14 @@ export class VoiceManager extends EventEmitter {
     
     peerConnection.onicecandidate = (event) => {
       if (event.candidate) {
-        // إرسال ICE candidate للخادم
-        this.emit('ice_candidate', {
-          roomId: connection.roomId,
-          candidate: event.candidate
-        });
+        // إرسال ICE candidate للخادم عبر قناة الإشارة
+        try {
+          this.socket?.emit('voice:signal', {
+            type: 'ice-candidate',
+            roomId: connection.roomId,
+            data: event.candidate,
+          });
+        } catch {}
       }
     };
     
@@ -821,13 +828,14 @@ export class VoiceManager extends EventEmitter {
       
       await peerConnection.setLocalDescription(offer);
       
-      // إرسال العرض عبر Socket.IO
-      this.emit('ice_candidate', {
-        type: 'offer',
-        roomId,
-        userId,
-        data: offer
-      });
+      // إرسال العرض عبر Socket.IO باستخدام قناة الإشارة الصحيحة
+      try {
+        this.socket?.emit('voice:signal', {
+          type: 'offer',
+          roomId,
+          data: offer,
+        });
+      } catch {}
       
     } catch (error) {
       console.error('خطأ في بدء الاتصال:', error);

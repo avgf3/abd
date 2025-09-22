@@ -258,6 +258,8 @@ export default function BroadcastRoomInterface({
   // التحقق من صلاحيات المستخدم
   const speakers = Array.isArray(broadcastInfo?.speakers) ? broadcastInfo!.speakers : [];
   const micQueue = Array.isArray(broadcastInfo?.micQueue) ? broadcastInfo!.micQueue : [];
+  // استبعاد البوتات من الاعتبار كمستمعين فعليين
+  const humanOnlineUsers = onlineUsers.filter((u) => (u as any)?.userType !== 'bot');
   const isHost =
     !!currentUser && broadcastInfo?.hostId != null && broadcastInfo.hostId === currentUser.id;
   const isAdmin = !!currentUser && currentUser.userType === 'admin';
@@ -528,7 +530,7 @@ export default function BroadcastRoomInterface({
       console.log('✅ تم الحصول على الميكروفون، بدء إنشاء الاتصالات...');
       
       // 6. إنشاء اتصالات مع المستمعين
-      const listeners = onlineUsers.filter(
+      const listeners = humanOnlineUsers.filter(
         (u) => u.id !== currentUser.id && !speakers.includes(u.id) && u.id !== broadcastInfo?.hostId
       );
       
@@ -601,7 +603,7 @@ export default function BroadcastRoomInterface({
   useEffect(() => {
     const run = async () => {
       if (!isBroadcasting || !localStream || !currentUser || !room.id) return;
-      const listeners = onlineUsers.filter(
+      const listeners = humanOnlineUsers.filter(
         (u) => u.id !== currentUser.id && !speakers.includes(u.id) && u.id !== broadcastInfo?.hostId
       );
       for (const listener of listeners) {
@@ -650,10 +652,20 @@ export default function BroadcastRoomInterface({
           pc.ontrack = (event) => {
             console.log('🎵 استقبال مسار صوتي جديد:', event);
             
-            // التحقق من وجود العنصر الصوتي
+            // تأكد من وجود عنصر صوتي دائم التشغيل (إن لم يكن موجوداً، أنشئ واحداً مخفياً)
             if (!audioRef.current) {
-              console.warn('⚠️ العنصر الصوتي غير جاهز');
-              return;
+              try {
+                const el = document.createElement('audio');
+                try { el.setAttribute('playsinline', ''); } catch {}
+                el.autoplay = true as any;
+                el.muted = false;
+                el.style.display = 'none';
+                document.body.appendChild(el);
+                audioRef.current = el;
+              } catch (e) {
+                console.warn('⚠️ تعذر إنشاء عنصر الصوت ديناميكياً:', e);
+                return;
+              }
             }
             
             const [remoteStream] = event.streams;
@@ -1002,7 +1014,7 @@ export default function BroadcastRoomInterface({
   };
 
   // UI Helpers
-  const listenerCount = onlineUsers.filter(
+  const listenerCount = humanOnlineUsers.filter(
     (user) =>
       !speakers.includes(user.id) &&
       !micQueue.includes(user.id) &&
@@ -1021,6 +1033,20 @@ export default function BroadcastRoomInterface({
 
   return (
     <div className="flex-1 flex flex-col min-h-0">
+      {/* عنصر صوتي مخفي مخصص لتشغيل صوت البث لدى المستمعين، مهيأ دائماً */}
+      <div className="hidden">
+        <audio
+          ref={audioRef}
+          playsInline
+          autoPlay
+          controlsList="nodownload noplaybackrate"
+          onLoadedMetadata={() => console.log('🎵 تم تحميل بيانات الصوت (root)')}
+          onCanPlay={() => console.log('🎵 الصوت جاهز للتشغيل (root)')}
+          onPlay={() => console.log('🎵 بدء تشغيل الصوت (root)')}
+          onPause={() => console.log('🎵 توقف تشغيل الصوت (root)')}
+          onError={(e) => console.error('❌ خطأ في العنصر الصوتي (root):', e)}
+        />
+      </div>
       {/* شريط علوي بسيط مماثل لباقي الغرف */}
       <div className="modern-nav px-3 py-2 sm:px-4 border-b flex-shrink-0">
         <div className="flex items-center justify-between">
