@@ -201,29 +201,91 @@ export class VoiceManager {
       const connection = this.connections.get(message.roomId);
       if (!connection) return;
 
-      const { peerConnection } = connection;
+      // Ensure per-user PC map
+      if (!connection.peerConnectionsByUser) {
+        connection.peerConnectionsByUser = new Map<number, RTCPeerConnection>();
+      }
+
+      const fromUserId: number | undefined = message.userId || message.senderId;
+
+      // Helper to ensure RTCPeerConnection exists for a remote user
+      const ensurePeer = async (remoteUserId: number): Promise<RTCPeerConnection> => {
+        let pc = connection.peerConnectionsByUser!.get(remoteUserId);
+        if (!pc) {
+          pc = new RTCPeerConnection(this.rtcConfig);
+          // Attach local tracks if we have a microphone stream
+          if (!this.localStream) {
+            try { await this.createLocalStream(); } catch {}
+          }
+          if (this.localStream) {
+            this.localStream.getTracks().forEach((t) => pc!.addTrack(t, this.localStream!));
+          }
+          // Track remote
+          pc.ontrack = (event) => {
+            const [remoteStream] = event.streams;
+            if (remoteStream) {
+              connection.remoteStreams.set(remoteUserId, remoteStream);
+              this.emit('remote_stream_added', {
+                roomId: connection.roomId,
+                userId: remoteUserId,
+                stream: remoteStream,
+              });
+            }
+          };
+          // State updates
+          pc.onconnectionstatechange = () => {
+            connection.connectionState = pc!.connectionState;
+            this.emit('connection_state_changed', { roomId: connection.roomId, state: pc!.connectionState });
+          };
+          pc.oniceconnectionstatechange = () => {
+            connection.iceConnectionState = pc!.iceConnectionState;
+            this.emit('ice_connection_state_changed', { roomId: connection.roomId, state: pc!.iceConnectionState });
+          };
+          pc.onicecandidate = (event) => {
+            if (event.candidate) {
+              try {
+                this.socket?.emit('voice:signal', {
+                  type: 'ice-candidate',
+                  roomId: connection.roomId,
+                  targetUserId: remoteUserId,
+                  data: event.candidate,
+                });
+              } catch {}
+            }
+          };
+          connection.peerConnectionsByUser!.set(remoteUserId, pc);
+        }
+        return pc;
+      };
 
       switch (message.type) {
-        case 'offer':
-          await peerConnection.setRemoteDescription(new RTCSessionDescription(message.data));
-          const answer = await peerConnection.createAnswer();
-          await peerConnection.setLocalDescription(answer);
-          
+        case 'offer': {
+          if (!fromUserId) return;
+          const pc = await ensurePeer(fromUserId);
+          await pc.setRemoteDescription(new RTCSessionDescription(message.data));
+          const answer = await pc.createAnswer();
+          await pc.setLocalDescription(answer);
+          // Target the original sender
           this.socket.emit('voice:signal', {
             type: 'answer',
             roomId: message.roomId,
-            targetUserId: message.userId,
-            data: answer
+            targetUserId: fromUserId,
+            data: answer,
           });
           break;
-
-        case 'answer':
-          await peerConnection.setRemoteDescription(new RTCSessionDescription(message.data));
+        }
+        case 'answer': {
+          if (!fromUserId) return;
+          const pc = await ensurePeer(fromUserId);
+          await pc.setRemoteDescription(new RTCSessionDescription(message.data));
           break;
-
-        case 'ice-candidate':
-          await peerConnection.addIceCandidate(new RTCIceCandidate(message.data));
+        }
+        case 'ice-candidate': {
+          if (!fromUserId) return;
+          const pc = await ensurePeer(fromUserId);
+          await pc.addIceCandidate(new RTCIceCandidate(message.data));
           break;
+        }
       }
     } catch (error) {
       console.error('❌ خطأ في معالجة الإشارة:', error);
@@ -449,6 +511,7 @@ export class VoiceManager {
       roomId,
       userId: (() => { try { return this.getUserId(); } catch { return 0; } })(),
       peerConnection,
+      peerConnectionsByUser: new Map<number, RTCPeerConnection>(),
       remoteStreams: new Map(),
       connectionState: 'new',
       iceConnectionState: 'new',
@@ -844,7 +907,7 @@ export class VoiceManager {
 
   private async startConnection(connection: VoiceConnection): Promise<void> {
     try {
-      const { peerConnection, roomId, userId } = connection;
+      const { peerConnection, roomId } = connection;
       
       // إنشاء العرض (offer) للاتصال
       const offer = await peerConnection.createOffer({
@@ -856,11 +919,8 @@ export class VoiceManager {
       
       // إرسال العرض عبر Socket.IO باستخدام قناة الإشارة الصحيحة
       try {
-        this.socket?.emit('voice:signal', {
-          type: 'offer',
-          roomId,
-          data: offer,
-        });
+        // بث Offer عام للغرفة (سيتعامل الطرف المقابل مع التوجيه)
+        this.socket?.emit('voice:signal', { type: 'offer', roomId, data: offer });
       } catch {}
       
     } catch (error) {
