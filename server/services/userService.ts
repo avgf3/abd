@@ -19,7 +19,7 @@ export class UserService {
         ...userData,
         role: userData.role || userData.userType || 'guest',
         profileBackgroundColor: userData.profileBackgroundColor || '#2a2a2a',
-        usernameColor: userData.usernameColor || '#000000',
+        usernameColor: userData.usernameColor || '#4A90E2',
       };
 
       const [newUser] = await db

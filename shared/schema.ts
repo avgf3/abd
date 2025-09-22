@@ -43,7 +43,7 @@ export const users = pgTable('users', {
   ipAddress: varchar('ip_address', { length: 45 }),
   deviceId: varchar('device_id', { length: 100 }),
   ignoredUsers: text('ignored_users').default('[]'), // قائمة المستخدمين المتجاهلين - JSON string للتوافق مع SQLite
-  usernameColor: text('username_color').default('#FFFFFF'), // لون اسم المستخدم
+  usernameColor: text('username_color').default('#4A90E2'), // لون اسم المستخدم (افتراضي أزرق)
   profileEffect: text('profile_effect').default('none'), // تأثير البروفايل
   points: integer('points').default(0), // نقاط المستخدم الحالية
   level: integer('level').default(1), // مستوى المستخدم
@@ -176,7 +176,7 @@ export const levelSettings = pgTable('level_settings', {
   level: integer('level').notNull().unique(),
   requiredPoints: integer('required_points').notNull(), // النقاط المطلوبة للوصول لهذا المستوى
   title: text('title').notNull(), // لقب المستوى (مبتدئ، متقدم، خبير، إلخ)
-  color: text('color').default('#FFFFFF'), // لون خاص بالمستوى
+  color: text('color').default('#4A90E2'), // لون خاص بالمستوى (افتراضي أزرق)
   benefits: jsonb('benefits'), // مزايا المستوى (JSON)
   createdAt: timestamp('created_at').defaultNow(),
 });
@@ -264,7 +264,7 @@ export const wallPosts = pgTable('wall_posts', {
   type: text('type').notNull().default('public'), // 'public', 'friends'
   timestamp: timestamp('timestamp').defaultNow(),
   userProfileImage: text('user_profile_image'),
-  usernameColor: text('username_color').default('#FFFFFF'),
+  usernameColor: text('username_color').default('#4A90E2'),
   totalLikes: integer('total_likes').default(0),
   totalDislikes: integer('total_dislikes').default(0),
   totalHearts: integer('total_hearts').default(0),
