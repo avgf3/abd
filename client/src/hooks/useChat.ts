@@ -847,14 +847,20 @@ export const useChat = () => {
           const updatedUser: ChatUser | undefined = (envelope as any).user;
           if (updatedUser && updatedUser.id) {
             const isCurrent = currentUserRef.current?.id === updatedUser.id;
-            // دمج فوري للحقول المتاحة
+            // إذا أصبح المستخدم مخفياً، أزله من قائمة المتصلين فوراً
+            if ((updatedUser as any).isHidden === true) {
+              dispatch({ type: 'REMOVE_ONLINE_USER', payload: updatedUser.id });
+            } else {
+              // غير مخفي: حدّثه/أضِفه في قائمة المتصلين
+              dispatch({ type: 'UPSERT_ONLINE_USER', payload: updatedUser });
+            }
+            // دمج فوري للحقول المتاحة للمستخدم الحالي أيضاً
             if (isCurrent && currentUserRef.current) {
               dispatch({
                 type: 'SET_CURRENT_USER',
                 payload: { ...currentUserRef.current, ...updatedUser } as any,
               });
             }
-            dispatch({ type: 'UPSERT_ONLINE_USER', payload: updatedUser });
 
             // إذا كان البث خفيفاً (بدون profileImage/base64) والمستخدم الحالي يحتاج الصورة، اجلب نسخة كاملة مرة واحدة
             if (

@@ -3068,6 +3068,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ error: 'غير مسموح' });
       }
       await storage.setUserHiddenStatus(userId, true);
+      try { await updateConnectedUserCache(userId, { isHidden: true }); } catch {}
+      const updated = await storage.getUser(userId);
+      // بث تحديث حالة المستخدم (يتضمن isHidden بعد تعديل buildUserBroadcastPayload)
+      try { emitUserUpdatedToUser(userId, updated); } catch {}
+      try { emitUserUpdatedToAll(updated); } catch {}
+      // تحديث قوائم الغرف التي يتواجد فيها المستخدم فوراً
+      try {
+        const rooms = getUserActiveRooms(userId);
+        if (Array.isArray(rooms) && rooms.length > 0) {
+          for (const r of rooms) { try { await emitOnlineUsersForRoom(r); } catch {} }
+        } else {
+          // تحديث الغرفة العامة كحل احتياطي
+          try { await emitOnlineUsersForRoom('general'); } catch {}
+        }
+      } catch {}
       res.json({ success: true, isHidden: true, message: 'تم إخفاؤك من قائمة المتصلين' });
     } catch (error) {
       res.status(500).json({ error: 'خطأ في الخادم' });
@@ -3083,6 +3098,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ error: 'غير مسموح' });
       }
       await storage.setUserHiddenStatus(userId, false);
+      try { await updateConnectedUserCache(userId, { isHidden: false }); } catch {}
+      const updated = await storage.getUser(userId);
+      // بث تحديث حالة المستخدم
+      try { emitUserUpdatedToUser(userId, updated); } catch {}
+      try { emitUserUpdatedToAll(updated); } catch {}
+      // تحديث قوائم الغرف التي يتواجد فيها المستخدم فوراً
+      try {
+        const rooms = getUserActiveRooms(userId);
+        if (Array.isArray(rooms) && rooms.length > 0) {
+          for (const r of rooms) { try { await emitOnlineUsersForRoom(r); } catch {} }
+        } else {
+          try { await emitOnlineUsersForRoom('general'); } catch {}
+        }
+      } catch {}
       res.json({ success: true, isHidden: false, message: 'تم إظهارك في قائمة المتصلين' });
     } catch (error) {
       res.status(500).json({ error: 'خطأ في الخادم' });
@@ -4470,6 +4499,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       username: sanitized.username,
       userType: sanitized.userType,
       role: sanitized.role,
+      isHidden: !!sanitized.isHidden,
       usernameColor: sanitized.usernameColor,
       profileBackgroundColor: sanitized.profileBackgroundColor,
       profileEffect: sanitized.profileEffect,
