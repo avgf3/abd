@@ -945,9 +945,14 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                         : `/api/users/${chat.currentUser.id}/hide-online`;
                       const res = await apiRequest(endpoint, { method: 'POST' });
                       const nowHidden = (res as any)?.isHidden ?? !chat.currentUser.isHidden;
-                      // تحديث محلي بسيط لحالة المستخدم الحالي
-                      (chat.currentUser as any).isHidden = nowHidden;
+                      // تحديث حالة المستخدم عبر setState لضمان إعادة التصيير
+                      chat.updateCurrentUser?.({ isHidden: nowHidden } as any);
+                      try {
+                        const msg = (res as any)?.message || (nowHidden ? 'تم إخفاؤك من قائمة المتصلين' : 'تم إظهارك في قائمة المتصلين');
+                        showSuccessToast(msg, 'تم التحديث');
+                      } catch {}
                     } catch (e) {
+                      showErrorToast('تعذر تحديث حالة الظهور', 'خطأ');
                     }
                   }}
                   title="إخفائي من قائمة المتصلين للجميع"
