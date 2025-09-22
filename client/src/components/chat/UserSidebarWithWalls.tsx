@@ -531,7 +531,7 @@ export default function UnifiedSidebar({
 
   return (
     <aside
-      className={`w-full bg-card text-sm overflow-hidden border-l border-border shadow-lg flex flex-col h-full max-h-screen ${isMobile ? 'sidebar mobile-scroll' : ''}`}
+      className={`w-full bg-sidebar text-sidebar-foreground text-sm overflow-hidden border-l border-sidebar-border shadow-lg flex flex-col h-full max-h-screen ${isMobile ? 'sidebar mobile-scroll' : ''}`}
     >
       {/* Top toggle buttons removed; bottom bar is the sole navigation */}
 
@@ -539,7 +539,7 @@ export default function UnifiedSidebar({
       {activeView === 'users' && (
         <div className="flex-1 flex flex-col overflow-hidden min-h-0">
           {/* Search Bar - ثابت في الأعلى (تصغير الطول بحجم التبويبات) */}
-          <div className={`${isMobile ? 'p-2' : 'p-2'} bg-card border-b border-border flex-shrink-0`}>
+          <div className={`${isMobile ? 'p-2' : 'p-2'} bg-sidebar border-b border-sidebar-border flex-shrink-0`}>
             <div className="relative">
               <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">🔍</span>
               <Input
