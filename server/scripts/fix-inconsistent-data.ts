@@ -50,7 +50,7 @@ async function fixInconsistentData() {
     if (usersWithInvalidUsernameColors.length > 0) {
       await db
         .update(users)
-        .set({ usernameColor: '#000000' })
+        .set({ usernameColor: '#4A90E2' })
         .where(
           or(
             isNull(users.usernameColor),
@@ -108,8 +108,13 @@ async function fixInconsistentData() {
       }
 
       // التحقق من usernameColor
-      if (user.usernameColor && !isValidHexColor(user.usernameColor)) {
-        updates.usernameColor = '#000000';
+      if (
+        !user.usernameColor ||
+        String(user.usernameColor).toLowerCase() === '#ffffff' ||
+        String(user.usernameColor).toLowerCase() === '#fff' ||
+        !isValidHexColor(user.usernameColor)
+      ) {
+        updates.usernameColor = '#4A90E2';
         needsUpdate = true;
       }
 
@@ -128,7 +133,7 @@ async function fixInconsistentData() {
         totalUsers: sql<number>`count(*)`,
         usersWithColor: sql<number>`count(case when ${users.profileBackgroundColor} != '#2a2a2a' then 1 end)`,
         usersWithEffect: sql<number>`count(case when ${users.profileEffect} != 'none' then 1 end)`,
-        usersWithCustomUsername: sql<number>`count(case when ${users.usernameColor} != '#000000' and ${users.usernameColor} != '#FFFFFF' then 1 end)`,
+        usersWithCustomUsername: sql<number>`count(case when ${users.usernameColor} != '#4A90E2' then 1 end)`,
       })
       .from(users);
   } catch (error) {

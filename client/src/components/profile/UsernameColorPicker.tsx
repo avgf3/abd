@@ -13,7 +13,6 @@ interface UsernameColorPickerProps {
 
 // 40 لون جميل ومتنوع - يتضمن ألوان النيون القوية والمتوهجة
 const USERNAME_COLORS = [
-  { name: 'أبيض', value: '#FFFFFF', bg: 'bg-white' },
   { name: 'أحمر', value: '#FF4444', bg: 'bg-red-500' },
   { name: 'أحمر فاتح', value: '#FF6B6B', bg: 'bg-red-400' },
   { name: 'أزرق', value: '#4A90E2', bg: 'bg-blue-500' },
@@ -61,7 +60,7 @@ export default function UsernameColorPicker({
   currentUser,
   onColorUpdate,
 }: UsernameColorPickerProps) {
-  const [selectedColor, setSelectedColor] = useState(currentUser.usernameColor || '#000000');
+  const [selectedColor, setSelectedColor] = useState(currentUser.usernameColor || '#4A90E2');
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 

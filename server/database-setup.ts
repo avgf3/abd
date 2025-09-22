@@ -23,6 +23,7 @@ import { ensureRoomsColumns } from './database-adapter';
 import { ensureBotsTable } from './database-adapter';
 import { ensureChatLockColumns } from './database-adapter';
 import { ensureUserPreferencesColumns } from './database-adapter';
+import { ensureUsernameColorDefaultBlue } from './database-adapter';
 import { optimizeDatabaseIndexes } from './utils/database-optimization';
 
 // إعادة تصدير دالة التهيئة من المحول
@@ -286,6 +287,13 @@ export async function initializeSystem(): Promise<boolean> {
       await ensureUserPreferencesColumns();
     } catch (e) {
       console.warn('⚠️ تعذر ضمان أعمدة تفضيلات المستخدم:', (e as any)?.message || e);
+    }
+
+    // ضمان اللون الافتراضي للاسم أزرق وتطهير القيم البيضاء
+    try {
+      await ensureUsernameColorDefaultBlue();
+    } catch (e) {
+      console.warn('⚠️ تعذر ضبط اللون الافتراضي للاسم:', (e as any)?.message || e);
     }
 
     // ضمان أعمدة جدول الغرف (مثل is_locked)
