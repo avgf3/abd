@@ -3204,6 +3204,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Notifications API
   app.get('/api/notifications/:userId', async (req, res) => {
     try {
+      try { res.set('Cache-Control', 'no-store'); } catch {}
       // Check database availability
       if (!db || dbType === 'disabled') {
         return res.json({ notifications: [] });
@@ -3216,7 +3217,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'معرف المستخدم غير صحيح' });
       }
 
-      const notifications = await storage.getUserNotifications(userId);
+      // دعم استعلام "after" اختياري لتقليل النتائج إذا طُلِب
+      const afterRaw = (req.query?.after as string) || '';
+      let notifications;
+      if (afterRaw) {
+        const afterMs = Number(afterRaw);
+        if (!Number.isNaN(afterMs) && afterMs > 0) {
+          notifications = await (storage as any).getUserNotificationsSince(
+            userId,
+            new Date(afterMs)
+          );
+        }
+      }
+      if (!notifications) {
+        notifications = await storage.getUserNotifications(userId);
+      }
       res.json({ notifications });
     } catch (error) {
       console.error('خطأ في جلب الإشعارات:', error);
@@ -3227,19 +3242,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // إضافة endpoint للإشعارات بدون userId (للحالات التي تستدعى بدون معامل)
   app.get('/api/notifications', async (req, res) => {
     try {
+      try { res.set('Cache-Control', 'no-store'); } catch {}
       // Check database availability
       if (!db || dbType === 'disabled') {
         return res.json({ notifications: [] });
       }
 
-      const { userId } = req.query;
+      const { userId, after } = req.query as any;
 
       if (!userId || isNaN(parseInt(userId as string))) {
         return res.status(400).json({ error: 'معرف المستخدم مطلوب وغير صحيح' });
       }
 
       const userIdInt = parseInt(userId as string);
-      const notifications = await storage.getUserNotifications(userIdInt);
+      let notifications;
+      if (after && !isNaN(Number(after))) {
+        notifications = await (storage as any).getUserNotificationsSince(
+          userIdInt,
+          new Date(Number(after))
+        );
+      }
+      if (!notifications) {
+        notifications = await storage.getUserNotifications(userIdInt);
+      }
       res.json({ notifications });
     } catch (error) {
       console.error('خطأ في جلب الإشعارات:', error);
@@ -3302,6 +3327,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/notifications/:userId/unread-count', async (req, res) => {
     try {
+      try { res.set('Cache-Control', 'no-store'); } catch {}
       // Check database availability
       if (!db || dbType === 'disabled') {
         return res.json({ count: 0 });
@@ -3318,6 +3344,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Alternative endpoint with userId in query parameter (for client compatibility)
   app.get('/api/notifications/unread-count', async (req, res) => {
     try {
+      try { res.set('Cache-Control', 'no-store'); } catch {}
       // Check database availability
       if (!db || dbType === 'disabled') {
         return res.json({ count: 0 });

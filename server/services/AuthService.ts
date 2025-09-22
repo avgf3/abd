@@ -1,6 +1,7 @@
 import type { InsertUser } from '../../shared/schema';
 import { SecurityManager } from '../auth/security';
 import type { IStorage } from '../storage';
+import { notificationService } from './notificationService';
 
 import type { User } from './databaseService';
 
@@ -53,14 +54,11 @@ export class AuthService {
       // تحديث حالة الاتصال
       await this.storage.setUserOnlineStatus(user.id, true);
 
-      // إنشاء إشعار ترحيب
+      // إنشاء إشعار ترحيب عند الحاجة فقط (منع التكرار بفاصل زمني)
       if (user.userType !== 'guest') {
-        await this.storage.createNotification({
-          userId: user.id,
-          type: 'welcome_back',
-          title: '🎉 أهلاً بعودتك',
-          message: `مرحباً بك مرة أخرى ${user.username}! نسعد بعودتك إلى المنصة.`,
-        });
+        try {
+          await notificationService.createWelcomeBackIfNeeded(user.id, 12, user.username);
+        } catch {}
       }
 
       // Add missing profileEffect property for compatibility

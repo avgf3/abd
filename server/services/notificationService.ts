@@ -36,6 +36,29 @@ export class NotificationService {
     }
   }
 
+  // الحصول على إشعارات المستخدم بعد وقت معين
+  async getUserNotificationsSince(
+    userId: number,
+    after: Date,
+    limit: number = 50
+  ): Promise<Notification[]> {
+    try {
+      const all = await this.getUserNotifications(userId, limit * 4);
+      const filtered = (all || []).filter((n) => {
+        try {
+          const created = n?.createdAt ? new Date(n.createdAt as any) : null;
+          return created ? created > after : false;
+        } catch {
+          return false;
+        }
+      });
+      return filtered.slice(0, limit);
+    } catch (error) {
+      console.error('خطأ في الحصول على إشعارات المستخدم (since):', error);
+      return [];
+    }
+  }
+
   // تمييز إشعار كمقروء
   async markNotificationAsRead(notificationId: number): Promise<boolean> {
     try {
@@ -49,6 +72,48 @@ export class NotificationService {
     } catch (error) {
       console.error('خطأ في تمييز الإشعار كمقروء:', error);
       return false;
+    }
+  }
+
+  // إنشاء إشعار "أهلاً بعودتك" عند الحاجة فقط (منع التكرار خلال مدة محددة)
+  async createWelcomeBackIfNeeded(
+    userId: number,
+    minHours: number = 12,
+    username?: string
+  ): Promise<Notification | null> {
+    try {
+      const cutoff = new Date(Date.now() - minHours * 60 * 60 * 1000);
+
+      // آخر إشعار welcome_back للمستخدم
+      const last = await db
+        .select()
+        .from(notifications)
+        .where(and(eq(notifications.userId, userId), eq(notifications.type, 'welcome_back' as any)))
+        .orderBy(desc(notifications.createdAt))
+        .limit(1);
+
+      const lastNotif = last?.[0];
+      if (lastNotif && lastNotif.createdAt && new Date(lastNotif.createdAt as any) > cutoff) {
+        // تم إرسال إشعار ترحيب مؤخراً - لا ننشئ جديداً
+        return null;
+      }
+
+      const title = '🎉 أهلاً بعودتك';
+      const message = username
+        ? `مرحباً بك مرة أخرى ${username}! نسعد بعودتك إلى المنصة.`
+        : 'مرحباً بك مرة أخرى! نسعد بعودتك إلى المنصة.';
+
+      const created = await this.createNotification({
+        userId,
+        type: 'welcome_back',
+        title,
+        message,
+      } as any);
+
+      return created;
+    } catch (error) {
+      console.error('خطأ في إنشاء إشعار أهلاً بعودتك بشكل آمن:', error);
+      return null;
     }
   }
 

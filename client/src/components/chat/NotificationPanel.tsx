@@ -40,10 +40,10 @@ export default function NotificationPanel({
   currentUser,
 }: NotificationPanelProps) {
   const queryClient = useQueryClient();
-  const [lastChecked, setLastChecked] = useState<number>(Date.now());
+  const [lastChecked, setLastChecked] = useState<number>(0);
   const { showErrorToast, showSuccessToast } = useNotificationManager(currentUser);
 
-  // جلب الإشعارات - polling محسن
+  // جلب الإشعارات - يدعم after على الخادم الآن
   const {
     data: notificationsData,
     isLoading,
@@ -52,7 +52,8 @@ export default function NotificationPanel({
     queryKey: ['/api/notifications', currentUser?.id],
     queryFn: async () => {
       if (!currentUser?.id) throw new Error('No user ID');
-      return await apiRequest(`/api/notifications?userId=${currentUser.id}&after=${lastChecked}`);
+      // استخدم مسار يتضمن userId كـ path param لدقة أعلى، مع تمرير after اختياري
+      return await apiRequest(`/api/notifications/${currentUser.id}?after=${lastChecked}`);
     },
     enabled: !!currentUser?.id && isOpen,
     // لا حاجة لـ polling، التحديث يتم عبر أحداث الوقت الحقيقي
@@ -171,8 +172,14 @@ export default function NotificationPanel({
   }, [refetch]);
 
   const allNotifications = notificationsData?.notifications || [];
-  // استبعاد إشعارات الرسائل نهائياً من الواجهة (حماية إضافية بجانب فلترة الخادم)
-  const notifications = allNotifications.filter((n) => n.type !== 'message');
+  // إزالة التكرارات حسب المعرّف + استبعاد إشعارات الرسائل نهائياً
+  const notifications = (() => {
+    const dedup = new Map<number, Notification>();
+    for (const n of allNotifications) {
+      if (!dedup.has(n.id)) dedup.set(n.id, n);
+    }
+    return Array.from(dedup.values()).filter((n) => n.type !== 'message');
+  })();
   const unreadCount = unreadCountData?.count || 0;
 
   const getNotificationIcon = (type: string) => {
