@@ -112,6 +112,7 @@ interface BroadcastRoomInterfaceProps {
     offWebRTCIceCandidate?: (handler: (payload: any) => void) => void;
     onWebRTCAnswer?: (handler: (payload: any) => void) => void;
     offWebRTCAnswer?: (handler: (payload: any) => void) => void;
+    currentRoomId?: string; // للتأكد أننا داخل نفس الغرفة قبل الإشارة
   };
 }
 
@@ -529,6 +530,26 @@ export default function BroadcastRoomInterface({
       
       console.log('✅ تم الحصول على الميكروفون، بدء إنشاء الاتصالات...');
       
+      // 5.5 التأكد من أننا فعلياً داخل نفس الغرفة على Socket قبل إرسال أي إشارات
+      const ensureJoinedSameRoom = async () => {
+        try {
+          // انتظر حتى 2 ثانية كحد أقصى لتأكيد الانضمام
+          const MAX_WAIT_MS = 2000;
+          const started = Date.now();
+          while (Date.now() - started < MAX_WAIT_MS) {
+            if (chat?.currentRoomId && chat.currentRoomId === room.id) return true;
+            await new Promise((r) => setTimeout(r, 50));
+          }
+          return Boolean(chat?.currentRoomId === room.id);
+        } catch {
+          return false;
+        }
+      };
+      const joinedOk = await ensureJoinedSameRoom();
+      if (!joinedOk) {
+        throw new Error('جاري الانضمام للغرفة... حاول بدء البث بعد لحظات.');
+      }
+      
       // 6. إنشاء اتصالات مع المستمعين
       const listeners = humanOnlineUsers.filter(
         (u) => u.id !== currentUser.id && !speakers.includes(u.id) && u.id !== broadcastInfo?.hostId
@@ -738,6 +759,13 @@ export default function BroadcastRoomInterface({
           };
           peersRef.current.set(fromUserId, pc);
         }
+        // تأكد من وجود transceiver للاستقبال فقط لزيادة التوافق
+        try {
+          const hasAudioTransceiver = pc.getTransceivers().some((t) => t.receiver && t.receiver.track && t.receiver.track.kind === 'audio');
+          if (!hasAudioTransceiver) {
+            pc.addTransceiver('audio', { direction: 'recvonly' });
+          }
+        } catch {}
         await pc.setRemoteDescription(new RTCSessionDescription(payload.sdp));
         const answer = await pc.createAnswer();
         await pc.setLocalDescription(answer);
@@ -1185,22 +1213,7 @@ export default function BroadcastRoomInterface({
             </div>
           )}
 
-          <div className="hidden">
-            <audio
-              ref={audioRef}
-              playsInline
-              autoPlay
-              controlsList="nodownload noplaybackrate"
-              className="w-0 h-0 opacity-0 pointer-events-none"
-              onLoadedMetadata={() => console.log('🎵 تم تحميل بيانات الصوت')}
-              onCanPlay={() => console.log('🎵 الصوت جاهز للتشغيل')}
-              onPlay={() => console.log('🎵 بدء تشغيل الصوت')}
-              onPause={() => console.log('🎵 توقف تشغيل الصوت')}
-              onError={(e) => console.error('❌ خطأ في العنصر الصوتي:', e)}
-              onVolumeChange={() => console.log('🔊 تغيير مستوى الصوت:', audioRef.current?.volume)}
-              onMuteChange={() => console.log('🔇 تغيير حالة الكتم:', audioRef.current?.muted)}
-            />
-          </div>
+          {/* إزالة عنصر الصوت المكرر لتفادي تعارض المرجع */}
         </div>
       )}
 
