@@ -1,8 +1,39 @@
 // دالة لتحويل اسم المدينة إلى رابط
 export function getCityLinkFromName(cityName: string, countryPath: string): string | null {
-  // إزالة "شات" من بداية الاسم
-  const cleanName = cityName.replace(/^شات\s*/, '');
-  
+  // تطبيع الاسم وإزالة السوابق الشائعة
+  const nameTrimmed = (cityName || '').trim();
+  const cleanName = nameTrimmed
+    .replace(/^شات\s*/, '')
+    .replace(/^دردشه\s*/, '')
+    .replace(/^دردشة\s*/, '')
+    .trim();
+
+  // خرائط مطلقة للغرف العامة (خاصة صفحة وطن)
+  const absoluteRouteMap: { [key: string]: string } = {
+    'امامير': '/emamir',
+    'فلسطيني': '/falastini',
+    'شات فلسطيني': '/palestinian',
+    'صبايا': '/sabaya',
+    'اردني': '/jordan',
+    'دردشتي': '/dardashti',
+    'مزز': '/mezz',
+    'اونلاين': '/online-chat',
+    'احلا لمة': '/ahla-lamma',
+    'الحلوين': '/beautiful-chat',
+    'بدون تسجيل': '/no-signup'
+  };
+  if (absoluteRouteMap[cleanName]) {
+    return absoluteRouteMap[cleanName];
+  }
+
+  // تطبيع مسار الدولة إلى المسار القياسي عند الحاجة (للتعامل مع الأسماء المستعارة)
+  const canonicalCountryPathMap: { [key: string]: string } = {
+    '/jordan-chat': '/jordan',
+    '/palestinian': '/palestine',
+    '/falastini': '/palestine'
+  };
+  const baseCountryPath = canonicalCountryPathMap[countryPath] || countryPath;
+
   // تحويل الاسم إلى رابط
   const cityMap: { [key: string]: string } = {
     // عمان
@@ -88,6 +119,10 @@ export function getCityLinkFromName(cityName: string, countryPath: string): stri
     'سترة': 'sitrah',
     'عيسى': 'isa',
     'اللؤلؤة': 'pearl',
+    'المنامة': 'manama',
+    'المحرق': 'muharraq',
+    'الرفاع': 'riffa',
+    'حمد': 'hamad',
     
     // روابط الإمارات الإضافية
     'إماراتي جوال': 'uae-mobile',
@@ -105,6 +140,9 @@ export function getCityLinkFromName(cityName: string, countryPath: string): stri
     
     // روابط الكويت الإضافية
     'كويتي جوال': 'kuwait-mobile',
+    'مدينة الكويت': 'kuwait-city',
+    'الجهراء': 'jahra',
+    'الأحمدي': 'ahmadi',
     'الفروانية': 'farwaniyah',
     'حولي': 'hawalli',
     'مبارك الكبير': 'mubarak-al-kabeer',
@@ -130,12 +168,19 @@ export function getCityLinkFromName(cityName: string, countryPath: string): stri
     'طنجة': 'tangier',
     'أغادير': 'agadir',
     'مكناس': 'meknes',
+    'الرباط': 'rabat',
+    'الدار البيضاء': 'casablanca',
+    'مراكش': 'marrakesh',
     
     // روابط السودان الإضافية
     'سوداني جوال': 'sudan-mobile',
     'الجزيرة': 'gezira',
     'دارفور': 'darfur',
     'النيل الأزرق': 'blue-nile',
+    'الخرطوم': 'khartoum',
+    'أم درمان': 'omdurman',
+    'بورتسودان': 'port-sudan',
+    'كسلا': 'kassala',
     
     // روابط فلسطين الإضافية
     'فلسطيني جوال': 'palestine-mobile',
@@ -150,6 +195,9 @@ export function getCityLinkFromName(cityName: string, countryPath: string): stri
     'أم صلال': 'umm-salal',
     'لوسيل': 'lusail',
     'الشمال': 'al-shamal',
+    'الدوحة': 'doha',
+    'الريان': 'al-rayyan',
+    'الوكرة': 'al-wakrah',
     
     // روابط اليمن الإضافية
     'يمني جوال': 'yemen-mobile',
@@ -157,6 +205,9 @@ export function getCityLinkFromName(cityName: string, countryPath: string): stri
     'إب': 'ibb',
     'حضرموت': 'hadramaut',
     'المكلا': 'mukalla',
+    'صنعاء': 'sanaa',
+    'عدن': 'aden',
+    'تعز': 'taiz',
     
     // روابط لبنان الإضافية
     'لبناني جوال': 'lebanon-mobile',
@@ -164,6 +215,9 @@ export function getCityLinkFromName(cityName: string, countryPath: string): stri
     'زحلة': 'zahle',
     'جبيل': 'byblos',
     'بعلبك': 'baalbek',
+    'بيروت': 'beirut',
+    'طرابلس': 'tripoli',
+    'صيدا': 'sidon',
     
     // روابط سوريا الإضافية
     'سوري جوال': 'syria-mobile',
@@ -171,6 +225,9 @@ export function getCityLinkFromName(cityName: string, countryPath: string): stri
     'حماة': 'hama',
     'طرطوس': 'tartus',
     'دير الزور': 'deir-ez-zor',
+    'دمشق': 'damascus',
+    'حلب': 'aleppo',
+    'حمص': 'homs',
     
     // روابط العراق الإضافية
     'عراقي جوال': 'iraq-mobile',
@@ -178,6 +235,9 @@ export function getCityLinkFromName(cityName: string, countryPath: string): stri
     'النجف': 'najaf',
     'كربلاء': 'karbala',
     'السليمانية': 'sulaymaniyah',
+    'بغداد': 'baghdad',
+    'البصرة': 'basra',
+    'الموصل': 'mosul',
     
     // روابط جزر القمر الإضافية
     'قمري جوال': 'comoros-mobile',
@@ -187,9 +247,11 @@ export function getCityLinkFromName(cityName: string, countryPath: string): stri
     'مايوت': 'mayotte',
     'دوموني': 'domoni',
     'فومبوني': 'fomboni',
+    'موروني': 'moroni',
     
     // روابط جيبوتي الإضافية
     'جيبوتي جوال': 'djibouti-mobile',
+    'جيبوتي العاصمة': 'djibouti-city',
     'علي صبيح': 'ali-sabieh',
     'تاجورة': 'tadjoura',
     'أوبوك': 'obock',
@@ -200,7 +262,7 @@ export function getCityLinkFromName(cityName: string, countryPath: string): stri
   
   const citySlug = cityMap[cleanName];
   if (citySlug) {
-    return `${countryPath}/${citySlug}`;
+    return `${baseCountryPath}/${citySlug}`;
   }
   
   return null;
