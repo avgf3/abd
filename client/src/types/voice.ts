@@ -65,7 +65,9 @@ export interface VoiceConnection {
   userId: number;
   
   // WebRTC
-  peerConnection?: RTCPeerConnection;
+  peerConnection?: RTCPeerConnection; // optional main PC if used
+  // Per-remote user peer connections for mesh
+  peerConnectionsByUser?: Map<number, RTCPeerConnection>;
   localStream?: MediaStream;
   remoteStreams: Map<number, MediaStream>;
   

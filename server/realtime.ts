@@ -108,6 +108,12 @@ export function getOnlineUserCountsForRooms(roomIds: string[]): Record<string, n
     for (const id of target) counts[id] = 0;
 
     for (const [, entry] of connectedUsers.entries()) {
+      // استثناء البوتات من العدّ المباشر للمستخدمين في الغرف
+      try {
+        if (entry?.user?.userType === 'bot') {
+          continue;
+        }
+      } catch {}
       // A single user may have multiple sockets; count each user once per room
       const roomsForUser = new Set<string>();
       for (const socketMeta of entry.sockets.values()) {
