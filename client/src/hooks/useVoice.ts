@@ -105,6 +105,8 @@ export function useVoice(options: UseVoiceOptions = {}): UseVoiceReturn {
     packetsLost: 0,
     quality: 'good' as 'poor' | 'good' | 'excellent'
   });
+  const [autoplayBlocked, setAutoplayBlocked] = useState(false);
+  const [degraded, setDegraded] = useState(false);
   
   // المراجع
   const initializationPromiseRef = useRef<Promise<void> | null>(null);
@@ -363,11 +365,15 @@ export function useVoice(options: UseVoiceOptions = {}): UseVoiceReturn {
     };
 
     const handleStatsUpdated = (data: any) => {
-      setConnectionStats({
-        latency: Math.round(data.stats.rtt * 1000),
-        packetsLost: data.stats.packetsLost || 0,
-        quality: data.stats.rtt < 0.1 ? 'excellent' : data.stats.rtt < 0.2 ? 'good' : 'poor'
-      });
+      const rttSec = data?.stats?.rtt || 0;
+      const latencyMs = Math.round(rttSec * 1000);
+      const lost = data?.stats?.packetsLost || 0;
+      const recv = data?.stats?.packetsReceived || 0;
+      const lossRate = recv > 0 ? (lost / Math.max(1, lost + recv)) : 0;
+      const quality = rttSec < 0.1 && lossRate < 0.02 ? 'excellent' : (rttSec < 0.2 && lossRate < 0.05 ? 'good' : 'poor');
+
+      setConnectionStats({ latency: latencyMs, packetsLost: lost, quality });
+      setDegraded(quality === 'poor');
     };
 
     const handleAudioDevicesUpdated = (devices: AudioDeviceInfo[]) => {
@@ -392,6 +398,12 @@ export function useVoice(options: UseVoiceOptions = {}): UseVoiceReturn {
     voiceManager.on('speaking_stopped', handleSpeakingStopped);
     voiceManager.on('voice_level', handleVoiceLevel);
     voiceManager.on('stats_updated', handleStatsUpdated);
+    voiceManager.on('remote_stream_added', () => {
+      // عند وصول ستريم، قد يحظر التشغيل: دع الواجهة تعرف لتعرض زر تشغيل الصوت
+      try {
+        setAutoplayBlocked(false);
+      } catch {}
+    });
     voiceManager.on('audio_devices_updated', handleAudioDevicesUpdated);
     voiceManager.on('error', handleError);
 
@@ -405,6 +417,7 @@ export function useVoice(options: UseVoiceOptions = {}): UseVoiceReturn {
       voiceManager.off('speaking_stopped', handleSpeakingStopped);
       voiceManager.off('voice_level', handleVoiceLevel);
       voiceManager.off('stats_updated', handleStatsUpdated);
+      try { voiceManager.off('remote_stream_added', () => {}); } catch {}
       voiceManager.off('audio_devices_updated', handleAudioDevicesUpdated);
       voiceManager.off('error', handleError);
     };
@@ -451,5 +464,9 @@ export function useVoice(options: UseVoiceOptions = {}): UseVoiceReturn {
     
     // إحصائيات
     connectionStats
+    ,
+    // إشارات الجودة والمتابعة
+    autoplayBlocked,
+    degraded
   };
 }

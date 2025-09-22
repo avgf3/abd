@@ -740,34 +740,68 @@ export class VoiceManager {
    */
   private async startStatsMonitoring(connection: VoiceConnection): Promise<void> {
     const monitorStats = async () => {
-      if (connection.connectionState !== 'connected') return;
-      
       try {
-        const stats = await connection.peerConnection!.getStats();
-        
-        stats.forEach((report) => {
-          if (report.type === 'inbound-rtp' && report.mediaType === 'audio') {
-            connection.stats.packetsReceived = report.packetsReceived || 0;
-            connection.stats.packetsLost = report.packetsLost || 0;
-            connection.stats.bytesReceived = report.bytesReceived || 0;
-            connection.stats.jitter = report.jitter || 0;
+        // لا تتوقّف عن القياس بالكامل عند تغيّر الحالة؛ قد نحصل على قيم مفيدة أثناء إعادة التفاوض
+        const aggregate = {
+          packetsLost: 0,
+          packetsReceived: 0,
+          bytesReceived: 0,
+          jitter: 0,
+          rtt: 0,
+        } as typeof connection.stats;
+
+        const perUser: Record<number, typeof connection.stats> = {} as any;
+
+        // Helper to accumulate from a single RTCPeerConnection
+        const readStats = async (pc: RTCPeerConnection, keyUserId?: number) => {
+          try {
+            const reports = await pc.getStats();
+            let local = { packetsLost: 0, packetsReceived: 0, bytesReceived: 0, jitter: 0, rtt: 0 } as typeof connection.stats;
+            reports.forEach((report) => {
+              if (report.type === 'inbound-rtp' && (report as any).mediaType === 'audio') {
+                local.packetsReceived += (report as any).packetsReceived || 0;
+                local.packetsLost += (report as any).packetsLost || 0;
+                local.bytesReceived += (report as any).bytesReceived || 0;
+                local.jitter = Math.max(local.jitter, (report as any).jitter || 0);
+              }
+              if (report.type === 'candidate-pair' && (report as any).state === 'succeeded') {
+                local.rtt = Math.max(local.rtt, (report as any).currentRoundTripTime || 0);
+              }
+            });
+            // Aggregate into global
+            aggregate.packetsReceived += local.packetsReceived;
+            aggregate.packetsLost += local.packetsLost;
+            aggregate.bytesReceived += local.bytesReceived;
+            aggregate.jitter = Math.max(aggregate.jitter, local.jitter);
+            aggregate.rtt = Math.max(aggregate.rtt, local.rtt);
+            if (typeof keyUserId === 'number') {
+              perUser[keyUserId] = local;
+            }
+          } catch {}
+        };
+
+        if (connection.peerConnection) {
+          await readStats(connection.peerConnection);
+        }
+        if (connection.peerConnectionsByUser && connection.peerConnectionsByUser.size > 0) {
+          for (const [uid, pc] of connection.peerConnectionsByUser.entries()) {
+            await readStats(pc, uid);
           }
-          
-          if (report.type === 'candidate-pair' && report.state === 'succeeded') {
-            connection.stats.rtt = report.currentRoundTripTime || 0;
-          }
-        });
-        
+        }
+
+        // Update connection.stats for backward compatibility
+        connection.stats = aggregate;
+
         this.emit('stats_updated', {
           roomId: connection.roomId,
-          stats: connection.stats
+          stats: connection.stats,
+          perUserStats: perUser,
         });
-        
-        // جدولة المراقبة التالية
+
         setTimeout(monitorStats, 5000);
-        
       } catch (error) {
         console.error('❌ خطأ في مراقبة الإحصائيات:', error);
+        setTimeout(monitorStats, 5000);
       }
     };
     
