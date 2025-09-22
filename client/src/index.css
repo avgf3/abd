@@ -1782,6 +1782,31 @@ li > * > div.effect-crystal {
   backface-visibility: hidden;
 }
 
+/* Themed bottom nav buttons (keeps icon/text colors intact) */
+.themed-nav {
+  background-image: linear-gradient(135deg,
+    var(--nav-tint-start, rgba(255, 255, 255, 0.06)) 0%,
+    var(--nav-tint-end, rgba(255, 255, 255, 0.03)) 100%
+  );
+  border: 1px solid var(--nav-border, rgba(255, 255, 255, 0.08));
+  color: inherit;
+}
+
+.themed-nav:hover {
+  background-image: linear-gradient(135deg,
+    color-mix(in srgb, var(--primary-solid, #6b7280) 24%, transparent) 0%,
+    color-mix(in srgb, var(--primary-solid, #6b7280) 10%, transparent) 100%
+  );
+}
+
+.themed-active {
+  background-image: linear-gradient(135deg,
+    color-mix(in srgb, var(--primary-solid, #6b7280) 28%, transparent) 0%,
+    color-mix(in srgb, var(--primary-solid, #6b7280) 12%, transparent) 100%
+  );
+  border-color: var(--nav-border, rgba(255, 255, 255, 0.10));
+}
+
 /* Modern Tab */
 .modern-tab {
   position: relative;
