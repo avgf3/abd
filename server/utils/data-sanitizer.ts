@@ -10,7 +10,7 @@ export function isValidHexColor(color: string): boolean {
 // دالة لتنظيف وتصحيح لون HEX
 export function sanitizeHexColor(
   color: string | null | undefined,
-  defaultColor: string = '#2a2a2a'
+  defaultColor: string = '#4A90E2'
 ): string {
   if (!color || color === 'null' || color === 'undefined' || color === '') {
     return defaultColor;
@@ -125,7 +125,7 @@ export function sanitizeUserData(user: any): any {
   return {
     ...user,
     profileBackgroundColor: sanitizeProfileBackgroundColor(user.profileBackgroundColor),
-    usernameColor: sanitizeHexColor(user.usernameColor, '#000000'),
+    usernameColor: sanitizeHexColor(user.usernameColor, '#4A90E2'),
     profileEffect: sanitizeEffect(user.profileEffect),
     dmPrivacy,
     // تفضيلات عامة (ضمان قيم منطقية افتراضية)
