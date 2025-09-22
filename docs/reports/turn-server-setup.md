@@ -56,8 +56,9 @@ VITE_TURN_URL_TLS=turns:your-turn-server.com:5349
 ### 2. استخدام خدمة Twilio المجانية (مثال):
 
 ```env
+# ملاحظة مهمة: استخدم استعلام transport مع TURN فقط، وليس مع STUN
 VITE_TURN_URL=turn:global.turn.twilio.com:3478?transport=udp
-VITE_TURN_URL_TLS=turn:global.turn.twilio.com:3478?transport=tcp
+VITE_TURN_URL_TLS=turns:global.turn.twilio.com:5349?transport=tcp
 VITE_TURN_USERNAME=your-twilio-username
 VITE_TURN_CREDENTIAL=your-twilio-password
 ```
@@ -71,7 +72,7 @@ const getIceServers = (): RTCIceServer[] => {
   const servers: RTCIceServer[] = [
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' },
-    { urls: 'stun:global.stun.twilio.com:3478?transport=udp' },
+    { urls: 'stun:global.stun.twilio.com:3478' },
   ];
 
   // TURN server من متغيرات البيئة
