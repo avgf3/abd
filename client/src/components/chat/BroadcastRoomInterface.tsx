@@ -269,7 +269,8 @@ export default function BroadcastRoomInterface({
   const canManageMic = isHost || isAdmin || isModerator || isOwner;
   const isSpeaker = !!currentUser && speakers.includes(currentUser.id);
   const isInQueue = !!currentUser && micQueue.includes(currentUser.id);
-  const canSpeak = isHost || isSpeaker;
+  // السماح للمالك/الأدمن ببدء البث حتى لو لم يتم تعيين hostId بعد
+  const canSpeak = isHost || isSpeaker || isOwner || isAdmin;
   const canRequestMic = !!currentUser && !isHost && !isSpeaker && !isInQueue;
   const isListener = !!currentUser && !canSpeak;
 
