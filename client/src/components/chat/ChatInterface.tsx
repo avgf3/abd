@@ -1197,9 +1197,9 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           {/* الحوائط */}
           <Button
             size="sm"
-            className={`glass-effect transition-all duration-200 flex items-center gap-1.5 ${
+            className={`glass-effect themed-nav transition-all duration-200 flex items-center gap-1.5 ${
               isMobile ? 'flex-1 px-2 py-2 text-xs' : 'px-2 py-1.5 text-sm'
-            }${activeView === 'walls' ? ' bg-primary text-primary-foreground' : ' hover:bg-accent'} rounded-lg`}
+            }${activeView === 'walls' ? ' themed-active' : ' hover:bg-accent'} rounded-lg`}
             onClick={() => setActiveView((prev) => (prev === 'walls' ? 'hidden' : 'walls'))}
             title="الحائط"
           >
@@ -1225,9 +1225,9 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           {/* المستخدمون */}
           <Button
             size="sm"
-            className={`glass-effect transition-all duration-200 flex items-center gap-1.5 ${
+            className={`glass-effect themed-nav transition-all duration-200 flex items-center gap-1.5 ${
               isMobile ? 'flex-1 px-2 py-2 text-xs' : 'px-2 py-1.5 text-sm'
-            }${activeView === 'users' ? ' bg-primary text-primary-foreground' : ' hover:bg-accent'} rounded-lg`}
+            }${activeView === 'users' ? ' themed-active' : ' hover:bg-accent'} rounded-lg`}
             onClick={() => setActiveView((prev) => (prev === 'users' ? 'hidden' : 'users'))}
             title="المستخدمون المتصلون"
           >
@@ -1254,9 +1254,9 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           {/* الغرف */}
           <Button
             size="sm"
-            className={`glass-effect transition-all duration-200 flex items-center gap-1.5 ${
+            className={`glass-effect themed-nav transition-all duration-200 flex items-center gap-1.5 ${
               isMobile ? 'flex-1 px-2 py-2 text-xs' : 'px-2 py-1.5 text-sm'
-            }${activeView === 'rooms' ? ' bg-primary text-primary-foreground' : ' hover:bg-accent'} rounded-lg`}
+            }${activeView === 'rooms' ? ' themed-active' : ' hover:bg-accent'} rounded-lg`}
             onClick={() => setActiveView((prev) => (prev === 'rooms' ? 'hidden' : 'rooms'))}
             title="الغرف"
           >
@@ -1282,9 +1282,9 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           {/* الأصدقاء */}
           <Button
             size="sm"
-            className={`glass-effect transition-all duration-200 flex items-center gap-1.5 ${
+            className={`glass-effect themed-nav transition-all duration-200 flex items-center gap-1.5 ${
               isMobile ? 'flex-1 px-2 py-2 text-xs' : 'px-2 py-1.5 text-sm'
-            }${activeView === 'friends' ? ' bg-primary text-primary-foreground' : ' hover:bg-accent'} rounded-lg`}
+            }${activeView === 'friends' ? ' themed-active' : ' hover:bg-accent'} rounded-lg`}
             onClick={() => setActiveView((prev) => (prev === 'friends' ? 'hidden' : 'friends'))}
             title="الأصدقاء"
           >

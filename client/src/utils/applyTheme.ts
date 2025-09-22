@@ -157,6 +157,41 @@ export function applyThemeById(themeId: string, persist: boolean = false) {
   if (finalCssVars['--primary'] && !finalCssVars['--primary-solid']) {
     finalCssVars['--primary-solid'] = finalCssVars['--primary'];
   }
+
+  // Navigation bar tint variables (exclude dark and berryCool as requested)
+  if (themeId !== 'dark' && themeId !== 'berryCool') {
+    finalCssVars['--nav-tint-start'] = 'color-mix(in srgb, var(--primary-solid) 16%, transparent)';
+    finalCssVars['--nav-tint-end'] = 'color-mix(in srgb, var(--primary-solid) 6%, transparent)';
+    finalCssVars['--nav-border'] = 'color-mix(in srgb, var(--primary-solid) 22%, rgba(255, 255, 255, 0.10))';
+    // Sidebar: force clean white for non-excluded themes
+    finalCssVars['--sidebar-background'] = '#ffffff';
+    finalCssVars['--sidebar-foreground'] = '#0f172a';
+    finalCssVars['--sidebar-border'] = 'rgba(0, 0, 0, 0.08)';
+    finalCssVars['--sidebar-accent'] = 'rgba(0, 0, 0, 0.04)';
+    finalCssVars['--sidebar-accent-foreground'] = '#0f172a';
+    finalCssVars['--sidebar-primary'] = 'var(--primary-solid)';
+    finalCssVars['--sidebar-primary-foreground'] = 'var(--primary-foreground)';
+    finalCssVars['--sidebar-ring'] = 'var(--ring)';
+    // Tabs active background (theme tinted)
+    finalCssVars['--tab-active-bg-start'] = 'color-mix(in srgb, var(--primary-solid) 28%, transparent)';
+    finalCssVars['--tab-active-bg-end'] = 'color-mix(in srgb, var(--primary-solid) 12%, transparent)';
+  } else {
+    finalCssVars['--nav-tint-start'] = 'transparent';
+    finalCssVars['--nav-tint-end'] = 'transparent';
+    finalCssVars['--nav-border'] = 'rgba(255, 255, 255, 0.08)';
+    // Sidebar: keep theme-native look for excluded themes
+    finalCssVars['--sidebar-background'] = 'var(--background-solid)';
+    finalCssVars['--sidebar-foreground'] = 'var(--foreground)';
+    finalCssVars['--sidebar-border'] = 'rgba(255, 255, 255, 0.08)';
+    finalCssVars['--sidebar-accent'] = 'rgba(255, 255, 255, 0.06)';
+    finalCssVars['--sidebar-accent-foreground'] = 'var(--foreground)';
+    finalCssVars['--sidebar-primary'] = 'var(--primary-solid)';
+    finalCssVars['--sidebar-primary-foreground'] = 'var(--primary-foreground)';
+    finalCssVars['--sidebar-ring'] = 'var(--ring)';
+    // Tabs active background: neutral
+    finalCssVars['--tab-active-bg-start'] = 'transparent';
+    finalCssVars['--tab-active-bg-end'] = 'transparent';
+  }
   Object.entries(finalCssVars).forEach(([property, value]) => {
     root.style.setProperty(property, value);
   });
