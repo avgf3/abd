@@ -1,4 +1,3 @@
-import { EventEmitter } from 'events';
 import type { 
   VoiceRoom, 
   VoiceUser, 
@@ -14,7 +13,9 @@ import type {
  * مدير النظام الصوتي المتقدم
  * يدير جميع جوانب الصوت في الغرف
  */
-export class VoiceManager extends EventEmitter {
+export class VoiceManager {
+  // Simple internal event emitter for browser environment
+  private eventHandlers: Map<string, Set<(payload?: any) => void>> = new Map();
   private connections: Map<string, VoiceConnection> = new Map();
   private currentRoom: VoiceRoom | null = null;
   private settings: VoiceSettings;
@@ -62,7 +63,6 @@ export class VoiceManager extends EventEmitter {
   private currentUserId: number | null = null;
 
   constructor() {
-    super();
     
     // الإعدادات الافتراضية
     this.settings = {
@@ -87,6 +87,32 @@ export class VoiceManager extends EventEmitter {
 
     this.loadSettings();
     this.setupEventHandlers();
+  }
+
+  // Event API
+  on(eventName: string, handler: (payload?: any) => void): void {
+    const set = this.eventHandlers.get(eventName) || new Set();
+    set.add(handler);
+    this.eventHandlers.set(eventName, set);
+  }
+
+  off(eventName: string, handler: (payload?: any) => void): void {
+    const set = this.eventHandlers.get(eventName);
+    if (!set) return;
+    set.delete(handler);
+    if (set.size === 0) {
+      this.eventHandlers.delete(eventName);
+    } else {
+      this.eventHandlers.set(eventName, set);
+    }
+  }
+
+  private emit(eventName: string, payload?: any): void {
+    const set = this.eventHandlers.get(eventName);
+    if (!set) return;
+    for (const handler of Array.from(set)) {
+      try { handler(payload); } catch {}
+    }
   }
 
   /**
