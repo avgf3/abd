@@ -1002,7 +1002,7 @@ export default function MessageArea({
 
       {/* Message Input - تحسين التثبيت لمنع التداخل */}
       <div
-        className={`p-3 bg-white border-t border-gray-200 w-full z-20 shadow-lg chat-input soft-entrance`}
+        className={`p-3 bg-white w-full z-20 shadow-lg chat-input soft-entrance`}
       >
         {/* Typing Indicator */}
         {typingUsers.size > 0 && (
@@ -1010,7 +1010,7 @@ export default function MessageArea({
         )}
 
         <div
-          className={`flex ${isMobile ? 'gap-2 p-3' : 'gap-3 p-4'} ${isMultiLine ? 'flex-col items-start' : 'items-end'} max-w-full mx-auto bg-white/80 backdrop-blur-sm border-t border-gray-200 transition-all duration-300`}
+          className={`flex ${isMobile ? 'gap-2 p-3' : 'gap-3 p-4'} ${isMultiLine ? 'flex-col items-start' : 'items-end'} max-w-full mx-auto bg-white/80 backdrop-blur-sm transition-all duration-300`}
           style={{ paddingBottom: isMobile ? 'calc(env(safe-area-inset-bottom) + 0.75rem)' : '1rem' }}
         >
           {/* First row: Emoji buttons and textarea */}
@@ -1120,25 +1120,42 @@ export default function MessageArea({
               <Send className="w-4 h-4" />
             </Button>
 
-            {/* Message Input - Textarea with 2 lines */}
-            <textarea
-              ref={inputRef}
-              value={messageText}
-              onChange={handleMessageChange}
-              onKeyPress={handleKeyPress}
-              onPaste={handlePaste}
-              placeholder={isChatRestricted ? getRestrictionMessage : "اكتب رسالتك هنا..."}
-              className={`flex-1 resize-none bg-white placeholder:text-gray-500 ring-offset-white border border-gray-300 rounded-full px-4 ${isMultiLine ? 'h-auto py-3' : (isMobile ? 'h-12 py-3' : 'h-11 py-3')} transition-all duration-200 ${isMobile ? 'mobile-text' : ''} ${isChatRestricted ? 'cursor-not-allowed opacity-60' : ''}`}
-              disabled={!currentUser || isChatRestricted}
-              maxLength={1000}
-              autoComplete="off"
-              rows={1}
-              style={{
-                ...(isMobile ? { fontSize: '16px' } : {}),
-                color: composerTextColor,
-                fontWeight: composerBold ? 600 : undefined,
-              }}
-            />
+            {/* Message Input - render centered disabled input if restricted, otherwise 2-line textarea */}
+            {(!currentUser || isChatRestricted) ? (
+              <input
+                type="text"
+                value={''}
+                onChange={() => {}}
+                placeholder={getRestrictionMessage || 'هذه الخاصية غير متوفرة الآن'}
+                className={`flex-1 bg-white placeholder:text-gray-500 ring-offset-white border border-gray-300 rounded-full px-4 ${isMobile ? 'h-12' : 'h-11'} transition-all duration-200 cursor-not-allowed opacity-60`}
+                disabled
+                style={{
+                  ...(isMobile ? { fontSize: '16px' } : {}),
+                  color: composerTextColor,
+                  fontWeight: composerBold ? 600 : undefined,
+                  lineHeight: `${isMobile ? 48 : 44}px`,
+                }}
+              />
+            ) : (
+              <textarea
+                ref={inputRef}
+                value={messageText}
+                onChange={handleMessageChange}
+                onKeyPress={handleKeyPress}
+                onPaste={handlePaste}
+                placeholder={"اكتب رسالتك هنا..."}
+                className={`flex-1 resize-none bg-white placeholder:text-gray-500 ring-offset-white border border-gray-300 rounded-full px-4 ${isMultiLine ? 'h-auto py-3' : (isMobile ? 'h-12 py-0' : 'h-11 py-0')} transition-all duration-200 ${isMobile ? 'mobile-text' : ''}`}
+                maxLength={1000}
+                autoComplete="off"
+                rows={1}
+                style={{
+                  ...(isMobile ? { fontSize: '16px' } : {}),
+                  color: composerTextColor,
+                  fontWeight: composerBold ? 600 : undefined,
+                  lineHeight: !isMultiLine ? `${isMobile ? 48 : 44}px` : undefined,
+                }}
+              />
+            )}
 
             {/* Composer Plus Menu moved to the end */}
             <React.Suspense fallback={null}>
