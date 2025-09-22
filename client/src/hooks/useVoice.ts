@@ -36,6 +36,8 @@ export interface UseVoiceReturn {
   isDeafened: boolean;
   isSpeaking: boolean;
   voiceLevel: number;
+  autoplayBlocked: boolean;
+  degraded: boolean;
   
   // الوظائف
   initialize: () => Promise<void>;
