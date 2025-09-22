@@ -178,7 +178,7 @@ export default function NotificationPanel({
     for (const n of allNotifications) {
       if (!dedup.has(n.id)) dedup.set(n.id, n);
     }
-    return Array.from(dedup.values()).filter((n) => n.type !== 'message');
+    return Array.from(dedup.values()).filter((n) => n.type !== 'message' && !n.isRead);
   })();
   const unreadCount = unreadCountData?.count || 0;
 
