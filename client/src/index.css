@@ -27,11 +27,8 @@
   overflow: hidden;
 }
 
-<<<<<<< HEAD
-/* دعم حصر 4 أسطر (للجوال) */
-=======
+/* */
 /* للجوال: قيد 4 أسطر للنصوص الطويلة */
->>>>>>> origin/main
 .line-clamp-4 {
   display: -webkit-box;
   -webkit-line-clamp: 4;
