@@ -593,16 +593,47 @@ export const useChat = () => {
         }
         // ping عادي في المقدمة (كل 20 ثانية)
         pingIntervalRef.current = startPing(20000);
+
+        // حاول إعادة الاتصال فور العودة إذا كان الاتصال مقطوعاً
+        try {
+          if (!socketInstance.connected) {
+            socketInstance.connect();
+          }
+        } catch {}
       }
     };
 
     // إضافة معالج Page Visibility
     document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    // دعم أفضل لدورة حياة الصفحة على الأجهزة المحمولة: pageshow/pagehide
+    const handlePageShow = () => {
+      try {
+        if (socket.current && !socket.current.connected) {
+          socket.current.connect();
+        }
+      } catch {}
+    };
+    const handlePageHide = () => {
+      try {
+        // تأكيد تفعيل الping في الخلفية عند الانتقال للخلفية
+        if (socketWorkerRef.current) {
+          socketWorkerRef.current.postMessage({ type: 'start-ping', data: { interval: 60000 } });
+        }
+        if (serviceWorkerRef.current) {
+          serviceWorkerRef.current.postMessage({ type: 'start-background-ping', data: { interval: 60000 } });
+        }
+      } catch {}
+    };
+    window.addEventListener('pageshow', handlePageShow);
+    window.addEventListener('pagehide', handlePageHide);
     
     // تنظيف معالج Page Visibility عند إغلاق Socket
     const originalDisconnect = socketInstance.disconnect;
     socketInstance.disconnect = function() {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
+      try { window.removeEventListener('pageshow', handlePageShow); } catch {}
+      try { window.removeEventListener('pagehide', handlePageHide); } catch {}
       if (pingIntervalRef.current) {
         clearInterval(pingIntervalRef.current);
       }

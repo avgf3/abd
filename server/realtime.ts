@@ -57,6 +57,10 @@ function scheduleUserListUpdate(roomId: string): void {
 }
 
 const GENERAL_ROOM = 'general';
+// نافذة استئناف الجلسة بدون رسائل انضمام جديدة
+const RESUME_TTL_MS = 60 * 60 * 1000; // 1 ساعة
+// تخزين نافذة الاستئناف لكل مستخدم بعد انقطاع آخر Socket له
+const resumeWindow = new Map<number, { until: number; roomId: string | null }>();
 
 // Track connected users and their sockets/rooms with improved synchronization
 export const connectedUsers = new Map<
@@ -496,10 +500,15 @@ async function joinRoom(
 
   // Update connectedUsers room for this socket
   const entry = connectedUsers.get(userId);
+  // اكتشاف ما إذا كان هذا استئنافاً سريعاً للجلسة
+  const resumeInfo = resumeWindow.get(userId);
+  const isResume = !!(resumeInfo && Date.now() <= resumeInfo.until && resumeInfo.roomId === roomId);
   if (entry) {
     const now = new Date();
     entry.sockets.set(socket.id, { room: roomId, lastSeen: now });
     await updateUserLastSeen(userId, now);
+    // تنظيف علامات الاستئناف بعد نجاح العودة
+    try { resumeWindow.delete(userId); } catch {}
     
     // تحديث غرفة المستخدم في قاعدة البيانات إذا لزم الأمر
     if (entry.user.currentRoom !== roomId) {
@@ -548,32 +557,35 @@ async function joinRoom(
   } catch {}
 
   // رسالة نظامية: انضمام للغرفة الجديدة (بعد إرسال قائمة الرسائل لتجنب التكرار)
-  try {
-    const user = entry?.user || (await storage.getUser(userId));
-    const content = formatRoomEventMessage('join', {
-      username,
-      userType: user?.userType,
-      level: user?.level,
-    });
-    const created = await roomMessageService.sendMessage({
-      senderId: userId,
-      roomId,
-      content,
-      messageType: 'system',
-      isPrivate: false,
-    });
-    const sender = await storage.getUser(userId);
-    io.to(`room_${roomId}`).emit('message', {
-      type: 'newMessage',
-      message: {
-        ...created,
-        sender,
+  // إذا كان هذا استئنافاً سريعاً داخل نافذة السماح، لا ترسل رسالة "انضمام جديد"
+  if (!isResume) {
+    try {
+      const user = entry?.user || (await storage.getUser(userId));
+      const content = formatRoomEventMessage('join', {
+        username,
+        userType: user?.userType,
+        level: user?.level,
+      });
+      const created = await roomMessageService.sendMessage({
+        senderId: userId,
         roomId,
-        reactions: { like: 0, dislike: 0, heart: 0 },
-        myReaction: null,
-      },
-    });
-  } catch {}
+        content,
+        messageType: 'system',
+        isPrivate: false,
+      });
+      const sender = await storage.getUser(userId);
+      io.to(`room_${roomId}`).emit('message', {
+        type: 'newMessage',
+        message: {
+          ...created,
+          sender,
+          roomId,
+          reactions: { like: 0, dislike: 0, heart: 0 },
+          myReaction: null,
+        },
+      });
+    } catch {}
+  }
 }
 
 async function leaveRoom(
@@ -1261,6 +1273,13 @@ export function setupRealtime(httpServer: HttpServer): IOServer<ClientToServerEv
           
           // إذا لم يعد هناك sockets، قم بتحديث حالة الاتصال في قاعدة البيانات
           if (entry.sockets.size === 0) {
+            try {
+              // علّم هذا المستخدم بأنه يملك نافذة استئناف لمدة محددة، مع حفظ آخر غرفة
+              resumeWindow.set(userId, {
+                until: Date.now() + RESUME_TTL_MS,
+                roomId: socket.currentRoom || null,
+              });
+            } catch {}
             try {
               // تحديث آخر تواجد في قاعدة البيانات قبل إزالة المستخدم
               await storage.setUserOnlineStatus(userId, false);
