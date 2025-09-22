@@ -302,7 +302,9 @@ export async function buildOnlineUsersForRoom(roomId: string) {
         entry.user &&
         entry.user.id &&
         entry.user.username &&
-        entry.user.userType
+        entry.user.userType &&
+        // استثناء المستخدمين المخفيين إن توفرت القيمة محلياً
+        (entry.user.isHidden !== true)
       ) {
         userMap.set(entry.user.id, entry.user);
         // ✅ إزالة break للسماح بجمع جميع المستخدمين
@@ -329,11 +331,23 @@ export async function buildOnlineUsersForRoom(roomId: string) {
       // جلب lastSeen و currentRoom من قاعدة البيانات بدلاً من الذاكرة المحلية
       try {
         const dbUser = await storage.getUser(u.id);
+        // تحديث حالة الإخفاء وفق قاعدة البيانات (مصدر الحقيقة)
+        const hidden = (dbUser as any)?.isHidden === true || (u as any)?.isHidden === true;
+        next.isHidden = hidden;
+        if (hidden) {
+          return null as any; // استثناء المستخدمين المخفيين بالكامل من القائمة
+        }
         next.lastSeen = dbUser?.lastSeen || (u as any).createdAt || new Date();
         next.currentRoom = dbUser?.currentRoom || u.currentRoom || 'general';
       } catch (error) {
         next.lastSeen = (u as any).lastSeen || (u as any).createdAt || new Date();
         next.currentRoom = u.currentRoom || 'general';
+        // في حال تعذر الوصول لقاعدة البيانات، احترم حالة isHidden المحلية إن وُجدت
+        const hiddenLocal = (u as any)?.isHidden === true;
+        next.isHidden = hiddenLocal;
+        if (hiddenLocal) {
+          return null as any;
+        }
       }
       
       // ✅ منطق ذكي للغرفة الحالية:
@@ -400,7 +414,8 @@ export async function buildOnlineUsersForRoom(roomId: string) {
     return { ...u, isOnline: true, lastSeen: (u as any).lastSeen || (u as any).createdAt || new Date() };
   }));
 
-  return users;
+  // استبعاد nulls والمخفيين احتياطياً
+  return (users || []).filter((x: any) => x && x.isHidden !== true);
 }
 
 // أزيلت دالة إبطال الكاش
