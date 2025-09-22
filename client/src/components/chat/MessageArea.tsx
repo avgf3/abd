@@ -686,7 +686,7 @@ export default function MessageArea({
                         />
                       </div>
                     )}
-                    <div className={`flex-1 min-w-0 flex ${isMobile ? 'flex-wrap items-start' : 'items-start'} gap-2`}>
+                    <div className={`flex-1 min-w-0 flex ${isMobile ? 'flex-nowrap items-center' : 'items-center'} gap-2`}>
                       {message.sender && (message.sender.userType as any) !== 'bot' && (
                         <UserRoleBadge user={message.sender} showOnlyIcon={true} hideGuestAndGender={true} size={16} />
                       )}
@@ -697,8 +697,8 @@ export default function MessageArea({
                       >
                         {message.sender?.username || 'جاري التحميل...'}
                       </button>
-                      <div className={`text-red-600 break-words flex-1 min-w-0 message-content-fix ${isMobile ? 'w-full basis-full line-clamp-4' : 'line-clamp-2'}`}>
-                        <span dir="auto" className={`${isMobile ? 'block w-full line-clamp-4' : 'line-clamp-2'}`}>
+                      <div className={`text-red-600 break-words flex-1 min-w-0 message-content-fix ${isMobile ? 'line-clamp-4' : 'line-clamp-2'}`}>
+                        <span dir="auto" className={`${isMobile ? 'line-clamp-4' : 'line-clamp-2'}`}>
                           {message.content}
                         </span>
                       </div>
@@ -722,7 +722,7 @@ export default function MessageArea({
                     )}
 
                     {/* Inline row: badge, name, content */}
-                    <div className={`flex-1 min-w-0 flex ${isMobile ? 'flex-wrap items-start' : 'items-center'} gap-2`}>
+                    <div className={`flex-1 min-w-0 flex ${isMobile ? 'flex-nowrap items-center' : 'items-center'} gap-2`}>
                       {message.sender && (message.sender.userType as any) !== 'bot' && (
                         <UserRoleBadge user={message.sender} showOnlyIcon={true} hideGuestAndGender={true} size={16} />
                       )}
@@ -734,7 +734,7 @@ export default function MessageArea({
                         {message.sender?.username || 'جاري التحميل...'}
                       </button>
 
-                    <div className={`text-gray-800 break-words flex-1 min-w-0 message-content-fix ${isMobile ? 'w-full basis-full line-clamp-4' : 'line-clamp-2'}`}>
+                    <div className={`text-gray-800 break-words flex-1 min-w-0 message-content-fix ${isMobile ? 'line-clamp-4' : 'line-clamp-2'}`}>
                         {message.messageType === 'image' ? (
                           <img
                             src={message.content}
@@ -754,10 +754,10 @@ export default function MessageArea({
                             if (ids.length > 0) {
                               const firstId = ids[0];
                               return (
-                                <span dir="auto" className={`${isMobile ? 'line-clamp-4' : 'line-clamp-2'} ${!isMobile ? 'text-breathe' : ''} flex items-center gap-2 w-full`} onClick={() => isMobile && toggleMessageExpanded(message.id)}>
+                                <span dir="auto" className={`${isMobile ? 'line-clamp-4' : 'line-clamp-2'} ${!isMobile ? 'text-breathe' : ''} flex items-center gap-2`} onClick={() => isMobile && toggleMessageExpanded(message.id)}>
                                   {cleaned ? (
                                     <span
-                                      className={`${isMobile ? 'line-clamp-4 w-full' : 'line-clamp-2'}`}
+                                      className={`${isMobile ? 'line-clamp-4' : 'line-clamp-2'}`}
                                       style={
                                         currentUser && message.senderId === currentUser.id
                                           ? { color: composerTextColor, fontWeight: composerBold ? 600 : undefined }
@@ -785,7 +785,7 @@ export default function MessageArea({
                             return (
                               <span
                                 dir="auto"
-                                className={`${isMobile ? 'line-clamp-4 w-full block' : 'line-clamp-2 text-breathe'}`}
+                                className={`${isMobile ? 'line-clamp-4' : 'line-clamp-2 text-breathe'}`}
                                 onClick={() => isMobile && toggleMessageExpanded(message.id)}
                                 style={
                                   currentUser && message.senderId === currentUser.id
