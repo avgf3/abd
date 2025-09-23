@@ -1,4 +1,4 @@
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { Send, Image as ImageIcon } from 'lucide-react';
 import { Virtuoso, type VirtuosoHandle } from 'react-virtuoso';
@@ -331,9 +331,9 @@ export default function PrivateMessageBox({
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.95, opacity: 0 }}
           transition={{ duration: 0.4, ease: "easeOut" }}
-          className="relative z-[12000] w-[95vw] max-w-lg max-h-[85vh] bg-white text-gray-900 border border-gray-200 shadow-2xl rounded-xl overflow-hidden cursor-grab active:cursor-grabbing soft-entrance container-sway"
+          className="relative z-[12000] w-[95vw] max-w-lg max-h-[85vh] bg-background text-foreground border border-border shadow-2xl rounded-xl overflow-hidden cursor-grab active:cursor-grabbing"
         >
-          <DialogHeader className="border-b border-gray-200 p-3 bg-white">
+          <DialogHeader className="relative border-b border-border px-3 py-2 bg-background">
             <div className="flex items-center gap-3">
               <ProfileImage
                 user={user}
@@ -370,21 +370,22 @@ export default function PrivateMessageBox({
                     </span>
                     <UserRoleBadge user={user} size={20} />
                   </div>
+                  {/* زر الإغلاق في أقصى اليسار */}
                   <Button
                     onClick={onClose}
                     variant="ghost"
                     size="sm"
-                    className="ml-auto px-2 py-1 hover:bg-red-100 text-red-600"
+                    className="absolute left-2 top-2 px-2 py-1 hover:bg-red-100 text-red-600"
+                    aria-label="إغلاق"
                   >
                     ✖️
                   </Button>
                 </div>
-                <span className="text-xs text-gray-500">رسائل خاصة</span>
               </div>
             </div>
           </DialogHeader>
 
-          <div className="relative h-[55vh] w-full p-4 pb-4 bg-white">
+          <div className="relative h-[55vh] w-full p-4 pb-4 bg-background">
             {sortedMessages.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
                 <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="text-6xl mb-4">
@@ -431,7 +432,7 @@ export default function PrivateMessageBox({
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -20 }}
                       transition={{ duration: 0.3, ease: "easeOut" }}
-                      className={`flex items-start gap-3 p-3 rounded-lg transition-all duration-300 private-message-float ${
+                      className={`flex items-start gap-3 p-3 rounded-lg transition-all duration-300 ${
                         isMe ? 'bg-blue-50/80 border-r-4 ml-4' : 'bg-green-50/80 border-r-4 mr-4'
                       }`}
                       style={{
@@ -516,7 +517,7 @@ export default function PrivateMessageBox({
                             if (ids.length > 0) {
                               const firstId = ids[0];
                               return (
-                                <span className="text-sm leading-relaxed text-breathe inline-flex items-center gap-2">
+                                <span className="text-sm leading-relaxed inline-flex items-center gap-2">
                                   {cleaned && (
                                     <span
                                       className="truncate"
@@ -543,7 +544,7 @@ export default function PrivateMessageBox({
                             }
                             return (
                               <span
-                                className="text-sm leading-relaxed text-breathe"
+                                className="text-sm leading-relaxed"
                                 style={
                                   currentUser && m.senderId === currentUser.id
                                     ? { color: composerTextColor, fontWeight: composerBold ? 600 : undefined }
@@ -562,10 +563,10 @@ export default function PrivateMessageBox({
               />
             )}
 
-            {/* تم إخفاء زر "الانتقال لأسفل" بناءً على رغبتك لتقليل الإزعاج */}
+            {/* تم إخفاء زر "الانتقال لأسفل" */}
           </div>
 
-          <div className="p-4 border-t border-gray-200 bg-white soft-entrance">
+          <div className="p-4 border-t border-border bg-background">
             {isDmClosed ? (
               <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg text-center text-sm text-gray-600">
                 عفواً هذا العضو قامَ بإغلاق الرسائل الخاصة

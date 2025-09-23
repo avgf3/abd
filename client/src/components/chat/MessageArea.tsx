@@ -281,7 +281,7 @@ export default function MessageArea({
     return base;
   }, [messages, ignoredUserIds]);
 
-  const showScrollToBottom = !isAtBottom && validMessages.length > 0;
+  const showScrollToBottom = false; // إخفاء الزر السفلي بشكل دائم بناءً على الطلب
 
   // Scroll to bottom function - optimized via Virtuoso
   type ScrollBehaviorStrict = 'auto' | 'smooth';
@@ -889,20 +889,7 @@ export default function MessageArea({
             )}
           />
         )}
-        {showScrollToBottom && (
-          <button
-            onClick={handleScrollDownClick}
-            className="absolute left-1/2 -translate-x-1/2 bottom-28 bg-primary text-white shadow-lg rounded-full px-3 py-1.5 flex items-center gap-2 hover:bg-primary/90 transition-colors"
-            title="الانتقال لآخر الرسائل"
-          >
-            <ChevronDown className="w-4 h-4" />
-            {unreadCount > 0 && (
-              <span className="text-xs bg-white/20 rounded px-1.5 py-0.5">
-                {unreadCount}
-              </span>
-            )}
-          </button>
-        )}
+        {/* تم حذف زر الانتقال السفلي المركزي */}
       </div>
 
       {/* YouTube Modal */}
