@@ -722,7 +722,7 @@ export default function UnifiedSidebar({
                             <div className="flex items-center gap-2">
                               <span
                                 className="font-medium text-sm cursor-pointer hover:underline"
-                                style={{ color: post.usernameColor || 'inherit' }}
+                                style={{ color: getFinalUsernameColor({ userType: post.userRole || 'member', usernameColor: post.usernameColor }) }}
                                 onClick={(e) => {
                                   const targetUser: ChatUser = {
                                     id: post.userId,
@@ -835,7 +835,7 @@ export default function UnifiedSidebar({
                             <div className="flex items-center gap-2">
                               <span
                                 className="font-medium text-sm cursor-pointer hover:underline"
-                                style={{ color: post.usernameColor || 'inherit' }}
+                                style={{ color: getFinalUsernameColor({ userType: post.userRole || 'member', usernameColor: post.usernameColor }) }}
                                 onClick={(e) => {
                                   const targetUser: ChatUser = {
                                     id: post.userId,

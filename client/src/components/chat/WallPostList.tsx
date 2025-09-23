@@ -2,6 +2,7 @@ import React from 'react';
 import { Trash2, Globe } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
+import { getFinalUsernameColor } from '@/utils/themeUtils';
 import ImageLightbox from '@/components/ui/ImageLightbox';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import type { WallPost, ChatUser } from '@/types/chat';
@@ -84,7 +85,7 @@ export default function WallPostList({
                   <div className="flex items-center gap-2">
                     <div
                       className={`font-bold text-base ${onUserClick ? 'cursor-pointer hover:underline' : ''}`}
-                      style={{ color: post.usernameColor || 'inherit' }}
+                      style={{ color: getFinalUsernameColor({ userType: post.userRole, usernameColor: post.usernameColor }) }}
                       onClick={(e) => {
                         if (!onUserClick) return;
                         const targetUser: ChatUser = {
