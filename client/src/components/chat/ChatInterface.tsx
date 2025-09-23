@@ -656,38 +656,26 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   { /* keep near bottom overlays */ }
 
   // معالج للروابط الشخصية
-  const handleProfileLink = (userId: number) => {
-    const user = chat.onlineUsers.find((u) => u.id === userId);
-    if (user) {
-      setProfileUser(user);
-      setShowProfile(true);
+  const handleProfileLink = async (userId: number) => {
+    // البحث عن المستخدم في القائمة أولاً
+    let user = chat.onlineUsers.find((u) => u.id === userId);
+    
+    if (!user) {
+      // محاولة جلب البيانات من السيرفر
       try {
-        if (
-          user?.profileMusicUrl &&
-          (user as any).profileMusicEnabled !== false &&
-          (chat.currentUser as any)?.globalSoundEnabled !== false
-        ) {
-          if (!profileAudioRef.current) profileAudioRef.current = new Audio();
-          const audio = profileAudioRef.current;
-          audio.src = user.profileMusicUrl;
-          const vol = typeof user.profileMusicVolume === 'number' ? user.profileMusicVolume : 70;
-          audio.volume = Math.max(0, Math.min(1, (vol || 70) / 100));
-          audio.loop = true;
-          audio.pause();
-          audio.currentTime = 0;
-          audio.play().catch(async () => {
-            try {
-              audio.muted = true;
-              await audio.play();
-              setTimeout(() => { try { audio.muted = false; } catch {} }, 120);
-            } catch {}
-          });
-        } else {
-          try { profileAudioRef.current?.pause(); } catch {}
+        const data = await apiRequest(`/api/users/${userId}`);
+        if (data && (data as any).id) {
+          user = data as ChatUser;
         }
-      } catch {}
-    } else {
-      showErrorToast('لم نتمكن من العثور على هذا المستخدم', 'مستخدم غير موجود');
+      } catch (error) {
+        showErrorToast('لم نتمكن من العثور على هذا المستخدم', 'مستخدم غير موجود');
+        return;
+      }
+    }
+    
+    // استخدام handleViewProfile الموحد
+    if (user) {
+      handleViewProfile(user);
     }
   };
 
