@@ -62,9 +62,7 @@ export default function ProfileModal({
       setLocalUser((prev) => {
         // إذا تغير المستخدم بالكامل (مستخدم جديد)، نظف كل شيء وابدأ من جديد
         if (!prev || prev.id !== user.id) {
-          // إظهار حالة التحميل لمستخدم جديد
-          setIsInitializing(true);
-          // تنظيف وتحديث فوري للألوان والتأثيرات للمستخدم الجديد
+          // تنظيف وتحديث فوري للألوان والتأثيرات للمستخدم الجديد - بدون أي تأخير
           setSelectedTheme(user.profileBackgroundColor || '');
           setSelectedEffect(user.profileEffect || 'none');
           setEditValue('');
@@ -81,8 +79,7 @@ export default function ProfileModal({
             audioRef.current.pause();
             audioRef.current.currentTime = 0;
           }
-          // إزالة حالة التحميل بعد قليل
-          setTimeout(() => setIsInitializing(false), 100);
+          setIsInitializing(false);
           return user;
         }
         
@@ -2685,16 +2682,6 @@ export default function ProfileModal({
             ['--card-bg' as any]: computedCardGradient,
           }}
         >
-          {/* Loading Overlay - يظهر أثناء تغيير المستخدم */}
-          {isInitializing && (
-            <div className="absolute inset-0 z-30 bg-black/50 backdrop-blur-sm rounded-[20px] flex items-center justify-center">
-              <div className="flex flex-col items-center gap-2">
-                <div className="w-12 h-12 border-4 border-white/30 border-t-white rounded-full animate-spin" />
-                <span className="text-white text-sm">جاري التحميل...</span>
-              </div>
-            </div>
-          )}
-          
           {/* Close Button */}
           <button
             onClick={onClose}
