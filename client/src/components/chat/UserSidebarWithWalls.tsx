@@ -19,6 +19,7 @@ import ProfileImage from './ProfileImage';
 import RoomComponent from './RoomComponent';
 import SimpleUserMenu from './SimpleUserMenu';
 import UserRoleBadge from './UserRoleBadge';
+import Username from './Username';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -720,25 +721,25 @@ export default function UnifiedSidebar({
                           </div>
                           <div className="flex-1">
                             <div className="flex items-center gap-2">
-                              <span
-                                className="font-medium text-sm cursor-pointer hover:underline"
-                                style={{ color: post.usernameColor || 'inherit' }}
-                                onClick={(e) => {
-                                  const targetUser: ChatUser = {
-                                    id: post.userId,
-                                    username: post.username,
-                                    role: (post.userRole as any) || 'member',
-                                    userType: post.userRole || 'member',
-                                    isOnline: true,
-                                    profileImage: post.userProfileImage,
-                                    usernameColor: post.usernameColor,
-                                  } as ChatUser;
-                                  handleUserClick(e as any, targetUser);
-                                }}
-                                title="عرض خيارات المستخدم"
-                              >
-                                {post.username}
-                              </span>
+                              {(() => {
+                                const targetUser: ChatUser = {
+                                  id: post.userId,
+                                  username: post.username,
+                                  role: (post.userRole as any) || 'member',
+                                  userType: post.userRole || 'member',
+                                  isOnline: true,
+                                  profileImage: post.userProfileImage,
+                                  usernameColor: post.usernameColor,
+                                } as ChatUser;
+                                return (
+                                  <Username
+                                    user={targetUser}
+                                    className="font-medium text-sm"
+                                    onClick={(e, u) => handleUserClick(e as any, u as ChatUser)}
+                                    title="عرض خيارات المستخدم"
+                                  />
+                                );
+                              })()}
                               {/* تمت إزالة الشارات بجانب الاسم وفق المطلوب */}
                             </div>
                             <p className="text-xs text-gray-500">
@@ -833,25 +834,25 @@ export default function UnifiedSidebar({
                           </div>
                           <div className="flex-1">
                             <div className="flex items-center gap-2">
-                              <span
-                                className="font-medium text-sm cursor-pointer hover:underline"
-                                style={{ color: post.usernameColor || 'inherit' }}
-                                onClick={(e) => {
-                                  const targetUser: ChatUser = {
-                                    id: post.userId,
-                                    username: post.username,
-                                    role: (post.userRole as any) || 'member',
-                                    userType: post.userRole || 'member',
-                                    isOnline: true,
-                                    profileImage: post.userProfileImage,
-                                    usernameColor: post.usernameColor,
-                                  } as ChatUser;
-                                  handleUserClick(e as any, targetUser);
-                                }}
-                                title="عرض خيارات المستخدم"
-                              >
-                                {post.username}
-                              </span>
+                              {(() => {
+                                const targetUser: ChatUser = {
+                                  id: post.userId,
+                                  username: post.username,
+                                  role: (post.userRole as any) || 'member',
+                                  userType: post.userRole || 'member',
+                                  isOnline: true,
+                                  profileImage: post.userProfileImage,
+                                  usernameColor: post.usernameColor,
+                                } as ChatUser;
+                                return (
+                                  <Username
+                                    user={targetUser}
+                                    className="font-medium text-sm"
+                                    onClick={(e, u) => handleUserClick(e as any, u as ChatUser)}
+                                    title="عرض خيارات المستخدم"
+                                  />
+                                );
+                              })()}
                               {/* تمت إزالة الشارات بجانب الاسم وفق المطلوب */}
                             </div>
                             <p className="text-xs text-gray-500">

@@ -10,6 +10,7 @@ const AnimatedEmojiEnhanced = React.lazy(() => import('./AnimatedEmojiEnhanced')
 const ComposerPlusMenu = React.lazy(() => import('./ComposerPlusMenu'));
 import ProfileImage from './ProfileImage';
 import UserRoleBadge from './UserRoleBadge';
+import Username from './Username';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -690,13 +691,13 @@ export default function MessageArea({
                       {message.sender && (message.sender.userType as any) !== 'bot' && (
                         <UserRoleBadge user={message.sender} showOnlyIcon={true} hideGuestAndGender={true} size={16} />
                       )}
-                      <button
-                        onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
-                        className="font-semibold hover:underline transition-colors duration-200 truncate"
-                        style={{ color: getFinalUsernameColor(message.sender) }}
-                      >
-                        {message.sender?.username || 'جاري التحميل...'}
-                      </button>
+                      {message.sender && (
+                        <Username
+                          user={message.sender}
+                          className="font-semibold truncate"
+                          onClick={(e) => handleUsernameClick(e, message.sender!)}
+                        />
+                      )}
                       <div className={`text-red-600 break-words flex-1 min-w-0 message-content-fix ${isMobile ? 'line-clamp-4' : 'line-clamp-2'}`}>
                         <span className={`${isMobile ? 'line-clamp-4' : 'line-clamp-2'}`}>
                           {message.content}
@@ -730,13 +731,13 @@ export default function MessageArea({
                             {message.sender && (message.sender.userType as any) !== 'bot' && (
                               <UserRoleBadge user={message.sender} showOnlyIcon={true} hideGuestAndGender={true} size={16} />
                             )}
-                            <button
-                              onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
-                              className="font-semibold hover:underline transition-colors duration-200 truncate"
-                              style={{ color: getFinalUsernameColor(message.sender) }}
-                            >
-                              {message.sender?.username || 'جاري التحميل...'}
-                            </button>
+                            {message.sender && (
+                              <Username
+                                user={message.sender}
+                                className="font-semibold truncate"
+                                onClick={(e) => handleUsernameClick(e, message.sender!)}
+                              />
+                            )}
                           </span>
 
                           <div className={`runin-text text-gray-800 break-words message-content-fix ${isMobile ? 'line-clamp-4' : 'line-clamp-2'}`}>

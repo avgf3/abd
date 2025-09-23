@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import ImageLightbox from '@/components/ui/ImageLightbox';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import type { WallPost, ChatUser } from '@/types/chat';
+import Username from './Username';
 import { getImageSrc } from '@/utils/imageUtils';
 import { formatTimeAgo } from '@/utils/timeUtils';
  
@@ -82,28 +83,29 @@ export default function WallPostList({
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <div
-                      className={`font-bold text-base ${onUserClick ? 'cursor-pointer hover:underline' : ''}`}
-                      style={{ color: post.usernameColor || 'inherit' }}
-                      onClick={(e) => {
-                        if (!onUserClick) return;
-                        const targetUser: ChatUser = {
-                          id: post.userId,
-                          username: post.username,
-                          role: (post.userRole as any) || 'member',
-                          userType: post.userRole || 'member',
-                          isOnline: true,
-                          profileImage: post.userProfileImage,
-                          usernameColor: post.usernameColor,
-                          gender: (post as any).userGender,
-                          level: (post as any).userLevel || 1,
-                        } as ChatUser;
-                        onUserClick(e, targetUser);
-                      }}
-                      title="عرض خيارات المستخدم"
-                    >
-                      {post.username}
-                    </div>
+                    {(() => {
+                      const targetUser: ChatUser = {
+                        id: post.userId,
+                        username: post.username,
+                        role: (post.userRole as any) || 'member',
+                        userType: post.userRole || 'member',
+                        isOnline: true,
+                        profileImage: post.userProfileImage,
+                        usernameColor: post.usernameColor,
+                        gender: (post as any).userGender,
+                        level: (post as any).userLevel || 1,
+                      } as ChatUser;
+                      return (
+                        <Username
+                          user={targetUser}
+                          className="font-bold text-base"
+                          onClick={(e, u) => {
+                            if (onUserClick) onUserClick(e as any, u as ChatUser);
+                          }}
+                          title="عرض خيارات المستخدم"
+                        />
+                      );
+                    })()}
                   </div>
                   <div className="text-xs text-muted-foreground flex items-center gap-1">
                     <span>{formatTimeAgo(post.timestamp)}</span>
