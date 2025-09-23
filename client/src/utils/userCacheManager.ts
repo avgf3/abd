@@ -125,6 +125,23 @@ class UserCacheManager {
   }
 
   /**
+   * دمج جزئي لبيانات المستخدم في الكاش بدون الحاجة لتوفير username
+   * يُستخدم لتحديث الخصائص مثل الألوان والتأثيرات من بث السوكت
+   */
+  mergePartial(userId: number, partialData: Partial<CachedUser>): void {
+    if (!userId || !partialData) return;
+    const existing = this.memoryCache.get(userId);
+    if (!existing) return; // لا ننشئ إدخالاً جديداً بدون اسم مستخدم
+    const merged: CachedUser = {
+      ...existing,
+      ...partialData,
+      lastUpdated: Date.now(),
+    } as CachedUser;
+    this.memoryCache.set(userId, merged);
+    this.saveToLocalStorage();
+  }
+
+  /**
    * الحصول على بيانات مستخدم من الكاش
    */
   getUser(userId: number): CachedUser | null {
@@ -365,6 +382,14 @@ class UserCacheManager {
       this.saveToLocalStorage();
     }
   }
+
+  /**
+   * الحصول على اسم المستخدم بسرعة من الكاش مع قيمة افتراضية عند الغياب
+   */
+  getUsername(userId: number, fallback?: string): string {
+    const cached = this.memoryCache.get(userId);
+    return (cached && cached.username) || fallback || '';
+  }
 }
 
 // تصدير instance واحد فقط
@@ -394,4 +419,9 @@ export const updateCachedUserStatus = (userId: number, isOnline: boolean): void 
 
 export const updateCachedUserRoom = (userId: number, roomId: string): void => {
   userCache.updateUserRoom(userId, roomId);
+};
+
+// ✅ تحديث جزئي لبيانات المستخدم في الكاش (بدون الحاجة لاسم المستخدم)
+export const mergeCachedUserPartial = (userId: number, partialData: Partial<CachedUser>): void => {
+  userCache.mergePartial(userId, partialData);
 };

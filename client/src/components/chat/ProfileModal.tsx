@@ -92,7 +92,7 @@ export default function ProfileModal({
     return da || db || null;
   };
 
-  // توحيد لون خلفية الملف الشخصي للأعضاء والزوار ليطابق لون البوت فقط داخل نافذة البروفايل
+  // منطق البطاقة كما كان سابقاً
   const isMemberOrGuest =
     (localUser?.userType === 'member' || localUser?.userType === 'guest');
   const forcedBotColor = '#2a2a2a';

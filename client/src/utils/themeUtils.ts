@@ -1,4 +1,5 @@
 // دوال مساعدة للتأثيرات
+
 export const getEffectColor = (effect: string): string => {
   const effectColors = {
     none: '#FFFFFF',
@@ -142,7 +143,7 @@ export const getFinalUsernameColor = (user: any): string => {
   const color = user && user.usernameColor ? String(user.usernameColor) : '';
   const cleaned = sanitizeHexColor(color, '');
   if (cleaned) return cleaned;
-  
+
   // إذا لم يكن له لون مخصص، استخدم لون حسب نوع المستخدم
   if (user && user.userType) {
     switch (user.userType) {
@@ -160,7 +161,7 @@ export const getFinalUsernameColor = (user: any): string => {
         return '#000000';
     }
   }
-  
+
   return '#000000';
 };
 
