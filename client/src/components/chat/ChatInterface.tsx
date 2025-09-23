@@ -552,15 +552,39 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
     closeUserPopup();
   };
 
-  const handleViewProfile = (user: ChatUser) => {
-    setProfileUser(user);
-    setShowProfile(true);
-    closeUserPopup();
-    // إغلاق نافذة الأثرياء لضمان عدم تراكبها فوق نافذة البروفايل
+  const handleViewProfile = async (user: ChatUser) => {
+    // إغلاق نافذة الأثرياء فوراً
     try { setShowRichest(false); } catch {}
-    // إذا كان بروفايل المستخدم المفتوح هو المستخدم الحالي، حافظ على مزامنة بياناته الحية
+    closeUserPopup();
+    
+    // إذا كان بروفايل المستخدم المفتوح هو المستخدم الحالي، استخدم البيانات الحية
     if (chat.currentUser && user.id === chat.currentUser.id) {
       setProfileUser(chat.currentUser);
+      setShowProfile(true);
+    } else {
+      // عرض الملف الشخصي بالبيانات المتاحة أولاً
+      setProfileUser(user);
+      setShowProfile(true);
+      
+      // تحميل البيانات الكاملة من الخادم في الخلفية
+      // فقط إذا كانت البيانات ناقصة
+      const needsFullData = !user.profileBackgroundColor && !user.profileEffect && !user.profileImage;
+      if (needsFullData) {
+        try {
+          const fullUserData = await apiRequest(`/api/users/${user.id}`);
+          if (fullUserData && (fullUserData as any).id) {
+            // تحديث البيانات فقط إذا كان النافذة لا تزال مفتوحة ونفس المستخدم
+            setProfileUser((prev) => {
+              if (prev && prev.id === (fullUserData as any).id) {
+                return fullUserData as ChatUser;
+              }
+              return prev;
+            });
+          }
+        } catch (error) {
+          console.error('Error fetching full user data:', error);
+        }
+      }
     }
     try {
       // تشغيل الموسيقى عند كل فتح للبروفايل إن كانت مفعلة ولها رابط صالح
