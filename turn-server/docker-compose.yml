@@ -1,0 +1,118 @@
+version: '3.8'
+
+services:
+  # خادم TURN/STUN الرئيسي
+  coturn:
+    image: coturn/coturn:4.6.2-alpine
+    container_name: voice-turn-server
+    restart: unless-stopped
+    network_mode: host
+    
+    volumes:
+      # ملف التكوين
+      - ./coturn.conf:/etc/coturn/turnserver.conf:ro
+      
+      # الشهادات SSL
+      - ./certs:/etc/coturn/certs:ro
+      
+      # السجلات
+      - ./logs:/var/log/turnserver
+      
+      # قاعدة بيانات SQLite للمستخدمين (اختياري)
+      - ./data:/var/lib/coturn
+    
+    environment:
+      # اكتشاف IP تلقائياً
+      - DETECT_EXTERNAL_IP=yes
+      - DETECT_RELAY_IP=yes
+      
+      # متغيرات بيئة إضافية
+      - TURN_PORT=3478
+      - TURN_PORT_TLS=5349
+      
+    # الأمر لتشغيل الخادم
+    command: ["-c", "/etc/coturn/turnserver.conf"]
+    
+    # فحص الصحة
+    healthcheck:
+      test: ["CMD", "turnutils_uclient", "-t", "127.0.0.1", "-p", "3478", "-u", "test", "-w", "test"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # خدمة Redis للإحصائيات (اختياري)
+  redis:
+    image: redis:7-alpine
+    container_name: voice-turn-redis
+    restart: unless-stopped
+    
+    volumes:
+      - ./redis-data:/data
+    
+    ports:
+      - "127.0.0.1:6379:6379"
+    
+    command: redis-server --save 60 1 --loglevel warning
+    
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # خدمة Prometheus للمراقبة (اختياري)
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: voice-turn-prometheus
+    restart: unless-stopped
+    
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus-data:/prometheus
+    
+    ports:
+      - "127.0.0.1:9090:9090"
+    
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+
+  # خدمة Grafana للوحة المراقبة (اختياري)
+  grafana:
+    image: grafana/grafana:latest
+    container_name: voice-turn-grafana
+    restart: unless-stopped
+    
+    volumes:
+      - ./grafana-data:/var/lib/grafana
+      - ./grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./grafana/datasources:/etc/grafana/provisioning/datasources:ro
+    
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=VoiceTurnAdmin2024!
+      - GF_INSTALL_PLUGINS=redis-datasource
+    
+    ports:
+      - "127.0.0.1:3000:3000"
+    
+    depends_on:
+      - prometheus
+      - redis
+
+# الشبكات (إذا لم تستخدم host mode)
+# networks:
+#   voice-network:
+#     driver: bridge
+#     ipam:
+#       config:
+#         - subnet: 172.20.0.0/16
+
+# الأحجام المستمرة
+volumes:
+  redis-data:
+  prometheus-data:
+  grafana-data:

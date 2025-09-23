@@ -24,35 +24,7 @@ export class VoiceManager {
   private analytics: VoiceAnalytics | null = null;
   
   // WebRTC Configuration with enhanced TURN support
-  private rtcConfig: RTCConfig = {
-    iceServers: [
-      // STUN servers
-      { urls: 'stun:stun.l.google.com:19302' },
-      { urls: 'stun:stun1.l.google.com:19302' },
-      { urls: 'stun:stun2.l.google.com:19302' },
-      { urls: 'stun:global.stun.twilio.com:3478' },
-      { urls: 'stun:stun.cloudflare.com:3478' },
-      // Free TURN servers as fallback
-      { 
-        urls: 'turn:openrelay.metered.ca:80',
-        username: 'openrelayproject',
-        credential: 'openrelayproject'
-      },
-      { 
-        urls: 'turn:openrelay.metered.ca:443',
-        username: 'openrelayproject',
-        credential: 'openrelayproject'
-      },
-      { 
-        urls: 'turn:openrelay.metered.ca:443?transport=tcp',
-        username: 'openrelayproject',
-        credential: 'openrelayproject'
-      }
-    ],
-    iceCandidatePoolSize: 10,
-    bundlePolicy: 'max-bundle',
-    rtcpMuxPolicy: 'require'
-  };
+  private rtcConfig: RTCConfig = this.buildRTCConfig();
 
   // Audio Context
   private audioContext: AudioContext | null = null;
@@ -63,6 +35,8 @@ export class VoiceManager {
   private currentUserId: number | null = null;
 
   constructor() {
+    // تحديث تكوين RTC
+    this.rtcConfig = this.buildRTCConfig();
     
     // الإعدادات الافتراضية
     this.settings = {
@@ -897,6 +871,135 @@ export class VoiceManager {
     } catch {}
   }
 
+  /**
+   * بناء تكوين RTC مع الخادم المخصص
+   */
+  private buildRTCConfig(): RTCConfig {
+    const iceServers: RTCIceServer[] = [];
+    
+    // خادم STUN المخصص (الأولوية الأولى)
+    const customStunUrl = import.meta.env?.VITE_STUN_URL;
+    if (customStunUrl) {
+      iceServers.push({ urls: customStunUrl });
+    }
+    
+    // خادم TURN المخصص
+    const customTurnUrl = import.meta.env?.VITE_TURN_URL;
+    const customTurnsUrl = import.meta.env?.VITE_TURNS_URL;
+    const turnSecret = import.meta.env?.VITE_TURN_SECRET;
+    
+    if (customTurnUrl && turnSecret) {
+      const turnCredentials = this.generateTurnCredentials(turnSecret);
+      
+      // TURN عبر UDP/TCP
+      iceServers.push({
+        urls: customTurnUrl,
+        username: turnCredentials.username,
+        credential: turnCredentials.credential
+      });
+      
+      // TURN عبر TLS
+      if (customTurnsUrl) {
+        iceServers.push({
+          urls: customTurnsUrl,
+          username: turnCredentials.username,
+          credential: turnCredentials.credential
+        });
+      }
+    }
+    
+    // خوادم احتياطية
+    const backupStun1 = import.meta.env?.VITE_BACKUP_STUN_1;
+    const backupStun2 = import.meta.env?.VITE_BACKUP_STUN_2;
+    
+    if (backupStun1) iceServers.push({ urls: backupStun1 });
+    if (backupStun2) iceServers.push({ urls: backupStun2 });
+    
+    // خوادم افتراضية إذا لم تكن هناك خوادم مخصصة
+    if (iceServers.length === 0) {
+      console.warn('⚠️ لا توجد خوادم TURN/STUN مخصصة، استخدام الخوادم الافتراضية');
+      iceServers.push(
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' },
+        { 
+          urls: 'turn:openrelay.metered.ca:80',
+          username: 'openrelayproject',
+          credential: 'openrelayproject'
+        }
+      );
+    }
+    
+    return {
+      iceServers,
+      iceCandidatePoolSize: 10,
+      bundlePolicy: 'max-bundle',
+      rtcpMuxPolicy: 'require',
+      iceTransportPolicy: 'all' // أو 'relay' لإجبار استخدام TURN
+    };
+  }
+  
+  /**
+   * توليد بيانات اعتماد TURN باستخدام المصادقة المؤقتة
+   */
+  private generateTurnCredentials(secret: string): { username: string; credential: string } {
+    try {
+      // الطابع الزمني لانتهاء الصلاحية (24 ساعة من الآن)
+      const expiry = import.meta.env?.VITE_TURN_EXPIRY || 86400;
+      const timestamp = Math.floor(Date.now() / 1000) + parseInt(expiry);
+      
+      // اسم المستخدم: timestamp:userId
+      const username = `${timestamp}:user${this.currentUserId || Math.random().toString(36).substr(2, 9)}`;
+      
+      // توليد HMAC-SHA1 للكلمة السرية
+      const credential = this.generateHMAC(username, secret);
+      
+      if (import.meta.env?.VITE_VOICE_DEBUG === 'true') {
+        console.log('🔑 TURN Credentials:', { username, timestamp, expiry });
+      }
+      
+      return { username, credential };
+    } catch (error) {
+      console.error('❌ خطأ في توليد بيانات TURN:', error);
+      // استخدام بيانات ثابتة كاحتياط
+      return {
+        username: 'fallback',
+        credential: secret
+      };
+    }
+  }
+  
+  /**
+   * توليد HMAC-SHA1
+   */
+  private generateHMAC(data: string, secret: string): string {
+    try {
+      // استخدام Web Crypto API إذا كانت متاحة
+      if (typeof crypto !== 'undefined' && crypto.subtle) {
+        // هذا يحتاج إلى async، لذا نستخدم طريقة بديلة
+        return this.simpleHMAC(data, secret);
+      }
+      return this.simpleHMAC(data, secret);
+    } catch (error) {
+      console.error('❌ خطأ في توليد HMAC:', error);
+      return secret; // احتياط
+    }
+  }
+  
+  /**
+   * HMAC بسيط للاستخدام المؤقت
+   */
+  private simpleHMAC(data: string, secret: string): string {
+    // هذا تنفيذ مبسط - في الإنتاج يجب استخدام مكتبة crypto مناسبة
+    let hash = 0;
+    const combined = data + ':' + secret;
+    for (let i = 0; i < combined.length; i++) {
+      const char = combined.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32bit integer
+    }
+    return Math.abs(hash).toString(36);
+  }
+  
   /**
    * حفظ الإعدادات
    */

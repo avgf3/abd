@@ -1,0 +1,23 @@
+{
+  "name": "turn-server-test",
+  "version": "1.0.0",
+  "description": "أدوات اختبار ومراقبة خادم TURN/STUN",
+  "main": "test-turn-server.js",
+  "scripts": {
+    "test": "node test-turn-server.js",
+    "test:simple": "node test-simple.js",
+    "monitor": "node monitor-server.js",
+    "install-deps": "npm install"
+  },
+  "dependencies": {
+    "stun": "^2.1.0",
+    "wrtc": "^0.4.7",
+    "chalk": "^4.1.2",
+    "ora": "^5.4.1",
+    "cli-table3": "^0.6.3",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  }
+}
