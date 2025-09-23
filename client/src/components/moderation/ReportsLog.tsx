@@ -11,6 +11,7 @@ import { formatTimestamp } from '@/utils/timeUtils';
 import UserPopup from '@/components/chat/UserPopup';
 import ProfileImage from '@/components/chat/ProfileImage';
 import { getFinalUsernameColor } from '@/utils/themeUtils';
+import Username from '@/components/chat/Username';
 import { getCachedUserWithMerge, setCachedUser } from '@/utils/userCacheManager';
 
 interface ReportData {
@@ -246,14 +247,11 @@ export default function ReportsLog({ currentUser, isVisible, onClose }: ReportsL
                                 className="cursor-pointer"
                                 hideRoleBadgeOverlay
                               />
-                              <button
-                                className="font-medium hover:underline disabled:opacity-60"
-                                style={{ color: getFinalUsernameColor(reporter) }}
-                                onClick={(e) => openUserPopup(e, report.reporterId, report.reporterName)}
-                                disabled={!report.reporterId}
-                              >
-                                {reporter.username}
-                              </button>
+                              <Username
+                                user={reporter}
+                                className=""
+                                onClick={(e) => openUserPopup(e as any, report.reporterId, report.reporterName)}
+                              />
                               <span className="text-gray-400">بلّغ عن</span>
                               <ProfileImage
                                 user={reported}
@@ -262,14 +260,11 @@ export default function ReportsLog({ currentUser, isVisible, onClose }: ReportsL
                                 className="cursor-pointer"
                                 hideRoleBadgeOverlay
                               />
-                              <button
-                                className="font-medium hover:underline disabled:opacity-60"
-                                style={{ color: getFinalUsernameColor(reported) }}
-                                onClick={(e) => openUserPopup(e, report.reportedUserId, report.reportedUserName)}
-                                disabled={!report.reportedUserId}
-                              >
-                                {reported.username}
-                              </button>
+                              <Username
+                                user={reported}
+                                className=""
+                                onClick={(e) => openUserPopup(e as any, report.reportedUserId, report.reportedUserName)}
+                              />
                             </div>
 
                             <div className="flex items-center gap-2 mb-2">

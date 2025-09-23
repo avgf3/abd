@@ -9,6 +9,7 @@ import { getFinalUsernameColor, getUserListItemClasses, getUserListItemStyles } 
 import ProfileImage from '@/components/chat/ProfileImage';
 import UserRoleBadge from '@/components/chat/UserRoleBadge';
 import SimpleUserMenu from '@/components/chat/SimpleUserMenu';
+import Username from '@/components/chat/Username';
 import { Badge } from '@/components/ui/badge';
 import { useQueryClient } from '@tanstack/react-query';
 import { ListLoader } from '@/components/ui/loading';
@@ -283,13 +284,7 @@ export default function RichestModal({ isOpen, onClose, currentUser, onUserClick
                               {idx === 0 ? '🥇' : idx === 1 ? '🥈' : '🥉'}
                             </span>
                           )}
-                          <span
-                            className="text-base font-medium transition-colors duration-300"
-                            style={{ color: getFinalUsernameColor(u) }}
-                            title={u.username}
-                          >
-                            {u.username}
-                          </span>
+                          <Username user={u} className="text-base" onClick={(e) => onUserClick && onUserClick(e as any, u)} />
                           {u.isMuted && <span className="text-yellow-400 text-xs">🔇</span>}
                         </div>
                         <div className="flex items-center gap-1">
