@@ -1149,6 +1149,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                           chat.onWebRTCAnswer?.(handler),
                         offWebRTCAnswer: (handler: (payload: any) => void) =>
                           chat.offWebRTCAnswer?.(handler),
+                        currentRoomId: chat.currentRoomId,
                       }}
                     />
                   </Suspense>
