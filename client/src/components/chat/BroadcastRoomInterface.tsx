@@ -146,6 +146,27 @@ export default function BroadcastRoomInterface({
   const [isInfoCollapsed, setIsInfoCollapsed] = useState(true);
   const [playbackBlocked, setPlaybackBlocked] = useState(false);
 
+  // محاولة تشغيل الصوت تلقائياً عند أول تفاعل من المستخدم لتجاوز حظر Autoplay
+  useEffect(() => {
+    const tryAutoPlayOnce = () => {
+      try {
+        audioRef.current?.play()?.then(() => setPlaybackBlocked(false)).catch(() => {});
+      } catch {}
+    };
+    try {
+      document.addEventListener('click', tryAutoPlayOnce, { once: true, capture: true });
+      document.addEventListener('pointerdown', tryAutoPlayOnce, { once: true, capture: true } as any);
+      document.addEventListener('keydown', tryAutoPlayOnce, { once: true, capture: true } as any);
+      document.addEventListener('touchstart', tryAutoPlayOnce, { once: true, capture: true } as any);
+    } catch {}
+    return () => {
+      try { document.removeEventListener('click', tryAutoPlayOnce, { capture: true } as any); } catch {}
+      try { document.removeEventListener('pointerdown', tryAutoPlayOnce, { capture: true } as any); } catch {}
+      try { document.removeEventListener('keydown', tryAutoPlayOnce, { capture: true } as any); } catch {}
+      try { document.removeEventListener('touchstart', tryAutoPlayOnce, { capture: true } as any); } catch {}
+    };
+  }, []);
+
   // جلب معلومات غرفة البث
   // 🚀 جلب معلومات البث مع منع التكرار
   const fetchBroadcastInfo = useCallback(async () => {
@@ -649,38 +670,26 @@ export default function BroadcastRoomInterface({
 
           pc.oniceconnectionstatechange = () => {};
 
-          pc.ontrack = (event) => {
+          pc.ontrack = async (event) => {
             console.log('🎵 استقبال مسار صوتي جديد:', event);
-            
-            // تأكد من وجود عنصر صوتي دائم التشغيل (إن لم يكن موجوداً، أنشئ واحداً مخفياً)
             if (!audioRef.current) {
-              try {
-                const el = document.createElement('audio');
-                try { el.setAttribute('playsinline', ''); } catch {}
-                el.autoplay = true as any;
-                el.muted = false;
-                el.style.display = 'none';
-                document.body.appendChild(el);
-                audioRef.current = el;
-              } catch (e) {
-                console.warn('⚠️ تعذر إنشاء عنصر الصوت ديناميكياً:', e);
-                return;
-              }
+              console.warn('⚠️ عنصر الصوت غير متاح بعد. سيتم المحاولة لاحقاً.');
+              return;
             }
-            
-            const [remoteStream] = event.streams;
-            if (!remoteStream) {
+
+            const stream = (event.streams && event.streams[0]) ? event.streams[0] : new MediaStream([event.track]);
+            if (!stream) {
               console.warn('⚠️ لم يتم استقبال stream صحيح');
               return;
             }
-            
+
             // التحقق من وجود مسارات صوتية
-            const audioTracks = remoteStream.getAudioTracks();
+            const audioTracks = stream.getAudioTracks();
             if (audioTracks.length === 0) {
               console.warn('⚠️ لا توجد مسارات صوتية في الـ stream');
               return;
             }
-            
+
             console.log('🎵 تم استقبال مسارات صوتية:', audioTracks.map(track => ({
               id: track.id,
               label: track.label,
@@ -688,47 +697,38 @@ export default function BroadcastRoomInterface({
               muted: track.muted,
               readyState: track.readyState
             })));
-            
+
             // تعيين الـ stream للعنصر الصوتي
-            audioRef.current.srcObject = remoteStream;
-            
+            if (audioRef.current.srcObject !== stream) {
+              audioRef.current.srcObject = stream;
+            }
+
             // تأكد من عدم كتم الصوت افتراضياً
             audioRef.current.muted = false;
             audioRef.current.volume = 1.0;
-            
+
             // محاولة تشغيل الصوت مع معالجة الأخطاء
-            const playPromise = audioRef.current.play();
-            
-            if (playPromise !== undefined) {
-              playPromise
-                .then(() => {
-                  console.log('✅ تم تشغيل الصوت بنجاح');
-                  setPlaybackBlocked(false);
-                  
-                  // إضافة مستمع لتغييرات حالة التشغيل
-                  audioRef.current?.addEventListener('canplay', () => {
-                    console.log('🎵 الصوت جاهز للتشغيل');
-                  });
-                  
-                  audioRef.current?.addEventListener('playing', () => {
-                    console.log('🎵 الصوت يعمل الآن');
-                  });
-                  
-                  audioRef.current?.addEventListener('error', (e) => {
-                    console.error('❌ خطأ في تشغيل الصوت:', e);
-                  });
-                })
-                .catch((err) => {
-                  console.error('❌ فشل في تشغيل الصوت:', err);
-                  setPlaybackBlocked(true);
-                  
-                  // عرض رسالة للمستخدم
-                  toast({
-                    title: 'تشغيل الصوت محظور',
-                    description: 'اضغط على زر "تشغيل الصوت" للسماح بالتشغيل',
-                    variant: 'default',
-                  });
-                });
+            try {
+              await audioRef.current.play();
+              console.log('✅ تم تشغيل الصوت بنجاح');
+              setPlaybackBlocked(false);
+              audioRef.current?.addEventListener('canplay', () => {
+                console.log('🎵 الصوت جاهز للتشغيل');
+              });
+              audioRef.current?.addEventListener('playing', () => {
+                console.log('🎵 الصوت يعمل الآن');
+              });
+              audioRef.current?.addEventListener('error', (e) => {
+                console.error('❌ خطأ في تشغيل الصوت:', e);
+              });
+            } catch (err) {
+              console.error('❌ فشل في تشغيل الصوت:', err);
+              setPlaybackBlocked(true);
+              toast({
+                title: 'تشغيل الصوت محظور',
+                description: 'اضغط على زر "تشغيل الصوت" للسماح بالتشغيل',
+                variant: 'default',
+              });
             }
           };
           pc.onicecandidate = (event) => {
@@ -738,6 +738,7 @@ export default function BroadcastRoomInterface({
           };
           peersRef.current.set(fromUserId, pc);
         }
+        try { pc.addTransceiver('audio', { direction: 'recvonly' }); } catch {}
         await pc.setRemoteDescription(new RTCSessionDescription(payload.sdp));
         const answer = await pc.createAnswer();
         await pc.setLocalDescription(answer);
@@ -1185,22 +1186,7 @@ export default function BroadcastRoomInterface({
             </div>
           )}
 
-          <div className="hidden">
-            <audio
-              ref={audioRef}
-              playsInline
-              autoPlay
-              controlsList="nodownload noplaybackrate"
-              className="w-0 h-0 opacity-0 pointer-events-none"
-              onLoadedMetadata={() => console.log('🎵 تم تحميل بيانات الصوت')}
-              onCanPlay={() => console.log('🎵 الصوت جاهز للتشغيل')}
-              onPlay={() => console.log('🎵 بدء تشغيل الصوت')}
-              onPause={() => console.log('🎵 توقف تشغيل الصوت')}
-              onError={(e) => console.error('❌ خطأ في العنصر الصوتي:', e)}
-              onVolumeChange={() => console.log('🔊 تغيير مستوى الصوت:', audioRef.current?.volume)}
-              onMuteChange={() => console.log('🔇 تغيير حالة الكتم:', audioRef.current?.muted)}
-            />
-          </div>
+          
         </div>
       )}
 
