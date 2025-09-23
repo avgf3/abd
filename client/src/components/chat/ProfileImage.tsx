@@ -26,8 +26,9 @@ export default function ProfileImage({
   };
 
   // تحديد لون الإطار حسب الجنس - كما كان سابقاً (ring + border color)
-  const borderColor =
-    user.gender === 'female' ? 'border-pink-400 ring-pink-200' : 'border-blue-400 ring-blue-200';
+  // دعم القيم العربية للجنس إضافة إلى الإنجليزية
+  const isFemale = user.gender === 'female' || user.gender === 'أنثى';
+  const borderColor = isFemale ? 'border-pink-400 ring-pink-200' : 'border-blue-400 ring-blue-200';
   
 
 
