@@ -8,7 +8,7 @@ import { connectSocket, saveSession, clearSession, getSession } from '@/lib/sock
 import type { ChatUser, ChatMessage } from '@/types/chat';
 import type { Notification } from '@/types/chat';
 import { mapDbMessagesToChatMessages } from '@/utils/messageUtils';
-import { userCache, setCachedUser } from '@/utils/userCacheManager';
+import { userCache, setCachedUser, mergeCachedUserPartial } from '@/utils/userCacheManager';
 
 // Audio notification function
 const playNotificationSound = () => {
@@ -770,6 +770,7 @@ export const useChat = () => {
                 payload: { ...currentUserRef.current!, usernameColor: color } as any,
               });
             }
+            try { mergeCachedUserPartial(targetId, { usernameColor: color } as any); } catch {}
             dispatch({
               type: 'UPSERT_ONLINE_USER',
               payload: { id: targetId, usernameColor: color } as any,
@@ -789,6 +790,7 @@ export const useChat = () => {
                 payload: { ...currentUserRef.current!, profileBackgroundColor: color } as any,
               });
             }
+            try { mergeCachedUserPartial(targetId, { profileBackgroundColor: color } as any); } catch {}
             dispatch({
               type: 'UPSERT_ONLINE_USER',
               payload: { id: targetId, profileBackgroundColor: color } as any,

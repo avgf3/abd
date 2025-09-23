@@ -729,7 +729,7 @@ export default function UnifiedSidebar({
                                   userType: post.userRole || 'member',
                                   isOnline: true,
                                   profileImage: post.userProfileImage,
-                                  usernameColor: post.usernameColor,
+                                  // لا تمرر لون الاسم من الحائط؛ استخدم الكاش لضمان التزامن
                                 } as ChatUser;
                                 return (
                                   <Username
@@ -842,7 +842,7 @@ export default function UnifiedSidebar({
                                   userType: post.userRole || 'member',
                                   isOnline: true,
                                   profileImage: post.userProfileImage,
-                                  usernameColor: post.usernameColor,
+                                  // لا تمرر لون الاسم من الحائط؛ استخدم الكاش لضمان التزامن
                                 } as ChatUser;
                                 return (
                                   <Username

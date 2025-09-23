@@ -1347,8 +1347,8 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                   try { profileAudioRef.current?.pause(); } catch {}
                 }}
                 onUpdate={(updatedUser) => {
-                  // تحديث بيانات المستخدم في قائمة المتصلون
-                  if (updatedUser && updatedUser.id) {
+                  // لا تُحدِّث المستخدم الحالي عند تعديل ملف شخص آخر
+                  if (updatedUser && updatedUser.id === chat.currentUser?.id) {
                     chat.updateCurrentUser({
                       profileEffect: updatedUser.profileEffect,
                       usernameColor: updatedUser.usernameColor,
