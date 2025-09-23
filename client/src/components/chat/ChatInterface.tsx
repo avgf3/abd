@@ -556,6 +556,8 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
     setProfileUser(user);
     setShowProfile(true);
     closeUserPopup();
+    // إغلاق نافذة الأثرياء لضمان عدم تراكبها فوق نافذة البروفايل
+    try { setShowRichest(false); } catch {}
     // إذا كان بروفايل المستخدم المفتوح هو المستخدم الحالي، حافظ على مزامنة بياناته الحية
     if (chat.currentUser && user.id === chat.currentUser.id) {
       setProfileUser(chat.currentUser);
@@ -609,6 +611,21 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
       } else {
         // لا يوجد موسيقى: تأكد من إيقاف أي تشغيل سابق
         try { profileAudioRef.current?.pause(); } catch {}
+      }
+    } catch {}
+
+    // جلب نسخة محدثة وكاملة من الخادم لتوحيد عرض البروفايل (خاصة لمستخدمي VIP ذوي البيانات المختصرة)
+    try {
+      const uid = user?.id;
+      if (uid) {
+        (async () => {
+          try {
+            const data = await apiRequest(`/api/users/${uid}`);
+            if (data && (data as any).id) {
+              setProfileUser(data as any);
+            }
+          } catch {}
+        })();
       }
     } catch {}
   };
@@ -1745,7 +1762,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           isOpen={showRichest}
           onClose={() => setShowRichest(false)}
           currentUser={chat.currentUser}
-          onUserClick={handleUserClick}
+          onUserClick={(e, u) => { try { e.stopPropagation(); } catch {}; try { setShowRichest(false); } catch {}; handleViewProfile(u); }}
         />
       </Suspense>
 
