@@ -1479,6 +1479,9 @@ li > * > div.effect-crystal {
   line-height: 1.6;
   padding-bottom: 2px;
   padding-inline-end: 2px; /* منع قصّ آخر حرف في نهايات RTL/LTR على الهاتف */
+  /* ضمان عرض صحيح للنصوص المختلطة والرموز/الأرقام الإنجليزية داخل سياق RTL */
+  direction: auto;
+  unicode-bidi: plaintext;
 }
 
 .message-content-fix .truncate {
