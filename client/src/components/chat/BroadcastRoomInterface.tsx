@@ -1172,7 +1172,6 @@ export default function BroadcastRoomInterface({
               onPause={() => console.log('🎵 توقف تشغيل الصوت')}
               onError={(e) => console.error('❌ خطأ في العنصر الصوتي:', e)}
               onVolumeChange={() => console.log('🔊 تغيير مستوى الصوت:', audioRef.current?.volume)}
-              onMuteChange={() => console.log('🔇 تغيير حالة الكتم:', audioRef.current?.muted)}
             />
           </div>
         </div>

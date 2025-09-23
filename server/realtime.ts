@@ -718,8 +718,7 @@ export function setupRealtime(httpServer: HttpServer): IOServer<ClientToServerEv
     cleanupEmptyChildNamespaces: true, // تنظيف namespaces الفارغة
     // 🔥 إعدادات إضافية لدعم العمل في الخلفية
     // transports: ['websocket', 'polling'], // التأكد من دعم polling كـ fallback - تم حذف التكرار
-    forceBase64: false, // استخدام binary للأداء الأفضل
-    multiplex: true, // تمكين multiplexing للأداء الأفضل
+    // forceBase64 غير مدعوم في الكتابة الحالية للأنواع
     allowRequest: (req, callback) => {
       try {
         const originHeader = req.headers.origin || '';
@@ -996,7 +995,8 @@ export function setupRealtime(httpServer: HttpServer): IOServer<ClientToServerEv
               user,
               sockets: new Map([[socket.id, { room: null, lastSeen: new Date() }]]),
               lastSeen: new Date(),
-            });
+              mutex: Promise.resolve(),
+            } as any);
           } else {
             existing.user = user;
             existing.sockets.set(socket.id, { room: null, lastSeen: new Date() });
@@ -1457,15 +1457,18 @@ export function stopBotUpdater() {
 async function updateLastSeenForConnectedUsers() {
   try {
     const now = new Date();
-    const updatePromises: Promise<void>[] = [];
+  const updatePromises: Array<Promise<void>> = [];
     
     // تحديث lastSeen لجميع المستخدمين المتصلين
     for (const [userId, entry] of connectedUsers.entries()) {
       if (entry.sockets.size > 0) { // المستخدم متصل
         updatePromises.push(
-          storage.updateUser(userId, { lastSeen: now }).catch((error) => {
-            console.error(`خطأ في تحديث lastSeen للمستخدم ${userId}:`, error);
-          })
+          storage
+            .updateUser(userId, { lastSeen: now })
+            .then(() => {})
+            .catch((error) => {
+              console.error(`خطأ في تحديث lastSeen للمستخدم ${userId}:`, error);
+            })
         );
       }
     }
@@ -1480,12 +1483,12 @@ async function updateLastSeenForConnectedUsers() {
           if (entry.sockets.size === 0) continue;
           try {
             // جلب lastSeen و currentRoom من قاعدة البيانات
-            const dbUser = await storage.getUser(userId);
+            const dbUser = await storage.getUser(userId).then((u) => u).catch(() => null);
             const updatedUser = { 
               ...(entry.user || {}), 
               id: userId, 
-              lastSeen: dbUser?.lastSeen || now, 
-              currentRoom: dbUser?.currentRoom || entry.user?.currentRoom,
+              lastSeen: (dbUser as any)?.lastSeen || now, 
+              currentRoom: (dbUser as any)?.currentRoom || entry.user?.currentRoom,
               isOnline: true 
             } as any;
             // إرسال للمستخدم ذاته (كل أجهزته)

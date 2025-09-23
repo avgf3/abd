@@ -2749,7 +2749,6 @@ export default function ProfileModal({
                     color: getFinalUsernameColor(localUser || {}),
                     textShadow: '0 2px 4px rgba(0,0,0,0.5)',
                     cursor: 'pointer',
-                    direction: 'auto',
                     unicodeBidi: 'plaintext',
                     textAlign: 'center',
                     whiteSpace: 'normal',
@@ -2807,7 +2806,6 @@ export default function ProfileModal({
                     color: getFinalUsernameColor(localUser || {}),
                     textShadow: '0 2px 4px rgba(0,0,0,0.5)',
                     cursor: 'pointer',
-                    direction: 'auto',
                     unicodeBidi: 'plaintext',
                     textAlign: 'center',
                     whiteSpace: 'normal',
@@ -2863,7 +2861,6 @@ export default function ProfileModal({
                     fontWeight: 'bold',
                     color: getFinalUsernameColor(localUser || {}),
                     textShadow: '0 2px 4px rgba(0,0,0,0.5)',
-                    direction: 'auto',
                     unicodeBidi: 'plaintext',
                     textAlign: 'center',
                     whiteSpace: 'normal',
@@ -3107,7 +3104,7 @@ export default function ProfileModal({
                         padding: '4px 8px',
                         fontSize: '12px'
                       }}
-                      onChange={(e) => updateDmPrivacy(e.target.value)}
+                      onChange={(e) => updateDmPrivacy(e.target.value as 'all' | 'friends' | 'none')}
                     >
                       <option value="all">السماح للجميع</option>
                       <option value="friends">👥 السماح للأصدقاء فقط</option>
@@ -3537,10 +3534,7 @@ export default function ProfileModal({
                           background: 'rgba(255,255,255,0.05)',
                           border: '1px solid rgba(255,255,255,0.08)',
                           cursor: 'pointer',
-                          transition: 'all 0.2s ease',
-                          ':hover': {
-                            background: 'rgba(255,255,255,0.1)'
-                          }
+                          transition: 'all 0.2s ease'
                         }}
                         onMouseEnter={(e) => {
                           e.currentTarget.style.background = 'rgba(255,255,255,0.1)';

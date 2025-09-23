@@ -85,7 +85,7 @@ export async function initializeDatabase(): Promise<boolean> {
       onnotice: () => {}, // تجاهل الإشعارات
       // إضافة إعدادات إضافية للأداء
       fetch_types: false, // تحسين الأداء
-      types: false, // تحسين الأداء
+      // types: false, // تحسين الأداء (غير مدعوم على بعض الإصدارات)
       connection: {
         application_name: 'chat-app',
       },
@@ -94,11 +94,8 @@ export async function initializeDatabase(): Promise<boolean> {
       max_lifetime: 60 * 30, // 30 دقيقة كحد أقصى لعمر الاتصال
       connect_timeout: 30, // 30 ثانية timeout للاتصال الأولي
       // إعدادات إضافية لتحسين الاستقرار
-      max: 20, // حد أقصى 20 اتصال متزامن
-      min: 2, // حد أدنى 2 اتصال دائماً
-      // إعدادات إعادة المحاولة
-      retry_delay: 1000, // تأخير ثانية واحدة بين المحاولات
-      max_attempts: 3, // محاولة 3 مرات
+      // ملاحظة: خيارات max/min قد تختلف تبعاً لنسخة postgres-js
+      // إعدادات إعادة المحاولة غير مدعومة هنا في types، نعتمد على إعادة المحاولة اليدوية أدناه
     });
 
     const drizzleDb = drizzle(client, { schema, logger: false });

@@ -55,8 +55,11 @@ import { clearSession, getSession } from '@/lib/socket';
 import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser } from '@/types/chat';
 
+type RouteParams = { country?: string; city?: string } | null;
+
 export default function CityChat() {
-  const [match, params] = useRoute('/:country/:city');
+  const [match, paramsRaw] = useRoute('/:country/:city');
+  const params = (paramsRaw && typeof paramsRaw === 'object') ? (paramsRaw as RouteParams) : null;
   const [, setLocation] = useLocation();
 
   // Enhanced debug logging
@@ -72,18 +75,15 @@ export default function CityChat() {
   const testMode = params?.city === 'test-universal-system';
 
   if (testMode) {
-    const cityPath = params ? `/${(params as any).country}/${(params as any).city}` : '/';
+    const cityPath = params?.country && params?.city ? `/${params.country}/${params.city}` : '/';
     return <UniversalCitySystem cityPath={cityPath} />;
   }
   
   // Get city data based on URL using the unified system
   let cityPath = '/';
 
-  if (params && typeof params === 'object' && params.country && params.city) {
+  if (params?.country && params?.city) {
     cityPath = `/${params.country}/${params.city}`;
-  } else if (typeof params === 'object' && params[0] && params[1]) {
-    // Fallback for array-style params
-    cityPath = `/${params[0]}/${params[1]}`;
   }
 
   const cityData = getCityByPath(cityPath);
@@ -92,7 +92,7 @@ export default function CityChat() {
   console.log('CityChat Debug Info:', {
     currentPath: window.location.pathname,
     match,
-    params: params ? params : 'null/undefined',
+    params: params ?? 'null/undefined',
     cityPath,
     cityData: cityData ? 'FOUND' : 'NOT FOUND',
     cityDataDetails: cityData,
@@ -101,13 +101,6 @@ export default function CityChat() {
     searchingFor: cityPath,
     foundInData: getAllCities().some(c => c.path === cityPath) ? 'YES' : 'NO'
   });
-
-  // Import getAllCities for debugging - Remove this problematic async import
-  // import('@/data/cityChats').then(module => {
-  //   const { getAllCities } = module;
-  //   console.log('Available cities:', getAllCities().slice(0, 5)); // First 5 cities
-  //   console.log('City found for', cityPath, ':', getAllCities().find(c => c.path === cityPath));
-  // }).catch(err => console.log('Error importing cityChats:', err));
 
   // Enhanced city data with additional information using CitiesSystem
   const cityInfo = cityData ? CitiesSystem.getCitiesWithCountryInfo(cityData.countryPath) : null;
@@ -270,7 +263,7 @@ export default function CityChat() {
         {isRestoring ? (
           <div className="p-6 text-center">...جاري استعادة الجلسة</div>
         ) : showWelcome ? (
-          <CityWelcomeScreen onUserLogin={handleUserLogin} cityData={cityData} cityInfo={cityInfo} />
+          <CityWelcomeScreen onUserLogin={handleUserLogin} cityData={cityData} />
         ) : selectedRoomId ? (
           <ChatInterface chat={chat} onLogout={handleLogout} />
         ) : (

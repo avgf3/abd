@@ -147,6 +147,15 @@ class UserCacheManager {
   }
 
   /**
+   * الحصول على اسم المستخدم من الكاش بسرعة
+   */
+  getUsername(userId: number, fallback?: string): string {
+    const cached = this.getUser(userId);
+    if (cached && cached.username) return cached.username;
+    return fallback ?? '';
+  }
+
+  /**
    * الحصول على اسم المستخدم مع إعادة المحاولة
    */
   async getUsernameWithRetry(userId: number, maxRetries = 3): Promise<string | null> {
