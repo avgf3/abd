@@ -333,7 +333,7 @@ export default function PrivateMessageBox({
           transition={{ duration: 0.4, ease: "easeOut" }}
           className="relative z-[12000] w-[95vw] max-w-lg max-h-[85vh] bg-background text-foreground border border-border shadow-2xl rounded-xl overflow-hidden cursor-grab active:cursor-grabbing"
         >
-          <DialogHeader className="relative border-b border-border px-3 py-2 bg-background">
+          <DialogHeader className="relative border-b border-border px-3 py-2 modern-nav">
             <div className="flex items-center gap-3">
               <ProfileImage
                 user={user}
@@ -385,7 +385,7 @@ export default function PrivateMessageBox({
             </div>
           </DialogHeader>
 
-          <div className="relative h-[55vh] w-full p-4 pb-4 bg-background">
+          <div className="relative h-[55vh] w-full p-4 pb-4 bg-white">
             {sortedMessages.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
                 <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="text-6xl mb-4">
@@ -566,7 +566,7 @@ export default function PrivateMessageBox({
             {/* تم إخفاء زر "الانتقال لأسفل" */}
           </div>
 
-          <div className="p-4 border-t border-border bg-background">
+          <div className="p-4 border-t border-border modern-nav">
             {isDmClosed ? (
               <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg text-center text-sm text-gray-600">
                 عفواً هذا العضو قامَ بإغلاق الرسائل الخاصة
