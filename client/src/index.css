@@ -1479,9 +1479,10 @@ li > * > div.effect-crystal {
   line-height: 1.6;
   padding-bottom: 2px;
   padding-inline-end: 2px; /* منع قصّ آخر حرف في نهايات RTL/LTR على الهاتف */
-  /* ضمان عرض صحيح للنصوص المختلطة والرموز/الأرقام الإنجليزية داخل سياق RTL */
-  direction: auto;
-  unicode-bidi: plaintext;
+  /* اجعل اتجاه الأساس RTL دائمًا مع عزل خلط اللغات داخل الرسالة */
+  direction: rtl;
+  unicode-bidi: isolate;
+  text-align: start; /* يمين في RTL */
 }
 
 .message-content-fix .truncate {
@@ -1549,6 +1550,8 @@ li > * > div.effect-crystal {
   grid-column: 2;
   grid-row: 1 / span 999; /* يضمن أن كل الأسطر أسفل الاسم */
   min-width: 0;
+  /* ضمان بدء سطر الرسالة من يمين الحاوية حتى لو بدأ النص بسمايل/إنجليزي */
+  text-align: right;
 }
 
 /* تحسينات للجوال: نفس السلوك مع تقليل الفراغات */

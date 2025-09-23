@@ -698,7 +698,7 @@ export default function MessageArea({
                         {message.sender?.username || 'جاري التحميل...'}
                       </button>
                       <div className={`text-red-600 break-words flex-1 min-w-0 message-content-fix ${isMobile ? 'line-clamp-4' : 'line-clamp-2'}`}>
-                        <span dir="auto" className={`${isMobile ? 'line-clamp-4' : 'line-clamp-2'}`}>
+                        <span className={`${isMobile ? 'line-clamp-4' : 'line-clamp-2'}`}>
                           {message.content}
                         </span>
                       </div>
@@ -759,7 +759,7 @@ export default function MessageArea({
                                 if (ids.length > 0) {
                                   const firstId = ids[0];
                                   return (
-                                    <span dir="auto" className={`${isMobile ? 'line-clamp-4' : 'line-clamp-2'} ${!isMobile ? 'text-breathe' : ''} flex items-center gap-2`} onClick={() => isMobile && toggleMessageExpanded(message.id)}>
+                                    <span className={`${isMobile ? 'line-clamp-4' : 'line-clamp-2'} ${!isMobile ? 'text-breathe' : ''} flex items-center gap-2`} onClick={() => isMobile && toggleMessageExpanded(message.id)}>
                                       {cleaned ? (
                                         <span
                                           className={`${isMobile ? 'line-clamp-4' : 'line-clamp-2'}`}
@@ -789,7 +789,6 @@ export default function MessageArea({
                                 }
                                 return (
                                   <span
-                                    dir="auto"
                                     className={`${isMobile ? 'line-clamp-4' : 'line-clamp-2 text-breathe'}`}
                                     onClick={() => isMobile && toggleMessageExpanded(message.id)}
                                     style={
