@@ -92,8 +92,13 @@ export default function ProfileModal({
     return da || db || null;
   };
 
-  // احترام لون خلفية الملف الشخصي الحقيقي إن وُجد لأي نوع مستخدم
-  const resolvedProfileColorForCard = (localUser?.profileBackgroundColor || '');
+  // منطق البطاقة كما كان سابقاً
+  const isMemberOrGuest =
+    (localUser?.userType === 'member' || localUser?.userType === 'guest');
+  const forcedBotColor = '#2a2a2a';
+  const resolvedProfileColorForCard = isMemberOrGuest
+    ? forcedBotColor
+    : (localUser?.profileBackgroundColor || '');
   const computedCardGradient =
     buildProfileBackgroundGradient(resolvedProfileColorForCard) ||
     'linear-gradient(135deg, #1a1a1a, #2d2d2d)';

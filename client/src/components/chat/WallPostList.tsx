@@ -91,7 +91,7 @@ export default function WallPostList({
                         userType: post.userRole || 'member',
                         isOnline: true,
                         profileImage: post.userProfileImage,
-                        // لا تمرر لون الاسم من الحائط؛ استخدم الكاش لضمان التزامن
+                        usernameColor: post.usernameColor,
                         gender: (post as any).userGender,
                         level: (post as any).userLevel || 1,
                       } as ChatUser;

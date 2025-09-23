@@ -1,5 +1,4 @@
 // دوال مساعدة للتأثيرات
-import { getCachedUser } from '@/utils/userCacheManager';
 
 export const getEffectColor = (effect: string): string => {
   const effectColors = {
@@ -145,18 +144,6 @@ export const getFinalUsernameColor = (user: any): string => {
   const cleaned = sanitizeHexColor(color, '');
   if (cleaned) return cleaned;
 
-  // محاولة جلب اللون من كاش المستخدمين عند غيابه في الكائن الحالي
-  try {
-    const userId = user && typeof user.id === 'number' ? user.id : null;
-    if (userId) {
-      const cached = getCachedUser(userId as number) as any;
-      if (cached && cached.usernameColor) {
-        const cachedClean = sanitizeHexColor(String(cached.usernameColor), '');
-        if (cachedClean) return cachedClean;
-      }
-    }
-  } catch {}
-
   // إذا لم يكن له لون مخصص، استخدم لون حسب نوع المستخدم
   if (user && user.userType) {
     switch (user.userType) {
@@ -193,21 +180,8 @@ export const getUserEffectStyles = (user: any): Record<string, string> => {
   const style: Record<string, string> = {};
 
   // أولاً: تطبيق خلفية الملف الشخصي (تدرج أو لون)
-  const rawBg = (() => {
-    const direct = user?.profileBackgroundColor;
-    if (direct && direct !== 'null' && direct !== 'undefined') return String(direct);
-    try {
-      const uid = user && typeof user.id === 'number' ? user.id : null;
-      if (!uid) return '';
-      const cached = getCachedUser(uid as number) as any;
-      const cachedBg = cached?.profileBackgroundColor;
-      if (cachedBg && cachedBg !== 'null' && cachedBg !== 'undefined') return String(cachedBg);
-    } catch {}
-    return '';
-  })();
-
-  if (rawBg) {
-    const bg = buildProfileBackgroundGradient(rawBg);
+  if (user?.profileBackgroundColor && user.profileBackgroundColor !== 'null' && user.profileBackgroundColor !== 'undefined') {
+    const bg = buildProfileBackgroundGradient(String(user.profileBackgroundColor));
     if (bg && bg.startsWith('linear-gradient(')) {
       // استخدام backgroundImage لضمان أولوية التدرج وعدم تجاوزه بسهولة
       style.backgroundImage = bg;

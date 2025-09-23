@@ -13,7 +13,6 @@ import { apiRequest, api } from '@/lib/queryClient';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import type { ChatUser } from '@/types/chat';
 import { Table, TableHeader, TableHead, TableRow, TableBody, TableCell } from '@/components/ui/table';
-import { getFinalUsernameColor } from '@/utils/themeUtils';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { getImageSrc } from '@/utils/imageUtils';
 import { validateFile, getUploadTimeout } from '@/lib/uploadConfig';
@@ -471,13 +470,13 @@ export default function BotsManagement({ currentUser }: BotsManagementProps) {
                     <TableCell className="text-center">{bot.id}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-3">
-                        <Avatar className="h-10 w-10 ring-2 ring-offset-2 ring-offset-white" style={{ boxShadow: `0 0 0 2px ${getFinalUsernameColor({ id: bot.id, usernameColor: bot.usernameColor, userType: 'member' } as any)}33` }}>
+                        <Avatar className="h-10 w-10 ring-2 ring-offset-2 ring-offset-white" style={{ boxShadow: `0 0 0 2px ${bot.usernameColor}33` }}>
                           <AvatarImage src={getImageSrc(bot.profileImage)} alt={bot.username} />
                           <AvatarFallback>{bot.username?.slice(0,2).toUpperCase()}</AvatarFallback>
                         </Avatar>
                         <div className="flex flex-col">
                           <div className="flex items-center gap-2">
-                            <span className="font-medium" style={{ color: getFinalUsernameColor({ id: bot.id, usernameColor: bot.usernameColor, userType: 'member' } as any) }}>{bot.username}</span>
+                            <span className="font-medium" style={{ color: bot.usernameColor }}>{bot.username}</span>
                             <Badge className={getBotTypeColor(bot.botType)}>{getBotTypeName(bot.botType)}</Badge>
                             {bot.isActive ? (
                               <Badge className="bg-green-100 text-green-800">نشط</Badge>
