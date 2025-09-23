@@ -66,7 +66,7 @@ import { useNotificationManager } from '@/hooks/useNotificationManager';
 import { useRoomManager } from '@/hooks/useRoomManager';
 import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser, ChatRoom } from '@/types/chat';
-import { setCachedUser } from '@/utils/userCacheManager';
+import { setCachedUser, getCachedUserWithMerge } from '@/utils/userCacheManager';
 import { getPmLastOpened, setPmListLastOpened } from '@/utils/messageUtils';
 
 interface ChatInterfaceProps {
@@ -565,16 +565,19 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
       if (chat.currentUser && user.id === chat.currentUser.id) {
         setProfileUser(chat.currentUser);
       } else {
-        // تحميل البيانات الكاملة من الخادم
+        // تحميل البيانات الكاملة من الخادم مع تحديث الكاش، واستخدام الكاش كاحتياطي عند الفشل
         try {
           const fullUserData = await apiRequest(`/api/users/${user.id}`);
           if (fullUserData && (fullUserData as any).id) {
+            setCachedUser(fullUserData as ChatUser);
             setProfileUser(fullUserData as ChatUser);
           } else {
-            setProfileUser(user);
+            const merged = getCachedUserWithMerge(user.id, user as Partial<ChatUser>);
+            setProfileUser(merged);
           }
         } catch {
-          setProfileUser(user);
+          const merged = getCachedUserWithMerge(user.id, user as Partial<ChatUser>);
+          setProfileUser(merged);
         }
       }
       setShowProfile(true);
@@ -639,6 +642,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           try {
             const data = await apiRequest(`/api/users/${uid}`);
             if (data && (data as any).id) {
+              setCachedUser(data as any);
               setProfileUser(data as any);
             }
           } catch {}
@@ -1352,14 +1356,17 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                   try { profileAudioRef.current?.pause(); } catch {}
                 }}
                 onUpdate={(updatedUser) => {
-                  // تحديث بيانات المستخدم في قائمة المتصلون
-                  if (updatedUser && updatedUser.id) {
+                  if (!updatedUser || !updatedUser.id) return;
+                  // لا تحدث حالة المستخدم الحالي إلا إذا كان هو المعني بالتحديث
+                  if (chat.currentUser?.id === updatedUser.id) {
                     chat.updateCurrentUser({
                       profileEffect: updatedUser.profileEffect,
                       usernameColor: updatedUser.usernameColor,
                       profileBackgroundColor: updatedUser.profileBackgroundColor,
                     });
                   }
+                  // تحديث/تنظيف الكاش دائماً للمستخدم الذي تم تحديثه
+                  setCachedUser(updatedUser);
                 }}
               />
             ) : (
@@ -1381,6 +1388,8 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                       usernameColor: updatedUser.usernameColor,
                       profileBackgroundColor: updatedUser.profileBackgroundColor,
                     });
+                    // تحديث/تنظيف الكاش بعد التحديث الناجح
+                    setCachedUser(updatedUser);
                   }
                 }}
               />
