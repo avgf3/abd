@@ -30,11 +30,9 @@ class UserCacheManager {
   private readonly PRIORITY_CACHE_DURATION = 7 * 24 * 60 * 60 * 1000; // 7 أيام للمستخدمين المهمين
 
   private constructor() {
-    this.loadFromLocalStorage();
-    // ✅ تنظيف الكاش القديم كل 5 دقائق لتحسين الأداء
-    setInterval(() => this.cleanupOldEntries(), 5 * 60 * 1000);
-    // ✅ تنظيف شامل كل ساعة
-    setInterval(() => this.deepCleanup(), 60 * 60 * 1000);
+    // إيقاف التحميل من localStorage نهائياً لصفحة الملف الشخصي حسب الطلب
+    try { localStorage.removeItem(this.CACHE_KEY); } catch {}
+    // لا نقوم بأي جدولة تنظيف لأننا لا نخزن محلياً الآن
   }
 
   static getInstance(): UserCacheManager {
@@ -48,46 +46,14 @@ class UserCacheManager {
    * تحميل البيانات من localStorage عند بدء التطبيق
    */
   private loadFromLocalStorage(): void {
-    try {
-      const stored = localStorage.getItem(this.CACHE_KEY);
-      if (stored) {
-        const data = JSON.parse(stored) as Record<string, CachedUser>;
-        Object.entries(data).forEach(([key, user]) => {
-          const userId = parseInt(key, 10);
-          if (!isNaN(userId) && user && user.username) {
-            this.memoryCache.set(userId, user);
-          }
-        });
-      }
-    } catch (error) {
-      console.error('خطأ في تحميل كاش المستخدمين:', error);
-      // في حالة فساد البيانات، نقوم بمسحها
-      localStorage.removeItem(this.CACHE_KEY);
-    }
+    // معطّل بناءً على طلب إلغاء الكاش في الملف الشخصي
   }
 
   /**
    * حفظ البيانات في localStorage
    */
   private saveToLocalStorage(): void {
-    try {
-      const data: Record<string, CachedUser> = {};
-      
-      // نحفظ فقط أحدث المستخدمين استخداماً
-      const sorted = Array.from(this.memoryCache.entries())
-        .sort((a, b) => b[1].lastUpdated - a[1].lastUpdated)
-        .slice(0, this.MAX_CACHE_SIZE);
-      
-      sorted.forEach(([id, user]) => {
-        data[id.toString()] = user;
-      });
-      
-      localStorage.setItem(this.CACHE_KEY, JSON.stringify(data));
-    } catch (error) {
-      console.error('خطأ في حفظ كاش المستخدمين:', error);
-      // في حالة امتلاء التخزين، نحاول تنظيف البيانات القديمة
-      this.cleanupOldEntries();
-    }
+    // معطّل للملف الشخصي: لا حفظ في localStorage
   }
 
   /**

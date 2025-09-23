@@ -3617,6 +3617,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const isOwnProfile = verified && verified.userId === userId;
 
       const { password, ...userWithoutPassword } = user;
+
+      // منع التخزين المؤقت لبيانات الملف الشخصي على أي وسيط/متصفح
+      try {
+        res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
+        res.setHeader('Surrogate-Control', 'no-store');
+      } catch {}
       
       if (isOwnProfile) {
         // إذا كان المستخدم يطلب بياناته الخاصة، أرجع كل شيء بما فيها base64

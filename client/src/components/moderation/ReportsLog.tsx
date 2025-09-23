@@ -13,6 +13,7 @@ import ProfileImage from '@/components/chat/ProfileImage';
 import { getFinalUsernameColor } from '@/utils/themeUtils';
 import Username from '@/components/chat/Username';
 import { getCachedUserWithMerge, setCachedUser } from '@/utils/userCacheManager';
+import { fetchFreshProfile } from '@/utils/profile';
 
 interface ReportData {
   id: number;
@@ -60,8 +61,8 @@ export default function ReportsLog({ currentUser, isVisible, onClose }: ReportsL
         ).slice(0, 40);
         await Promise.all(
           uniqueIds.map(async (id) => {
-            try {
-              const u = await apiRequest<ChatUser>(`/api/users/${id}`);
+          try {
+            const u = await fetchFreshProfile(id);
               if (u && u.id) setCachedUser(u);
             } catch {}
           })
@@ -94,7 +95,7 @@ export default function ReportsLog({ currentUser, isVisible, onClose }: ReportsL
       // حاول جلب بيانات المستخدم لتحديث الصورة والألوان (best-effort)
       let user = getCachedUserWithMerge(userId, fallbackName ? { username: fallbackName } : undefined);
       try {
-        const fresh = await apiRequest<ChatUser>(`/api/users/${userId}`);
+        const fresh = await fetchFreshProfile(userId);
         if (fresh && fresh.id) {
           setCachedUser(fresh);
           user = fresh;

@@ -65,6 +65,7 @@ import type { UseChatReturn } from '@/hooks/useChat';
 import { useNotificationManager } from '@/hooks/useNotificationManager';
 import { useRoomManager } from '@/hooks/useRoomManager';
 import { apiRequest } from '@/lib/queryClient';
+import { fetchFreshProfile } from '@/utils/profile';
 import type { ChatUser, ChatRoom } from '@/types/chat';
 import { setCachedUser } from '@/utils/userCacheManager';
 import { getPmLastOpened, setPmListLastOpened } from '@/utils/messageUtils';
@@ -620,7 +621,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
       if (uid) {
         (async () => {
           try {
-            const data = await apiRequest(`/api/users/${uid}`);
+            const data = await fetchFreshProfile(uid);
             if (data && (data as any).id) {
               setProfileUser(data as any);
             }
@@ -696,8 +697,8 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           let user = chat.onlineUsers.find((u) => u.id === userId);
           if (!user) {
             try {
-              const data = await apiRequest(`/api/users/${userId}`);
-              if (data && data.id) {
+              const data = await fetchFreshProfile(userId);
+              if (data && (data as any).id) {
                 user = data as any;
                 // تحديث الكاش مع بيانات المستخدم
                 setCachedUser(user);
@@ -1531,8 +1532,14 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                 const userId = chat.currentUser?.id;
                 if (userId) {
                   (async () => {
+            try {
+              const data = await fetchFreshProfile(userId);
+              if (data && (data as any).id) {
+                setProfileUser(data as any);
+              }
+            } catch {}
                     try {
-                      const data = await apiRequest(`/api/users/${userId}`);
+                      const data = await fetchFreshProfile(userId);
                       if (data && (data as any).id) {
                         setProfileUser(data as any);
                       }

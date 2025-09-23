@@ -22,6 +22,7 @@ import ProfileImage from './ProfileImage';
 import { useStories } from '@/hooks/useStories';
 import { useRoomManager } from '@/hooks/useRoomManager';
 import { getSocket } from '@/lib/socket';
+import { fetchFreshProfile } from '@/utils/profile';
 
 interface ProfileModalProps {
   user: ChatUser | null;
@@ -514,7 +515,7 @@ export default function ProfileModal({
   // دالة موحدة لجلب بيانات المستخدم من السيرفر وتحديث الحالة المحلية - محسّنة
   const fetchAndUpdateUser = async (userId: number) => {
     try {
-      const userData = await apiRequest(`/api/users/${userId}`);
+      const userData = await fetchFreshProfile(userId);
       
       // تحديث البيانات المحلية مع الحفاظ على التحديثات المحلية المهمة
       setLocalUser((prev) => {
@@ -562,11 +563,10 @@ export default function ProfileModal({
     }
   };
 
-  // عند فتح بروفايل مستخدم آخر، اجلب نسخة محدثة دائماً لضمان صحة آخر تواجد والغرفة
+  // عند فتح البروفايل (سواء لي أو لغيري)، اجلب نسخة محدثة دائماً لضمان عدم الاعتماد على أي كاش
   useEffect(() => {
     try {
       if (!localUser?.id) return;
-      if (currentUser?.id === localUser.id) return;
       fetchAndUpdateUser(localUser.id).catch(() => {});
     } catch {}
     // نعتمد فقط على تغيير معرف المستخدم المفتوح

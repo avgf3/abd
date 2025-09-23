@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
 import { apiRequest } from '@/lib/queryClient';
+import { fetchFreshProfile } from '@/utils/profile';
 import type { ChatUser } from '@/types/chat';
 import { formatMessagePreview, getPmLastOpened, setPmLastOpened } from '@/utils/messageUtils';
 import { formatTime } from '@/utils/timeUtils';
@@ -114,9 +115,7 @@ export default function MessagesPanel({
     (async () => {
       try {
         const results = await Promise.all(
-          ids.map((id) =>
-            apiRequest(`/api/users/${id}`).catch(() => null)
-          )
+          ids.map((id) => fetchFreshProfile(id).catch(() => null))
         );
         results.forEach((data, idx) => {
           if (!cancelled && data && data.id) {

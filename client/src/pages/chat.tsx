@@ -7,6 +7,7 @@ import KickCountdown from '@/components/moderation/KickCountdown';
 import { useChat } from '@/hooks/useChat';
 import { clearSession, getSession } from '@/lib/socket';
 import { apiRequest } from '@/lib/queryClient';
+import { fetchFreshProfile } from '@/utils/profile';
 import type { ChatUser, ChatRoom } from '@/types/chat';
 import RoomSelectorScreen from '@/components/chat/RoomSelectorScreen';
 
@@ -76,7 +77,7 @@ export default function ChatPage() {
     (async () => {
       try {
         if (savedUserId) {
-          const user = await apiRequest(`/api/users/${savedUserId}`);
+          const user = await fetchFreshProfile(savedUserId);
           if (user?.id) {
             chat.connect(user);
           }

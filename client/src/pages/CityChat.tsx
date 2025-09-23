@@ -53,6 +53,7 @@ import KickCountdown from '@/components/moderation/KickCountdown';
 import { useChat } from '@/hooks/useChat';
 import { clearSession, getSession } from '@/lib/socket';
 import { apiRequest } from '@/lib/queryClient';
+import { fetchFreshProfile } from '@/utils/profile';
 import type { ChatUser } from '@/types/chat';
 
 export default function CityChat() {
@@ -173,7 +174,7 @@ export default function CityChat() {
     (async () => {
       try {
         if (savedUserId) {
-          const user = await apiRequest(`/api/users/${savedUserId}`);
+          const user = await fetchFreshProfile(savedUserId);
           if (user?.id) {
             chat.connect(user);
           }
