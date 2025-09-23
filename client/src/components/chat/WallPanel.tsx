@@ -26,6 +26,7 @@ import { getSocket, saveSession } from '@/lib/socket';
 import type { WallPost, CreateWallPostData, ChatUser } from '@/types/chat';
 import { getImageSrc } from '@/utils/imageUtils';
 import UserPopup from '@/components/chat/UserPopup';
+import { getFinalUsernameColor } from '@/utils/themeUtils';
 
 interface WallPanelProps {
   isOpen: boolean;
@@ -435,7 +436,7 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
                       <div className="flex-1">
                         <div
                           className="text-sm font-semibold"
-                          style={{ color: currentUser.usernameColor || 'inherit' }}
+                          style={{ color: getFinalUsernameColor(currentUser) }}
                         >
                           {currentUser.username}
                         </div>

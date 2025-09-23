@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { getFinalUsernameColor } from '@/utils/themeUtils';
 
 import UserRoleBadge from './UserRoleBadge';
 
@@ -354,7 +355,7 @@ export default function ModerationPanel({
                         />
                         <div>
                           <div className="font-semibold flex items-center gap-2">
-                            <span style={{ color: user.usernameColor || '#000000' }}>
+                            <span style={{ color: getFinalUsernameColor(user) }}>
                               {user.username}
                             </span>
                             <UserRoleBadge user={user} />
@@ -415,7 +416,7 @@ export default function ModerationPanel({
                           />
                           <div>
                             <div className="font-semibold flex items-center gap-2">
-                              <span style={{ color: user.usernameColor || '#dc2626' }}>
+                              <span style={{ color: getFinalUsernameColor(user) }}>
                                 {user.username}
                               </span>
                               <Badge variant="destructive" className="text-xs">

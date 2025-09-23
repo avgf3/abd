@@ -16,6 +16,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser } from '@/types/chat';
+import { getFinalUsernameColor } from '@/utils/themeUtils';
 
 interface PromoteUserPanelProps {
   isVisible: boolean;
@@ -297,7 +298,7 @@ export default function PromoteUserPanel({
                       className="flex items-center justify-between p-2 bg-gray-800/50 rounded"
                     >
                       <div className="flex items-center gap-2">
-                        <span style={{ color: user.usernameColor || '#E5E7EB' }}>
+                        <span style={{ color: getFinalUsernameColor(user) }}>
                           {user.username}
                         </span>
                         {getRoleBadge(user.userType)}
