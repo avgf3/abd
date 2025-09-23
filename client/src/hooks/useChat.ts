@@ -9,6 +9,7 @@ import type { ChatUser, ChatMessage } from '@/types/chat';
 import type { Notification } from '@/types/chat';
 import { mapDbMessagesToChatMessages } from '@/utils/messageUtils';
 import { userCache, setCachedUser, mergeCachedUserPartial } from '@/utils/userCacheManager';
+import { fetchFreshProfile } from '@/utils/profile';
 
 // Audio notification function
 const playNotificationSound = () => {
@@ -872,7 +873,7 @@ export const useChat = () => {
                   !updatedUser.profileImage.startsWith('data:')))
             ) {
               try {
-                apiRequest(`/api/users/${updatedUser.id}`)
+                fetchFreshProfile(updatedUser.id)
                   .then((full: any) => {
                     if (full && full.id) {
                       // تحديث الكاش مع البيانات الكاملة
