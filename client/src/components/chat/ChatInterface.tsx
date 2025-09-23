@@ -553,8 +553,21 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   };
 
   const handleViewProfile = (user: ChatUser) => {
-    setProfileUser(user);
-    setShowProfile(true);
+    // جلب البيانات الكاملة أولاً لتفادي وميض ألوان/تأثيرات مؤقتة
+    (async () => {
+      try {
+        const data = await apiRequest(`/api/users/${user.id}`);
+        if (data && (data as any).id) {
+          setProfileUser(data as any);
+        } else {
+          setProfileUser(user);
+        }
+      } catch {
+        setProfileUser(user);
+      } finally {
+        setShowProfile(true);
+      }
+    })();
     closeUserPopup();
     // إغلاق نافذة الأثرياء لضمان عدم تراكبها فوق نافذة البروفايل
     try { setShowRichest(false); } catch {}
@@ -564,17 +577,18 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
     }
     try {
       // تشغيل الموسيقى عند كل فتح للبروفايل إن كانت مفعلة ولها رابط صالح
+      const target = (profileUser && profileUser.id === user.id) ? profileUser : user;
       if (
-        user?.profileMusicUrl &&
-        (user as any).profileMusicEnabled !== false &&
+        target?.profileMusicUrl &&
+        (target as any).profileMusicEnabled !== false &&
         (chat.currentUser as any)?.globalSoundEnabled !== false
       ) {
         if (!profileAudioRef.current) {
           profileAudioRef.current = new Audio();
         }
         const audio = profileAudioRef.current;
-        audio.src = user.profileMusicUrl;
-        const vol = typeof user.profileMusicVolume === 'number' ? user.profileMusicVolume : 70;
+        audio.src = target.profileMusicUrl;
+        const vol = typeof target.profileMusicVolume === 'number' ? target.profileMusicVolume : 70;
         audio.volume = Math.max(0, Math.min(1, (vol || 70) / 100));
         audio.loop = true;
         // استئناف التشغيل في كل مرة بشكل موثوق
