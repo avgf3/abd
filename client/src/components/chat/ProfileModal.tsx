@@ -92,13 +92,8 @@ export default function ProfileModal({
     return da || db || null;
   };
 
-  // توحيد لون خلفية الملف الشخصي للأعضاء والزوار ليطابق لون البوت فقط داخل نافذة البروفايل
-  const isMemberOrGuest =
-    (localUser?.userType === 'member' || localUser?.userType === 'guest');
-  const forcedBotColor = '#2a2a2a';
-  const resolvedProfileColorForCard = isMemberOrGuest
-    ? forcedBotColor
-    : (localUser?.profileBackgroundColor || '');
+  // استخدام لون المستخدم كما هو بدون فرض لون مؤقت لمنع وميض لونين
+  const resolvedProfileColorForCard = (localUser?.profileBackgroundColor || '');
   const computedCardGradient =
     buildProfileBackgroundGradient(resolvedProfileColorForCard) ||
     'linear-gradient(135deg, #1a1a1a, #2d2d2d)';
@@ -1526,7 +1521,8 @@ export default function ProfileModal({
       <style>{`
         :root {
           --main-bg: #121212;
-          --card-bg: linear-gradient(135deg, #f57f17, #b71c1c, #6a1b9a);
+          /* اجعل القيمة الافتراضية شفافة حتى يُطبَّق تدرج المستخدم فوراً بدون وميض */
+          --card-bg: transparent;
           --text-color: #ffffff;
           --accent-color: #ffc107;
           --error-color: #f44336;
@@ -1914,7 +1910,8 @@ export default function ProfileModal({
           max-width: 440px;
           border-radius: 16px;
           overflow: hidden;
-          background: var(--card-bg);
+          /* لا نعتمد على var(--card-bg) الثابت لأننا نمرّر الخلفية ديناميكياً عبر style */
+          background: transparent;
           box-shadow: 0 8px 32px rgba(0,0,0,0.8);
           position: relative;
           transition: transform 0.3s ease, box-shadow 0.3s ease;
@@ -2639,7 +2636,8 @@ export default function ProfileModal({
         <div
           className={`profile-card ${selectedEffect}`}
           style={{
-            background: computedCardGradient,
+            backgroundImage: computedCardGradient.startsWith('linear-gradient(') ? computedCardGradient : undefined,
+            background: computedCardGradient.startsWith('linear-gradient(') ? undefined : computedCardGradient,
             backgroundBlendMode: 'normal',
             ['--card-bg' as any]: computedCardGradient,
           }}
