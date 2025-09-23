@@ -98,6 +98,7 @@
   --shadow-glow: 0 0 40px rgba(100, 200, 255, 0.2);
 }
 
+/* Dark overrides */
 .dark {
   /* Inherits all the modern gradient variables from :root */
   /* Dark mode specific overrides if needed */
