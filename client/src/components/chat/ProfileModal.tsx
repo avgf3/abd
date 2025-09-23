@@ -92,13 +92,14 @@ export default function ProfileModal({
     return da || db || null;
   };
 
-  // توحيد لون خلفية الملف الشخصي للأعضاء والزوار ليطابق لون البوت فقط داخل نافذة البروفايل
+  // توحيد لون الخلفية مع الاعتماد أولاً على المستخدم القادم من الخصائص لتفادي وميض لون مستخدم سابق
+  const displayUser = user || localUser;
   const isMemberOrGuest =
-    (localUser?.userType === 'member' || localUser?.userType === 'guest');
+    (displayUser?.userType === 'member' || displayUser?.userType === 'guest');
   const forcedBotColor = '#2a2a2a';
   const resolvedProfileColorForCard = isMemberOrGuest
     ? forcedBotColor
-    : (localUser?.profileBackgroundColor || '');
+    : (displayUser?.profileBackgroundColor || '');
   const computedCardGradient =
     buildProfileBackgroundGradient(resolvedProfileColorForCard) ||
     'linear-gradient(135deg, #1a1a1a, #2d2d2d)';
@@ -1117,7 +1118,7 @@ export default function ProfileModal({
   // Profile banner fallback - محسّن للتعامل مع base64 و مشاكل الcache
   // إرجاع مصدر صورة البانر إن وُجد مع دعم المسارات والـ base64
   const getProfileBannerSrcLocal = () => {
-    const banner = localUser?.profileBanner;
+    const banner = (displayUser?.profileBanner ?? localUser?.profileBanner) as any;
     if (!banner || banner === '') return '';
     return getBannerImageSrc(banner);
   };
