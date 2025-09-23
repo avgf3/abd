@@ -124,29 +124,43 @@ class UserListOptimizer {
         }
       }
       
-      // تطبيق الأحداث
+      // تطبيق الأحداث مع احترام حالة الإخفاء دائماً
       for (const event of events) {
         switch (event.type) {
-          case 'join':
-            if (event.userData) {
-              userMap.set(event.userId, event.userData);
+          case 'join': {
+            const data = event.userData || {};
+            // إذا كان المستخدم مخفياً، لا نضيفه للقائمة إطلاقاً
+            if (data && (data as any).isHidden === true) {
+              userMap.delete(event.userId);
+            } else if (data) {
+              userMap.set(event.userId, data);
             }
             break;
-            
+          }
+          
           case 'leave':
             userMap.delete(event.userId);
             break;
             
-          case 'update':
+          case 'update': {
             const existing = userMap.get(event.userId);
-            if (existing && event.userData) {
-              userMap.set(event.userId, { ...existing, ...event.userData });
+            const data = event.userData || {};
+            // إذا كان التحديث يحدد isHidden=true، أحذف المستخدم من القائمة
+            if (data && (data as any).isHidden === true) {
+              userMap.delete(event.userId);
+            } else if (existing && data) {
+              userMap.set(event.userId, { ...existing, ...data });
+            } else if (data && Object.keys(data).length > 0) {
+              // في حالة عدم وجوده مسبقاً ولكن البيانات لا تشير إلى الإخفاء، أضفه بأمان
+              userMap.set(event.userId, data);
             }
             break;
+          }
         }
       }
       
-      return Array.from(userMap.values());
+      // تصفية النتيجة النهائية أيضاً كطبقة أمان أخيرة
+      return Array.from(userMap.values()).filter((u) => !(u as any)?.isHidden);
       
     } catch (error) {
       console.error('خطأ في بناء قائمة المستخدمين المحدثة:', error);
