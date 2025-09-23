@@ -552,40 +552,33 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
     closeUserPopup();
   };
 
-  const handleViewProfile = async (user: ChatUser) => {
-    // إغلاق نافذة الأثرياء فوراً
+  const handleViewProfile = (user: ChatUser) => {
+    // إغلاق أي نوافذ مفتوحة فوراً
     try { setShowRichest(false); } catch {}
     closeUserPopup();
     
-    // إذا كان بروفايل المستخدم المفتوح هو المستخدم الحالي، استخدم البيانات الحية
-    if (chat.currentUser && user.id === chat.currentUser.id) {
-      setProfileUser(chat.currentUser);
-      setShowProfile(true);
-    } else {
-      // عرض الملف الشخصي بالبيانات المتاحة أولاً
-      setProfileUser(user);
-      setShowProfile(true);
-      
-      // تحميل البيانات الكاملة من الخادم في الخلفية
-      // فقط إذا كانت البيانات ناقصة
-      const needsFullData = !user.profileBackgroundColor && !user.profileEffect && !user.profileImage;
-      if (needsFullData) {
+    // تنظيف البيانات القديمة أولاً
+    setProfileUser(null);
+    
+    // ثم عرض البيانات الجديدة فوراً
+    setTimeout(async () => {
+      if (chat.currentUser && user.id === chat.currentUser.id) {
+        setProfileUser(chat.currentUser);
+      } else {
+        // تحميل البيانات الكاملة من الخادم
         try {
           const fullUserData = await apiRequest(`/api/users/${user.id}`);
           if (fullUserData && (fullUserData as any).id) {
-            // تحديث البيانات فقط إذا كان النافذة لا تزال مفتوحة ونفس المستخدم
-            setProfileUser((prev) => {
-              if (prev && prev.id === (fullUserData as any).id) {
-                return fullUserData as ChatUser;
-              }
-              return prev;
-            });
+            setProfileUser(fullUserData as ChatUser);
+          } else {
+            setProfileUser(user);
           }
-        } catch (error) {
-          console.error('Error fetching full user data:', error);
+        } catch {
+          setProfileUser(user);
         }
       }
-    }
+      setShowProfile(true);
+    }, 0);
     try {
       // تشغيل الموسيقى عند كل فتح للبروفايل إن كانت مفعلة ولها رابط صالح
       if (

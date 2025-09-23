@@ -46,73 +46,80 @@ export default function ProfileModal({
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const musicFileInputRef = useRef<HTMLInputElement>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [isInitializing, setIsInitializing] = useState(false); // للتحميل الأولي
   const [currentEditType, setCurrentEditType] = useState<string | null>(null);
   const [editValue, setEditValue] = useState('');
-
-  // حالة محلية للمستخدم للتحديث الفوري
-  const [localUser, setLocalUser] = useState<ChatUser | null>(user);
-  // حالات الألوان والتأثيرات - تُحدث فوراً عند تغيير المستخدم
-  const [selectedTheme, setSelectedTheme] = useState(user?.profileBackgroundColor || '');
-  const [selectedEffect, setSelectedEffect] = useState(user?.profileEffect || 'none');
   
-  // مزامنة حالة المستخدم المحلي عند تغيّر الخصائص القادمة من الأعلى مع الحفاظ على التحديثات المحلية
+  // معرف فريد لكل مستخدم لضمان عدم التضارب
+  const currentUserId = user?.id || null;
+  const prevUserIdRef = useRef<string | null>(null);
+
+  // حالة محلية للمستخدم - تُحدث فوراً عند تغيير المستخدم
+  const [localUser, setLocalUser] = useState<ChatUser | null>(user);
+  
+  // حالات الألوان والتأثيرات - مربوطة مباشرة بـ localUser
+  const [selectedTheme, setSelectedTheme] = useState('');
+  const [selectedEffect, setSelectedEffect] = useState('none');
+  
+  // تحديث فوري وقوي عند تغيير المستخدم
   useEffect(() => {
-    if (user) {
-      setLocalUser((prev) => {
-        // إذا تغير المستخدم بالكامل (مستخدم جديد)، نظف كل شيء وابدأ من جديد
-        if (!prev || prev.id !== user.id) {
-          // تنظيف وتحديث فوري للألوان والتأثيرات للمستخدم الجديد - بدون أي تأخير
-          setSelectedTheme(user.profileBackgroundColor || '');
-          setSelectedEffect(user.profileEffect || 'none');
-          setEditValue('');
-          setCurrentEditType(null);
-          // تنظيف حالات الموسيقى
-          setMusicTitle(user.profileMusicTitle || '');
-          setMusicEnabled(user.profileMusicEnabled ?? true);
-          setMusicVolume(typeof user.profileMusicVolume === 'number' ? user.profileMusicVolume : 70);
-          setAudioError(false);
-          setAudioLoading(false);
-          setIsPlaying(false);
-          // إيقاف الموسيقى القديمة
-          if (audioRef.current) {
-            audioRef.current.pause();
-            audioRef.current.currentTime = 0;
-          }
-          setIsInitializing(false);
-          return user;
-        }
+    // إذا تغير المستخدم، نظف كل شيء فوراً
+    if (currentUserId !== prevUserIdRef.current) {
+      prevUserIdRef.current = currentUserId;
+      
+      if (user) {
+        // تحديث فوري لجميع الحالات
+        setLocalUser(user);
+        setSelectedTheme(user.profileBackgroundColor || '');
+        setSelectedEffect(user.profileEffect || 'none');
+        setEditValue('');
+        setCurrentEditType(null);
+        setMusicTitle(user.profileMusicTitle || '');
+        setMusicEnabled(user.profileMusicEnabled ?? true);
+        setMusicVolume(typeof user.profileMusicVolume === 'number' ? user.profileMusicVolume : 70);
+        setAudioError(false);
+        setAudioLoading(false);
+        setIsPlaying(false);
         
-        // إذا كان نفس المستخدم، ندمج البيانات الجديدة مع المحلية
+        // إيقاف الموسيقى القديمة فوراً
+        if (audioRef.current) {
+          audioRef.current.pause();
+          audioRef.current.currentTime = 0;
+          audioRef.current.src = '';
+        }
+      } else {
+        // تنظيف كامل عند الإغلاق
+        setLocalUser(null);
+        setSelectedTheme('');
+        setSelectedEffect('none');
+        setEditValue('');
+        setCurrentEditType(null);
+        setMusicTitle('');
+        setMusicEnabled(true);
+        setMusicVolume(70);
+        setAudioError(false);
+        setAudioLoading(false);
+        setIsPlaying(false);
+        
+        if (audioRef.current) {
+          audioRef.current.pause();
+          audioRef.current.currentTime = 0;
+          audioRef.current.src = '';
+        }
+      }
+    } else if (user && localUser) {
+      // تحديث البيانات فقط إذا كان نفس المستخدم
+      setLocalUser(prev => {
+        if (!prev || prev.id !== user.id) return user;
         return {
           ...prev,
           ...user,
-          // الحفاظ على التحديثات المحلية المهمة
           lastSeen: pickLatestValidDate(prev.lastSeen as any, user.lastSeen as any),
           isOnline: typeof user.isOnline !== 'undefined' ? user.isOnline : prev.isOnline,
           currentRoom: (user as any).hasOwnProperty('currentRoom') ? (user as any).currentRoom : prev.currentRoom,
         };
       });
-    } else {
-      setLocalUser(null);
-      // تنظيف الحالات عند إغلاق النافذة
-      setSelectedTheme('');
-      setSelectedEffect('none');
-      setEditValue('');
-      setCurrentEditType(null);
-      setMusicTitle('');
-      setMusicEnabled(true);
-      setMusicVolume(70);
-      setAudioError(false);
-      setAudioLoading(false);
-      setIsPlaying(false);
-      // إيقاف الموسيقى
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current.currentTime = 0;
-      }
     }
-  }, [user]);
+  }, [user, currentUserId]);
 
   // Helper: return the most recent valid date between two values
   const pickLatestValidDate = (
@@ -152,17 +159,13 @@ export default function ProfileModal({
 
   // موسيقى البروفايل
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const [musicTitle, setMusicTitle] = useState(user?.profileMusicTitle || '');
+  const [musicTitle, setMusicTitle] = useState('');
 
   // قائمة الأصدقاء
   const [friends, setFriends] = useState<ChatUser[]>([]);
   const [loadingFriends, setLoadingFriends] = useState(false);
-  const [musicEnabled, setMusicEnabled] = useState(
-    localUser?.profileMusicEnabled ?? true
-  );
-  const [musicVolume, setMusicVolume] = useState<number>(
-    typeof localUser?.profileMusicVolume === 'number' ? localUser.profileMusicVolume : 70
-  );
+  const [musicEnabled, setMusicEnabled] = useState(true);
+  const [musicVolume, setMusicVolume] = useState<number>(70);
   const [audioError, setAudioError] = useState(false);
   const [audioLoading, setAudioLoading] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
