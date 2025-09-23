@@ -48,33 +48,78 @@ export default function ProfileModal({
   const [isLoading, setIsLoading] = useState(false);
   const [currentEditType, setCurrentEditType] = useState<string | null>(null);
   const [editValue, setEditValue] = useState('');
+  
+  // معرف فريد لكل مستخدم لضمان عدم التضارب
+  const currentUserId = user?.id || null;
+  const prevUserIdRef = useRef<string | null>(null);
 
-  // حالة محلية للمستخدم للتحديث الفوري
+  // حالة محلية للمستخدم - تُحدث فوراً عند تغيير المستخدم
   const [localUser, setLocalUser] = useState<ChatUser | null>(user);
-  // مزامنة حالة المستخدم المحلي عند تغيّر الخصائص القادمة من الأعلى مع الحفاظ على التحديثات المحلية
+  
+  // حالات الألوان والتأثيرات - مربوطة مباشرة بـ localUser
+  const [selectedTheme, setSelectedTheme] = useState('');
+  const [selectedEffect, setSelectedEffect] = useState('none');
+  
+  // تحديث فوري وقوي عند تغيير المستخدم
   useEffect(() => {
-    if (user) {
-      setLocalUser((prev) => {
-        // إذا كان هناك مستخدم محلي موجود، ندمج البيانات الجديدة مع المحلية
-        if (prev && prev.id === user.id) {
-          return {
-            ...prev,
-            ...user,
-            // الحفاظ على التحديثات المحلية المهمة
-            lastSeen: pickLatestValidDate(prev.lastSeen as any, user.lastSeen as any),
-            isOnline: typeof user.isOnline !== 'undefined' ? user.isOnline : prev.isOnline,
-            currentRoom: (user as any).hasOwnProperty('currentRoom') ? (user as any).currentRoom : prev.currentRoom,
-          };
+    // إذا تغير المستخدم، نظف كل شيء فوراً
+    if (currentUserId !== prevUserIdRef.current) {
+      prevUserIdRef.current = currentUserId;
+      
+      if (user) {
+        // تحديث فوري لجميع الحالات
+        setLocalUser(user);
+        setSelectedTheme(user.profileBackgroundColor || '');
+        setSelectedEffect(user.profileEffect || 'none');
+        setEditValue('');
+        setCurrentEditType(null);
+        setMusicTitle(user.profileMusicTitle || '');
+        setMusicEnabled(user.profileMusicEnabled ?? true);
+        setMusicVolume(typeof user.profileMusicVolume === 'number' ? user.profileMusicVolume : 70);
+        setAudioError(false);
+        setAudioLoading(false);
+        setIsPlaying(false);
+        
+        // إيقاف الموسيقى القديمة فوراً
+        if (audioRef.current) {
+          audioRef.current.pause();
+          audioRef.current.currentTime = 0;
+          audioRef.current.src = '';
         }
-        // إذا لم يكن هناك مستخدم محلي، نستخدم البيانات الجديدة
-        return user;
+      } else {
+        // تنظيف كامل عند الإغلاق
+        setLocalUser(null);
+        setSelectedTheme('');
+        setSelectedEffect('none');
+        setEditValue('');
+        setCurrentEditType(null);
+        setMusicTitle('');
+        setMusicEnabled(true);
+        setMusicVolume(70);
+        setAudioError(false);
+        setAudioLoading(false);
+        setIsPlaying(false);
+        
+        if (audioRef.current) {
+          audioRef.current.pause();
+          audioRef.current.currentTime = 0;
+          audioRef.current.src = '';
+        }
+      }
+    } else if (user && localUser) {
+      // تحديث البيانات فقط إذا كان نفس المستخدم
+      setLocalUser(prev => {
+        if (!prev || prev.id !== user.id) return user;
+        return {
+          ...prev,
+          ...user,
+          lastSeen: pickLatestValidDate(prev.lastSeen as any, user.lastSeen as any),
+          isOnline: typeof user.isOnline !== 'undefined' ? user.isOnline : prev.isOnline,
+          currentRoom: (user as any).hasOwnProperty('currentRoom') ? (user as any).currentRoom : prev.currentRoom,
+        };
       });
-    } else {
-      setLocalUser(null);
     }
-  }, [user]);
-  const [selectedTheme, setSelectedTheme] = useState(user?.profileBackgroundColor || '');
-  const [selectedEffect, setSelectedEffect] = useState(user?.profileEffect || 'none');
+  }, [user, currentUserId]);
 
   // Helper: return the most recent valid date between two values
   const pickLatestValidDate = (
@@ -98,7 +143,7 @@ export default function ProfileModal({
   const forcedBotColor = '#2a2a2a';
   const resolvedProfileColorForCard = isMemberOrGuest
     ? forcedBotColor
-    : (localUser?.profileBackgroundColor || '');
+    : (selectedTheme || localUser?.profileBackgroundColor || '');
   const computedCardGradient =
     buildProfileBackgroundGradient(resolvedProfileColorForCard) ||
     'linear-gradient(135deg, #1a1a1a, #2d2d2d)';
@@ -114,17 +159,13 @@ export default function ProfileModal({
 
   // موسيقى البروفايل
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const [musicTitle, setMusicTitle] = useState(localUser?.profileMusicTitle || '');
+  const [musicTitle, setMusicTitle] = useState('');
 
   // قائمة الأصدقاء
   const [friends, setFriends] = useState<ChatUser[]>([]);
   const [loadingFriends, setLoadingFriends] = useState(false);
-  const [musicEnabled, setMusicEnabled] = useState(
-    localUser?.profileMusicEnabled ?? true
-  );
-  const [musicVolume, setMusicVolume] = useState<number>(
-    typeof localUser?.profileMusicVolume === 'number' ? localUser.profileMusicVolume : 70
-  );
+  const [musicEnabled, setMusicEnabled] = useState(true);
+  const [musicVolume, setMusicVolume] = useState<number>(70);
   const [audioError, setAudioError] = useState(false);
   const [audioLoading, setAudioLoading] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);

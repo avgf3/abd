@@ -553,15 +553,32 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   };
 
   const handleViewProfile = (user: ChatUser) => {
-    setProfileUser(user);
-    setShowProfile(true);
-    closeUserPopup();
-    // إغلاق نافذة الأثرياء لضمان عدم تراكبها فوق نافذة البروفايل
+    // إغلاق أي نوافذ مفتوحة فوراً
     try { setShowRichest(false); } catch {}
-    // إذا كان بروفايل المستخدم المفتوح هو المستخدم الحالي، حافظ على مزامنة بياناته الحية
-    if (chat.currentUser && user.id === chat.currentUser.id) {
-      setProfileUser(chat.currentUser);
-    }
+    closeUserPopup();
+    
+    // تنظيف البيانات القديمة أولاً
+    setProfileUser(null);
+    
+    // ثم عرض البيانات الجديدة فوراً
+    setTimeout(async () => {
+      if (chat.currentUser && user.id === chat.currentUser.id) {
+        setProfileUser(chat.currentUser);
+      } else {
+        // تحميل البيانات الكاملة من الخادم
+        try {
+          const fullUserData = await apiRequest(`/api/users/${user.id}`);
+          if (fullUserData && (fullUserData as any).id) {
+            setProfileUser(fullUserData as ChatUser);
+          } else {
+            setProfileUser(user);
+          }
+        } catch {
+          setProfileUser(user);
+        }
+      }
+      setShowProfile(true);
+    }, 0);
     try {
       // تشغيل الموسيقى عند كل فتح للبروفايل إن كانت مفعلة ولها رابط صالح
       if (
@@ -639,38 +656,26 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   { /* keep near bottom overlays */ }
 
   // معالج للروابط الشخصية
-  const handleProfileLink = (userId: number) => {
-    const user = chat.onlineUsers.find((u) => u.id === userId);
-    if (user) {
-      setProfileUser(user);
-      setShowProfile(true);
+  const handleProfileLink = async (userId: number) => {
+    // البحث عن المستخدم في القائمة أولاً
+    let user = chat.onlineUsers.find((u) => u.id === userId);
+    
+    if (!user) {
+      // محاولة جلب البيانات من السيرفر
       try {
-        if (
-          user?.profileMusicUrl &&
-          (user as any).profileMusicEnabled !== false &&
-          (chat.currentUser as any)?.globalSoundEnabled !== false
-        ) {
-          if (!profileAudioRef.current) profileAudioRef.current = new Audio();
-          const audio = profileAudioRef.current;
-          audio.src = user.profileMusicUrl;
-          const vol = typeof user.profileMusicVolume === 'number' ? user.profileMusicVolume : 70;
-          audio.volume = Math.max(0, Math.min(1, (vol || 70) / 100));
-          audio.loop = true;
-          audio.pause();
-          audio.currentTime = 0;
-          audio.play().catch(async () => {
-            try {
-              audio.muted = true;
-              await audio.play();
-              setTimeout(() => { try { audio.muted = false; } catch {} }, 120);
-            } catch {}
-          });
-        } else {
-          try { profileAudioRef.current?.pause(); } catch {}
+        const data = await apiRequest(`/api/users/${userId}`);
+        if (data && (data as any).id) {
+          user = data as ChatUser;
         }
-      } catch {}
-    } else {
-      showErrorToast('لم نتمكن من العثور على هذا المستخدم', 'مستخدم غير موجود');
+      } catch (error) {
+        showErrorToast('لم نتمكن من العثور على هذا المستخدم', 'مستخدم غير موجود');
+        return;
+      }
+    }
+    
+    // استخدام handleViewProfile الموحد
+    if (user) {
+      handleViewProfile(user);
     }
   };
 
