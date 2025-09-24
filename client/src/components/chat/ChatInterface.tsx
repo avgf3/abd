@@ -882,7 +882,6 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             title="الأثرياء"
           >
             <Crown className={isMobile ? "w-[18px] h-[18px] text-yellow-400" : "w-4 h-4 text-yellow-400"} />
-            <span className={`font-medium ${isMobile ? 'tab-text-hide' : ''}`}>الأثرياء</span>
           </Button>
 
           {/* زر إضافة غرفة جديدة للمالك */}
@@ -1229,6 +1228,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
       </main>
 
       {/* Modern Footer Navigation */}
+      {!showRichest && (
       <footer
         className={`fixed bottom-0 left-0 right-0 z-[60] modern-nav app-footer safe-area-bottom h-14 px-2 sm:px-4 flex justify-start items-center ${isMobile ? 'mobile-footer' : ''}`}
       >
@@ -1348,6 +1348,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           </Button>
         </div>
       </footer>
+      )}
 
       {/* Modals and Popups */}
       {showProfile && (

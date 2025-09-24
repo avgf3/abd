@@ -217,17 +217,15 @@ export default function RichestModal({ isOpen, onClose, currentUser, onUserClick
       <div className="absolute inset-0 modal-overlay" onClick={onClose} />
 
       <div className="relative w-[90vw] max-w-[24rem] sm:max-w-[26rem] bg-card rounded-xl overflow-hidden shadow-2xl animate-fade-in">
-        <div className="relative richest-header px-4 py-3 modern-nav flex items-center justify-between">
+        <div className="relative richest-header px-4 py-3 modern-nav flex items-center">
           <button
             onClick={onClose}
-            className="px-2 py-1 hover:bg-red-100 text-red-600 text-sm font-medium"
+            className="px-2 py-1 hover:bg-red-100 text-red-600 text-sm font-medium absolute left-3 top-1/2 -translate-y-1/2"
             aria-label="إغلاق"
             title="إغلاق"
           >
             ✖️
           </button>
-          <h2 className="text-white font-bold text-lg flex-1 text-center">الأثرياء</h2>
-          <div className="w-8"></div>
         </div>
 
         <div className="max-h-[70vh] overflow-y-auto bg-background">

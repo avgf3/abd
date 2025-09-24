@@ -34,7 +34,7 @@ export default function SettingsMenu({
   };
 
   return (
-    <Card className="fixed top-20 right-4 z-50 shadow-2xl animate-fade-in w-56 bg-card border-accent">
+    <Card className="fixed top-20 right-4 z-50 shadow-2xl animate-fade-in w-56 settings-menu-panel border-accent">
       <CardContent className="p-0">
         {currentUser && (
           <div className="p-3 border-b border-border" style={getUserListItemStyles(currentUser)}>
