@@ -1,5 +1,5 @@
 import { X } from 'lucide-react';
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -60,8 +60,8 @@ export default function ProfileModal({
   const [selectedTheme, setSelectedTheme] = useState('');
   const [selectedEffect, setSelectedEffect] = useState('none');
   
-  // تحديث فوري وقوي عند تغيير المستخدم
-  useEffect(() => {
+  // تحديث فوري وقبل الرسم عند تغيير المستخدم لمنع وميض بيانات المستخدم السابق
+  useLayoutEffect(() => {
     // إذا تغير المستخدم، نظف كل شيء فوراً
     if (currentUserId !== prevUserIdRef.current) {
       prevUserIdRef.current = currentUserId;
