@@ -59,8 +59,12 @@ function scheduleUserListUpdate(roomId: string): void {
 const GENERAL_ROOM = 'general';
 // نافذة استئناف الجلسة بدون رسائل انضمام جديدة
 const RESUME_TTL_MS = 60 * 60 * 1000; // 1 ساعة
+// مهلة صامتة قصيرة قبل بث حالة الانقطاع لتفادي الوميض عند إعادة الاتصال سريعاً
+const SILENT_REJOIN_GRACE_MS = 15_000; // 15 ثانية
 // تخزين نافذة الاستئناف لكل مستخدم بعد انقطاع آخر Socket له
 const resumeWindow = new Map<number, { until: number; roomId: string | null }>();
+// مؤقتات بث حالة الانقطاع المؤجلة لكل مستخدم (تلغى إذا عاد خلال المهلة)
+const offlineBroadcastTimers = new Map<number, NodeJS.Timeout>();
 
 // Track connected users and their sockets/rooms with improved synchronization
 export const connectedUsers = new Map<
@@ -551,6 +555,15 @@ async function joinRoom(
 
   // ✅ استخدام التحديث المجمع بدلاً من التحديث الفوري
   scheduleUserListUpdate(roomId);
+
+  // إلغاء أي مؤقت لبث الانقطاع إذا عاد المستخدم ضمن مهلة الصمت
+  try {
+    const pending = offlineBroadcastTimers.get(userId);
+    if (pending) {
+      clearTimeout(pending);
+      offlineBroadcastTimers.delete(userId);
+    }
+  } catch {}
 
   // إرسال التأكيد للمستخدم المنضم فقط
   const users = await buildOnlineUsersForRoom(roomId);
@@ -1303,45 +1316,58 @@ export function setupRealtime(httpServer: HttpServer): IOServer<ClientToServerEv
                 roomId: socket.currentRoom || null,
               });
             } catch {}
-            try {
-              // تحديث آخر تواجد في قاعدة البيانات قبل إزالة المستخدم
-              await storage.setUserOnlineStatus(userId, false);
-              console.log(`📝 تم تحديث آخر تواجد للمستخدم ${userId} في قاعدة البيانات`);
-            } catch (dbError) {
-              console.error(`❌ فشل تحديث آخر تواجد للمستخدم ${userId}:`, dbError);
-            }
-            
-            // إزالة المستخدم من الذاكرة المحلية
-            connectedUsers.delete(userId);
-            console.log(`🗑️ تم إزالة المستخدم ${userId} من الذاكرة المحلية`);
-            
-            // إشعار جميع الغرف بأن المستخدم انقطع
+            // بدلاً من البث الفوري للانقطاع، انتظر مهلة صامتة قصيرة، ثم أبث إذا لم يعد
             const lastRoom = socket.currentRoom;
-            if (lastRoom) {
-              try {
-                const users = await buildOnlineUsersForRoom(lastRoom);
-                io.to(`room_${lastRoom}`).emit('message', {
-                  type: 'onlineUsers',
-                  users,
-                  roomId: lastRoom,
-                  source: 'disconnect',
-                });
-                
-                // بث تحديث آخر تواجد للمستخدم المنفصل للواجهة فوراً
-                const dbUser = await storage.getUser(userId);
-                const updatedUser = { 
-                  ...(entry.user || {}), 
-                  lastSeen: dbUser?.lastSeen || new Date(), 
-                  currentRoom: dbUser?.currentRoom || null 
-                } as any;
-                io.to(`room_${lastRoom}`).emit('message', { type: 'userUpdated', user: updatedUser });
-                io.to(userId.toString()).emit('message', { type: 'userUpdated', user: updatedUser });
-                
-                console.log(`📡 تم إشعار الغرفة ${lastRoom} بانقطاع المستخدم ${userId}`);
-              } catch (emitError) {
-                console.error(`❌ فشل إشعار الغرفة ${lastRoom}:`, emitError);
+            try {
+              const pending = offlineBroadcastTimers.get(userId);
+              if (pending) {
+                clearTimeout(pending);
               }
-            }
+            } catch {}
+            const timer = setTimeout(async () => {
+              try {
+                // إذا غاب عن جميع الـ sockets حتى انتهاء المهلة، أكمل إجراءات الانقطاع
+                const stillGone = !connectedUsers.has(userId);
+                if (!stillGone) return; // عاد عبر Socket آخر
+
+                try {
+                  await storage.setUserOnlineStatus(userId, false);
+                  console.log(`📝 تم تحديث آخر تواجد للمستخدم ${userId} في قاعدة البيانات`);
+                } catch (dbError) {
+                  console.error(`❌ فشل تحديث آخر تواجد للمستخدم ${userId}:`, dbError);
+                }
+
+                connectedUsers.delete(userId);
+                console.log(`🗑️ تم إزالة المستخدم ${userId} من الذاكرة المحلية`);
+
+                if (lastRoom) {
+                  try {
+                    const users = await buildOnlineUsersForRoom(lastRoom);
+                    io.to(`room_${lastRoom}`).emit('message', {
+                      type: 'onlineUsers',
+                      users,
+                      roomId: lastRoom,
+                      source: 'disconnect',
+                    });
+
+                    const dbUser = await storage.getUser(userId);
+                    const updatedUser = { 
+                      ...(entry.user || {}), 
+                      lastSeen: dbUser?.lastSeen || new Date(), 
+                      currentRoom: dbUser?.currentRoom || null 
+                    } as any;
+                    io.to(`room_${lastRoom}`).emit('message', { type: 'userUpdated', user: updatedUser });
+                    io.to(userId.toString()).emit('message', { type: 'userUpdated', user: updatedUser });
+                    console.log(`📡 تم إشعار الغرفة ${lastRoom} بانقطاع المستخدم ${userId}`);
+                  } catch (emitError) {
+                    console.error(`❌ فشل إشعار الغرفة ${lastRoom}:`, emitError);
+                  }
+                }
+              } finally {
+                try { offlineBroadcastTimers.delete(userId); } catch {}
+              }
+            }, SILENT_REJOIN_GRACE_MS);
+            offlineBroadcastTimers.set(userId, timer);
           } else {
             // المستخدم لا يزال متصلاً عبر sockets أخرى
             console.log(`👤 المستخدم ${userId} لا يزال متصلاً عبر ${entry.sockets.size} socket(s)`);
