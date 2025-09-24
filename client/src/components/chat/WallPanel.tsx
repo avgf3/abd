@@ -534,17 +534,6 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
                     canDelete={canDeletePost}
                     onUserClick={handleUserClick}
                   />
-                  {!isAtBottomWall && (
-                    <div className="absolute bottom-4 right-4 z-10">
-                      <Button
-                        size="sm"
-                        onClick={() => scrollWallToBottom('smooth')}
-                        className="px-3 py-1.5 rounded-full text-xs bg-primary text-primary-foreground shadow"
-                      >
-                        الانتقال لأسفل
-                      </Button>
-                    </div>
-                  )}
                 </div>
               </TabsContent>
 
@@ -564,17 +553,6 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
                     canDelete={canDeletePost}
                     onUserClick={handleUserClick}
                   />
-                  {!isAtBottomWall && (
-                    <div className="absolute bottom-4 right-4 z-10">
-                      <Button
-                        size="sm"
-                        onClick={() => scrollWallToBottom('smooth')}
-                        className="px-3 py-1.5 rounded-full text-xs bg-primary text-primary-foreground shadow"
-                      >
-                        الانتقال لأسفل
-                      </Button>
-                    </div>
-                  )}
                 </div>
               </TabsContent>
             </Tabs>
