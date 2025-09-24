@@ -366,6 +366,15 @@
   -webkit-backdrop-filter: blur(12px) saturate(150%);
 }
 
+/* تخصيصات ثيم توتي بارد - بدون المساس بباقي الثيمات */
+[data-theme="berryCool"] .wall-post-card {
+  background: #000000 !important; /* خلفية بطاقة المنشور سوداء */
+}
+
+[data-theme="berryCool"] .settings-card-solid {
+  background: #000000 !important; /* قائمة الإعدادات سوداء صلبة */
+}
+
 .user-rank {
   padding: 4px 12px;
   border-radius: 20px;

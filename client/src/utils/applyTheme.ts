@@ -149,6 +149,8 @@ export function applyThemeById(themeId: string, persist: boolean = false) {
 
   const theme = themes[themeId] || themes.default;
   const root = document.documentElement;
+  // ضع معرف الثيم على عنصر الجذر لاستخدامه في تخصيصات شرطية
+  try { root.setAttribute('data-theme', themeId); } catch {}
   const finalCssVars: Record<string, string> = { ...theme.cssVars };
   // Ensure solid variables exist for Tailwind mappings
   if (finalCssVars['--background'] && !finalCssVars['--background-solid']) {

@@ -365,10 +365,10 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
 
   return (
     <div
-      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-6"
+      className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-6"
       dir="rtl"
     >
-      <div className="bg-background/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-border/50 w-full sm:w-[95vw] h-[92dvh] sm:h-[92vh] flex flex-col overflow-hidden min-h-0 max-w-[1200px]">
+      <div className="bg-background/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-border/50 w-full sm:w-[96vw] h-[94dvh] sm:h-[94vh] flex flex-col overflow-hidden min-h-0 max-w-[1400px]">
         {/* رأس النافذة المحسن */}
         <div className="flex items-center justify-between p-6 border-b border-border/50 bg-gradient-to-l from-primary/5 to-transparent">
           <div className="flex items-center gap-3">
@@ -535,17 +535,7 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
                     canDelete={canDeletePost}
                     onUserClick={handleUserClick}
                   />
-                  {!isAtBottomWall && (
-                    <div className="absolute bottom-4 right-4 z-10">
-                      <Button
-                        size="sm"
-                        onClick={() => scrollWallToBottom('smooth')}
-                        className="px-3 py-1.5 rounded-full text-xs bg-primary text-primary-foreground shadow"
-                      >
-                        الانتقال لأسفل
-                      </Button>
-                    </div>
-                  )}
+                  {/* إزالة زر التنقل السفلي حسب الطلب */}
                 </div>
               </TabsContent>
 
@@ -565,17 +555,7 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
                     canDelete={canDeletePost}
                     onUserClick={handleUserClick}
                   />
-                  {!isAtBottomWall && (
-                    <div className="absolute bottom-4 right-4 z-10">
-                      <Button
-                        size="sm"
-                        onClick={() => scrollWallToBottom('smooth')}
-                        className="px-3 py-1.5 rounded-full text-xs bg-primary text-primary-foreground shadow"
-                      >
-                        الانتقال لأسفل
-                      </Button>
-                    </div>
-                  )}
+                  {/* إزالة زر التنقل السفلي حسب الطلب */}
                 </div>
               </TabsContent>
             </Tabs>

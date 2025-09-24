@@ -882,7 +882,6 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             title="الأثرياء"
           >
             <Crown className={isMobile ? "w-[18px] h-[18px] text-yellow-400" : "w-4 h-4 text-yellow-400"} />
-            <span className={`font-medium ${isMobile ? 'tab-text-hide' : ''}`}>الأثرياء</span>
           </Button>
 
           {/* زر إضافة غرفة جديدة للمالك */}

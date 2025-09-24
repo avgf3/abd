@@ -1029,20 +1029,7 @@ export default function UnifiedSidebar({
                 )}
               </TabsContent>
 
-              {!isAtBottomSidebarWall && (
-                <div className="absolute bottom-4 right-4 z-10">
-                  <Button
-                    size="sm"
-                    onClick={() => {
-                      const el = wallsScrollRef.current;
-                      if (el) el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
-                    }}
-                    className="px-3 py-1.5 rounded-full text-xs bg-primary text-primary-foreground shadow"
-                  >
-                    الانتقال لأسفل
-                  </Button>
-                </div>
-              )}
+              {/* إزالة زر التنقل السفلي حسب الطلب */}
             </div>
           </Tabs>
         </div>

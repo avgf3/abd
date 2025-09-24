@@ -216,7 +216,7 @@ export default function RichestModal({ isOpen, onClose, currentUser, onUserClick
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 modal-overlay" onClick={onClose} />
 
-      <div className="relative w-[90vw] max-w-[24rem] sm:max-w-[26rem] bg-card rounded-xl overflow-hidden shadow-2xl animate-fade-in">
+      <div className="relative w-[92vw] max-w-[28rem] sm:max-w-[32rem] bg-card rounded-xl overflow-hidden shadow-2xl animate-fade-in">
         <div className="relative richest-header px-4 py-3 modern-nav">
           <button
             onClick={onClose}

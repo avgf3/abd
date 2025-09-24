@@ -62,7 +62,7 @@ export default function WallPostList({
       {posts.map((post) => (
         <Card
           key={post.id}
-          className="hover:shadow-lg transition-all duration-300 border-0 bg-background/60 backdrop-blur-sm group"
+          className="hover:shadow-lg transition-all duration-300 border-0 bg-background/60 backdrop-blur-sm group wall-post-card"
         >
           <CardHeader className="pb-4">
             <div className="flex items-center justify-between">
@@ -139,7 +139,7 @@ export default function WallPostList({
                 <img
                   src={post.imageUrl}
                   alt={`صورة منشور من ${post.username}`}
-                  className="w-full h-auto object-contain max-h-[520px] cursor-pointer"
+                  className="w-full h-auto object-contain max-h-[600px] cursor-pointer"
                   onClick={() => setImageLightbox({ open: true, src: post.imageUrl! })}
                 />
               </div>
