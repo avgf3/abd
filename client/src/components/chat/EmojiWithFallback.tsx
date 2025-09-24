@@ -39,8 +39,8 @@ export default function EmojiWithFallback({
   return (
     <>
       {isLoading && (
-        <span className={`${className} inline-block animate-pulse`}>
-          ⏳
+        <span className={`${className} inline-block`}>
+          <span className="inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin align-middle" />
         </span>
       )}
       <img

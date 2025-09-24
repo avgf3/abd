@@ -3357,7 +3357,7 @@ export default function ProfileModal({
                               }}
                               disabled={isLoading}
                             >
-                              {isLoading ? '⏳' : '🗑️'} حذف
+                              {isLoading ? 'جاري التحميل…' : '🗑️'} حذف
                             </button>
                           </div>
                         ) : (
@@ -3784,7 +3784,7 @@ export default function ProfileModal({
                         transition: 'all 0.3s ease',
                       }}
                     >
-                      {sendingPoints ? '⏳' : ''} إرسال
+                      {sendingPoints ? 'جاري الإرسال…' : ''} إرسال
                     </button>
                   </div>
 

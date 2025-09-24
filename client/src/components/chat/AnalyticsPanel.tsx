@@ -27,7 +27,7 @@ export default function AnalyticsPanel({ isOpen, onClose, currentUser }: Analyti
           <h2 className="text-2xl font-bold text-white">📊 تحليلات الشات</h2>
           <div className="flex gap-2">
             <Button onClick={refreshAnalytics} disabled={isLoading} className="glass-effect">
-              {isLoading ? '⏳' : '🔄'} تحديث
+              {isLoading ? 'جاري التحميل…' : '🔄'} تحديث
             </Button>
             <Button onClick={onClose} variant="ghost" className="text-white">
               ✕
