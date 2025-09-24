@@ -1,4 +1,5 @@
 import React from 'react';
+import { Spinner } from '@/components/ui/loading';
 import { Trash2, Globe } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -34,7 +35,7 @@ export default function WallPostList({
   if (loading) {
     return (
       <div className="text-center py-12">
-        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+        <div className="flex justify-center mb-4"><Spinner size="md" color="text-primary" /></div>
         <p className="text-muted-foreground">جاري تحميل المنشورات...</p>
       </div>
     );

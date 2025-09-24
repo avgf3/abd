@@ -26,6 +26,7 @@ import { getSocket, saveSession } from '@/lib/socket';
 import type { WallPost, CreateWallPostData, ChatUser } from '@/types/chat';
 import { getImageSrc } from '@/utils/imageUtils';
 import UserPopup from '@/components/chat/UserPopup';
+import { Spinner, ButtonLoader } from '@/components/ui/loading';
 
 interface WallPanelProps {
   isOpen: boolean;
@@ -503,7 +504,7 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
                       >
                         {submitting ? (
                           <div className="flex items-center gap-2">
-                            <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                            <ButtonLoader size="sm" />
                             جاري النشر...
                           </div>
                         ) : (

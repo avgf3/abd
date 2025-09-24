@@ -132,7 +132,7 @@ export default function SecurityPanel({ isOpen, onClose, currentUser }: Security
           <h2 className="text-2xl font-bold text-white">🛡️ لوحة الأمان</h2>
           <div className="flex gap-2">
             <Button onClick={loadSecurityReport} disabled={isLoading} className="glass-effect">
-              {isLoading ? '⏳' : '🔄'} تحديث
+              {isLoading ? 'جاري التحميل…' : '🔄'} تحديث
             </Button>
             <Button onClick={onClose} variant="ghost" className="text-white">
               ✕
@@ -244,7 +244,7 @@ export default function SecurityPanel({ isOpen, onClose, currentUser }: Security
                 </div>
               ) : (
                 <div className="text-center text-gray-400">
-                  {isLoading ? '⏳ جاري التحميل...' : '❌ لا توجد بيانات'}
+                  {isLoading ? 'جاري التحميل...' : '❌ لا توجد بيانات'}
                 </div>
               )}
             </div>

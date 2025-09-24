@@ -6,6 +6,7 @@ import { useToast } from '@/hooks/use-toast';
 import { api } from '@/lib/queryClient';
 import { validateFile, formatFileSize, getUploadTimeout } from '@/lib/uploadConfig';
 import type { ChatUser } from '@/types/chat';
+import { ButtonLoader } from '@/components/ui/loading';
 
 interface ProfileImageUploadProps {
   currentUser: ChatUser | null;
@@ -212,7 +213,7 @@ export default function ProfileImageUpload({
           variant="outline"
         >
           {uploading ? (
-            <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary border-t-transparent"></div>
+            <ButtonLoader size="sm" />
           ) : (
             <Upload className="w-4 h-4" />
           )}
