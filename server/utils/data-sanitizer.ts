@@ -144,6 +144,12 @@ export function sanitizeUserData(user: any): any {
       typeof user.profileMusicVolume === 'number'
         ? Math.max(0, Math.min(100, user.profileMusicVolume))
         : 70,
+    // توحيد الحقول المفقودة لضمان عدم ظهور "غير محدد" دون داع
+    status: typeof user.status === 'string' ? user.status : '',
+    relation: typeof user.relation === 'string' ? user.relation : undefined,
+    age: typeof user.age === 'number' && Number.isFinite(user.age) ? user.age : undefined,
+    createdAt: user.createdAt || user.joinDate || undefined,
+    joinDate: user.joinDate || user.createdAt || undefined,
   };
 }
 

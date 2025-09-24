@@ -3632,6 +3632,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (!payload.profileImage && typeof img === 'string' && img.length > 0) {
             payload.profileImage = img; // يمكن أن تكون base64 أو مسار محلي/خارجي
           }
+          // السماح بإرجاع صورة الغلاف base64 أيضاً في حالة الاستعلام الفردي
+          const banner = (sanitized as any)?.profileBanner;
+          if (!payload.profileBanner && typeof banner === 'string' && banner.length > 0) {
+            payload.profileBanner = banner; // يمكن أن تكون base64 أو مسار محلي/خارجي
+          }
         } catch {}
         res.json(payload);
       }
@@ -4520,6 +4525,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       levelProgress: sanitized.levelProgress,
       gender: sanitized.gender,
       country: sanitized.country,
+      // معلومات وحقول عامة إضافية مطلوبة في واجهة البروفايل
+      status: sanitized.status,
+      age: sanitized.age,
+      relation: sanitized.relation,
+      createdAt: sanitized.createdAt,
+      joinDate: (sanitized as any)?.joinDate,
+      bio: (sanitized as any)?.bio,
+      avatarHash: (sanitized as any)?.avatarHash,
       dmPrivacy: sanitized.dmPrivacy,
       isMuted: sanitized.isMuted,
       // التفضيلات العامة

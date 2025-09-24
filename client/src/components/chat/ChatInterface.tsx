@@ -561,6 +561,55 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
     setProfileUser(null);
     
     // ثم عرض البيانات الجديدة فوراً
+    const startProfileAudioForUser = (u?: ChatUser | null) => {
+      try {
+        if (
+          u?.profileMusicUrl &&
+          (u as any).profileMusicEnabled !== false &&
+          (chat.currentUser as any)?.globalSoundEnabled !== false
+        ) {
+          if (!profileAudioRef.current) {
+            profileAudioRef.current = new Audio();
+          }
+          const audio = profileAudioRef.current;
+          audio.src = u.profileMusicUrl;
+          const vol = typeof u.profileMusicVolume === 'number' ? u.profileMusicVolume : 70;
+          audio.volume = Math.max(0, Math.min(1, (vol || 70) / 100));
+          audio.loop = true;
+          // استئناف التشغيل بشكل موثوق
+          audio.pause();
+          audio.currentTime = 0;
+          const tryPlay = async (mutedFirst = true) => {
+            try {
+              audio.muted = false;
+              await audio.play();
+            } catch (e) {
+              if (mutedFirst) {
+                try {
+                  audio.muted = true;
+                  await audio.play();
+                  setTimeout(() => {
+                    try { audio.muted = false; } catch {}
+                  }, 120);
+                } catch {
+                  const onFirstGesture = async () => {
+                    try { await audio.play(); } catch {}
+                    window.removeEventListener('click', onFirstGesture);
+                    window.removeEventListener('touchstart', onFirstGesture);
+                  };
+                  window.addEventListener('click', onFirstGesture, { once: true });
+                  window.addEventListener('touchstart', onFirstGesture, { once: true });
+                }
+              }
+            }
+          };
+          tryPlay(true);
+        } else {
+          try { profileAudioRef.current?.pause(); } catch {}
+        }
+      } catch {}
+    };
+
     setTimeout(async () => {
       if (chat.currentUser && user.id === chat.currentUser.id) {
         setProfileUser(chat.currentUser);
@@ -571,67 +620,24 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           if (fullUserData && (fullUserData as any).id) {
             setCachedUser(fullUserData as ChatUser);
             setProfileUser(fullUserData as ChatUser);
+            // إعادة محاولة تشغيل موسيقى البروفايل بعد توفر البيانات الكاملة
+            startProfileAudioForUser(fullUserData as ChatUser);
           } else {
             const merged = getCachedUserWithMerge(user.id, user as Partial<ChatUser>);
             setProfileUser(merged);
+            startProfileAudioForUser(merged);
           }
         } catch {
           const merged = getCachedUserWithMerge(user.id, user as Partial<ChatUser>);
           setProfileUser(merged);
+          startProfileAudioForUser(merged);
         }
       }
       setShowProfile(true);
     }, 0);
     try {
-      // تشغيل الموسيقى عند كل فتح للبروفايل إن كانت مفعلة ولها رابط صالح
-      if (
-        user?.profileMusicUrl &&
-        (user as any).profileMusicEnabled !== false &&
-        (chat.currentUser as any)?.globalSoundEnabled !== false
-      ) {
-        if (!profileAudioRef.current) {
-          profileAudioRef.current = new Audio();
-        }
-        const audio = profileAudioRef.current;
-        audio.src = user.profileMusicUrl;
-        const vol = typeof user.profileMusicVolume === 'number' ? user.profileMusicVolume : 70;
-        audio.volume = Math.max(0, Math.min(1, (vol || 70) / 100));
-        audio.loop = true;
-        // استئناف التشغيل في كل مرة بشكل موثوق
-        audio.pause();
-        audio.currentTime = 0;
-        const tryPlay = async (mutedFirst = true) => {
-          try {
-            audio.muted = false;
-            await audio.play();
-          } catch (e) {
-            if (mutedFirst) {
-              try {
-                audio.muted = true;
-                await audio.play();
-                setTimeout(() => {
-                  try { 
-                    audio.muted = false; 
-                  } catch {}
-                }, 120);
-              } catch {
-                // ينتظر أول تفاعل للمستخدم
-                const onFirstGesture = async () => {
-                  try { await audio.play(); } catch {}
-                  window.removeEventListener('click', onFirstGesture);
-                  window.removeEventListener('touchstart', onFirstGesture);
-                };
-                window.addEventListener('click', onFirstGesture, { once: true });
-                window.addEventListener('touchstart', onFirstGesture, { once: true });
-              }
-            }
-          }
-        };
-        tryPlay(true);
-      } else {
-        // لا يوجد موسيقى: تأكد من إيقاف أي تشغيل سابق
-        try { profileAudioRef.current?.pause(); } catch {}
-      }
+      // محاولة مبدئية لتشغيل الموسيقى من بيانات المستخدم الأولية (قد تُستبدل بعد جلب البيانات الكاملة)
+      startProfileAudioForUser(user);
     } catch {}
 
     // جلب نسخة محدثة وكاملة من الخادم لتوحيد عرض البروفايل (خاصة لمستخدمي VIP ذوي البيانات المختصرة)
@@ -644,6 +650,8 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             if (data && (data as any).id) {
               setCachedUser(data as any);
               setProfileUser(data as any);
+              // تأكيد تشغيل الموسيقى بعد الجلب النهائي
+              startProfileAudioForUser(data as ChatUser);
             }
           } catch {}
         })();
