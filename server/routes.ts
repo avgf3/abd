@@ -3623,8 +3623,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const sanitized = sanitizeUserData(userWithoutPassword);
         res.json(sanitized);
       } else {
-        // للمستخدمين الآخرين، استخدم buildUserBroadcastPayload لتجنب base64
+        // للمستخدمين الآخرين: أعِد حمولة آمنة وخفيفة، ولكن لا تُسقط الصورة الشخصية إن كانت base64
+        // هذا استدعاء موجه لمستخدم واحد وليس بثاً عاماً، لذلك لا بأس بإرجاع base64 هنا
         const payload = buildUserBroadcastPayload(userWithoutPassword);
+        try {
+          const sanitized = sanitizeUserData(userWithoutPassword);
+          const img = (sanitized as any)?.profileImage;
+          if (!payload.profileImage && typeof img === 'string' && img.length > 0) {
+            payload.profileImage = img; // يمكن أن تكون base64 أو مسار محلي/خارجي
+          }
+        } catch {}
         res.json(payload);
       }
     } catch (error) {
