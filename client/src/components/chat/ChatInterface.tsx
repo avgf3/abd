@@ -1347,6 +1347,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           <>
             {profileUser && profileUser.id !== chat.currentUser?.id ? (
               <ProfileModal
+                key={`profile-${profileUser?.id || 'none'}`}
                 user={profileUser}
                 currentUser={chat.currentUser}
                 externalAudioManaged
@@ -1371,6 +1372,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
               />
             ) : (
               <ProfileModal
+                key={`profile-${chat.currentUser?.id || profileUser?.id || 'self'}`}
                 // مرّر نسخة حية دومًا لمستخدمك الحالي عند فتح بروفايلك
                 user={chat.currentUser || profileUser}
                 currentUser={chat.currentUser}
