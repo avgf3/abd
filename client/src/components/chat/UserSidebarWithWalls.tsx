@@ -599,7 +599,7 @@ export default function UnifiedSidebar({
 
       {/* Walls View - تحسين التمرير */}
       {activeView === 'walls' && (
-        <div className="flex-1 overflow-hidden flex flex-col min-h-0 bg-card">
+        <div className="flex-1 overflow-hidden flex flex-col min-h-0 bg-background">
           {/* Wall Tabs */}
           <Tabs
             value={activeTab}
@@ -769,7 +769,7 @@ export default function UnifiedSidebar({
                           <img
                             src={post.imageUrl}
                             alt="Post image"
-                            className="w-full max-h-60 object-cover rounded-lg mb-3"
+                            className="w-full max-h-60 object-contain rounded-lg mb-3 bg-muted/10"
                           />
                         )}
 
@@ -882,7 +882,7 @@ export default function UnifiedSidebar({
                           <img
                             src={post.imageUrl}
                             alt="Post image"
-                            className="w-full max-h-60 object-cover rounded-lg mb-3"
+                            className="w-full max-h-60 object-contain rounded-lg mb-3 bg-muted/10"
                           />
                         )}
 
