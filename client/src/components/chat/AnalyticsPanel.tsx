@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 
 import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/loading';
 import { useChatAnalytics } from '@/lib/chatAnalytics';
 import type { ChatUser } from '@/types/chat';
 import { formatTime } from '@/utils/timeUtils';
@@ -153,8 +154,8 @@ export default function AnalyticsPanel({ isOpen, onClose, currentUser }: Analyti
         {isLoading && (
           <div className="flex items-center justify-center h-48">
             <div className="text-center">
-              <div className="animate-spin text-4xl mb-4">⏳</div>
-              <div className="text-white">جاري تحميل التحليلات...</div>
+              <Spinner size="lg" color="text-white" />
+              <div className="text-white mt-4">جاري تحميل التحليلات...</div>
             </div>
           </div>
         )}

@@ -7,6 +7,7 @@ import type { PrivateConversation } from '../../../../shared/types';
 import ProfileImage from '@/components/chat/ProfileImage';
 import UserRoleBadge from '@/components/chat/UserRoleBadge';
 import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/loading';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
@@ -336,7 +337,7 @@ export default function MessagesPanel({
             <section>
               {isLoading ? (
                 <div className="flex justify-center py-10">
-                  <div className="animate-spin rounded-full h-6 w-6 border-2 border-gray-400 border-t-transparent"></div>
+                  <Spinner size="md" color="text-gray-400" />
                 </div>
               ) : conversations.length === 0 ? (
                 <div className="text-center py-10 text-muted-foreground">

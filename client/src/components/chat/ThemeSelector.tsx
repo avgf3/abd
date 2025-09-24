@@ -6,6 +6,7 @@ import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser } from '@/types/chat';
 import { applyThemeById } from '@/utils/applyTheme';
+import { Spinner } from '@/components/ui/loading';
 
 interface ThemeSelectorProps {
   isOpen: boolean;
@@ -349,7 +350,7 @@ export default function ThemeSelector({
               )}
               {loading && selectedTheme === theme.id && (
                 <div className="absolute inset-0 bg-black/50 rounded-xl flex items-center justify-center">
-                  <div className="animate-spin rounded-full h-6 w-6 border-2 border-white border-t-transparent"></div>
+                  <Spinner size="md" color="text-white" />
                 </div>
               )}
             </div>
