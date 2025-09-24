@@ -769,7 +769,7 @@ export default function UnifiedSidebar({
                   <div className="text-center py-8 text-gray-500">لا توجد منشورات حتى الآن</div>
                 ) : (
                   postsByTab.public.map((post) => (
-                    <Card key={post.id} className="border border-border bg-card">
+                    <Card key={post.id} className="border border-border wall-post-card">
                       <CardHeader className="pb-3">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
@@ -854,7 +854,7 @@ export default function UnifiedSidebar({
                           <img
                             src={post.imageUrl}
                             alt="Post image"
-                            className="w-full max-h-60 object-contain rounded-lg mb-3 bg-muted/10"
+                            className="w-full max-h-80 object-contain rounded-lg mb-3 bg-muted/10"
                           />
                         )}
 
@@ -902,7 +902,7 @@ export default function UnifiedSidebar({
                   <div className="text-center py-8 text-gray-500">لا توجد منشورات حتى الآن</div>
                 ) : (
                   postsByTab.friends.map((post) => (
-                    <Card key={post.id} className="border border-border bg-card">
+                    <Card key={post.id} className="border border-border wall-post-card">
                       <CardHeader className="pb-3">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
@@ -987,7 +987,7 @@ export default function UnifiedSidebar({
                           <img
                             src={post.imageUrl}
                             alt="Post image"
-                            className="w-full max-h-60 object-contain rounded-lg mb-3 bg-muted/10"
+                            className="w-full max-h-80 object-contain rounded-lg mb-3 bg-muted/10"
                           />
                         )}
 

@@ -1788,6 +1788,11 @@ li > * > div.effect-crystal {
   backface-visibility: hidden;
 }
 
+/* Settings menu panel background: theme-aware (solid black for berryCool only) */
+.settings-menu-panel {
+  background: var(--settings-menu-bg, var(--card));
+}
+
 /* ===== Richest modal top bar and badges (match image #2 style) ===== */
 .richest-header {
   height: 56px; /* thicker top bar */

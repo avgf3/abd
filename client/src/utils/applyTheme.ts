@@ -199,6 +199,8 @@ export function applyThemeById(themeId: string, persist: boolean = false) {
     finalCssVars['--wall-post-bg'] = 'rgba(0, 0, 0, 0.6)';
     // Richest modal header - pure black like private message header
     finalCssVars['--richest-header-bg'] = '#000000';
+    // Settings menu background - solid black only for berryCool
+    finalCssVars['--settings-menu-bg'] = '#000000';
     // Background RGB for fallback
     finalCssVars['--background-rgb'] = '15, 15, 20';
   } else {
