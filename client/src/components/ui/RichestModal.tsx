@@ -216,17 +216,14 @@ export default function RichestModal({ isOpen, onClose, currentUser, onUserClick
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 modal-overlay" onClick={onClose} />
 
-      <div className="relative w-[90vw] max-w-[20rem] sm:max-w-[22rem] bg-card rounded-xl overflow-hidden shadow-2xl animate-fade-in">
-        <div className="bg-primary p-3 text-primary-foreground flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-xl">👑</span>
-            <h3 className="font-bold text-lg">الأثرياء</h3>
-          </div>
+      <div className="relative w-[90vw] max-w-[24rem] sm:max-w-[26rem] bg-card rounded-xl overflow-hidden shadow-2xl animate-fade-in">
+        <div className="relative border-b border-border px-3 py-2 modern-nav">
           <button
             onClick={onClose}
-            className="text-primary-foreground/80 hover:text-primary-foreground text-xl"
+            className="absolute left-2 top-2 px-2 py-1 hover:bg-red-100 text-red-600"
+            aria-label="إغلاق"
           >
-            ✕
+            ✖️
           </button>
         </div>
 
@@ -262,27 +259,26 @@ export default function RichestModal({ isOpen, onClose, currentUser, onUserClick
               <li key={u.id} className="relative -mx-4 list-none">
                 <SimpleUserMenu targetUser={u} currentUser={currentUser || null} showModerationActions={isModerator}>
                   <div
-                    className={`flex items-center gap-2 p-2 px-4 rounded-none border-b border-border transition-colors duration-200 cursor-pointer w-full ${getUserListItemClasses(u) || 'bg-card hover:bg-accent/10'}`}
+                    className={`flex items-center gap-2 p-3 px-4 min-h-[56px] rounded-none border-b border-border transition-colors duration-200 cursor-pointer w-full ${getUserListItemClasses(u) || 'bg-card hover:bg-accent/10'}`}
                     style={getUserListItemStyles(u)}
                     onClick={(e) => onUserClick && onUserClick(e as any, u)}
                   >
+                    {/* رقم الترتيب وميدالية على يمين الصورة (RTL) */}
+                    <span
+                      className="inline-flex items-center justify-center text-[11px] min-w-[22px] h-5 px-2 rounded bg-secondary text-secondary-foreground"
+                      title={`الترتيب ${idx + 1}`}
+                    >
+                      {idx + 1}
+                    </span>
+                    {idx < 3 && (
+                      <span className="text-base" aria-label="rank-medal">
+                        {idx === 0 ? '🥇' : idx === 1 ? '🥈' : '🥉'}
+                      </span>
+                    )}
                     <ProfileImage user={u} size="small" className="" hideRoleBadgeOverlay={true} />
                     <div className="flex-1">
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2">
-                          {/* رتبة رقمية مثبتة على يمين الحاوية */}
-                          <span
-                            className="inline-flex items-center justify-center text-[11px] min-w-[22px] h-5 px-2 rounded bg-secondary text-secondary-foreground"
-                            title={`الترتيب ${idx + 1}`}
-                          >
-                            {idx + 1}
-                          </span>
-                          {/* ميدالية لأعلى 3 فقط (اختياري) */}
-                          {idx < 3 && (
-                            <span className="text-base" aria-label="rank-medal">
-                              {idx === 0 ? '🥇' : idx === 1 ? '🥈' : '🥉'}
-                            </span>
-                          )}
                           <span
                             className="text-base font-medium transition-colors duration-300"
                             style={{ color: getFinalUsernameColor(u) }}

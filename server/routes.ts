@@ -2082,7 +2082,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const limit = Math.min(50, Math.max(1, Number(req.query.limit) || 50));
       const users = await databaseService.getVipUsers(limit);
-      const safe = users.map((u) => buildUserBroadcastPayload(u));
+      const safe = users.map((u: any) => {
+        const p: any = buildUserBroadcastPayload(u);
+        // إظهار صورة البروفايل حتى لو كانت Base64 لأنها قائمة صغيرة (أقصى 50)
+        const img = u?.profileImage;
+        if (img && typeof img === 'string') {
+          const versionTag = (u as any)?.avatarHash || (u as any)?.avatarVersion;
+          if (!img.startsWith('data:') && versionTag && !String(img).includes('?v=')) {
+            p.profileImage = `${img}?v=${versionTag}`;
+          } else {
+            p.profileImage = img;
+          }
+        }
+        return p;
+      });
       res.json({ users: safe });
     } catch (error) {
       res.status(500).json({ error: 'خطأ في الخادم' });
@@ -2093,7 +2106,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/vip/candidates', protect.admin, async (req, res) => {
     try {
       const list = await databaseService.getVipCandidates(200);
-      const safe = list.map((u) => buildUserBroadcastPayload(u));
+      const safe = list.map((u: any) => {
+        const p: any = buildUserBroadcastPayload(u);
+        const img = u?.profileImage;
+        if (img && typeof img === 'string') {
+          const versionTag = (u as any)?.avatarHash || (u as any)?.avatarVersion;
+          if (!img.startsWith('data:') && versionTag && !String(img).includes('?v=')) {
+            p.profileImage = `${img}?v=${versionTag}`;
+          } else {
+            p.profileImage = img;
+          }
+        }
+        return p;
+      });
       res.json({ users: safe });
     } catch (error) {
       res.status(500).json({ error: 'خطأ في الخادم' });
@@ -2122,7 +2147,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // بث تحديث VIP للجميع
       try {
         const latest = await databaseService.getVipUsers(50);
-        const safe = latest.map((u) => buildUserBroadcastPayload(u));
+        const safe = latest.map((u: any) => {
+          const p: any = buildUserBroadcastPayload(u);
+          const img = u?.profileImage;
+          if (img && typeof img === 'string') {
+            const versionTag = (u as any)?.avatarHash || (u as any)?.avatarVersion;
+            if (!img.startsWith('data:') && versionTag && !String(img).includes('?v=')) {
+              p.profileImage = `${img}?v=${versionTag}`;
+            } else {
+              p.profileImage = img;
+            }
+          }
+          return p;
+        });
         getIO().emit('message', { type: 'vipUpdated', users: safe });
       } catch {}
 
@@ -2146,7 +2183,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // بث تحديث VIP للجميع
       try {
         const latest = await databaseService.getVipUsers(50);
-        const safe = latest.map((u) => buildUserBroadcastPayload(u));
+        const safe = latest.map((u: any) => {
+          const p: any = buildUserBroadcastPayload(u);
+          const img = u?.profileImage;
+          if (img && typeof img === 'string') {
+            const versionTag = (u as any)?.avatarHash || (u as any)?.avatarVersion;
+            if (!img.startsWith('data:') && versionTag && !String(img).includes('?v=')) {
+              p.profileImage = `${img}?v=${versionTag}`;
+            } else {
+              p.profileImage = img;
+            }
+          }
+          return p;
+        });
         getIO().emit('message', { type: 'vipUpdated', users: safe });
       } catch {}
 
