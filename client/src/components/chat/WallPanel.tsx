@@ -535,7 +535,6 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
                     canDelete={canDeletePost}
                     onUserClick={handleUserClick}
                   />
-                  {/* إزالة زر التنقل السفلي حسب الطلب */}
                 </div>
               </TabsContent>
 
@@ -555,7 +554,6 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
                     canDelete={canDeletePost}
                     onUserClick={handleUserClick}
                   />
-                  {/* إزالة زر التنقل السفلي حسب الطلب */}
                 </div>
               </TabsContent>
             </Tabs>

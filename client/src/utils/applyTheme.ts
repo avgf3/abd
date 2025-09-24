@@ -194,6 +194,23 @@ export function applyThemeById(themeId: string, persist: boolean = false) {
     finalCssVars['--tab-active-bg-start'] = 'transparent';
     finalCssVars['--tab-active-bg-end'] = 'transparent';
   }
+
+  // Special styles for berryCool theme
+  if (themeId === 'berryCool') {
+    // Wall posts background - pure black for berryCool
+    finalCssVars['--wall-post-bg'] = 'rgba(0, 0, 0, 0.6)';
+    // Richest modal header - pure black like private message header
+    finalCssVars['--richest-header-bg'] = '#000000';
+    // Background RGB for fallback
+    finalCssVars['--background-rgb'] = '15, 15, 20';
+  } else {
+    // Default wall post background
+    finalCssVars['--wall-post-bg'] = 'rgba(255, 255, 255, 0.6)';
+    // Default richest header
+    finalCssVars['--richest-header-bg'] = 'linear-gradient(90deg, #1f1235, #6c2bd9, #0ea5e9)';
+    // Default background RGB
+    finalCssVars['--background-rgb'] = '255, 255, 255';
+  }
   Object.entries(finalCssVars).forEach(([property, value]) => {
     root.style.setProperty(property, value);
   });

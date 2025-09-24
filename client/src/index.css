@@ -1800,7 +1800,7 @@ li > * > div.effect-crystal {
 /* ===== Richest modal top bar and badges (match image #2 style) ===== */
 .richest-header {
   height: 56px; /* thicker top bar */
-  background: linear-gradient(90deg, #1f1235, #6c2bd9, #0ea5e9);
+  background: var(--richest-header-bg, linear-gradient(90deg, #1f1235, #6c2bd9, #0ea5e9));
   background-size: 200% 200%;
   animation: gradient-x 10s ease infinite;
 }
@@ -1974,6 +1974,11 @@ li > * > div.effect-crystal {
 .animate-gradient-x {
   animation: gradient-x 15s ease infinite;
   background-size: 200% 200%;
+}
+
+/* Wall Post Card - Theme aware */
+.wall-post-card {
+  background: var(--wall-post-bg, rgba(var(--background-rgb, 255, 255, 255), 0.6));
 }
 
 .modern-gradient-animate {
