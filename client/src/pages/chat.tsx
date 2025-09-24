@@ -9,6 +9,7 @@ import { clearSession, getSession } from '@/lib/socket';
 import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser, ChatRoom } from '@/types/chat';
 import RoomSelectorScreen from '@/components/chat/RoomSelectorScreen';
+import { PageLoader } from '@/components/ui/loading';
 
 // Prefetch heavy modules during idle time (guarded by Save-Data)
 try {
@@ -130,14 +131,7 @@ export default function ChatPage() {
 
   return (
     <div className="min-h-[100dvh] bg-background text-foreground font-['Cairo'] overflow-hidden" dir="rtl" style={{ minHeight: '100dvh' }}>
-      <Suspense fallback={
-        <div className="min-h-[100dvh] bg-background text-foreground flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent mx-auto mb-2"></div>
-            <div>جاري التحميل...</div>
-          </div>
-        </div>
-      }>
+      <Suspense fallback={<PageLoader message="جاري التحميل..." />}>
         {isRestoring ? (
           <div className="p-6 text-center">...جاري استعادة الجلسة</div>
         ) : showWelcome ? (

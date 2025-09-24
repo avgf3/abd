@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Bot, Plus, Trash2, Edit, ToggleLeft, ToggleRight, ArrowRight, RefreshCw, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/loading';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -398,7 +399,7 @@ export default function BotsManagement({ currentUser }: BotsManagementProps) {
   if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
-        <RefreshCw className="w-8 h-8 animate-spin text-blue-500" />
+        <Spinner size="md" color="text-blue-500" />
       </div>
     );
   }

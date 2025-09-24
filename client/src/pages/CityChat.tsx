@@ -265,7 +265,7 @@ export default function CityChat() {
       <Suspense fallback={
         <div className="min-h-[100dvh] bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
           <div className="text-center p-8 bg-white rounded-xl shadow-lg">
-            <div className="text-6xl mb-4">⏳</div>
+            <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
             <h2 className="text-2xl font-bold text-gray-800 mb-2">جاري التحميل...</h2>
             <p className="text-gray-600">يرجى الانتظار قليلاً</p>
           </div>
