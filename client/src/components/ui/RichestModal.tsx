@@ -217,13 +217,14 @@ export default function RichestModal({ isOpen, onClose, currentUser, onUserClick
       <div className="absolute inset-0 modal-overlay" onClick={onClose} />
 
       <div className="relative w-[90vw] max-w-[24rem] sm:max-w-[26rem] bg-card rounded-xl overflow-hidden shadow-2xl animate-fade-in">
-        <div className="relative border-b border-border px-3 py-2 modern-nav">
+        <div className="relative richest-header px-4 py-3 modern-nav">
           <button
             onClick={onClose}
-            className="absolute left-2 top-2 px-2 py-1 hover:bg-red-100 text-red-600"
+            className="richest-close-btn absolute left-3 top-1/2 -translate-y-1/2 inline-flex items-center justify-center"
             aria-label="إغلاق"
+            title="إغلاق"
           >
-            ✖️
+            ×
           </button>
         </div>
 
@@ -263,16 +264,17 @@ export default function RichestModal({ isOpen, onClose, currentUser, onUserClick
                     style={getUserListItemStyles(u)}
                     onClick={(e) => onUserClick && onUserClick(e as any, u)}
                   >
-                    {/* رقم الترتيب وميدالية على يمين الصورة (RTL) */}
-                    <span
-                      className="inline-flex items-center justify-center text-[11px] min-w-[22px] h-5 px-2 rounded bg-secondary text-secondary-foreground"
-                      title={`الترتيب ${idx + 1}`}
-                    >
-                      {idx + 1}
-                    </span>
-                    {idx < 3 && (
-                      <span className="text-base" aria-label="rank-medal">
+                    {/* حذف الأرقام للثلاثة الأوائل وإظهار الميدالية فقط */}
+                    {idx < 3 ? (
+                      <span className={`rank-medal ${idx === 0 ? 'rank-first' : idx === 1 ? 'rank-second' : 'rank-third'}`} aria-label="rank-medal">
                         {idx === 0 ? '🥇' : idx === 1 ? '🥈' : '🥉'}
+                      </span>
+                    ) : (
+                      <span
+                        className="rank-badge"
+                        title={`الترتيب ${idx + 1}`}
+                      >
+                        {idx + 1}
                       </span>
                     )}
                     <ProfileImage user={u} size="small" className="" hideRoleBadgeOverlay={true} />
