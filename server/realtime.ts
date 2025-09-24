@@ -60,7 +60,7 @@ const GENERAL_ROOM = 'general';
 // نافذة استئناف الجلسة بدون رسائل انضمام جديدة
 const RESUME_TTL_MS = 60 * 60 * 1000; // 1 ساعة
 // مهلة صامتة قصيرة قبل بث حالة الانقطاع لتفادي الوميض عند إعادة الاتصال سريعاً
-const SILENT_REJOIN_GRACE_MS = 15_000; // 15 ثانية
+const SILENT_REJOIN_GRACE_MS = 0; // بدون مهلة: إعادة الاتصال صامتة بالكامل
 // تخزين نافذة الاستئناف لكل مستخدم بعد انقطاع آخر Socket له
 const resumeWindow = new Map<number, { until: number; roomId: string | null }>();
 // مؤقتات بث حالة الانقطاع المؤجلة لكل مستخدم (تلغى إذا عاد خلال المهلة)
