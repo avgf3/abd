@@ -90,6 +90,71 @@ export default function UnifiedSidebar({
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
 
+  // YouTube helpers (same logic as messages)
+  const isAllowedYouTubeHost = useCallback((host: string) => {
+    const h = host.toLowerCase();
+    return (
+      h === 'youtube.com' ||
+      h === 'www.youtube.com' ||
+      h === 'm.youtube.com' ||
+      h === 'youtu.be' ||
+      h === 'www.youtu.be' ||
+      h === 'youtube-nocookie.com' ||
+      h === 'www.youtube-nocookie.com'
+    );
+  }, []);
+
+  const extractYouTubeId = useCallback(
+    (rawUrl: string): string | null => {
+      try {
+        let u = rawUrl.trim();
+        if (!/^https?:\/\//i.test(u)) u = 'https://' + u;
+        const url = new URL(u);
+        if (!isAllowedYouTubeHost(url.hostname)) return null;
+        const v = url.searchParams.get('v');
+        if (v && /^[a-zA-Z0-9_-]{6,15}$/.test(v)) return v;
+        if (/^\/(shorts|embed)\//.test(url.pathname)) {
+          const id = url.pathname.split('/')[2] || '';
+          return /^[a-zA-Z0-9_-]{6,15}$/.test(id) ? id : null;
+        }
+        if (url.hostname.toLowerCase().includes('youtu.be')) {
+          const id = url.pathname.replace(/^\//, '');
+          return /^[a-zA-Z0-9_-]{6,15}$/.test(id) ? id : null;
+        }
+        const parts = url.pathname.split('/').filter(Boolean);
+        if (parts.length > 0) {
+          const last = parts[parts.length - 1];
+          if (/^[a-zA-Z0-9_-]{6,15}$/.test(last)) return last;
+        }
+        return null;
+      } catch {
+        return null;
+      }
+    },
+    [isAllowedYouTubeHost]
+  );
+
+  const parseYouTubeFromText = useCallback(
+    (text: string): { cleaned: string; ids: string[] } => {
+      if (!text) return { cleaned: '', ids: [] };
+      const urlRegex = /(https?:\/\/[^\s]+|www\.[^\s]+)/gi;
+      const matches = text.match(urlRegex) || [];
+      const ids: string[] = [];
+      for (const m of matches) {
+        const id = extractYouTubeId(m);
+        if (id) ids.push(id);
+      }
+      let cleaned = text;
+      for (const m of matches) {
+        if (extractYouTubeId(m)) {
+          cleaned = cleaned.split(m).join('').replace(/\s{2,}/g, ' ').trim();
+        }
+      }
+      return { cleaned, ids };
+    },
+    [extractYouTubeId]
+  );
+
   // دالة ترتيب المستخدمين حسب الرتب
   const getRankOrder = (userType: string): number => {
     switch (userType) {
@@ -762,7 +827,27 @@ export default function UnifiedSidebar({
 
                       <CardContent className="pt-0">
                         {post.content && (
-                          <p className="text-sm mb-3 whitespace-pre-wrap">{post.content}</p>
+                          (() => {
+                            const { cleaned, ids } = parseYouTubeFromText(post.content);
+                            return (
+                              <>
+                                {cleaned && (
+                                  <p className="text-sm mb-3 whitespace-pre-wrap">{cleaned}</p>
+                                )}
+                                {ids.length > 0 && (
+                                  <div className="relative w-full mb-3" style={{ paddingTop: '56.25%' }}>
+                                    <iframe
+                                      src={`https://www.youtube.com/embed/${ids[0]}`}
+                                      className="absolute inset-0 w-full h-full rounded-lg"
+                                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                      allowFullScreen
+                                      title="يوتيوب"
+                                    />
+                                  </div>
+                                )}
+                              </>
+                            );
+                          })()
                         )}
 
                         {post.imageUrl && (
@@ -875,7 +960,27 @@ export default function UnifiedSidebar({
 
                       <CardContent className="pt-0">
                         {post.content && (
-                          <p className="text-sm mb-3 whitespace-pre-wrap">{post.content}</p>
+                          (() => {
+                            const { cleaned, ids } = parseYouTubeFromText(post.content);
+                            return (
+                              <>
+                                {cleaned && (
+                                  <p className="text-sm mb-3 whitespace-pre-wrap">{cleaned}</p>
+                                )}
+                                {ids.length > 0 && (
+                                  <div className="relative w-full mb-3" style={{ paddingTop: '56.25%' }}>
+                                    <iframe
+                                      src={`https://www.youtube.com/embed/${ids[0]}`}
+                                      className="absolute inset-0 w-full h-full rounded-lg"
+                                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                      allowFullScreen
+                                      title="يوتيوب"
+                                    />
+                                  </div>
+                                )}
+                              </>
+                            );
+                          })()
                         )}
 
                         {post.imageUrl && (
