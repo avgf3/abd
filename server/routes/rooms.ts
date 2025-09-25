@@ -91,6 +91,7 @@ router.get('/stats', protect.admin, async (req, res) => {
 router.get('/', async (req, res) => {
   try {
     // 🚀 تحسينات الكاش والأداء
+    // تعطيل مؤقت للتحقق بـ ETag لأن بعض العملاء لا يتعاملون مع 304 جيداً
     const version = roomService.getRoomsVersion?.() || 1;
     const etag = `"rooms-v${version}-${Date.now() / 10000 | 0}"`; // ETag يتغير كل 10 ثواني
 
@@ -98,11 +99,7 @@ router.get('/', async (req, res) => {
     res.setHeader('Cache-Control', 'public, max-age=5, s-maxage=10, stale-while-revalidate=30');
     res.setHeader('ETag', etag);
     res.setHeader('Vary', 'Accept-Encoding'); // للتعامل مع الضغط
-    
-    // التحقق من ETag للحفظ في النطاق الترددي
-    if (req.headers['if-none-match'] === etag) {
-      return res.status(304).end();
-    }
+    // ملاحظة: لا نعيد 304 حالياً لضمان استجابة JSON كاملة للواجهة
 
     const rooms = await roomService.getAllRooms();
 
