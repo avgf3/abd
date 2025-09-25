@@ -207,6 +207,8 @@ export function applyThemeById(themeId: string, persist: boolean = false) {
     finalCssVars['--background-rgb'] = '15, 15, 20';
     // Tabs list solid background for wall tabs (Public/Friends) should be pure black
     finalCssVars['--tabs-bg'] = '#000000';
+    // Friends requests cards background should be pure black on berryCool only
+    finalCssVars['--friends-requests-bg'] = '#000000';
   } else {
     // Default wall post background
     finalCssVars['--wall-post-bg'] = 'rgba(255, 255, 255, 0.6)';

@@ -455,38 +455,38 @@ export default function OwnerAdminPanel({
           </DialogHeader>
 
           <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-5 bg-gradient-to-r from-purple-100 to-blue-100 rounded-xl p-1">
+            <TabsList className="grid w-full grid-cols-5 themed-tabs-list rounded-xl p-1">
               <TabsTrigger
                 value="staff"
-                className="flex items-center gap-2 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-lg transition-all"
+                className="flex items-center gap-2 rounded-lg themed-tab data-[state=active]:themed-active data-[state=active]:shadow-lg transition-all"
               >
                 <Users className="w-4 h-4" />
                 قائمة المشرفين
               </TabsTrigger>
               <TabsTrigger
                 value="chat_lock"
-                className="flex items-center gap-2 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-lg transition-all"
+                className="flex items-center gap-2 rounded-lg themed-tab data-[state=active]:themed-active data-[state=active]:shadow-lg transition-all"
               >
                 <MessageSquareOff className="w-4 h-4" />
                 قفل الدردشة
               </TabsTrigger>
               <TabsTrigger
                 value="log"
-                className="flex items-center gap-2 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-lg transition-all"
+                className="flex items-center gap-2 rounded-lg themed-tab data-[state=active]:themed-active data-[state=active]:shadow-lg transition-all"
               >
                 <Shield className="w-4 h-4" />
                 سجل الإجراءات
               </TabsTrigger>
               <TabsTrigger
                 value="ban_tab"
-                className="flex items-center gap-2 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-lg transition-all"
+                className="flex items-center gap-2 rounded-lg themed-tab data-[state=active]:themed-active data-[state=active]:shadow-lg transition-all"
               >
                 <Ban className="w-4 h-4" />
                 تبويب الحظر
               </TabsTrigger>
               <TabsTrigger
                 value="bots"
-                className="flex items-center gap-2 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-lg transition-all"
+                className="flex items-center gap-2 rounded-lg themed-tab data-[state=active]:themed-active data-[state=active]:shadow-lg transition-all"
               >
                 <Bot className="w-4 h-4" />
                 نظام البوتات

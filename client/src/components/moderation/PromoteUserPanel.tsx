@@ -192,7 +192,7 @@ export default function PromoteUserPanel({
   if (currentUser.userType !== 'owner') {
     return (
       <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
-        <Card className="w-96 bg-gray-900/95 border-gray-700">
+        <Card className="w-96 bg-popover border-border">
           <CardHeader>
             <CardTitle className="text-center text-red-400">غير مصرح</CardTitle>
           </CardHeader>
@@ -220,8 +220,8 @@ export default function PromoteUserPanel({
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-2xl max-h-[85vh] bg-gray-900/95 border-gray-700 flex flex-col">
-        <CardHeader className="border-b border-gray-700">
+      <Card className="w-full max-w-2xl max-h-[85vh] bg-popover border-border flex flex-col">
+        <CardHeader className="border-b border-border">
           <CardTitle className="text-xl text-gray-100 flex items-center gap-2">
             <UserCheck className="w-6 h-6 text-blue-400" />
             ترقية المستخدمين
@@ -233,7 +233,7 @@ export default function PromoteUserPanel({
             <div>
               <label className="text-sm font-medium text-gray-200 mb-2 block">اختر المستخدم</label>
               <Select value={selectedUser} onValueChange={setSelectedUser}>
-                <SelectTrigger className="bg-gray-800 border-gray-600">
+                <SelectTrigger className="bg-background border-input">
                   <SelectValue placeholder="اختر مستخدم للترقية" />
                 </SelectTrigger>
                 <SelectContent>
@@ -254,7 +254,7 @@ export default function PromoteUserPanel({
                 اختر الرتبة الجديدة
               </label>
               <Select value={selectedRole} onValueChange={setSelectedRole}>
-                <SelectTrigger className="bg-gray-800 border-gray-600">
+                <SelectTrigger className="bg-background border-input">
                   <SelectValue placeholder="اختر الرتبة" />
                 </SelectTrigger>
                 <SelectContent>
@@ -271,7 +271,7 @@ export default function PromoteUserPanel({
             </div>
 
             {selectedRole && (
-              <div className="p-3 bg-blue-900/30 border border-blue-700 rounded-lg">
+              <div className="p-3 bg-accent/20 border border-accent rounded-lg">
                 <h4 className="font-medium text-blue-200 mb-1">
                   صلاحيات {roleOptions.find((r) => r.value === selectedRole)?.label}:
                 </h4>
@@ -321,7 +321,7 @@ export default function PromoteUserPanel({
                   اختر المستخدم
                 </label>
                 <Select value={selectedLevelUser} onValueChange={setSelectedLevelUser}>
-                  <SelectTrigger className="bg-gray-800 border-gray-600">
+                  <SelectTrigger className="bg-background border-input">
                     <SelectValue placeholder="اختر مستخدم لتعديل المستوى" />
                   </SelectTrigger>
                   <SelectContent>
@@ -348,7 +348,7 @@ export default function PromoteUserPanel({
                   max={40}
                   value={levelValue}
                   onChange={(e) => setLevelValue(e.target.value)}
-                  className="bg-gray-800 border-gray-600"
+                  className="bg-background border-input"
                 />
               </div>
               <div className="flex items-end">
