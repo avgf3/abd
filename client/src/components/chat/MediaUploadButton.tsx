@@ -94,7 +94,7 @@ export default function MediaUploadButton({ onMediaSelect, disabled, currentUser
             variant="outline"
             size="sm"
             disabled={disabled}
-            className="glass-effect border-accent hover:bg-accent/20"
+            className="border-input bg-background text-foreground hover:bg-accent hover:text-accent-foreground"
           >
             <Plus className="h-4 w-4" />
           </Button>

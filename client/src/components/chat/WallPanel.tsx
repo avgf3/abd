@@ -391,13 +391,13 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
 
         <div className="flex-1 flex flex-col sm:flex-row overflow-hidden min-h-0">
           {/* منطقة الحائط - أكثر من الثلث قليلاً */}
-          <div className="w-full sm:w-2/5 border-l border-border/50 p-4 sm:p-6 flex flex-col bg-gradient-to-b from-muted/20 to-transparent min-h-0 max-h-full overflow-hidden">
+          <div className="w-full sm:w-2/5 border-l border-border/50 p-4 sm:p-6 flex flex-col bg-gradient-to-b from-primary/5 to-transparent min-h-0 max-h-full overflow-hidden">
             <Tabs
               value={activeTab}
               onValueChange={(value) => setActiveTab(value as 'public' | 'friends')}
               className="flex-1 flex flex-col min-h-0 overflow-hidden"
             >
-              <TabsList className="grid w-full grid-cols-2 mb-6 bg-muted/50 backdrop-blur-sm rounded-xl p-1">
+              <TabsList className="grid w-full grid-cols-2 mb-6 bg-background border border-border text-foreground rounded-xl p-1">
                 <TabsTrigger
                   value="public"
                   className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm flex items-center gap-2"
@@ -416,7 +416,7 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
 
               {/* نموذج النشر المحسن */}
               {currentUser.userType !== 'guest' && (
-                <Card className="mb-6 border-0 shadow-lg bg-background/80 backdrop-blur-sm">
+                <Card className="mb-6 border border-border shadow-lg bg-background">
                   <CardContent className="p-6">
                     <div className="flex items-center gap-3 mb-4">
                       <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
@@ -447,7 +447,7 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
                       placeholder="شارك أفكارك، تجاربك، أو أي شيء يخطر ببالك..."
                       value={newPostContent}
                       onChange={(e) => setNewPostContent(e.target.value)}
-                      className="mb-4 resize-none border-0 bg-muted/30 rounded-xl focus:bg-muted/50 transition-colors min-h-[100px]"
+                      className="mb-4 resize-none bg-background text-foreground border-input rounded-xl focus:bg-background transition-colors min-h-[100px]"
                       maxLength={500}
                     />
 
@@ -487,7 +487,7 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
                         <Button
                           variant="outline"
                           size="sm"
-                          className="cursor-pointer rounded-xl border-dashed bg-primary/10 text-primary border-primary/20 hover:bg-primary/15"
+                          className="cursor-pointer rounded-xl border-input bg-background text-foreground hover:bg-accent hover:text-accent-foreground"
                           onClick={() => wallImageInputRef.current?.click()}
                         >
                           <ImageIcon className="h-4 w-4 ml-2" />
