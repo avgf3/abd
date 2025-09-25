@@ -310,8 +310,8 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   const [showIgnoredUsers, setShowIgnoredUsers] = useState(false);
   const [showThemeSelector, setShowThemeSelector] = useState(false);
   const [showUsernameColorPicker, setShowUsernameColorPicker] = useState(false);
-  // تفاصيل المستخدمين المتجاهلين (اسم دائمًا)
-  const [ignoredUsersData, setIgnoredUsersData] = useState<Map<number, { id: number; username: string }>>(new Map());
+  // تفاصيل المستخدمين المتجاهلين (نخزن ChatUser بحد أدنى من الحقول المطلوبة)
+  const [ignoredUsersData, setIgnoredUsersData] = useState<Map<number, ChatUser>>(new Map());
 
   // عند فتح نافذة المتجاهلين: اجلب قائمة المتجاهلين بأسمائهم مباشرة (بدون كاش)
   useEffect(() => {
@@ -328,14 +328,21 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
         
         if (cancelled) return;
         
-        const map = new Map<number, { id: number; username: string }>();
-        const list: Array<{ id: number; username: string }> = Array.isArray((data as any)?.users)
+        const map = new Map<number, ChatUser>();
+        const list: Array<{ id: number; username: string; role?: string; userType?: string; isOnline?: boolean; profileImage?: string }> = Array.isArray((data as any)?.users)
           ? (data as any).users
           : [];
         
         list.forEach((u) => { 
           if (u && typeof u.id === 'number' && u.username) {
-            map.set(u.id, u); 
+            map.set(u.id, {
+              id: u.id,
+              username: u.username,
+              role: (u as any).role || 'member',
+              isOnline: (u as any).isOnline ?? false,
+              userType: (u as any).userType || 'member',
+              profileImage: (u as any).profileImage,
+            } as ChatUser); 
           }
         });
         
@@ -343,11 +350,18 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
       } catch (error) {
         console.error('❌ خطأ في جلب بيانات المستخدمين المتجاهلين:', error);
         // في حالة الخطأ، نحاول استخدام البيانات المتاحة من المستخدمين المتصلين
-        const fallbackMap = new Map<number, { id: number; username: string }>();
+        const fallbackMap = new Map<number, ChatUser>();
         Array.from(chat.ignoredUsers || []).forEach(id => {
           const onlineUser = chat.onlineUsers.find(u => u.id === id);
           if (onlineUser) {
-            fallbackMap.set(id, { id: onlineUser.id, username: onlineUser.username });
+            fallbackMap.set(id, {
+              id: onlineUser.id,
+              username: onlineUser.username,
+              role: onlineUser.role || 'member',
+              isOnline: onlineUser.isOnline ?? true,
+              userType: onlineUser.userType || 'member',
+              profileImage: onlineUser.profileImage,
+            } as ChatUser);
           }
         });
         setIgnoredUsersData(fallbackMap);
@@ -790,7 +804,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
     try {
       // Vite will cache this dynamic import and load the chunk ahead of time
       // Ignore returned promise; we just want to warm the chunk
-      // eslint-disable-next-line @typescript-eslint/no-floating-promises
+       
       import('@/components/ui/RichestModal');
     } catch {}
   }, []);

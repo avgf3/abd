@@ -105,9 +105,7 @@ const RoomCard: React.FC<RoomCardProps> = ({
           <span className="flex items-center gap-1 flex-shrink-0">
             {room.isBroadcast && <Mic className="w-3 h-3 text-orange-500" />}
             {room.isLocked && <Lock className="w-3 h-3 text-yellow-600" />}
-            {false && (
-              <Phone className="w-3 h-3 text-green-500" />
-            )}
+            {/* phone indicator removed */}
           </span>
           {/* إزالة شارة "افتراضي" بناءً على طلب العميل */}
         </div>
@@ -696,7 +694,7 @@ export default function RoomComponent({
                   size="sm"
                   onClick={handleVoiceToggleMute}
                 >
-                  {false ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                  {isVoiceMuted ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
                 </Button>
               </div>
             </div>

@@ -81,8 +81,7 @@ export function sanitizeName(name: string): string {
   
   // إزالة أي أحرف خاصة قد تسبب مشاكل
   return cleaned
-    .replace(/[<>\"'&]/g, '') // إزالة أحرف HTML الخاصة
-    .replace(/[\x00-\x1F\x7F]/g, '') // إزالة أحرف التحكم
+    .replace(/[<>"'&]/g, '') // إزالة أحرف HTML الخاصة
     .trim();
 }
 
@@ -122,7 +121,7 @@ export function hasXSSContent(content: string): boolean {
     /<embed[^>]*>/gi,
     /eval\s*\(/gi,
     /expression\s*\(/gi,
-    /<img[^>]+src[\\s]*=[\\s]*[\"']javascript:/gi
+    /<img[^>]+src\s*=\s*["]javascript:/gi
   ];
 
   return xssPatterns.some(pattern => pattern.test(content));

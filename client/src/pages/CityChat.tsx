@@ -56,7 +56,9 @@ import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser } from '@/types/chat';
 
 export default function CityChat() {
-  const [match, params] = useRoute('/:country/:city');
+  const [matchRaw, paramsRaw] = useRoute('/:country/:city') as unknown as [boolean, { country?: string; city?: string } | null];
+  const match = matchRaw;
+  const params = paramsRaw;
   const [, setLocation] = useLocation();
 
   // Enhanced debug logging
@@ -69,7 +71,7 @@ export default function CityChat() {
   });
 
   // Test mode for Universal City System
-  const testMode = params?.city === 'test-universal-system';
+  const testMode = (params as any)?.city === 'test-universal-system';
 
   if (testMode) {
     const cityPath = params ? `/${(params as any).country}/${(params as any).city}` : '/';
@@ -79,11 +81,11 @@ export default function CityChat() {
   // Get city data based on URL using the unified system
   let cityPath = '/';
 
-  if (params && typeof params === 'object' && params.country && params.city) {
-    cityPath = `/${params.country}/${params.city}`;
-  } else if (typeof params === 'object' && params[0] && params[1]) {
+  if (params && typeof params === 'object' && (params as any).country && (params as any).city) {
+    cityPath = `/${(params as any).country}/${(params as any).city}`;
+  } else if (typeof params === 'object' && (params as any)[0] && (params as any)[1]) {
     // Fallback for array-style params
-    cityPath = `/${params[0]}/${params[1]}`;
+    cityPath = `/${(params as any)[0]}/${(params as any)[1]}`;
   }
 
   const cityData = getCityByPath(cityPath);
@@ -266,7 +268,7 @@ export default function CityChat() {
         {isRestoring ? (
           <div className="p-6 text-center">...جاري استعادة الجلسة</div>
         ) : showWelcome ? (
-          <CityWelcomeScreen onUserLogin={handleUserLogin} cityData={cityData} cityInfo={cityInfo} />
+          <CityWelcomeScreen onUserLogin={handleUserLogin} cityData={cityData} />
         ) : selectedRoomId ? (
           <ChatInterface chat={chat} onLogout={handleLogout} />
         ) : (

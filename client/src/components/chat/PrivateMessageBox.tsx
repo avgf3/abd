@@ -62,7 +62,7 @@ export default function PrivateMessageBox({
 
   const handleViewProfileClick = useCallback(() => {
     try {
-      onViewProfile && onViewProfile(user);
+      if (onViewProfile) { onViewProfile(user); }
     } catch {}
   }, [onViewProfile, user]);
 
@@ -496,7 +496,7 @@ export default function PrivateMessageBox({
                                   onClick={() => {
                                     try {
                                       const uid = storyAttachment?.storyUserId || user.id;
-                                      onViewStoryByUser && onViewStoryByUser(uid);
+                                      if (onViewStoryByUser) { onViewStoryByUser(uid); }
                                     } catch {}
                                   }}
                                   className="text-xs px-2 py-1 rounded-md bg-purple-600 text-white hover:bg-purple-700 transition"
@@ -658,11 +658,11 @@ export default function PrivateMessageBox({
               e.preventDefault();
               const dialog = e.currentTarget.closest('.fixed') as HTMLElement | null;
               if (!dialog) return;
-              let startX = e.clientX;
-              let startY = e.clientY;
+              const startX = e.clientX;
+              const startY = e.clientY;
               const rect = dialog.getBoundingClientRect();
-              let initialLeft = rect.left;
-              let initialTop = rect.top;
+              const initialLeft = rect.left;
+              const initialTop = rect.top;
               let nextLeft = initialLeft;
               let nextTop = initialTop;
               let rafId: number | null = null;
