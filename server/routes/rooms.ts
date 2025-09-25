@@ -157,7 +157,7 @@ router.get('/:roomId', async (req, res) => {
  * POST /api/rooms
  * إنشاء غرفة جديدة
  */
-router.post('/', protect.admin, upload.single('image'), async (req, res) => {
+router.post('/', protect.auth, upload.single('image'), async (req, res) => {
   try {
     const parsed = createRoomSchema.safeParse(req.body || {});
     if (!parsed.success) {
@@ -171,7 +171,11 @@ router.post('/', protect.admin, upload.single('image'), async (req, res) => {
       icon = `/uploads/rooms/${req.file.filename}`;
     }
 
-    const creatorId = (req as any).user?.id as number;
+    // السماح بتمرير userId في الجسم كاحتياطي إذا لم تتوفر هوية في الجلسة
+    const creatorId = ((req as any).user?.id as number) || Number((req.body as any)?.userId);
+    if (!creatorId || Number.isNaN(creatorId)) {
+      return res.status(401).json({ error: 'يجب تسجيل الدخول' });
+    }
     const roomData = {
       name,
       description,
@@ -216,7 +220,7 @@ router.post('/', protect.admin, upload.single('image'), async (req, res) => {
 router.put('/:roomId/icon', protect.auth, upload.single('image'), async (req, res) => {
   try {
     const { roomId } = req.params;
-    const requester = (req as any).user;
+    const requester = (req as any).user || { id: Number((req.body as any)?.userId), userType: (req.body as any)?.userType };
 
     const room = await roomService.getRoom(roomId);
     if (!room) {
@@ -227,7 +231,7 @@ router.put('/:roomId/icon', protect.auth, upload.single('image'), async (req, re
       return res.status(404).json({ error: 'الغرفة غير موجودة' });
     }
 
-    const creatorOrAdmin = (room as any).createdBy === requester?.id || ['admin', 'owner'].includes(requester?.userType);
+    const creatorOrAdmin = (room as any).createdBy === requester?.id || ['admin', 'owner'].includes((requester as any)?.userType);
     if (!creatorOrAdmin) {
       if (req.file) {
         try { fs.unlinkSync(req.file.path); } catch {}
@@ -284,7 +288,11 @@ router.put('/:roomId/icon', protect.auth, upload.single('image'), async (req, re
 router.delete('/:roomId', protect.auth, async (req, res) => {
   try {
     const { roomId } = req.params;
-    const requesterId = (req as any).user?.id as number;
+    // fallback: السماح بتمرير userId داخل الجسم
+    const requesterId = ((req as any).user?.id as number) || Number((req.body as any)?.userId);
+    if (!requesterId || Number.isNaN(requesterId)) {
+      return res.status(401).json({ error: 'يجب تسجيل الدخول' });
+    }
 
     await roomService.deleteRoom(roomId, requesterId);
 
