@@ -182,6 +182,10 @@ router.post('/', protect.admin, upload.single('image'), async (req, res) => {
 
     const room = await roomService.createRoom(roomData);
 
+    if (!room) {
+      return res.status(500).json({ error: 'تعذر إنشاء الغرفة' });
+    }
+
     // بث تحديث قائمة الغرف
     try {
       const io = req.app.get('io');

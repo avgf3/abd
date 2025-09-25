@@ -154,9 +154,12 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
         const newRoom = await addRoomViaManager({ ...roomData }, chat.currentUser.id);
         if (newRoom) {
           showSuccessToast(`تم إنشاء غرفة "${roomData.name}" بنجاح`, 'تم إنشاء الغرفة');
+        } else {
+          showErrorToast('لم يتم استلام بيانات الغرفة من الخادم', 'فشل الإنشاء');
         }
-      } catch (error) {
-        showErrorToast('فشل في إنشاء الغرفة', 'خطأ');
+      } catch (error: any) {
+        const msg = error?.message || 'فشل في إنشاء الغرفة';
+        showErrorToast(msg, 'خطأ');
       }
     },
     [chat.currentUser, addRoomViaManager, showSuccessToast, showErrorToast]
@@ -170,14 +173,16 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
       try {
         const ok = await deleteRoomViaManager(roomId, chat.currentUser.id);
         if (ok) {
-          // الانتقال للغرفة العامة إذا تم حذف الغرفة الحالية
           if (chat.currentRoomId === roomId) {
             chat.joinRoom('general');
           }
           showSuccessToast('تم حذف الغرفة بنجاح', 'تم حذف الغرفة');
+        } else {
+          showErrorToast('تعذر حذف الغرفة', 'خطأ');
         }
-      } catch (error) {
-        showErrorToast('فشل في حذف الغرفة', 'خطأ');
+      } catch (error: any) {
+        const msg = error?.message || 'فشل في حذف الغرفة';
+        showErrorToast(msg, 'خطأ');
       }
     },
     [chat, deleteRoomViaManager, showSuccessToast, showErrorToast]

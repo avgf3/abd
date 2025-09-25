@@ -204,7 +204,10 @@ export function useRoomManager(options: UseRoomManagerOptions = {}) {
           method: 'POST',
           body: formData,
         });
-        const newRoom: ChatRoom = mapApiRoom(data.room);
+        if (!data || !(data as any).room) {
+          throw new Error('استجابة غير صالحة من الخادم: لم يتم إرجاع الغرفة');
+        }
+        const newRoom: ChatRoom = mapApiRoom((data as any).room);
 
         // 🔄 تحديث الحالة المحلية مع إزالة التكرار
         setRooms((prev) => {
@@ -224,7 +227,7 @@ export function useRoomManager(options: UseRoomManagerOptions = {}) {
         return newRoom;
       } catch (err: any) {
         console.error('❌ خطأ في إنشاء الغرفة:', err);
-        setError(err.message || 'فشل في إنشاء الغرفة');
+        setError(err?.message || 'فشل في إنشاء الغرفة');
         return null;
       } finally {
         setLoading(false);
