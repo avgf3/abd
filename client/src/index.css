@@ -1867,6 +1867,7 @@ li > * > div.effect-crystal {
 
 /* Themed tabs (uses nav tint vars; excluded themes have transparent values) */
 .themed-tabs-list {
+  background-color: var(--tabs-bg, initial);
   background-image: linear-gradient(135deg,
     var(--nav-tint-start, transparent) 0%,
     var(--nav-tint-end, transparent) 100%
