@@ -1975,6 +1975,7 @@ li > * > div.effect-crystal {
 /* Wall Post Card - Theme aware */
 .wall-post-card {
   background: var(--wall-post-bg, rgba(var(--background-rgb, 255, 255, 255), 0.6));
+  border: 1px solid var(--wall-border, var(--border));
 }
 
 .modern-gradient-animate {
