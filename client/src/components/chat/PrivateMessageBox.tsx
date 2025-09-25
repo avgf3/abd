@@ -587,7 +587,7 @@ export default function PrivateMessageBox({
                     variant="outline"
                     size="sm"
                     onClick={() => fileInputRef.current?.click()}
-                    className="aspect-square mobile-touch-button min-w-[40px] min-h-[40px]"
+                    className="aspect-square mobile-touch-button min-w-[40px] min-h-[40px] bg-primary/10 text-primary border-primary/20 hover:bg-primary/15"
                     disabled={false}
                     title="إرسال صورة"
                   >

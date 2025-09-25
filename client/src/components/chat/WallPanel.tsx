@@ -487,7 +487,7 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
                         <Button
                           variant="outline"
                           size="sm"
-                          className="cursor-pointer rounded-xl border-dashed hover:bg-primary/5"
+                          className="cursor-pointer rounded-xl border-dashed bg-primary/10 text-primary border-primary/20 hover:bg-primary/15"
                           onClick={() => wallImageInputRef.current?.click()}
                         >
                           <ImageIcon className="h-4 w-4 ml-2" />
@@ -499,7 +499,7 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
                         onClick={handleCreatePost}
                         disabled={submitting || (!newPostContent.trim() && !selectedImage)}
                         size="sm"
-                        className="rounded-xl bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
+                        className="rounded-xl bg-primary text-primary-foreground hover:bg-primary/90"
                       >
                         {submitting ? (
                           <div className="flex items-center gap-2">
