@@ -5,7 +5,7 @@ import { Virtuoso, type VirtuosoHandle } from 'react-virtuoso';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, FloatingDialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, FloatingDialogContent } from '@/components/ui/dialog';
 import ImageLightbox from '@/components/ui/ImageLightbox';
 import UserRoleBadge from '@/components/chat/UserRoleBadge';
 import { Input } from '@/components/ui/input';
@@ -334,6 +334,8 @@ export default function PrivateMessageBox({
           className="relative z-[12000] w-[95vw] max-w-lg max-h-[85vh] bg-background text-foreground border border-border shadow-2xl rounded-xl overflow-hidden cursor-grab active:cursor-grabbing"
         >
           <DialogHeader className="relative border-b border-border px-3 py-2 modern-nav">
+            <DialogTitle className="sr-only">محادثة خاصة مع {user?.username || 'مستخدم'}</DialogTitle>
+            <DialogDescription className="sr-only">نافذة الرسائل الخاصة</DialogDescription>
             <div className="flex items-center gap-3">
               <ProfileImage
                 user={user}
@@ -645,6 +647,10 @@ export default function PrivateMessageBox({
           onInteractOutside={(e) => e.preventDefault()}
           onPointerDownOutside={(e) => e.preventDefault()}
         >
+          <DialogHeader className="sr-only">
+            <DialogTitle>مشغل يوتيوب</DialogTitle>
+            <DialogDescription>نافذة فيديو من YouTube</DialogDescription>
+          </DialogHeader>
           <div 
             className="drag-handle bg-popover p-1 flex justify-end cursor-move border-b border-border select-none"
             style={{ touchAction: 'none', userSelect: 'none' }}

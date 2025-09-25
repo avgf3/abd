@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 
 interface ImageLightboxProps {
   open: boolean;
@@ -14,6 +14,8 @@ export default function ImageLightbox({ open, src, alt = 'صورة', onOpenChang
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-6xl w-[98vw] p-2 bg-transparent border-0 shadow-none">
+        <DialogTitle className="sr-only">عارض الصور</DialogTitle>
+        <DialogDescription className="sr-only">{alt}</DialogDescription>
         {src && (
           <div className="w-full h-full flex items-center justify-center">
             <img
