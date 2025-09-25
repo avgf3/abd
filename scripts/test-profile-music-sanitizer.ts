@@ -14,14 +14,14 @@ function run() {
     profileMusicTitle: 'Old Song',
     profileMusicEnabled: true,
     profileMusicVolume: 55,
-  } as any;
+  } as Record<string, unknown>;
 
   const after = {
     ...before,
     profileMusicUrl: null,
     profileMusicTitle: null,
     profileMusicEnabled: false,
-  } as any;
+  } as Record<string, unknown>;
 
   const sBefore = sanitizeUserData(before);
   assert(sBefore.profileMusicUrl === '/uploads/music/music-123.mp3', 'Expected URL to be preserved before delete');

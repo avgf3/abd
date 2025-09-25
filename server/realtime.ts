@@ -24,7 +24,7 @@ import { setupSocketMonitoring, socketPerformanceMonitor } from './utils/socket-
 import { createUserListOptimizer, getUserListOptimizer, optimizedUserJoin, optimizedUserLeave } from './utils/user-list-optimizer';
 
 // 🔥 نظام التحديث المجمع لقائمة المستخدمين
-let updateQueue = new Set<string>();
+const updateQueue = new Set<string>();
 let updateTimeout: NodeJS.Timeout | null = null;
 
 // متغير لتتبع interval تحديث lastSeen
@@ -780,8 +780,8 @@ export function setupRealtime(httpServer: HttpServer): IOServer<ClientToServerEv
     cleanupEmptyChildNamespaces: true, // تنظيف namespaces الفارغة
     // 🔥 إعدادات إضافية لدعم العمل في الخلفية
     // transports: ['websocket', 'polling'], // التأكد من دعم polling كـ fallback - تم حذف التكرار
-    forceBase64: false, // استخدام binary للأداء الأفضل
-    multiplex: true, // تمكين multiplexing للأداء الأفضل
+    // forceBase64: false, // خيار غير مدعوم في ServerOptions - إزالة للحفاظ على التوافق
+    // multiplex خيار غير موثق في ServerOptions لنفس الإصدار
     allowRequest: (req, callback) => {
       try {
         const originHeader = req.headers.origin || '';
@@ -1071,6 +1071,7 @@ export function setupRealtime(httpServer: HttpServer): IOServer<ClientToServerEv
               user,
               sockets: new Map([[socket.id, { room: null, lastSeen: new Date() }]]),
               lastSeen: new Date(),
+              mutex: Promise.resolve(),
             });
           } else {
             existing.user = user;
@@ -1560,9 +1561,12 @@ async function updateLastSeenForConnectedUsers() {
     for (const [userId, entry] of connectedUsers.entries()) {
       if (entry.sockets.size > 0) { // المستخدم متصل
         updatePromises.push(
-          storage.updateUser(userId, { lastSeen: now }).catch((error) => {
-            console.error(`خطأ في تحديث lastSeen للمستخدم ${userId}:`, error);
-          })
+          storage
+            .updateUser(userId, { lastSeen: now })
+            .then(() => undefined)
+            .catch((error) => {
+              console.error(`خطأ في تحديث lastSeen للمستخدم ${userId}:`, error);
+            })
         );
       }
     }

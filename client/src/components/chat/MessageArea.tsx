@@ -911,11 +911,11 @@ export default function MessageArea({
               e.preventDefault();
               const dialog = e.currentTarget.closest('.fixed') as HTMLElement | null;
               if (!dialog) return;
-              let startX = e.clientX;
-              let startY = e.clientY;
+              const startX = e.clientX;
+              const startY = e.clientY;
               const rect = dialog.getBoundingClientRect();
-              let initialLeft = rect.left;
-              let initialTop = rect.top;
+              const initialLeft = rect.left;
+              const initialTop = rect.top;
               let nextLeft = initialLeft;
               let nextTop = initialTop;
               let rafId: number | null = null;

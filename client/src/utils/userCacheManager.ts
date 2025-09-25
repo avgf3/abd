@@ -37,6 +37,15 @@ class UserCacheManager {
     setInterval(() => this.deepCleanup(), 60 * 60 * 1000);
   }
 
+  /**
+   * الحصول على اسم المستخدم من الكاش مع قيمة احتياطية
+   */
+  getUsername(userId: number, fallback?: string): string {
+    const cached = this.getUser(userId);
+    if (cached?.username) return cached.username;
+    return fallback || `User#${userId}`;
+  }
+
   static getInstance(): UserCacheManager {
     if (!UserCacheManager.instance) {
       UserCacheManager.instance = new UserCacheManager();

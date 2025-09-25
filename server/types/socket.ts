@@ -57,7 +57,7 @@ export interface ClientToServerEvents {
 }
 
 export interface InterServerEvents {
-  // أحداث بين الخوادم إذا كان هناك clustering
+  heartbeat?: (serverId: string, timestamp: number) => void;
 }
 
 export interface SocketData {

@@ -38,7 +38,8 @@ export default defineConfig({
 					motion: ['framer-motion'],
 					virtuoso: ['react-virtuoso'],
 					carousel: ['embla-carousel-react'],
-					emoji: ['emoji-regex'],
+					emoji: ['emoji-regex', 'emoji-mart', '@emoji-mart/react', '@emoji-mart/data'],
+					lottie: ['lottie-react', '@lottiefiles/react-lottie-player'],
 					icons: ['lucide-react'],
 					radix: [
 						'@radix-ui/react-accordion',

@@ -115,7 +115,7 @@ export default function ProfileModal({
           ...user,
           lastSeen: pickLatestValidDate(prev.lastSeen as any, user.lastSeen as any),
           isOnline: typeof user.isOnline !== 'undefined' ? user.isOnline : prev.isOnline,
-          currentRoom: (user as any).hasOwnProperty('currentRoom') ? (user as any).currentRoom : prev.currentRoom,
+          currentRoom: Object.prototype.hasOwnProperty.call(user as any, 'currentRoom') ? (user as any).currentRoom : prev.currentRoom,
         };
       });
     }
@@ -179,7 +179,7 @@ export default function ProfileModal({
     // جلب مرة واحدة فقط عند فتح البروفايل لتفادي التذبذب
     fetchRooms(false).catch(() => {});
     // لا نعتمد على currentRoom لتكرار الجلب
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [fetchRooms]);
 
   // تم حذف formatAmPmTime لأنها غير مستخدمة
@@ -480,7 +480,7 @@ export default function ProfileModal({
             // الحفاظ على التحديثات المحلية المهمة
             lastSeen: prev.lastSeen || user.lastSeen,
             isOnline: prev.isOnline !== undefined ? prev.isOnline : user.isOnline,
-            currentRoom: prev.currentRoom || user.currentRoom,
+            currentRoom: Object.prototype.hasOwnProperty.call(user as any, 'currentRoom') ? (user as any).currentRoom : prev.currentRoom,
           };
         }
         // إذا لم يكن هناك مستخدم محلي، نستخدم البيانات الجديدة
@@ -566,7 +566,7 @@ export default function ProfileModal({
             // الحفاظ على التحديثات المحلية المهمة
             lastSeen: pickLatestValidDate(prev.lastSeen as any, (userData as any).lastSeen as any),
             isOnline: typeof (userData as any).isOnline !== 'undefined' ? (userData as any).isOnline : prev.isOnline,
-            currentRoom: (userData as any).hasOwnProperty('currentRoom') ? (userData as any).currentRoom : prev.currentRoom,
+            currentRoom: Object.prototype.hasOwnProperty.call(userData as any, 'currentRoom') ? (userData as any).currentRoom : prev.currentRoom,
           };
         }
         return userData;
@@ -611,7 +611,7 @@ export default function ProfileModal({
       fetchAndUpdateUser(localUser.id).catch(() => {});
     } catch {}
     // نعتمد فقط على تغيير معرف المستخدم المفتوح
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [localUser?.id]);
 
   // تحديث إعداد خصوصية الرسائل الخاصة

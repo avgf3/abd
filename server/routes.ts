@@ -4813,7 +4813,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { bots } = await import('../shared/schema');
       
       // إذا كان هناك كلمة مرور جديدة، قم بتشفيرها
-      let updateData = { ...req.body } as any;
+      const updateData = { ...req.body } as any;
       if (updateData.password) {
         updateData.password = await bcrypt.hash(updateData.password, 12);
       }

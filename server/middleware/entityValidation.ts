@@ -2,15 +2,13 @@ import type { Request, Response, NextFunction } from 'express';
 import { getAuthTokenFromRequest, verifyAuthToken } from '../utils/auth-token';
 import { isUserId, isBotId, parseEntityId, isBotEntityId, isUserEntityId } from '../types/entities';
 
-// إضافة خصائص مخصصة لـ Request
-declare global {
-  namespace Express {
-    interface Request {
-      entityId?: number;
-      entityType?: 'user' | 'bot';
-      isValidUser?: boolean;
-      isValidBot?: boolean;
-    }
+// إضافة خصائص مخصصة لـ Request بدون استخدام namespace
+declare module 'express-serve-static-core' {
+  interface Request {
+    entityId?: number;
+    entityType?: 'user' | 'bot';
+    isValidUser?: boolean;
+    isValidBot?: boolean;
   }
 }
 

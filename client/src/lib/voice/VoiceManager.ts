@@ -756,7 +756,7 @@ export class VoiceManager {
         const readStats = async (pc: RTCPeerConnection, keyUserId?: number) => {
           try {
             const reports = await pc.getStats();
-            let local = { packetsLost: 0, packetsReceived: 0, bytesReceived: 0, jitter: 0, rtt: 0 } as typeof connection.stats;
+            const local = { packetsLost: 0, packetsReceived: 0, bytesReceived: 0, jitter: 0, rtt: 0 } as typeof connection.stats;
             reports.forEach((report) => {
               if (report.type === 'inbound-rtp' && (report as any).mediaType === 'audio') {
                 local.packetsReceived += (report as any).packetsReceived || 0;

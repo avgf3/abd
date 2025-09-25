@@ -483,7 +483,7 @@ class ImageMonitoringService {
         }
         break;
         
-      case 'cache_miss':
+      case 'cache_miss': {
         const recentCacheMetrics = this.getMetrics({ metric: 'cache_hit', timeframe: '1h' });
         const recentMisses = this.getMetrics({ metric: 'cache_miss', timeframe: '1h' });
         const totalCache = recentCacheMetrics.length + recentMisses.length;
@@ -494,6 +494,7 @@ class ImageMonitoringService {
           }
         }
         break;
+      }
     }
   }
 
