@@ -416,7 +416,7 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
 
               {/* نموذج النشر المحسن */}
               {currentUser.userType !== 'guest' && (
-                <Card className="mb-6 border border-border shadow-lg bg-background">
+                <Card className="mb-6 border border-border shadow-lg" style={{ background: 'var(--wall-post-bg)' }}>
                   <CardContent className="p-6">
                     <div className="flex items-center gap-3 mb-4">
                       <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
@@ -447,7 +447,7 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
                       placeholder="شارك أفكارك، تجاربك، أو أي شيء يخطر ببالك..."
                       value={newPostContent}
                       onChange={(e) => setNewPostContent(e.target.value)}
-                      className="mb-4 resize-none bg-background text-foreground border-input rounded-xl focus:bg-background transition-colors min-h-[100px]"
+                      className="mb-4 resize-none bg-transparent text-foreground border-input rounded-xl focus:bg-transparent transition-colors min-h-[100px]"
                       maxLength={500}
                     />
 
