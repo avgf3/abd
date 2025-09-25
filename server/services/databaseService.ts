@@ -313,9 +313,9 @@ export class DatabaseService {
       return null;
     }
 
-    // Filter out undefined/null values and ensure we have valid updates
+    // Filter out undefined values only; allow explicit null to clear columns
     const validUpdates = Object.fromEntries(
-      Object.entries(updates).filter(([_, value]) => value !== undefined && value !== null)
+      Object.entries(updates).filter(([_, value]) => value !== undefined)
     );
 
     // If no valid updates, return the current user without updating
