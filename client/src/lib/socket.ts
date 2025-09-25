@@ -128,13 +128,14 @@ export function getSocket(): Socket {
   // 🔥 إعدادات محسّنة للأداء والاستقرار
   const isDevelopment = (import.meta as any)?.env?.DEV;
   const isProduction = !isDevelopment;
+  const sessionForHandshake = getSession();
   
   socketInstance = io(serverUrl, {
     path: '/socket.io',
-    // 🔥 تحسين النقل - إعطاء أولوية للـ WebSocket مع fallback ذكي
-    transports: ['websocket', 'polling'],
+    // 🔥 ابدأ بـ polling لضمان النجاح ثم حاول الترقية إلى WebSocket
+    transports: ['polling', 'websocket'],
     upgrade: true,
-    rememberUpgrade: true, // تذكر الترقية الناجحة
+    rememberUpgrade: false, // تجنب محاولة WS مباشرة إذا فشل سابقاً
     autoConnect: false,
     reconnection: true,
     // 🔥 تحسين إعادة الاتصال - محاولات محدودة مع تدرج ذكي
@@ -146,7 +147,7 @@ export function getSocket(): Socket {
     timeout: isDevelopment ? 15000 : 20000, // timeout أقل لاستجابة أسرع
     forceNew: false, // إعادة استخدام الاتصالات الموجودة
     withCredentials: true,
-    auth: { deviceId },
+    auth: { deviceId, token: sessionForHandshake?.token },
     extraHeaders: { 'x-device-id': deviceId },
     // 🔥 إعدادات محسّنة للاستقرار والأداء
     closeOnBeforeunload: false, // لا تغلق عند إعادة التحميل
