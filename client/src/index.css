@@ -1867,6 +1867,7 @@ li > * > div.effect-crystal {
 
 /* Themed tabs (uses nav tint vars; excluded themes have transparent values) */
 .themed-tabs-list {
+  background-color: var(--tabs-bg, initial);
   background-image: linear-gradient(135deg,
     var(--nav-tint-start, transparent) 0%,
     var(--nav-tint-end, transparent) 100%
@@ -1975,6 +1976,7 @@ li > * > div.effect-crystal {
 /* Wall Post Card - Theme aware */
 .wall-post-card {
   background: var(--wall-post-bg, rgba(var(--background-rgb, 255, 255, 255), 0.6));
+  border: 1px solid var(--wall-border, var(--border));
 }
 
 .modern-gradient-animate {

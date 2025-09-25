@@ -197,12 +197,16 @@ export function applyThemeById(themeId: string, persist: boolean = false) {
   if (themeId === 'berryCool') {
     // Wall posts background - pure black for berryCool
     finalCssVars['--wall-post-bg'] = 'rgba(0, 0, 0, 0.6)';
+    // Wall border color - pure black for berryCool (walls only)
+    finalCssVars['--wall-border'] = '#000000';
     // Richest modal header - pure black like private message header
     finalCssVars['--richest-header-bg'] = '#000000';
     // Settings menu background - solid black only for berryCool
     finalCssVars['--settings-menu-bg'] = '#000000';
     // Background RGB for fallback
     finalCssVars['--background-rgb'] = '15, 15, 20';
+    // Tabs list solid background for wall tabs (Public/Friends) should be pure black
+    finalCssVars['--tabs-bg'] = '#000000';
   } else {
     // Default wall post background
     finalCssVars['--wall-post-bg'] = 'rgba(255, 255, 255, 0.6)';

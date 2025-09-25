@@ -561,7 +561,7 @@ export default function UnifiedSidebar({
               showModerationActions={isModerator}
             >
               <div
-                className={`flex items-center gap-2 py-1.5 px-0 rounded-none border-b border-black transition-colors duration-200 cursor-pointer w-full ${getUserListItemClasses(user)} hover:bg-accent/10`}
+                className={`flex items-center gap-2 py-1.5 px-0 rounded-none border-b border-border transition-colors duration-200 cursor-pointer w-full ${getUserListItemClasses(user)} hover:bg-accent/10`}
                 style={getUserListItemStyles(user)}
                 onClick={(e) => handleUserClick(e as any, user)}
               >
@@ -632,7 +632,7 @@ export default function UnifiedSidebar({
             </div>
 
             {filteredUsers.length === 0 ? (
-              <div className="text-center text-gray-500 py-6">
+              <div className="text-center text-muted-foreground py-6">
                 <div className="mb-3">{searchTerm ? '🔍' : '👥'}</div>
                 <p className="text-sm">
                   {searchTerm ? 'لا توجد نتائج للبحث' : 'لا يوجد مستخدمون متصلون حالياً'}
@@ -640,7 +640,7 @@ export default function UnifiedSidebar({
                 {searchTerm && (
                   <button
                     onClick={() => setSearchTerm('')}
-                    className="text-blue-500 hover:text-blue-700 text-xs mt-2 underline"
+                    className="text-primary hover:opacity-80 text-xs mt-2 underline"
                   >
                     مسح البحث
                   </button>
@@ -745,7 +745,6 @@ export default function UnifiedSidebar({
                         size="sm"
                         onClick={handleCreatePost}
                         disabled={submitting || (!newPostContent.trim() && !selectedImage)}
-                        className="bg-blue-500 hover:bg-blue-600"
                       >
                         {submitting ? (
                           'جاري النشر...'
@@ -764,15 +763,15 @@ export default function UnifiedSidebar({
               {/* Posts List */}
               <TabsContent value="public" className="mt-0 space-y-3">
                 {loadingByTab.public ? (
-                  <div className="text-center py-8 text-gray-500">جاري التحميل...</div>
+                  <div className="text-center py-8 text-muted-foreground">جاري التحميل...</div>
                 ) : postsByTab.public.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">لا توجد منشورات حتى الآن</div>
+                  <div className="text-center py-8 text-muted-foreground">لا توجد منشورات حتى الآن</div>
                 ) : (
                   postsByTab.public.map((post) => (
                     <Card key={post.id} className="border border-border wall-post-card">
                       <CardHeader className="pb-3">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
+                          <div className="w-8 h-8 rounded-full overflow-hidden bg-muted/20 flex items-center justify-center">
                             {post.userProfileImage ? (
                               <img
                                 src={getImageSrc(post.userProfileImage)}
@@ -806,7 +805,7 @@ export default function UnifiedSidebar({
                               </span>
                               {/* تمت إزالة الشارات بجانب الاسم وفق المطلوب */}
                             </div>
-                            <p className="text-xs text-gray-500">
+                            <p className="text-xs text-muted-foreground">
                               {formatTimeAgo(post.timestamp.toString())}
                             </p>
                           </div>
@@ -817,7 +816,7 @@ export default function UnifiedSidebar({
                               size="sm"
                               variant="ghost"
                               onClick={() => handleDeletePost(post.id)}
-                              className="text-red-500 hover:bg-red-50"
+                              className="text-destructive hover:bg-destructive/10"
                             >
                               <Trash2 className="w-4 h-4" />
                             </Button>
@@ -859,12 +858,12 @@ export default function UnifiedSidebar({
                         )}
 
                         {/* Reactions */}
-                        <div className="flex items-center gap-4 pt-3 border-t border-gray-100">
+                        <div className="flex items-center gap-4 pt-3 border-t border-border/30">
                           <Button
                             size="sm"
                             variant="ghost"
                             onClick={() => handleReaction(post.id, 'like')}
-                            className="flex items-center gap-1 text-blue-600 hover:bg-blue-50"
+                            className="flex items-center gap-1 text-primary hover:bg-primary/10"
                           >
                             <ThumbsUp className="w-4 h-4" />
                             <span className="text-xs">{post.totalLikes || 0}</span>
@@ -874,7 +873,7 @@ export default function UnifiedSidebar({
                             size="sm"
                             variant="ghost"
                             onClick={() => handleReaction(post.id, 'heart')}
-                            className="flex items-center gap-1 text-red-600 hover:bg-red-50"
+                            className="flex items-center gap-1 text-accent hover:bg-accent/10"
                           >
                             <Heart className="w-4 h-4" />
                             <span className="text-xs">{post.totalHearts || 0}</span>
@@ -884,7 +883,7 @@ export default function UnifiedSidebar({
                             size="sm"
                             variant="ghost"
                             onClick={() => handleReaction(post.id, 'dislike')}
-                            className="flex items-center gap-1 text-gray-600 hover:bg-gray-50"
+                            className="flex items-center gap-1 text-muted-foreground hover:bg-accent/10"
                           >
                             <ThumbsDown className="w-4 h-4" />
                             <span className="text-xs">{post.totalDislikes || 0}</span>
@@ -897,15 +896,15 @@ export default function UnifiedSidebar({
               </TabsContent>
               <TabsContent value="friends" className="mt-0 space-y-3">
                 {loadingByTab.friends ? (
-                  <div className="text-center py-8 text-gray-500">جاري التحميل...</div>
+                  <div className="text-center py-8 text-muted-foreground">جاري التحميل...</div>
                 ) : postsByTab.friends.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">لا توجد منشورات حتى الآن</div>
+                  <div className="text-center py-8 text-muted-foreground">لا توجد منشورات حتى الآن</div>
                 ) : (
                   postsByTab.friends.map((post) => (
                     <Card key={post.id} className="border border-border wall-post-card">
                       <CardHeader className="pb-3">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
+                          <div className="w-8 h-8 rounded-full overflow-hidden bg-muted/20 flex items-center justify-center">
                             {post.userProfileImage ? (
                               <img
                                 src={getImageSrc(post.userProfileImage)}
@@ -939,7 +938,7 @@ export default function UnifiedSidebar({
                               </span>
                               {/* تمت إزالة الشارات بجانب الاسم وفق المطلوب */}
                             </div>
-                            <p className="text-xs text-gray-500">
+                            <p className="text-xs text-muted-foreground">
                               {formatTimeAgo(post.timestamp.toString())}
                             </p>
                           </div>
@@ -950,7 +949,7 @@ export default function UnifiedSidebar({
                               size="sm"
                               variant="ghost"
                               onClick={() => handleDeletePost(post.id)}
-                              className="text-red-500 hover:bg-red-50"
+                              className="text-destructive hover:bg-destructive/10"
                             >
                               <Trash2 className="w-4 h-4" />
                             </Button>
@@ -992,12 +991,12 @@ export default function UnifiedSidebar({
                         )}
 
                         {/* Reactions */}
-                        <div className="flex items-center gap-4 pt-3 border-t border-gray-100">
+                        <div className="flex items-center gap-4 pt-3 border-t border-border/30">
                           <Button
                             size="sm"
                             variant="ghost"
                             onClick={() => handleReaction(post.id, 'like')}
-                            className="flex items-center gap-1 text-blue-600 hover:bg-blue-50"
+                            className="flex items-center gap-1 text-primary hover:bg-primary/10"
                           >
                             <ThumbsUp className="w-4 h-4" />
                             <span className="text-xs">{post.totalLikes || 0}</span>
@@ -1007,7 +1006,7 @@ export default function UnifiedSidebar({
                             size="sm"
                             variant="ghost"
                             onClick={() => handleReaction(post.id, 'heart')}
-                            className="flex items-center gap-1 text-red-600 hover:bg-red-50"
+                            className="flex items-center gap-1 text-accent hover:bg-accent/10"
                           >
                             <Heart className="w-4 h-4" />
                             <span className="text-xs">{post.totalHearts || 0}</span>
@@ -1017,7 +1016,7 @@ export default function UnifiedSidebar({
                             size="sm"
                             variant="ghost"
                             onClick={() => handleReaction(post.id, 'dislike')}
-                            className="flex items-center gap-1 text-gray-600 hover:bg-gray-50"
+                            className="flex items-center gap-1 text-muted-foreground hover:bg-accent/10"
                           >
                             <ThumbsDown className="w-4 h-4" />
                             <span className="text-xs">{post.totalDislikes || 0}</span>
