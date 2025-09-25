@@ -174,10 +174,7 @@ export const Loading: React.FC<LoadingProps> = ({
   return content;
 };
 
-// مؤشر تحميل الصفحة
-export const PageLoader: React.FC<{ message?: string }> = ({ message = 'جاري التحميل...' }) => (
-  <Loading fullScreen size="lg" variant="spinner" message={message} className="space-y-4" />
-);
+// تم الاستغناء عن المؤشر العام للصفحة
 
 // مؤشر تحميل الزر
 export const ButtonLoader: React.FC<{ size?: LoadingSize }> = ({ size = 'sm' }) => (
