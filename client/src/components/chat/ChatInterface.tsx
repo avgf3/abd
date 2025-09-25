@@ -1382,6 +1382,29 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                   }
                   // تحديث/تنظيف الكاش دائماً للمستخدم الذي تم تحديثه
                   setCachedUser(updatedUser);
+                  // تحديث المشغل الصوتي العالمي فوراً بناء على حالة موسيقى البروفايل
+                  try {
+                    const hasMusic = !!updatedUser.profileMusicUrl && (updatedUser as any).profileMusicEnabled !== false && (chat.currentUser as any)?.globalSoundEnabled !== false;
+                    if (!hasMusic) {
+                      try { profileAudioRef.current?.pause(); } catch {}
+                    } else {
+                      if (!profileAudioRef.current) profileAudioRef.current = new Audio();
+                      const audio = profileAudioRef.current;
+                      audio.src = updatedUser.profileMusicUrl as string;
+                      const vol = typeof (updatedUser as any).profileMusicVolume === 'number' ? (updatedUser as any).profileMusicVolume : 70;
+                      audio.volume = Math.max(0, Math.min(1, (vol || 70) / 100));
+                      audio.loop = true;
+                      audio.pause();
+                      audio.currentTime = 0;
+                      audio.play().catch(async () => {
+                        try {
+                          audio.muted = true;
+                          await audio.play();
+                          setTimeout(() => { try { audio.muted = false; } catch {} }, 120);
+                        } catch {}
+                      });
+                    }
+                  } catch {}
                 }}
               />
             ) : (
@@ -1406,6 +1429,29 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                     });
                     // تحديث/تنظيف الكاش بعد التحديث الناجح
                     setCachedUser(updatedUser);
+                    // تحديث المشغل الصوتي العالمي فوراً بناء على حالة موسيقى البروفايل
+                    try {
+                      const hasMusic = !!updatedUser.profileMusicUrl && (updatedUser as any).profileMusicEnabled !== false && (chat.currentUser as any)?.globalSoundEnabled !== false;
+                      if (!hasMusic) {
+                        try { profileAudioRef.current?.pause(); } catch {}
+                      } else {
+                        if (!profileAudioRef.current) profileAudioRef.current = new Audio();
+                        const audio = profileAudioRef.current;
+                        audio.src = updatedUser.profileMusicUrl as string;
+                        const vol = typeof (updatedUser as any).profileMusicVolume === 'number' ? (updatedUser as any).profileMusicVolume : 70;
+                        audio.volume = Math.max(0, Math.min(1, (vol || 70) / 100));
+                        audio.loop = true;
+                        audio.pause();
+                        audio.currentTime = 0;
+                        audio.play().catch(async () => {
+                          try {
+                            audio.muted = true;
+                            await audio.play();
+                            setTimeout(() => { try { audio.muted = false; } catch {} }, 120);
+                          } catch {}
+                        });
+                      }
+                    } catch {}
                   }
                 }}
               />
