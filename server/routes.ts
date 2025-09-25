@@ -174,7 +174,7 @@ const musicStorage = multer.diskStorage({
 const musicUpload = multer({
   storage: musicStorage,
   limits: { 
-    fileSize: 10 * 1024 * 1024, // 10MB
+    fileSize: 20 * 1024 * 1024, // 20MB
     files: 1, 
     fieldSize: 64 * 1024, 
     parts: 10 
@@ -561,7 +561,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             if (err.code === 'LIMIT_FILE_SIZE') {
               return res.status(400).json({ 
                 success: false,
-                error: 'حجم الملف كبير جداً. الحد الأقصى 10 ميجابايت' 
+                error: 'حجم الملف كبير جداً. الحد الأقصى 20 ميجابايت' 
               });
             }
             return res.status(400).json({ 
@@ -618,10 +618,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // حذف الملف القديم إن وجد - مع معالجة أفضل للأخطاء
         if (user.profileMusicUrl) {
-          const oldPath = path.join(process.cwd(), 'client', 'public', user.profileMusicUrl);
+          // احسب المسار الكامل بأمان حتى لو كان الرابط يبدأ بـ '/'
+          const uploadsRoot = path.join(process.cwd(), 'client', 'public');
+          const relative = String(user.profileMusicUrl).replace(/^\/+/, '');
+          const oldPath = path.resolve(uploadsRoot, relative);
           try {
-            await fsp.unlink(oldPath);
-            console.log(`✅ تم حذف الملف القديم: ${oldPath}`);
+            if (oldPath.startsWith(uploadsRoot)) {
+              await fsp.unlink(oldPath);
+              console.log(`✅ تم حذف الملف القديم: ${oldPath}`);
+            } else {
+              console.warn('⚠️ تم تجاهل حذف ملف خارج مجلد الرفع:', oldPath);
+            }
           } catch (unlinkErr) {
             console.warn(`⚠️ تعذر حذف الملف القديم: ${oldPath}`, unlinkErr);
             // لا نوقف العملية إذا فشل حذف الملف القديم
@@ -3434,10 +3441,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // حذف الملف الفعلي من الخادم إن وجد
       if (user.profileMusicUrl) {
-        const filePath = path.join(process.cwd(), 'client', 'public', user.profileMusicUrl);
+        const uploadsRoot = path.join(process.cwd(), 'client', 'public');
+        const relative = String(user.profileMusicUrl).replace(/^\/+/, '');
+        const filePath = path.resolve(uploadsRoot, relative);
         try {
-          await fsp.unlink(filePath);
-          console.log(`✅ تم حذف ملف الموسيقى: ${filePath}`);
+          if (filePath.startsWith(uploadsRoot)) {
+            await fsp.unlink(filePath);
+            console.log(`✅ تم حذف ملف الموسيقى: ${filePath}`);
+          } else {
+            console.warn('⚠️ تم تجاهل حذف ملف خارج مجلد الرفع:', filePath);
+          }
         } catch (unlinkErr) {
           console.warn(`⚠️ تعذر حذف ملف الموسيقى: ${filePath}`, unlinkErr);
           // لا نوقف العملية إذا فشل حذف الملف
@@ -3447,6 +3460,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const updated = await storage.updateUser(userId, {
         profileMusicUrl: null as any,
         profileMusicTitle: null as any,
+        profileMusicEnabled: false as any,
       } as any);
       if (!updated) return res.status(500).json({ error: 'فشل تحديث المستخدم' });
 
