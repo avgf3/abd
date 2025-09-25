@@ -63,9 +63,17 @@ export default function RoomListItem({
 
   return (
     <div
-      className={`flex items-center gap-2 py-1.5 px-3 rounded-none border-b border-border/20 transition-colors duration-200 cursor-pointer w-full hover:bg-accent/10 ${
-        isActive ? 'bg-primary/5' : ''
+      className={`flex items-center gap-2 py-1.5 px-3 rounded-none border-b border-border/20 transition-colors duration-200 cursor-pointer w-full hover:bg-primary/10 ${
+        isActive ? 'bg-primary/10 ring-1 ring-primary/20 border-r-4 border-primary/60' : ''
       }`}
+      style={
+        isActive
+          ? {
+              backgroundImage:
+                'linear-gradient(90deg, color-mix(in srgb, var(--primary-solid) 18%, transparent) 0%, transparent 100%)',
+            }
+          : undefined
+      }
       onClick={() => onSelect(room.id)}
     >
       {/* صورة الغرفة */}
