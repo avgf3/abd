@@ -2,6 +2,9 @@ import type { ChatRoom } from '@/types/chat';
 
 // يحول عنصر من API إلى ChatRoom موحّد
 export function mapApiRoom(room: any): ChatRoom {
+  if (!room || typeof room !== 'object' || room.id == null) {
+    throw new Error('استجابة الغرفة غير صالحة: لا توجد بيانات كافية (id)');
+  }
   return {
     id: String(room.id),
     name: room.name || 'غرفة بدون اسم',
