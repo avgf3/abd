@@ -111,9 +111,28 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
     cacheTimeout: 10 * 60 * 1000, // 10 دقائق cache
   });
 
-  // جلب الغرف عند الدخول لأول مرة لضمان ظهور التبويب مباشرة
+  // اجلب الغرف فقط بعد اتصال السوكت لضمان نجاح أسرع وتفادي مهلة البداية
   useEffect(() => {
-    fetchRooms(false).catch(() => {});
+    let unsub: (() => void) | null = null;
+    try {
+      const { getSocket } = require('@/lib/socket');
+      const s = getSocket();
+      const onConnect = () => {
+        fetchRooms(false).catch(() => {});
+      };
+      if (s.connected) {
+        onConnect();
+      } else {
+        s.on('connect', onConnect);
+      }
+      unsub = () => {
+        try { s.off('connect', onConnect); } catch {}
+      };
+    } catch {
+      // fallback: حاول مرة واحدة فقط بدون ربط بالسوقت
+      fetchRooms(false).catch(() => {});
+    }
+    return () => { if (unsub) unsub(); };
   }, [fetchRooms]);
 
   // الاستماع لأخطاء الغرف المقفلة
