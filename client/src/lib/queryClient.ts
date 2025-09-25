@@ -12,26 +12,35 @@ export interface ApiResponse<T = any> {
 // معالجة محسنة للأخطاء
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
+    // استخدم نسخة مستنسخة لقراءة الجسم بدون استهلاك الأصل
+    const cloned = res.clone();
+    const contentType = cloned.headers.get('content-type') || '';
+    let message: string = res.statusText;
+    let code: any = undefined;
+    let details: any = undefined;
+    let timestamp: any = undefined;
+
     try {
-      const errorData = await res.json();
-
-      // إذا كان الخطأ يحتوي على رسالة عربية، استخدمها
-      const message = errorData.message || errorData.error || res.statusText;
-
-      const error = new Error(message) as any;
-      error.status = res.status;
-      error.code = errorData.code;
-      error.details = errorData.details;
-      error.timestamp = errorData.timestamp;
-
-      throw error;
-    } catch (parseError) {
-      // إذا فشل في parse JSON، استخدم النص العادي
-      const text = (await res.text()) || res.statusText;
-      const error = new Error(text) as any;
-      error.status = res.status;
-      throw error;
+      if (contentType.includes('application/json')) {
+        const errorData = await cloned.json();
+        message = errorData?.message || errorData?.error || message;
+        code = errorData?.code;
+        details = errorData?.details;
+        timestamp = errorData?.timestamp;
+      } else {
+        const text = await cloned.text();
+        if (text) message = text;
+      }
+    } catch {
+      // تجاهل أخطاء القراءة من النسخة المستنسخة
     }
+
+    const error = new Error(message) as any;
+    error.status = res.status;
+    if (code !== undefined) error.code = code;
+    if (details !== undefined) error.details = details;
+    if (timestamp !== undefined) error.timestamp = timestamp;
+    throw error;
   }
 }
 
@@ -129,6 +138,8 @@ export async function apiRequest<T = any>(
       error.message = 'ليس لديك صلاحية للوصول لهذا المحتوى';
     } else if (error.status === 404) {
       error.message = 'المورد المطلوب غير موجود';
+    } else if (error.status === 413) {
+      error.message = 'حجم الملف كبير جداً - يرجى اختيار ملف أصغر';
     } else if (error.status === 500) {
       error.message = 'خطأ في الخادم - يرجى المحاولة لاحقاً';
     } else if (error.status === 503) {

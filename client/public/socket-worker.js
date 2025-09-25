@@ -154,7 +154,6 @@ function cleanup() {
   }
 }
 
-// تنظيف عند إغلاق Worker
-self.addEventListener('beforeunload', cleanup);
+// ملاحظة: Web Worker لا يطلق beforeunload دائماً، لذا نعتمد على رسالة cleanup من التطبيق الرئيسي
 
 console.log('🔧 Web Worker للـ Socket.IO تم تحميله');

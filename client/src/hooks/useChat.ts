@@ -501,6 +501,40 @@ export const useChat = () => {
     
     // تهيئة Web Worker
     initSocketWorker();
+    // مزامنة حالة الاتصال مع Web Worker ليعرف متى يُرسل ping
+    try {
+      socketInstance.on('connect', () => {
+        try {
+          if (socketWorkerRef.current) {
+            socketWorkerRef.current.postMessage({
+              type: 'socket-status',
+              data: { connected: true },
+            });
+          }
+        } catch {}
+      });
+      socketInstance.on('disconnect', () => {
+        try {
+          if (socketWorkerRef.current) {
+            socketWorkerRef.current.postMessage({
+              type: 'socket-status',
+              data: { connected: false },
+            });
+          }
+        } catch {}
+      });
+      socketInstance.on('connect_error', () => {
+        try {
+          if (socketWorkerRef.current) {
+            socketWorkerRef.current.postMessage({
+              type: 'socket-status',
+              data: { connected: false },
+            });
+          }
+        } catch {}
+      });
+    } catch {}
+
     
     // 🔥 حافظ على الاتصال عبر ping/pong محسّن مع قياس الكمون
     if (pingIntervalRef.current) {
@@ -631,6 +665,14 @@ export const useChat = () => {
     // تنظيف معالج Page Visibility عند إغلاق Socket
     const originalDisconnect = socketInstance.disconnect;
     socketInstance.disconnect = function() {
+      try {
+        if (socketWorkerRef.current) {
+          socketWorkerRef.current.postMessage({
+            type: 'socket-status',
+            data: { connected: false },
+          });
+        }
+      } catch {}
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       try { window.removeEventListener('pageshow', handlePageShow); } catch {}
       try { window.removeEventListener('pagehide', handlePageHide); } catch {}
