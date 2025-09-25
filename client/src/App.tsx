@@ -8,7 +8,6 @@ import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { UserProvider } from '@/contexts/UserContext';
 import { ComposerStyleProvider } from '@/contexts/ComposerStyleContext';
-import { PageLoader } from '@/components/ui/loading';
 import ChatPage from '@/pages/chat';
 import ArabicChat from '@/pages/ArabicChat';
 import CountryChat from '@/pages/CountryChat';
@@ -323,7 +322,7 @@ function App() {
               تخطِ إلى المحتوى الرئيسي
             </a>
             <main id="main-content" role="main">
-              <Suspense fallback={<PageLoader />}>
+              <Suspense fallback={null}>
                 <Router />
               </Suspense>
             </main>
