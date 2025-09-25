@@ -6,7 +6,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { Input } from '@/components/ui/input';
 import PointsSentNotification from '@/components/ui/PointsSentNotification';
 import { useToast } from '@/hooks/use-toast';
-import { apiRequest } from '@/lib/queryClient';
+import { apiRequest, api } from '@/lib/queryClient';
 import type { ChatUser } from '@/types/chat';
 import { getProfileImageSrc, getBannerImageSrc } from '@/utils/imageUtils';
 import { formatPoints, getLevelInfo } from '@/utils/pointsUtils';
@@ -3404,21 +3404,21 @@ export default function ProfileModal({
                                   if (!file) return;
                                   
                                   // التحقق من نوع الملف
-                                  const allowedTypes = ['audio/mpeg', 'audio/mp3', 'audio/ogg', 'audio/webm', 'audio/wav', 'audio/m4a', 'audio/aac'];
+                                  const allowedTypes = ['audio/mpeg', 'audio/mp3', 'audio/ogg', 'audio/webm', 'audio/wav', 'audio/m4a', 'audio/aac', 'audio/mp4'];
                                   if (!allowedTypes.some(type => file.type.includes(type.split('/')[1]))) {
                                     toast({
                                       title: 'نوع ملف غير مدعوم',
-                                      description: 'يرجى اختيار ملف صوتي (MP3, WAV, OGG, M4A)',
+                                      description: 'يرجى اختيار ملف صوتي (MP3, WAV, OGG, M4A, MP4)',
                                       variant: 'destructive',
                                     });
                                     return;
                                   }
                                   
-                                  // التحقق من حجم الملف (10 ميجا كحد أقصى)
-                                  if (file.size > 10 * 1024 * 1024) {
+                                  // التحقق من حجم الملف (20 ميجا كحد أقصى)
+                                  if (file.size > 20 * 1024 * 1024) {
                                     toast({
                                       title: 'حجم الملف كبير جداً',
-                                      description: 'الحد الأقصى لحجم الملف هو 10 ميجابايت',
+                                      description: 'الحد الأقصى لحجم الملف هو 20 ميجابايت',
                                       variant: 'destructive',
                                     });
                                     return;
@@ -3429,7 +3429,7 @@ export default function ProfileModal({
                                   fd.append('music', file);
                                   if (musicTitle) fd.append('title', musicTitle);
                                   
-                                  const res = await apiRequest(`/api/upload/profile-music`, { method: 'POST', body: fd });
+                                  const res = await api.upload(`/api/upload/profile-music`, fd, { timeout: 120000 });
                                   
                                   if (!(res as any)?.success) {
                                     throw new Error((res as any)?.error || 'فشل رفع الملف');
