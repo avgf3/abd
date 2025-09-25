@@ -12,26 +12,24 @@ export interface ApiResponse<T = any> {
 // معالجة محسنة للأخطاء
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
+    let bodyText = '';
+    let errorData: any = null;
     try {
-      const errorData = await res.json();
+      bodyText = await res.text();
+      try {
+        errorData = JSON.parse(bodyText);
+      } catch {}
+    } catch {}
 
-      // إذا كان الخطأ يحتوي على رسالة عربية، استخدمها
-      const message = errorData.message || errorData.error || res.statusText;
-
-      const error = new Error(message) as any;
-      error.status = res.status;
+    const message = (errorData?.message || errorData?.error || bodyText || res.statusText || 'Request failed');
+    const error = new Error(message) as any;
+    error.status = res.status;
+    if (errorData && typeof errorData === 'object') {
       error.code = errorData.code;
       error.details = errorData.details;
       error.timestamp = errorData.timestamp;
-
-      throw error;
-    } catch (parseError) {
-      // إذا فشل في parse JSON، استخدم النص العادي
-      const text = (await res.text()) || res.statusText;
-      const error = new Error(text) as any;
-      error.status = res.status;
-      throw error;
     }
+    throw error;
   }
 }
 

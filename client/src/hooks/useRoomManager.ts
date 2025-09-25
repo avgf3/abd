@@ -204,10 +204,29 @@ export function useRoomManager(options: UseRoomManagerOptions = {}) {
           method: 'POST',
           body: formData,
         });
-        if (!data || !(data as any).room) {
-          throw new Error('استجابة غير صالحة من الخادم: لم يتم إرجاع الغرفة');
+
+        // قبول أكثر من شكل للاستجابة: { room }, { data: { room } }, عنصر غرفة مباشرة، أو رسالة فقط
+        let roomPayload: any = null;
+        if (data && typeof data === 'object') {
+          if ((data as any).room) {
+            roomPayload = (data as any).room;
+          } else if ((data as any).data && (data as any).data.room) {
+            roomPayload = (data as any).data.room;
+          } else if ((data as any).id && ((data as any).name || (data as any).isDefault !== undefined)) {
+            // يبدو كعنصر غرفة مباشرة
+            roomPayload = data;
+          }
         }
-        const newRoom: ChatRoom = mapApiRoom((data as any).room);
+
+        if (!roomPayload) {
+          // إذا لم تُرجع الاستجابة الغرفة، حاول تحديث القائمة قسرياً لجلب الغرفة التي تم إنشاؤها
+          try {
+            await fetchRooms(true);
+          } catch {}
+          throw new Error('استجابة غير صالحة من الخادم: لم يتم إرجاع بيانات الغرفة');
+        }
+
+        const newRoom: ChatRoom = mapApiRoom(roomPayload);
 
         // 🔄 تحديث الحالة المحلية مع إزالة التكرار
         setRooms((prev) => {
