@@ -669,12 +669,19 @@ export const useChat = () => {
           currentRoomIdRef.current
         );
         if (desired && desired !== 'public' && desired !== 'friends' && currentUserRef.current) {
+          // أرسل joinRoom مرة واحدة فقط إذا لم يكن قد تم طلبه بالفعل
+          if (pendingJoinRoomRef.current !== null && pendingJoinRoomRef.current !== desired) {
+            // في حال تم وضع غرفة أخرى بانتظار، نفضّل آخر غرفة محفوظة
+            pendingJoinRoomRef.current = desired;
+          }
+          if (pendingJoinRoomRef.current === null) {
+            pendingJoinRoomRef.current = desired;
+          }
           socketInstance.emit('joinRoom', {
             roomId: desired,
             userId: currentUserRef.current.id,
             username: currentUserRef.current.username,
           });
-          pendingJoinRoomRef.current = null;
         }
       } catch {}
     });
@@ -719,12 +726,14 @@ export const useChat = () => {
               currentRoomIdRef.current
             );
             if (desired && desired !== 'public' && desired !== 'friends' && currentUserRef.current) {
+              if (pendingJoinRoomRef.current === null) {
+                pendingJoinRoomRef.current = desired;
+              }
               socket.current?.emit('joinRoom', {
                 roomId: desired,
                 userId: currentUserRef.current.id,
                 username: currentUserRef.current.username,
               });
-              pendingJoinRoomRef.current = null;
             }
           } catch {}
         }
@@ -1046,6 +1055,12 @@ export const useChat = () => {
               dispatch({ type: 'SET_CURRENT_ROOM', payload: roomId });
               try { saveSession({ roomId }); } catch {}
             }
+            // تنظيف queue الانضمام: تم تأكيد الانضمام
+            try {
+              if (pendingJoinRoomRef.current === roomId) {
+                pendingJoinRoomRef.current = null;
+              }
+            } catch {}
             // استبدال القائمة بالكامل بقائمة الغرفة المرسلة (مع فلترة وإزالة التكرارات)
             const users = (envelope as any).users;
             if (Array.isArray(users)) {
@@ -1620,7 +1635,8 @@ export const useChat = () => {
         console.warn('Invalid room ID provided to joinRoom:', roomId);
         return;
       }
-      if (state.currentRoomId === roomId) {
+      // حارس لمنع التكرار: إذا كانت نفس الغرفة محلياً أو كانت في قائمة انتظار الانضمام، لا تعيد الإرسال
+      if (state.currentRoomId === roomId || pendingJoinRoomRef.current === roomId) {
         return;
       }
 
@@ -1631,6 +1647,8 @@ export const useChat = () => {
           userId: state.currentUser.id,
           username: state.currentUser.username,
         });
+        // تمييز أن لدينا طلب انضمام جارٍ لتفادي إعادة الإرسال من مسارات أخرى
+        pendingJoinRoomRef.current = roomId;
         // لا نحدث lastSeen محلياً إطلاقاً؛ الاعتماد على بث الخادم فقط
         try { saveSession({ roomId }); } catch {}
       } else {
