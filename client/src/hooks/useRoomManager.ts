@@ -120,7 +120,7 @@ export function useRoomManager(options: UseRoomManagerOptions = {}) {
         const response = await apiRequest('/api/rooms', {
           method: 'GET',
           // Increase timeout to better handle slow responses
-          timeout: 45000,
+          timeout: 60000,
           signal: abortControllerRef.current.signal,
         });
 
