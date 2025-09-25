@@ -62,11 +62,12 @@ export default function ChatPage() {
     // تشغيل فوري من التخزين المحلي لتجنب وميض "جاري استعادة الجلسة"
     if (savedUserId) {
       // وصل السوكت بحساب مخزن مؤقتاً (سنحدّث البيانات لاحقاً من الخادم)
+      // ملاحظة: connect هنا لا يرسل joinRoom — الانضمام يتم بعد authenticated داخل useChat
       chat.connect({ id: savedUserId, username: session?.username || `User#${savedUserId}`, userType: session?.userType || 'member', isOnline: true, role: 'member' } as any);
       setShowWelcome(false);
       if (roomId) {
         setSelectedRoomId(roomId);
-        chat.joinRoom(roomId);
+        // لا نستدعي joinRoom هنا لتجنب التكرار — سيتم بعد authenticated
       } else {
         setSelectedRoomId(null);
       }
@@ -88,7 +89,7 @@ export default function ChatPage() {
             const r = session?.roomId && session.roomId !== 'public' && session.roomId !== 'friends' ? session.roomId : null;
             if (r) {
               setSelectedRoomId(r);
-              chat.joinRoom(r);
+              // الانضمام سيتم تلقائياً بعد authenticated
             }
           } else {
             setShowWelcome(true);

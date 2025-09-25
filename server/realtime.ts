@@ -61,6 +61,11 @@ const GENERAL_ROOM = 'general';
 const RESUME_TTL_MS = 60 * 60 * 1000; // 1 ساعة
 // تخزين نافذة الاستئناف لكل مستخدم بعد انقطاع آخر Socket له
 const resumeWindow = new Map<number, { until: number; roomId: string | null }>();
+// نافذة استئناف إضافية مبنية على معرف الجهاز لتغطية سيناريو الرفرش الفوري/السباق
+const RESUME_GRACE_MS = 15_000; // 15 ثانية سماحية فورية
+const deviceResumeWindow = new Map<string, { until: number; roomId: string | null; userId: number }>();
+// مؤقتات تأجيل إعلان الخروج لسيناريوهات الرفرش السريع
+const pendingOfflineTimers = new Map<number, NodeJS.Timeout>();
 
 // Track connected users and their sockets/rooms with improved synchronization
 export const connectedUsers = new Map<
@@ -580,7 +585,29 @@ async function joinRoom(
 
   // رسالة نظامية: انضمام للغرفة الجديدة (بعد إرسال قائمة الرسائل لتجنب التكرار)
   // إذا كان هذا استئنافاً سريعاً داخل نافذة السماح، لا ترسل رسالة "انضمام جديد"
-  if (!isResume) {
+  // إضافة كتم مبني على نافذة الجهاز و/أو إعادة مصادقة reconnect
+  let suppressJoinMessage = isResume;
+  try {
+    if (!suppressJoinMessage) {
+      const devKey = socket.deviceId || '';
+      const devResume = devKey ? deviceResumeWindow.get(devKey) : undefined;
+      if (devResume && Date.now() <= devResume.until && devResume.roomId === roomId && devResume.userId === userId) {
+        suppressJoinMessage = true;
+        try { deviceResumeWindow.delete(devKey); } catch {}
+      }
+    }
+  } catch {}
+  try {
+    if (!suppressJoinMessage && socket.isReconnectAuth === true) {
+      // إذا كانت إعادة مصادقة لنفس المستخدم ونفس الغرفة الحالية، اعتبرها استئناف
+      const resumeInfo2 = resumeWindow.get(userId);
+      if (resumeInfo2 && Date.now() <= resumeInfo2.until && resumeInfo2.roomId === roomId) {
+        suppressJoinMessage = true;
+      }
+    }
+  } catch {}
+
+  if (!suppressJoinMessage) {
     try {
       const user = entry?.user || (await storage.getUser(userId));
       const content = formatRoomEventMessage('join', {
@@ -861,6 +888,8 @@ export function setupRealtime(httpServer: HttpServer): IOServer<ClientToServerEv
       typeof authDeviceId === 'string' && authDeviceId.trim().length > 0
         ? authDeviceId.trim()
         : getDeviceIdFromHeaders(socket.handshake.headers as any);
+    // حفظ معرف الجهاز على السوكت لاستخدامه في منطق الاستئناف
+    try { socket.deviceId = deviceId; } catch {}
     if (moderationSystem.isBlocked(clientIP, deviceId)) {
       socket.emit('error', {
         type: 'error',
@@ -917,6 +946,8 @@ export function setupRealtime(httpServer: HttpServer): IOServer<ClientToServerEv
         reconnect?: boolean;
         token?: string;
       }) => {
+        // تمييز هذا الطلب كمحاولة إعادة مصادقة/استئناف إذا تم تمرير reconnect
+        try { socket.isReconnectAuth = !!payload?.reconnect; } catch {}
         // السماح بإعادة المصادقة إذا كان المستخدم مختلفاً
         if (
           isAuthenticated &&
@@ -1022,6 +1053,15 @@ export function setupRealtime(httpServer: HttpServer): IOServer<ClientToServerEv
           } catch {}
           try {
             await storage.setUserOnlineStatus(user.id, true);
+          } catch {}
+
+          // إذا كان هناك مؤقت إعلان خروج معلق للمستخدم (من سوكت سابق)، ألغِه — هذا استئناف سريع
+          try {
+            const pending = pendingOfflineTimers.get(user.id);
+            if (pending) {
+              clearTimeout(pending);
+              pendingOfflineTimers.delete(user.id);
+            }
           } catch {}
 
           // Track connection - لا نضع المستخدم في أي غرفة تلقائياً
@@ -1303,45 +1343,60 @@ export function setupRealtime(httpServer: HttpServer): IOServer<ClientToServerEv
                 roomId: socket.currentRoom || null,
               });
             } catch {}
+            // نافذة استئناف سريعة مبنية على الجهاز لتغطية الرفرش الفوري
             try {
-              // تحديث آخر تواجد في قاعدة البيانات قبل إزالة المستخدم
-              await storage.setUserOnlineStatus(userId, false);
-              console.log(`📝 تم تحديث آخر تواجد للمستخدم ${userId} في قاعدة البيانات`);
-            } catch (dbError) {
-              console.error(`❌ فشل تحديث آخر تواجد للمستخدم ${userId}:`, dbError);
-            }
-            
-            // إزالة المستخدم من الذاكرة المحلية
-            connectedUsers.delete(userId);
-            console.log(`🗑️ تم إزالة المستخدم ${userId} من الذاكرة المحلية`);
-            
-            // إشعار جميع الغرف بأن المستخدم انقطع
-            const lastRoom = socket.currentRoom;
-            if (lastRoom) {
-              try {
-                const users = await buildOnlineUsersForRoom(lastRoom);
-                io.to(`room_${lastRoom}`).emit('message', {
-                  type: 'onlineUsers',
-                  users,
-                  roomId: lastRoom,
-                  source: 'disconnect',
+              const devKey = socket.deviceId || getDeviceIdFromHeaders(socket.handshake.headers as any);
+              if (devKey) {
+                deviceResumeWindow.set(devKey, {
+                  until: Date.now() + RESUME_GRACE_MS,
+                  roomId: socket.currentRoom || null,
+                  userId,
                 });
-                
-                // بث تحديث آخر تواجد للمستخدم المنفصل للواجهة فوراً
-                const dbUser = await storage.getUser(userId);
-                const updatedUser = { 
-                  ...(entry.user || {}), 
-                  lastSeen: dbUser?.lastSeen || new Date(), 
-                  currentRoom: dbUser?.currentRoom || null 
-                } as any;
-                io.to(`room_${lastRoom}`).emit('message', { type: 'userUpdated', user: updatedUser });
-                io.to(userId.toString()).emit('message', { type: 'userUpdated', user: updatedUser });
-                
-                console.log(`📡 تم إشعار الغرفة ${lastRoom} بانقطاع المستخدم ${userId}`);
-              } catch (emitError) {
-                console.error(`❌ فشل إشعار الغرفة ${lastRoom}:`, emitError);
               }
-            }
+            } catch {}
+            // جدولة إعلان الخروج بعد فترة سماحية قصيرة لتغطية الرفرش السريع
+            const timer = setTimeout(async () => {
+              try {
+                // تحديث آخر تواجد في قاعدة البيانات قبل إزالة المستخدم
+                await storage.setUserOnlineStatus(userId, false);
+                console.log(`📝 تم تحديث آخر تواجد للمستخدم ${userId} في قاعدة البيانات`);
+              } catch (dbError) {
+                console.error(`❌ فشل تحديث آخر تواجد للمستخدم ${userId}:`, dbError);
+              }
+              
+              // إزالة المستخدم من الذاكرة المحلية
+              connectedUsers.delete(userId);
+              console.log(`🗑️ تم إزالة المستخدم ${userId} من الذاكرة المحلية`);
+              
+              // إشعار جميع الغرف بأن المستخدم انقطع
+              const lastRoom = socket.currentRoom;
+              if (lastRoom) {
+                try {
+                  const users = await buildOnlineUsersForRoom(lastRoom);
+                  io.to(`room_${lastRoom}`).emit('message', {
+                    type: 'onlineUsers',
+                    users,
+                    roomId: lastRoom,
+                    source: 'disconnect',
+                  });
+                  
+                  // بث تحديث آخر تواجد للمستخدم المنفصل للواجهة فوراً
+                  const dbUser = await storage.getUser(userId);
+                  const updatedUser = { 
+                    ...(entry.user || {}), 
+                    lastSeen: dbUser?.lastSeen || new Date(), 
+                    currentRoom: dbUser?.currentRoom || null 
+                  } as any;
+                  io.to(`room_${lastRoom}`).emit('message', { type: 'userUpdated', user: updatedUser });
+                  io.to(userId.toString()).emit('message', { type: 'userUpdated', user: updatedUser });
+                  
+                  console.log(`📡 تم إشعار الغرفة ${lastRoom} بانقطاع المستخدم ${userId}`);
+                } catch (emitError) {
+                  console.error(`❌ فشل إشعار الغرفة ${lastRoom}:`, emitError);
+                }
+              }
+            }, RESUME_GRACE_MS);
+            pendingOfflineTimers.set(userId, timer);
           } else {
             // المستخدم لا يزال متصلاً عبر sockets أخرى
             console.log(`👤 المستخدم ${userId} لا يزال متصلاً عبر ${entry.sockets.size} socket(s)`);

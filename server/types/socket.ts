@@ -11,6 +11,8 @@ export interface CustomSocket extends BaseSocket {
   userType?: string;
   isAuthenticated?: boolean;
   currentRoom?: string | null;
+  deviceId?: string;
+  isReconnectAuth?: boolean;
 }
 
 // أنواع إضافية للأحداث
