@@ -1604,6 +1604,13 @@ export class DatabaseService {
         }
       };
 
+      // Generate a slug that is unlikely to collide, especially when the name is non-Latin (e.g., Arabic)
+      const genUniqueSlug = (name?: string) => {
+        const base = genSlug(name);
+        const suffix = Math.random().toString(36).slice(2, 8);
+        return `${base}-${suffix}`;
+      };
+
       const genId = (name?: string) => {
         const slugPart = genSlug(name);
         const suffix = Math.random().toString(36).slice(2, 8);
@@ -1614,9 +1621,8 @@ export class DatabaseService {
         if (!generatedId || generatedId === (undefined as any)) {
           generatedId = genId(roomData.name as any);
         }
-        if (!generatedSlug || generatedSlug === (undefined as any)) {
-          generatedSlug = genSlug(roomData.name as any);
-        }
+        // Always generate a unique-ish slug to avoid collisions when names map to the same ASCII slug (e.g., non-Latin names)
+        generatedSlug = genUniqueSlug(roomData.name as any);
       }
 
       const room = {
