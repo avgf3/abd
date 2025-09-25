@@ -671,7 +671,7 @@ export default function UnifiedSidebar({
             onValueChange={(value) => setActiveTab(value as 'public' | 'friends')}
             className="flex-1 flex flex-col min-h-0 overflow-hidden"
           >
-            <TabsList className="grid w-full grid-cols-2 m-2 flex-shrink-0">
+            <TabsList className="grid w-full grid-cols-2 m-2 flex-shrink-0 bg-background text-foreground border border-border rounded-lg p-1">
               <TabsTrigger value="public" className="flex items-center gap-2">
                 <Globe className="w-4 h-4" />
                 عام
@@ -695,7 +695,7 @@ export default function UnifiedSidebar({
             >
               {/* Post Creation */}
               {currentUser && currentUser.userType !== 'guest' && (
-                <Card className="mb-4 border border-border bg-card">
+                <Card className="mb-4 border border-sidebar-border bg-sidebar text-sidebar-foreground">
                   <CardContent className="p-3">
                     <Textarea
                       value={newPostContent}
@@ -735,6 +735,7 @@ export default function UnifiedSidebar({
                         <Button
                           size="sm"
                           variant="outline"
+                          className="bg-background text-foreground border-input hover:bg-accent hover:text-accent-foreground"
                           onClick={() => wallImageInputRef.current?.click()}
                         >
                           <ImageIcon className="w-4 h-4" />
