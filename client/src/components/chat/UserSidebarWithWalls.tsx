@@ -695,7 +695,7 @@ export default function UnifiedSidebar({
             >
               {/* Post Creation */}
               {currentUser && currentUser.userType !== 'guest' && (
-                <Card className="mb-4 border border-sidebar-border bg-sidebar text-sidebar-foreground">
+                <Card className="mb-4 wall-post-card text-sidebar-foreground">
                   <CardContent className="p-3">
                     <Textarea
                       value={newPostContent}

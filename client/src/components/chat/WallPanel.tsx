@@ -416,7 +416,7 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
 
               {/* نموذج النشر المحسن */}
               {currentUser.userType !== 'guest' && (
-                <Card className="mb-6 border border-border shadow-lg bg-background">
+                <Card className="mb-6 wall-post-card shadow-lg">
                   <CardContent className="p-6">
                     <div className="flex items-center gap-3 mb-4">
                       <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
