@@ -203,6 +203,9 @@ export function applyThemeById(themeId: string, persist: boolean = false) {
     finalCssVars['--settings-menu-bg'] = '#000000';
     // Background RGB for fallback
     finalCssVars['--background-rgb'] = '15, 15, 20';
+    // Tabs active background: violet (nahdi) tint for berryCool
+    finalCssVars['--tab-active-bg-start'] = 'color-mix(in srgb, var(--primary-solid) 28%, transparent)';
+    finalCssVars['--tab-active-bg-end'] = 'color-mix(in srgb, var(--primary-solid) 12%, transparent)';
   } else {
     // Default wall post background
     finalCssVars['--wall-post-bg'] = 'rgba(255, 255, 255, 0.6)';
