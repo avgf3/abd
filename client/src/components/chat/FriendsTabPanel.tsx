@@ -459,7 +459,7 @@ export default function FriendsTabPanel({
         {activeTab === 'requests' && (
           <div className="space-y-4">
             {/* Incoming Requests */}
-            <Card>
+            <Card className="bg-[var(--friends-requests-bg,var(--card))]">
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
                   <span>الطلبات الواردة</span>
@@ -539,7 +539,7 @@ export default function FriendsTabPanel({
             </Card>
 
             {/* Outgoing Requests */}
-            <Card>
+            <Card className="bg-[var(--friends-requests-bg,var(--card))]">
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
                   <span>الطلبات الصادرة</span>
