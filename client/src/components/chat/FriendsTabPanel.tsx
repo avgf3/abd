@@ -278,12 +278,10 @@ export default function FriendsTabPanel({
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-gray-200">
+      <div className="flex border-b border-border">
         <Button
           variant={activeTab === 'friends' ? 'default' : 'ghost'}
-          className={`flex-1 rounded-none py-3 ${
-            activeTab === 'friends' ? 'bg-blue-500 text-white' : 'text-gray-600 hover:bg-gray-100'
-          }`}
+          className={`flex-1 rounded-none py-3`}
           onClick={() => setActiveTab('friends')}
         >
           <Users className="w-4 h-4 ml-2" />
@@ -291,15 +289,13 @@ export default function FriendsTabPanel({
         </Button>
         <Button
           variant={activeTab === 'requests' ? 'default' : 'ghost'}
-          className={`flex-1 rounded-none py-3 relative ${
-            activeTab === 'requests' ? 'bg-blue-500 text-white' : 'text-gray-600 hover:bg-gray-100'
-          }`}
+          className={`flex-1 rounded-none py-3 relative`}
           onClick={() => setActiveTab('requests')}
         >
           <UserPlus className="w-4 h-4 ml-2" />
           الطلبات
           {incomingRequests.length > 0 && (
-            <Badge className="absolute -top-1 -right-1 bg-red-500 text-white text-xs min-w-[20px] h-5">
+            <Badge className="absolute -top-1 -right-1 text-destructive bg-destructive/10 border-destructive/30 text-xs min-w-[20px] h-5">
               {incomingRequests.length}
             </Badge>
           )}
@@ -336,9 +332,9 @@ export default function FriendsTabPanel({
 
             {/* Friends List */}
             {isLoadingFriends || isFetchingFriends ? (
-              <div className="text-center py-8 text-gray-500">جاري التحميل...</div>
+              <div className="text-center py-8 text-muted-foreground">جاري التحميل...</div>
             ) : filteredFriends.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-8 text-muted-foreground">
                 <div className="mb-3">👥</div>
                 <p className="text-sm">
                   {searchTerm ? 'لا توجد نتائج للبحث' : 'لا توجد أصدقاء بعد'}
@@ -346,7 +342,7 @@ export default function FriendsTabPanel({
                 {searchTerm && (
                   <button
                     onClick={() => setSearchTerm('')}
-                    className="text-blue-500 hover:text-blue-700 text-xs mt-2 underline"
+                    className="text-primary hover:opacity-80 text-xs mt-2 underline"
                   >
                     مسح البحث
                   </button>
@@ -433,7 +429,6 @@ export default function FriendsTabPanel({
                               e.stopPropagation();
                               onStartPrivateChat(friend);
                             }}
-                            className="bg-blue-500 hover:bg-blue-600"
                             title="محادثة خاصة"
                           >
                             <MessageCircle className="w-4 h-4" />
@@ -445,7 +440,7 @@ export default function FriendsTabPanel({
                               e.stopPropagation();
                               handleRemoveFriend(friend.id);
                             }}
-                            className="text-red-500 hover:bg-red-50"
+                            className="text-destructive hover:bg-destructive/10"
                             title="حذف الصديق"
                           >
                             <Trash2 className="w-4 h-4" />

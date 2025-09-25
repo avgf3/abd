@@ -99,17 +99,17 @@ export default function MediaUploadButton({ onMediaSelect, disabled, currentUser
             <Plus className="h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="bg-gray-900/95 border-gray-700">
+        <DropdownMenuContent align="end" className="bg-popover border-border text-popover-foreground">
           <DropdownMenuItem
             onClick={() => imageInputRef.current?.click()}
-            className="flex items-center gap-2 text-gray-200 hover:bg-gray-800"
+            className="flex items-center gap-2 hover:bg-accent/10"
           >
             <Image className="h-4 w-4" />
             إرسال صورة
           </DropdownMenuItem>
           <DropdownMenuItem
             onClick={() => videoInputRef.current?.click()}
-            className="flex items-center gap-2 text-gray-200 hover:bg-gray-800"
+            className="flex items-center gap-2 hover:bg-accent/10"
           >
             <Video className="h-4 w-4" />
             إرسال فيديو

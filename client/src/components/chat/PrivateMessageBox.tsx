@@ -641,12 +641,12 @@ export default function PrivateMessageBox({
         modal={false}
       >
         <FloatingDialogContent
-          className="max-w-md w-[25vw] min-w-[400px] p-0 bg-black/90 border-gray-700"
+          className="max-w-md w-[25vw] min-w-[400px] p-0 bg-popover border-border"
           onInteractOutside={(e) => e.preventDefault()}
           onPointerDownOutside={(e) => e.preventDefault()}
         >
           <div 
-            className="drag-handle bg-black/50 p-1 flex justify-end cursor-move border-b border-gray-600 select-none"
+            className="drag-handle bg-popover p-1 flex justify-end cursor-move border-b border-border select-none"
             style={{ touchAction: 'none', userSelect: 'none' }}
             onPointerDown={(e) => {
               e.preventDefault();

@@ -54,7 +54,6 @@ export default function FileUploadButton({
       <Button
         onClick={handleFileClick}
         disabled={disabled}
-        className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-lg shadow-md disabled:opacity-50"
         title="إرسال ملف (صورة، فيديو، مستند)"
       >
         <Paperclip className="w-4 h-4" />
