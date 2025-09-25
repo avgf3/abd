@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState, useEffect } from 'react';
+import { lazy, useState, useEffect } from 'react';
 import { useRoute, useLocation } from 'wouter';
 import { getSubChatByPath } from '@/data/subChats';
 
@@ -124,17 +124,15 @@ export default function SubChat() {
 
   return (
     <div className="min-h-[100dvh] bg-background text-foreground font-['Cairo'] overflow-hidden" dir="rtl" style={{ minHeight: '100dvh' }}>
-      <Suspense fallback={<div className="p-6 text-center">...جاري التحميل</div>}>
-        {isRestoring ? (
-          <div className="p-6 text-center">...جاري استعادة الجلسة</div>
-        ) : showWelcome ? (
-          <SubChatWelcomeScreen onUserLogin={handleUserLogin} subChatData={subChatData} />
-        ) : selectedRoomId ? (
-          <ChatInterface chat={chat} onLogout={handleLogout} />
-        ) : (
-          <RoomSelectorScreen currentUser={chat.currentUser} onSelectRoom={handleSelectRoom} />
-        )}
-      </Suspense>
+      {isRestoring ? (
+        <div className="p-6 text-center">...جاري استعادة الجلسة</div>
+      ) : showWelcome ? (
+        <SubChatWelcomeScreen onUserLogin={handleUserLogin} subChatData={subChatData} />
+      ) : selectedRoomId ? (
+        <ChatInterface chat={chat} onLogout={handleLogout} />
+      ) : (
+        <RoomSelectorScreen currentUser={chat.currentUser} onSelectRoom={handleSelectRoom} />
+      )}
 
       {/* Kick countdown */}
       <KickCountdown

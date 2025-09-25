@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState, useEffect } from 'react';
+import { lazy, useState, useEffect } from 'react';
 import { useRoute, useLocation } from 'wouter';
 import { getCityByPath, CitiesSystem, getAllCities, getCitiesByCountry } from '@/data/cityChats';
 
@@ -262,25 +262,15 @@ export default function CityChat() {
   return (
     <div className="min-h-[100dvh] bg-background text-foreground font-['Cairo'] overflow-hidden" dir="rtl" style={{ minHeight: '100dvh' }}>
 
-      <Suspense fallback={
-        <div className="min-h-[100dvh] bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
-          <div className="text-center p-8 bg-white rounded-xl shadow-lg">
-            <div className="text-6xl mb-4">⏳</div>
-            <h2 className="text-2xl font-bold text-gray-800 mb-2">جاري التحميل...</h2>
-            <p className="text-gray-600">يرجى الانتظار قليلاً</p>
-          </div>
-        </div>
-      }>
-        {isRestoring ? (
-          <div className="p-6 text-center">...جاري استعادة الجلسة</div>
-        ) : showWelcome ? (
-          <CityWelcomeScreen onUserLogin={handleUserLogin} cityData={cityData} cityInfo={cityInfo} />
-        ) : selectedRoomId ? (
-          <ChatInterface chat={chat} onLogout={handleLogout} />
-        ) : (
-          <RoomSelectorScreen currentUser={chat.currentUser} onSelectRoom={handleSelectRoom} />
-        )}
-      </Suspense>
+      {isRestoring ? (
+        <div className="p-6 text-center">...جاري استعادة الجلسة</div>
+      ) : showWelcome ? (
+        <CityWelcomeScreen onUserLogin={handleUserLogin} cityData={cityData} cityInfo={cityInfo} />
+      ) : selectedRoomId ? (
+        <ChatInterface chat={chat} onLogout={handleLogout} />
+      ) : (
+        <RoomSelectorScreen currentUser={chat.currentUser} onSelectRoom={handleSelectRoom} />
+      )}
 
       {/* Kick countdown */}
       <KickCountdown

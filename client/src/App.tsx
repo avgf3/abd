@@ -1,5 +1,6 @@
 import { QueryClientProvider } from '@tanstack/react-query';
 import { Switch, Route } from 'wouter';
+import { Suspense } from 'react';
 
 import { queryClient } from './lib/queryClient';
 
@@ -7,6 +8,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { UserProvider } from '@/contexts/UserContext';
 import { ComposerStyleProvider } from '@/contexts/ComposerStyleContext';
+import { PageLoader } from '@/components/ui/loading';
 import ChatPage from '@/pages/chat';
 import ArabicChat from '@/pages/ArabicChat';
 import CountryChat from '@/pages/CountryChat';
@@ -321,7 +323,9 @@ function App() {
               تخطِ إلى المحتوى الرئيسي
             </a>
             <main id="main-content" role="main">
-              <Router />
+              <Suspense fallback={<PageLoader />}>
+                <Router />
+              </Suspense>
             </main>
           </TooltipProvider>
         </ComposerStyleProvider>
