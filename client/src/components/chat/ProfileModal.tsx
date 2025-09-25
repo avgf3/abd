@@ -3462,9 +3462,12 @@ export default function ProfileModal({
                                   }
                                 } catch (err: any) {
                                   console.error('خطأ في رفع الموسيقى:', err);
+                                  const msg = err?.status === 413
+                                    ? 'حجم الملف كبير جداً. الحد الأقصى هو 20 ميجابايت.'
+                                    : (err?.message || 'فشل رفع الملف الصوتي. تأكد من نوع وحجم الملف.');
                                   toast({ 
                                     title: 'خطأ في رفع الملف', 
-                                    description: err?.message || 'فشل رفع الملف الصوتي. تأكد من نوع وحجم الملف.', 
+                                    description: msg, 
                                     variant: 'destructive' 
                                   });
                                 } finally {
