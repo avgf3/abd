@@ -701,7 +701,7 @@ export default function UnifiedSidebar({
                       value={newPostContent}
                       onChange={(e) => setNewPostContent(e.target.value)}
                       placeholder={`ما الذي تريد مشاركته مع ${activeTab === 'public' ? 'الجميع' : 'أصدقائك'}؟`}
-                      className="mb-3 min-h-[80px] resize-none text-sm bg-background text-foreground border-input"
+                      className="mb-3 min-h-[80px] resize-none text-sm bg-transparent text-foreground border-input"
                       maxLength={500}
                     />
 

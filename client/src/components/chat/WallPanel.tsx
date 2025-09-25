@@ -447,7 +447,7 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
                       placeholder="شارك أفكارك، تجاربك، أو أي شيء يخطر ببالك..."
                       value={newPostContent}
                       onChange={(e) => setNewPostContent(e.target.value)}
-                      className="mb-4 resize-none bg-background text-foreground border-input rounded-xl focus:bg-background transition-colors min-h-[100px]"
+                      className="mb-4 resize-none bg-transparent text-foreground border-input rounded-xl focus:bg-transparent transition-colors min-h-[100px]"
                       maxLength={500}
                     />
 
