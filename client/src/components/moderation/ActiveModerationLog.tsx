@@ -137,7 +137,7 @@ export default function ActiveModerationLog({
   if (currentUser.userType !== 'admin' && currentUser.userType !== 'owner') {
     return (
       <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
-        <Card className="w-96 bg-gray-900/95 border-gray-700">
+        <Card className="w-96 bg-popover border-border">
           <CardHeader>
             <CardTitle className="text-center text-red-400">غير مصرح</CardTitle>
           </CardHeader>
@@ -154,8 +154,8 @@ export default function ActiveModerationLog({
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-4xl h-[80vh] bg-gray-900/95 border-gray-700">
-        <CardHeader className="border-b border-gray-700">
+      <Card className="w-full max-w-4xl h-[80vh] bg-popover border-border">
+        <CardHeader className="border-b border-border">
           <div className="flex items-center justify-between">
             <CardTitle className="text-xl text-gray-100 flex items-center gap-2">
               <Shield className="w-6 h-6 text-yellow-400" />
