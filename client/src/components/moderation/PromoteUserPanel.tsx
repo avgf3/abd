@@ -191,8 +191,9 @@ export default function PromoteUserPanel({
   // فقط المالك يمكنه ترقية المستخدمين
   if (currentUser.userType !== 'owner') {
     return (
-      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
-        <Card className="w-96 bg-popover border-border">
+      <div className="fixed inset-0 z-50 flex items-center justify-center">
+        <div className="absolute inset-0 modal-overlay" />
+        <Card className="w-96 bg-card border-border rounded-xl overflow-hidden shadow-2xl animate-fade-in">
           <CardHeader>
             <CardTitle className="text-center text-red-400">غير مصرح</CardTitle>
           </CardHeader>
@@ -219,13 +220,22 @@ export default function PromoteUserPanel({
   });
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-2xl max-h-[85vh] bg-popover border-border flex flex-col">
-        <CardHeader className="border-b border-border">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 modal-overlay" onClick={onClose} />
+      <Card className="w-full max-w-2xl max-h-[85vh] bg-card border-border rounded-xl overflow-hidden shadow-2xl flex flex-col animate-fade-in">
+        <CardHeader className="border-b border-border modern-nav relative px-4 py-3">
           <CardTitle className="text-xl text-gray-100 flex items-center gap-2">
-            <UserCheck className="w-6 h-6 text-blue-400" />
+            <UserCheck className="w-6 h-6 text-primary" />
             ترقية المستخدمين
           </CardTitle>
+          <button
+            onClick={onClose}
+            className="px-2 py-1 hover:bg-red-100 text-red-600 text-sm font-medium absolute left-3 top-1/2 -translate-y-1/2"
+            aria-label="إغلاق"
+            title="إغلاق"
+          >
+            ✖️
+          </button>
         </CardHeader>
 
         <CardContent className="p-6 space-y-6 flex-1 overflow-y-auto">
@@ -272,17 +282,17 @@ export default function PromoteUserPanel({
 
             {selectedRole && (
               <div className="p-3 bg-accent/20 border border-accent rounded-lg">
-                <h4 className="font-medium text-blue-200 mb-1">
+                <h4 className="font-medium text-primary mb-1">
                   صلاحيات {roleOptions.find((r) => r.value === selectedRole)?.label}:
                 </h4>
-                <p className="text-sm text-blue-300">
+                <p className="text-sm text-primary/80">
                   {roleOptions.find((r) => r.value === selectedRole)?.description}
                 </p>
               </div>
             )}
           </div>
 
-          <div className="border-t border-gray-700 pt-4">
+          <div className="border-t border-border pt-4">
             <h3 className="text-lg font-medium text-gray-200 mb-3">المستخدمون المؤهلون:</h3>
             <ScrollArea className="h-40">
               {eligibleUsers.length === 0 ? (
@@ -294,7 +304,7 @@ export default function PromoteUserPanel({
                   {eligibleUsers.map((user) => (
                     <div
                       key={user.id}
-                      className="flex items-center justify-between p-2 bg-gray-800/50 rounded"
+                      className="flex items-center justify-between p-2 bg-muted/50 rounded"
                     >
                       <div className="flex items-center gap-2">
                         <span style={{ color: user.usernameColor || '#E5E7EB' }}>
@@ -313,7 +323,7 @@ export default function PromoteUserPanel({
           </div>
 
           {/* قسم تعديل المستوى */}
-          <div className="mt-6 border-t border-gray-700 pt-4">
+          <div className="mt-6 border-t border-border pt-4">
             <h3 className="text-lg font-medium text-gray-200 mb-3">تعديل مستوى المستخدم</h3>
             <div className="grid md:grid-cols-3 grid-cols-1 gap-3">
               <div>
@@ -364,14 +374,14 @@ export default function PromoteUserPanel({
           </div>
         </CardContent>
 
-        <CardFooter className="flex justify-end gap-2 border-t border-gray-700">
+        <CardFooter className="flex justify-end gap-2 border-t border-border modern-nav">
           <Button onClick={onClose} variant="outline">
             إلغاء
           </Button>
           <Button
             onClick={handlePromote}
             disabled={!selectedUser || !selectedRole || isSubmitting}
-            className="bg-blue-600 hover:bg-blue-700"
+            className="bg-primary hover:opacity-90 text-primary-foreground"
           >
             {isSubmitting ? 'جاري الترقية...' : 'ترقية المستخدم'}
           </Button>
