@@ -3463,9 +3463,13 @@ export default function ProfileModal({
                                   }
                                 } catch (err: any) {
                                   console.error('خطأ في رفع الموسيقى:', err);
-                                  const msg = err?.status === 413
-                                    ? 'حجم الملف كبير جداً. الحد الأقصى هو 10 ميجابايت. جرّب تقليل الجودة أو الضغط.'
-                                    : (err?.message || 'فشل رفع الملف الصوتي. تأكد من نوع وحجم الملف.');
+                                  let msg = err?.message || 'فشل رفع الملف الصوتي. تأكد من نوع وحجم الملف.';
+                                  
+                                  if (err?.status === 413) {
+                                    const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
+                                    msg = `حجم الملف كبير جداً (${fileSizeMB} ميجابايت). الحد الأقصى هو 10 ميجابايت. جرّب تقليل الجودة أو الضغط.`;
+                                  }
+                                  
                                   toast({ 
                                     title: 'خطأ في رفع الملف', 
                                     description: msg, 
