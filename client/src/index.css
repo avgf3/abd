@@ -1536,9 +1536,9 @@ li > * > div.effect-crystal {
 .runin-first-line {
   display: block;
   width: 100%;
-  /* استخدام hanging indent لجعل الأسطر التالية تبدأ تحت الاسم */
-  padding-right: 110px; /* مساحة للاسم والشارة */
-  text-indent: -110px; /* سحب السطر الأول للخلف */
+  /* تطبيق hanging indent بشكل صحيح */
+  text-indent: -100px;
+  padding-right: 100px;
 }
 
 /* الاسم والشارة */
@@ -1548,10 +1548,10 @@ li > * > div.effect-crystal {
   gap: 0.25rem; /* gap-1 */
   white-space: nowrap;
   margin-left: 0.5rem; /* مسافة بين الاسم والنص */
-  vertical-align: baseline;
-  /* تأكد من أن الاسم لا يتجاوز المساحة المخصصة */
-  max-width: 105px;
+  width: 95px; /* عرض ثابت للاسم */
   overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: baseline;
 }
 
 /* النص - يبدأ inline مع الاسم ثم يكمل في أسطر جديدة تحت بداية الاسم */
@@ -1562,18 +1562,19 @@ li > * > div.effect-crystal {
   word-break: break-word;
   overflow-wrap: anywhere;
   white-space: pre-wrap;
+  vertical-align: baseline;
 }
 
 /* تحسينات للجوال: نفس السلوك مع تقليل الفراغات */
 @media (max-width: 768px) {
   .runin-name { 
     gap: 0.25rem;
-    max-width: 90px; /* مساحة أقل للأسماء على الجوال */
+    width: 80px; /* مساحة أقل للأسماء على الجوال */
   }
   
   .runin-first-line {
-    padding-right: 95px; /* مساحة أقل للاسم والشارة على الجوال */
-    text-indent: -95px; /* سحب السطر الأول للخلف على الجوال */
+    padding-right: 85px; /* مساحة أقل للاسم والشارة على الجوال */
+    text-indent: -85px; /* سحب السطر الأول للخلف على الجوال */
   }
 }
 
