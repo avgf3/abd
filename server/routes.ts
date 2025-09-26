@@ -174,10 +174,10 @@ const musicStorage = multer.diskStorage({
 const musicUpload = multer({
   storage: musicStorage,
   limits: { 
-    fileSize: 10 * 1024 * 1024, // 10MB
+    fileSize: 12 * 1024 * 1024, // margin over 10MB to account for multipart overhead
     files: 1, 
-    fieldSize: 64 * 1024, 
-    parts: 10 
+    fieldSize: 256 * 1024, 
+    parts: 20 
   },
   fileFilter: (_req, file, cb) => {
     // قائمة أنواع الملفات المدعومة - محسنة
@@ -587,6 +587,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
             error: 'لم يتم رفع أي ملف صوت' 
           });
         }
+
+        // enforce business max size of 10MB while allowing a transport margin above (multipart overhead)
+        try {
+          const uploadedSize = (req.file as any)?.size || 0;
+          const maxUserFileSize = 10 * 1024 * 1024;
+          if (uploadedSize > maxUserFileSize) {
+            try { await fsp.unlink(req.file.path).catch(() => {}); } catch {}
+            return res.status(413).json({
+              success: false,
+              error: 'حجم الملف يتجاوز الحد المسموح (10 ميجابايت)'
+            });
+          }
+        } catch {}
 
         const userId = (req as any).user?.id as number;
         if (!userId || isNaN(userId)) {

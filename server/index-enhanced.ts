@@ -185,6 +185,20 @@ app.use(
     index: false,
     redirect: false,
     setHeaders: (res, path) => {
+      // Basic content types for audio to ensure proper streaming and seeking
+      if (path.endsWith('.mp3')) {
+        res.setHeader('Content-Type', 'audio/mpeg');
+        res.setHeader('Accept-Ranges', 'bytes');
+      } else if (path.endsWith('.ogg')) {
+        res.setHeader('Content-Type', 'audio/ogg');
+        res.setHeader('Accept-Ranges', 'bytes');
+      } else if (path.endsWith('.wav')) {
+        res.setHeader('Content-Type', 'audio/wav');
+        res.setHeader('Accept-Ranges', 'bytes');
+      } else if (path.endsWith('.webm')) {
+        res.setHeader('Content-Type', 'audio/webm');
+        res.setHeader('Accept-Ranges', 'bytes');
+      }
       res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
       res.setHeader('Pragma', 'no-cache');
       res.setHeader('Expires', '0');

@@ -124,7 +124,7 @@ app.use(
   })
 );
 
-app.use(express.urlencoded({ limit: '10mb', extended: true }));
+app.use(express.urlencoded({ limit: '16mb', extended: true }));
 
 // خدمة الملفات الثابتة للصور المرفوعة - محسّنة مع كاش يعتمد على ?v=hash
 const uploadsPath = path.join(process.cwd(), 'client/public/uploads');
@@ -224,12 +224,16 @@ app.use(
         res.setHeader('Content-Type', 'image/svg+xml');
       } else if (filePath.endsWith('.mp3')) {
         res.setHeader('Content-Type', 'audio/mpeg');
+        res.setHeader('Accept-Ranges', 'bytes');
       } else if (filePath.endsWith('.ogg')) {
         res.setHeader('Content-Type', 'audio/ogg');
+        res.setHeader('Accept-Ranges', 'bytes');
       } else if (filePath.endsWith('.wav')) {
         res.setHeader('Content-Type', 'audio/wav');
+        res.setHeader('Accept-Ranges', 'bytes');
       } else if (filePath.endsWith('.webm')) {
         res.setHeader('Content-Type', 'audio/webm');
+        res.setHeader('Accept-Ranges', 'bytes');
       }
 
       // ضبط سياسة الكاش النهائية بناءً على hasVersion الذي تم حسابه في middleware السابق

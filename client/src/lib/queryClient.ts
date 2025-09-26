@@ -197,7 +197,17 @@ export const api = {
               resolve(xhr.responseText as any);
             }
           } else {
-            reject(new Error(`${xhr.status}: ${xhr.statusText}`));
+            // حاول قراءة الرسالة JSON لإظهار سبب الرفض بدقة (مثل 413)
+            try {
+              const data = JSON.parse(xhr.responseText || '{}');
+              const err: any = new Error(`${xhr.status}: ${data?.error || xhr.statusText || 'Upload failed'}`);
+              err.status = xhr.status;
+              return reject(err);
+            } catch {
+              const err: any = new Error(`${xhr.status}: ${xhr.statusText || 'Upload failed'}`);
+              err.status = xhr.status;
+              return reject(err);
+            }
           }
         });
 
@@ -209,7 +219,7 @@ export const api = {
           reject(new Error('انتهت مهلة رفع الملف'));
         });
 
-        xhr.timeout = timeout;
+        xhr.timeout = timeout || 0; // 0 لتعطيل المهلة عند الحاجة
         xhr.open('POST', endpoint);
         xhr.withCredentials = true;
         xhr.send(formData);
