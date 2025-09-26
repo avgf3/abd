@@ -111,9 +111,28 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
     cacheTimeout: 10 * 60 * 1000, // 10 دقائق cache
   });
 
-  // جلب الغرف عند الدخول لأول مرة لضمان ظهور التبويب مباشرة
+  // اجلب الغرف فقط بعد اتصال السوكت لضمان نجاح أسرع وتفادي مهلة البداية
   useEffect(() => {
-    fetchRooms(false).catch(() => {});
+    let unsub: (() => void) | null = null;
+    try {
+      const { getSocket } = require('@/lib/socket');
+      const s = getSocket();
+      const onConnect = () => {
+        fetchRooms(false).catch(() => {});
+      };
+      if (s.connected) {
+        onConnect();
+      } else {
+        s.on('connect', onConnect);
+      }
+      unsub = () => {
+        try { s.off('connect', onConnect); } catch {}
+      };
+    } catch {
+      // fallback: حاول مرة واحدة فقط بدون ربط بالسوقت
+      fetchRooms(false).catch(() => {});
+    }
+    return () => { if (unsub) unsub(); };
   }, [fetchRooms]);
 
   // الاستماع لأخطاء الغرف المقفلة
@@ -1382,6 +1401,29 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                   }
                   // تحديث/تنظيف الكاش دائماً للمستخدم الذي تم تحديثه
                   setCachedUser(updatedUser);
+                  // تحديث المشغل الصوتي العالمي فوراً بناء على حالة موسيقى البروفايل
+                  try {
+                    const hasMusic = !!updatedUser.profileMusicUrl && (updatedUser as any).profileMusicEnabled !== false && (chat.currentUser as any)?.globalSoundEnabled !== false;
+                    if (!hasMusic) {
+                      try { profileAudioRef.current?.pause(); } catch {}
+                    } else {
+                      if (!profileAudioRef.current) profileAudioRef.current = new Audio();
+                      const audio = profileAudioRef.current;
+                      audio.src = updatedUser.profileMusicUrl as string;
+                      const vol = typeof (updatedUser as any).profileMusicVolume === 'number' ? (updatedUser as any).profileMusicVolume : 70;
+                      audio.volume = Math.max(0, Math.min(1, (vol || 70) / 100));
+                      audio.loop = true;
+                      audio.pause();
+                      audio.currentTime = 0;
+                      audio.play().catch(async () => {
+                        try {
+                          audio.muted = true;
+                          await audio.play();
+                          setTimeout(() => { try { audio.muted = false; } catch {} }, 120);
+                        } catch {}
+                      });
+                    }
+                  } catch {}
                 }}
               />
             ) : (
@@ -1406,6 +1448,29 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                     });
                     // تحديث/تنظيف الكاش بعد التحديث الناجح
                     setCachedUser(updatedUser);
+                    // تحديث المشغل الصوتي العالمي فوراً بناء على حالة موسيقى البروفايل
+                    try {
+                      const hasMusic = !!updatedUser.profileMusicUrl && (updatedUser as any).profileMusicEnabled !== false && (chat.currentUser as any)?.globalSoundEnabled !== false;
+                      if (!hasMusic) {
+                        try { profileAudioRef.current?.pause(); } catch {}
+                      } else {
+                        if (!profileAudioRef.current) profileAudioRef.current = new Audio();
+                        const audio = profileAudioRef.current;
+                        audio.src = updatedUser.profileMusicUrl as string;
+                        const vol = typeof (updatedUser as any).profileMusicVolume === 'number' ? (updatedUser as any).profileMusicVolume : 70;
+                        audio.volume = Math.max(0, Math.min(1, (vol || 70) / 100));
+                        audio.loop = true;
+                        audio.pause();
+                        audio.currentTime = 0;
+                        audio.play().catch(async () => {
+                          try {
+                            audio.muted = true;
+                            await audio.play();
+                            setTimeout(() => { try { audio.muted = false; } catch {} }, 120);
+                          } catch {}
+                        });
+                      }
+                    } catch {}
                   }
                 }}
               />

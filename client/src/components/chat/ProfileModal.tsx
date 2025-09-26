@@ -2716,6 +2716,7 @@ export default function ProfileModal({
                     src={localUser.profileMusicUrl}
                     {...(externalAudioManaged ? {} : { autoPlay: true })}
                     loop
+                    crossOrigin="anonymous"
                     style={{ display: 'none' }}
                     onError={handleAudioError}
                     onLoadStart={handleAudioLoadStart}
@@ -2730,6 +2731,7 @@ export default function ProfileModal({
                     src={localUser.profileMusicUrl}
                     {...(externalAudioManaged ? {} : { autoPlay: true })}
                     loop
+                    crossOrigin="anonymous"
                     style={{ display: 'none' }}
                     onError={handleAudioError}
                     onLoadStart={handleAudioLoadStart}

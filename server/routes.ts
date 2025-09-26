@@ -616,22 +616,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
 
-        // حذف الملف القديم إن وجد - مع معالجة أفضل للأخطاء
-        if (user.profileMusicUrl) {
-          // احسب المسار الكامل بأمان حتى لو كان الرابط يبدأ بـ '/'
-          const uploadsRoot = path.join(process.cwd(), 'client', 'public');
-          const relative = String(user.profileMusicUrl).replace(/^\/+/, '');
-          const oldPath = path.resolve(uploadsRoot, relative);
+        // تأكيد وجود مجلد الرفع العام ونقل الملف في حال تم حفظه في temp
+        const publicRoot = path.join(process.cwd(), 'client', 'public');
+        const publicMusicDir = path.join(publicRoot, 'uploads', 'music');
+        try {
+          await fsp.mkdir(publicMusicDir, { recursive: true });
+        } catch (mkErr) {
+          console.error('❌ تعذر إنشاء مجلد الرفع العام للموسيقى:', mkErr);
+          // تنظيف الملف الذي تم رفعه
+          try { await fsp.unlink(req.file.path).catch(() => {}); } catch {}
+          return res.status(500).json({ success: false, error: 'تعذر تهيئة مجلد رفع الملفات' });
+        }
+
+        const currentPath = path.resolve(req.file.path);
+        const finalPath = path.join(publicMusicDir, req.file.filename);
+        const isAlreadyInPublic = currentPath.startsWith(publicMusicDir + path.sep);
+
+        if (!isAlreadyInPublic) {
           try {
-            if (oldPath.startsWith(uploadsRoot)) {
-              await fsp.unlink(oldPath);
-              console.log(`✅ تم حذف الملف القديم: ${oldPath}`);
-            } else {
-              console.warn('⚠️ تم تجاهل حذف ملف خارج مجلد الرفع:', oldPath);
+            // محاولة النقل السريع
+            await fsp.rename(currentPath, finalPath);
+          } catch (renameErr) {
+            // في حال فشل rename (اختلاف الأقراص)، قم بالنسخ ثم الحذف
+            try {
+              const buffer = await fsp.readFile(currentPath);
+              await fsp.writeFile(finalPath, buffer);
+              await fsp.unlink(currentPath);
+            } catch (copyErr) {
+              console.error('❌ تعذر نقل الملف إلى مجلد الرفع العام:', copyErr);
+              try { await fsp.unlink(currentPath).catch(() => {}); } catch {}
+              return res.status(500).json({ success: false, error: 'فشل نقل الملف إلى مجلد الرفع' });
             }
-          } catch (unlinkErr) {
-            console.warn(`⚠️ تعذر حذف الملف القديم: ${oldPath}`, unlinkErr);
-            // لا نوقف العملية إذا فشل حذف الملف القديم
           }
         }
 
@@ -652,15 +667,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (!updated) {
           // حذف الملف في حالة فشل التحديث
           try { 
-            await fsp.unlink(req.file.path);
-            console.log(`✅ تم حذف الملف بعد فشل التحديث: ${req.file.path}`);
+            const pathToRemove = isAlreadyInPublic ? finalPath : (path.resolve(finalPath));
+            await fsp.unlink(pathToRemove);
+            console.log(`✅ تم حذف الملف بعد فشل التحديث: ${pathToRemove}`);
           } catch (cleanupErr) {
-            console.warn(`⚠️ تعذر حذف الملف بعد فشل التحديث: ${req.file.path}`, cleanupErr);
+            console.warn(`⚠️ تعذر حذف الملف بعد فشل التحديث: ${finalPath}`, cleanupErr);
           }
           return res.status(500).json({ 
             success: false,
             error: 'فشل تحديث بيانات المستخدم' 
           });
+        }
+
+        // حذف الملف القديم إن وجد - بعد نجاح التحديث
+        if (user.profileMusicUrl) {
+          try {
+            const relative = String(user.profileMusicUrl).replace(/^\/+/, '').split('?')[0];
+            const oldPath = path.resolve(publicRoot, relative);
+            if (oldPath.startsWith(publicRoot + path.sep)) {
+              await fsp.unlink(oldPath).catch(() => {});
+              console.log(`✅ تم حذف الملف القديم: ${oldPath}`);
+            } else {
+              console.warn('⚠️ تم تجاهل حذف ملف خارج مجلد الرفع:', oldPath);
+            }
+          } catch (unlinkErr) {
+            console.warn('⚠️ تعذر حذف الملف القديم بأمان:', unlinkErr);
+          }
         }
 
         // بث تحديث محسن مع معالجة أفضل للأخطاء
@@ -699,7 +731,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         let statusCode = 500;
         
         if (error.code === 'LIMIT_FILE_SIZE') {
-          errorMessage = 'حجم الملف كبير جداً (الحد الأقصى 10 ميجابايت)';
+          errorMessage = 'حجم الملف كبير جداً (الحد الأقصى 20 ميجابايت)';
           statusCode = 413;
         } else if (error.message?.includes('Unsupported audio file type')) {
           errorMessage = 'نوع الملف غير مدعوم';
