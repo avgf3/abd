@@ -14,6 +14,7 @@ export const UPLOAD_CONFIG = {
   ALLOWED_TYPES: {
     IMAGES: ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'],
     VIDEOS: ['video/mp4', 'video/avi', 'video/mov', 'video/wmv', 'video/webm'],
+    AUDIO: ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/ogg', 'audio/webm', 'audio/m4a', 'audio/aac'],
   },
 
   // رسائل الخطأ
@@ -36,7 +37,7 @@ export const UPLOAD_CONFIG = {
 // دالة للتحقق من صحة الملف
 export function validateFile(
   file: File,
-  type: 'profile_image' | 'profile_banner' | 'chat_image' | 'chat_video' | 'wall_image'
+  type: 'profile_image' | 'profile_banner' | 'chat_image' | 'chat_video' | 'wall_image' | 'profile_music'
 ): { isValid: boolean; error?: string } {
   // التحقق من الحجم
   const maxSize =
@@ -52,6 +53,7 @@ export function validateFile(
   // التحقق من النوع
   const isImage = type.includes('image');
   const isVideo = type.includes('video');
+  const isAudio = type.includes('music');
 
   if (isImage && !UPLOAD_CONFIG.ALLOWED_TYPES.IMAGES.includes(file.type)) {
     return {
@@ -64,6 +66,13 @@ export function validateFile(
     return {
       isValid: false,
       error: `${UPLOAD_CONFIG.ERROR_MESSAGES.INVALID_TYPE} (المسموح: MP4, AVI, MOV, WMV, WebM)`,
+    };
+  }
+
+  if (isAudio && !UPLOAD_CONFIG.ALLOWED_TYPES.AUDIO.includes(file.type)) {
+    return {
+      isValid: false,
+      error: `${UPLOAD_CONFIG.ERROR_MESSAGES.INVALID_TYPE} (المسموح: MP3, WAV, OGG, WebM, M4A, AAC)`,
     };
   }
 
