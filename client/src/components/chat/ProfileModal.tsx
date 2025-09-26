@@ -2707,14 +2707,14 @@ export default function ProfileModal({
             }}
           >
             {/* مشغل الموسيقى - يظهر أعلى يمين الغلاف */}
-            {localUser?.profileMusicUrl && musicEnabled && (
+            {localUser?.profileMusicUrl && musicEnabled && !externalAudioManaged && (
               <>
                 {/* مشغل مخفي لصاحب البروفايل - التشغيل التلقائي فقط */}
                 {localUser?.id === currentUser?.id && (
                   <audio
                     ref={audioRef}
                     src={localUser.profileMusicUrl}
-                    {...(externalAudioManaged ? {} : { autoPlay: true })}
+                    autoPlay
                     loop
                     style={{ display: 'none' }}
                     onError={handleAudioError}
@@ -2728,7 +2728,7 @@ export default function ProfileModal({
                   <audio
                     ref={audioRef}
                     src={localUser.profileMusicUrl}
-                    {...(externalAudioManaged ? {} : { autoPlay: true })}
+                    autoPlay
                     loop
                     style={{ display: 'none' }}
                     onError={handleAudioError}
