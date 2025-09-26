@@ -2,6 +2,7 @@ import fs from 'fs';
 import { promises as fsp } from 'fs';
 import { createServer, type Server } from 'http';
 import path from 'path';
+import crypto from 'crypto';
 
 import roomRoutes from './routes/rooms';
 import messageRoutes from './routes/messages';
@@ -16,6 +17,7 @@ import { sanitizeUserData, sanitizeUsersArray } from './utils/data-sanitizer';
 
 import bcrypt from 'bcrypt';
 import type { Express } from 'express';
+import express from 'express';
 import multer from 'multer';
 import sharp from 'sharp';
 import { z } from 'zod';
@@ -758,6 +760,291 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     }
   );
+
+  // رفع موسيقى البروفايل - رفع مجزّأ لتجاوز قيود الـ Proxy/CDN
+  // نقاط النهاية: start / chunk / finish
+  const CHUNK_ROOT = path.join(process.cwd(), 'temp', 'uploads', 'music-chunks');
+  const ensureDir = async (dir: string) => {
+    await fsp.mkdir(dir, { recursive: true }).catch(() => {});
+  };
+
+  // تخزين مؤقت للقطع باستخدام ترويسات لتحديد الجلسة والفهرس
+  const chunkStorage = multer.diskStorage({
+    destination: async (req, _file, cb) => {
+      try {
+        const uploadId = String((req.headers['x-upload-id'] as string) || '').trim();
+        const safeId = uploadId && /^[a-f0-9\-]{8,}$/i.test(uploadId) ? uploadId : 'misc';
+        const sessionDir = path.join(CHUNK_ROOT, safeId);
+        await ensureDir(sessionDir);
+        cb(null, sessionDir);
+      } catch (err) {
+        cb(err as any, CHUNK_ROOT);
+      }
+    },
+    filename: (req, _file, cb) => {
+      const idxRaw = String((req.headers['x-chunk-index'] as string) || '0');
+      const idx = Number.isFinite(Number(idxRaw)) ? Number(idxRaw) : 0;
+      cb(null, `chunk-${idx}.part`);
+    },
+  });
+  const chunkUpload = multer({
+    storage: chunkStorage,
+    limits: {
+      // حجم كل قطعة (يمكن تغييره من العميل) لكن نحده هنا لأمان أعلى
+      fileSize: 8 * 1024 * 1024,
+      files: 1,
+      parts: 20,
+      fieldSize: 512 * 1024,
+    },
+  });
+
+  // بدء الجلسة
+  app.post('/api/upload/profile-music/chunked/start', protect.auth, limiters.upload, async (req, res) => {
+    try {
+      res.set('Cache-Control', 'no-store');
+
+      const userId = (req as any).user?.id as number;
+      if (!userId || isNaN(userId)) {
+        return res.status(401).json({ success: false, error: 'يجب تسجيل الدخول' });
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ success: false, error: 'المستخدم غير موجود' });
+      }
+      if (user.userType !== 'owner' && user.userType !== 'admin' && user.userType !== 'moderator') {
+        return res.status(403).json({ success: false, error: 'هذه الميزة متاحة للمشرفين فقط' });
+      }
+
+      const { fileName, fileSize, mimeType, chunkSize, title } = req.body || {};
+      if (!fileName || !fileSize || !chunkSize) {
+        return res.status(400).json({ success: false, error: 'بيانات البدء ناقصة' });
+      }
+
+      const allowedMimeTypes = [
+        'audio/mpeg',
+        'audio/mp3',
+        'audio/ogg',
+        'audio/webm',
+        'audio/wav',
+        'audio/m4a',
+        'audio/aac',
+        'audio/x-m4a',
+        'audio/mp4',
+      ];
+      if (mimeType && !allowedMimeTypes.includes(String(mimeType).toLowerCase())) {
+        return res.status(415).json({ success: false, error: 'نوع الملف غير مدعوم' });
+      }
+
+      const MAX_MB = Number(process.env.MAX_PROFILE_MUSIC_SIZE_MB || process.env.MAX_MUSIC_UPLOAD_MB || 50);
+      const MAX_BYTES = MAX_MB * 1024 * 1024;
+      if (Number(fileSize) > MAX_BYTES) {
+        return res.status(413).json({ success: false, error: `حجم الملف يتجاوز الحد (${MAX_MB} ميجابايت)` });
+      }
+
+      const totalChunks = Math.ceil(Number(fileSize) / Number(chunkSize));
+      const uploadId = crypto.randomBytes(16).toString('hex');
+      const sessionDir = path.join(CHUNK_ROOT, uploadId);
+      await ensureDir(sessionDir);
+
+      const meta = {
+        uploadId,
+        userId,
+        fileName: String(fileName),
+        fileSize: Number(fileSize),
+        mimeType: String(mimeType || ''),
+        chunkSize: Number(chunkSize),
+        totalChunks,
+        title: typeof title === 'string' ? title.slice(0, 200) : '',
+        received: {} as Record<string, boolean>,
+        createdAt: Date.now(),
+      };
+      await fsp.writeFile(path.join(sessionDir, 'meta.json'), JSON.stringify(meta, null, 2), 'utf-8');
+
+      return res.json({ success: true, uploadId, totalChunks });
+    } catch (err: any) {
+      console.error('❌ start chunked error:', err);
+      return res.status(500).json({ success: false, error: 'خطأ في بدء جلسة الرفع' });
+    }
+  });
+
+  // رفع قطعة
+  app.post(
+    '/api/upload/profile-music/chunked/chunk',
+    protect.auth,
+    limiters.upload,
+    (req, res, next) => {
+      chunkUpload.single('chunk')(req, res, (err) => {
+        if (err) {
+          if ((err as any)?.code === 'LIMIT_FILE_SIZE') {
+            return res.status(413).json({ success: false, error: 'القطعة كبيرة جداً' });
+          }
+          return res.status(400).json({ success: false, error: (err as Error).message || 'خطأ في رفع القطعة' });
+        }
+        next();
+      });
+    },
+    async (req, res) => {
+      try {
+        res.set('Cache-Control', 'no-store');
+        const uploadId = String((req.headers['x-upload-id'] as string) || '').trim();
+        const indexRaw = String((req.headers['x-chunk-index'] as string) || '');
+        const totalRaw = String((req.headers['x-chunk-count'] as string) || '');
+
+        if (!uploadId || !/^[a-f0-9\-]{8,}$/i.test(uploadId)) {
+          return res.status(400).json({ success: false, error: 'uploadId غير صالح' });
+        }
+        if (!req.file) {
+          return res.status(400).json({ success: false, error: 'لم يتم استلام القطعة' });
+        }
+        const index = Number(indexRaw);
+        const total = Number(totalRaw);
+        if (!Number.isFinite(index) || index < 0) {
+          return res.status(400).json({ success: false, error: 'chunk index غير صالح' });
+        }
+        if (!Number.isFinite(total) || total <= 0) {
+          return res.status(400).json({ success: false, error: 'chunk count غير صالح' });
+        }
+
+        const sessionDir = path.join(CHUNK_ROOT, uploadId);
+        const metaPath = path.join(sessionDir, 'meta.json');
+        const metaExists = await fsp.stat(metaPath).then(() => true).catch(() => false);
+        if (!metaExists) {
+          return res.status(404).json({ success: false, error: 'الجلسة غير موجودة' });
+        }
+        const meta = JSON.parse(await fsp.readFile(metaPath, 'utf-8')) as any;
+        if (meta.totalChunks !== total) {
+          // مزامنة العدد المتوقع إن اختلف (بعض المتصفحات قد تقرب)
+          meta.totalChunks = total;
+        }
+        meta.received[String(index)] = true;
+        await fsp.writeFile(metaPath, JSON.stringify(meta, null, 2), 'utf-8');
+
+        return res.json({ success: true, receivedIndex: index });
+      } catch (err: any) {
+        console.error('❌ chunk upload error:', err);
+        return res.status(500).json({ success: false, error: 'خطأ أثناء رفع القطعة' });
+      }
+    }
+  );
+
+  // إنهاء ودمج
+  app.post('/api/upload/profile-music/chunked/finish', protect.auth, limiters.upload, async (req, res) => {
+    try {
+      res.set('Cache-Control', 'no-store');
+      const userId = (req as any).user?.id as number;
+      if (!userId || isNaN(userId)) {
+        return res.status(401).json({ success: false, error: 'يجب تسجيل الدخول' });
+      }
+      const { uploadId } = req.body || {};
+      if (!uploadId || !/^[a-f0-9\-]{8,}$/i.test(uploadId)) {
+        return res.status(400).json({ success: false, error: 'uploadId غير صالح' });
+      }
+
+      const sessionDir = path.join(CHUNK_ROOT, uploadId);
+      const metaPath = path.join(sessionDir, 'meta.json');
+      const metaExists = await fsp.stat(metaPath).then(() => true).catch(() => false);
+      if (!metaExists) {
+        return res.status(404).json({ success: false, error: 'الجلسة غير موجودة' });
+      }
+
+      const meta = JSON.parse(await fsp.readFile(metaPath, 'utf-8')) as any;
+      const totalChunks = Number(meta.totalChunks || 0);
+      if (!Number.isFinite(totalChunks) || totalChunks <= 0) {
+        return res.status(400).json({ success: false, error: 'بيانات جلسة غير صالحة' });
+      }
+
+      // تحقق من اكتمال كل القطع
+      const missing: number[] = [];
+      for (let i = 0; i < totalChunks; i++) {
+        const chunkPath = path.join(sessionDir, `chunk-${i}.part`);
+        const exists = await fsp.stat(chunkPath).then(() => true).catch(() => false);
+        if (!exists) missing.push(i);
+      }
+      if (missing.length > 0) {
+        return res.status(400).json({ success: false, error: `قطع مفقودة: ${missing.join(',')}` });
+      }
+
+      const uploadsRoot = path.join(process.cwd(), 'client', 'public', 'uploads', 'music');
+      await ensureDir(uploadsRoot);
+
+      const ext = (path.extname(meta.fileName || '') || '').toLowerCase() || '.mp3';
+      const finalName = `music-${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
+      const finalPath = path.join(uploadsRoot, finalName);
+
+      // دمج تسلسلي بدون تحميل الذاكرة
+      const writeStream = fs.createWriteStream(finalPath, { flags: 'w' });
+      for (let i = 0; i < totalChunks; i++) {
+        await new Promise<void>((resolve, reject) => {
+          const chunkPath = path.join(sessionDir, `chunk-${i}.part`);
+          const readStream = fs.createReadStream(chunkPath);
+          readStream.on('error', reject);
+          readStream.on('end', resolve);
+          readStream.pipe(writeStream, { end: false });
+        });
+      }
+      await new Promise<void>((resolve, reject) => {
+        writeStream.end(() => resolve());
+        writeStream.on('error', reject);
+      });
+
+      // تحقق الحجم النهائي
+      const stat = await fsp.stat(finalPath);
+      if (meta.fileSize && stat.size !== Number(meta.fileSize)) {
+        // اختلاف طفيف قد يحدث بسبب metadata، نتسامح حتى ±1% أو 1KB
+        const delta = Math.abs(stat.size - Number(meta.fileSize));
+        const tolerance = Math.max(1024, Math.floor(Number(meta.fileSize) * 0.01));
+        if (delta > tolerance) {
+          await fsp.unlink(finalPath).catch(() => {});
+          return res.status(400).json({ success: false, error: 'حجم الملف النهائي غير مطابق' });
+        }
+      }
+
+      // تحقق الصلاحيات مجدداً ثم حدث المستخدم
+      const user = await storage.getUser(userId);
+      if (!user) {
+        await fsp.unlink(finalPath).catch(() => {});
+        return res.status(404).json({ success: false, error: 'المستخدم غير موجود' });
+      }
+      if (user.userType !== 'owner' && user.userType !== 'admin' && user.userType !== 'moderator') {
+        await fsp.unlink(finalPath).catch(() => {});
+        return res.status(403).json({ success: false, error: 'هذه الميزة متاحة للمشرفين فقط' });
+      }
+
+      // احذف الملف القديم إن وجد
+      if (user.profileMusicUrl) {
+        try {
+          const uploadsBase = path.join(process.cwd(), 'client', 'public');
+          const relative = String(user.profileMusicUrl).replace(/^\/+/, '');
+          const oldPath = path.resolve(uploadsBase, relative);
+          if (oldPath.startsWith(uploadsBase)) {
+            await fsp.unlink(oldPath).catch(() => {});
+          }
+        } catch {}
+      }
+
+      const fileUrl = `/uploads/music/${finalName}`;
+      const profileMusicTitle = String(meta.title || meta.fileName || 'موسيقى البروفايل').replace(/\.[^/.]+$/, '').slice(0, 200);
+      const updated = await storage.updateUser(userId, {
+        profileMusicUrl: fileUrl,
+        profileMusicTitle,
+        profileMusicEnabled: true,
+        profileMusicVolume: 70,
+      } as any);
+
+      // نظف مجلد الجلسة
+      await fsp.rm(sessionDir, { recursive: true, force: true }).catch(() => {});
+
+      if (!updated) {
+        return res.status(500).json({ success: false, error: 'فشل في تحديث المستخدم' });
+      }
+
+      return res.json({ success: true, url: fileUrl, title: profileMusicTitle });
+    } catch (err: any) {
+      console.error('❌ finish chunked error:', err);
+      return res.status(500).json({ success: false, error: 'خطأ في إنهاء الرفع' });
+    }
+  });
 
   // 🎛️ لوحة تحكم الصور المتقدمة - للمطورين والإدارة
   app.get('/api/admin/images/dashboard', developmentOnly, async (req, res) => {
