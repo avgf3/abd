@@ -2,6 +2,7 @@ import fs from 'fs';
 import { promises as fsp } from 'fs';
 import { createServer, type Server } from 'http';
 import path from 'path';
+// removed chunked upload crypto import per user request
 
 import roomRoutes from './routes/rooms';
 import messageRoutes from './routes/messages';
@@ -758,6 +759,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     }
   );
+
+  // تم إزالة الرفع المجزّأ بناءً على طلب المستخدم
 
   // 🎛️ لوحة تحكم الصور المتقدمة - للمطورين والإدارة
   app.get('/api/admin/images/dashboard', developmentOnly, async (req, res) => {

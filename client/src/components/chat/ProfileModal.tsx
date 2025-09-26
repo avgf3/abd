@@ -3429,15 +3429,16 @@ export default function ProfileModal({
                                   const fd = new FormData();
                                   fd.append('music', file);
                                   if (musicTitle) fd.append('title', musicTitle);
-                                  
+
+                                  let url: string | undefined;
+                                  let title: string | undefined;
+
                                   const res = await api.upload(`/api/upload/profile-music`, fd, { timeout: 0, onProgress: () => {} });
-                                  
                                   if (!(res as any)?.success) {
                                     throw new Error((res as any)?.error || 'فشل رفع الملف');
                                   }
-                                  
-                                  const url = (res as any)?.url;
-                                  const title = (res as any)?.title;
+                                  url = (res as any)?.url;
+                                  title = (res as any)?.title;
                                   
                                   if (url) {
                                     updateUserData({ profileMusicUrl: url, profileMusicTitle: title, profileMusicEnabled: true });
