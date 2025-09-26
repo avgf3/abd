@@ -4698,7 +4698,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   async function emitToUserRooms(userId: number, payload: any) {
     try {
-      let rooms = await storage.getUserRooms(userId);
+      // استخدام الغرف النشطة الحالية فقط بدلاً من جميع الغرف التاريخية
+      let rooms = getUserActiveRooms(userId);
       if (!Array.isArray(rooms) || rooms.length === 0) {
         rooms = ['general'];
       }
