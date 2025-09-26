@@ -152,7 +152,8 @@ export const requireOwnership = async (req: Request, res: Response, next: NextFu
     }
 
     // التحقق من أن المستخدم يحاول الوصول لبياناته الخاصة فقط
-    const raw = (req.params as any)?.userId || (req.params as any)?.id || ((req.body as any)?.userId);
+    // ملاحظة: لا نقرأ من req.body هنا لأنه قد لا يكون محلل بعد (خاصة مع multipart/form-data)
+    const raw = (req.params as any)?.userId || (req.params as any)?.id;
     const resourceUserId = parseEntityId(raw as any).id as number;
     const currentUserId = req.user.id;
 
