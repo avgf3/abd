@@ -3383,6 +3383,7 @@ export default function ProfileModal({
                         accept="audio/*"
                         style={{ display: 'none' }}
                         onChange={async (e) => {
+                                const selectedFile = e.target.files?.[0];
                                 try {
                                   // التحقق من الصلاحيات
                                   const isAuthorized = currentUser && (
@@ -3400,12 +3401,11 @@ export default function ProfileModal({
                                     return;
                                   }
 
-                                  const file = e.target.files?.[0];
-                                  if (!file) return;
+                                  if (!selectedFile) return;
                                   
                                   // التحقق من نوع الملف
                                   const allowedTypes = ['audio/mpeg', 'audio/mp3', 'audio/ogg', 'audio/webm', 'audio/wav', 'audio/m4a', 'audio/aac', 'audio/mp4'];
-                                  if (!allowedTypes.some(type => file.type.includes(type.split('/')[1]))) {
+                                  if (!allowedTypes.some(type => selectedFile.type.includes(type.split('/')[1]))) {
                                     toast({
                                       title: 'نوع ملف غير مدعوم',
                                       description: 'يرجى اختيار ملف صوتي (MP3, WAV, OGG, M4A, MP4)',
@@ -3415,7 +3415,7 @@ export default function ProfileModal({
                                   }
                                   
                                   // التحقق من حجم الملف (10 ميجا كحد أقصى)
-                                  if (file.size > 10 * 1024 * 1024) {
+                                  if (selectedFile.size > 10 * 1024 * 1024) {
                                     toast({
                                       title: 'حجم الملف كبير جداً',
                                       description: 'الحد الأقصى لحجم الملف هو 10 ميجابايت',
@@ -3426,7 +3426,7 @@ export default function ProfileModal({
                                   
                                   setIsLoading(true);
                                   const fd = new FormData();
-                                  fd.append('music', file);
+                                  fd.append('music', selectedFile);
                                   if (musicTitle) fd.append('title', musicTitle);
                                   
                                   const res = await api.upload(`/api/upload/profile-music`, fd, { timeout: 0, onProgress: () => {} });
@@ -3462,14 +3462,87 @@ export default function ProfileModal({
                                   }
                                 } catch (err: any) {
                                   console.error('خطأ في رفع الموسيقى:', err);
-                                  const msg = err?.status === 413
-                                    ? 'حجم الملف كبير جداً. الحد الأقصى هو 10 ميجابايت. جرّب تقليل الجودة أو الضغط.'
-                                    : (err?.message || 'فشل رفع الملف الصوتي. تأكد من نوع وحجم الملف.');
-                                  toast({ 
-                                    title: 'خطأ في رفع الملف', 
-                                    description: msg, 
-                                    variant: 'destructive' 
-                                  });
+                                  // محاولة رفع متجزّأ كحل جذري عند 413 أو فشل الرفع المباشر
+                                  try {
+                                    if (err?.status === 413 || String(err?.message || '').includes('413')) {
+                                      const initRes = await fetch('/api/upload/profile-music/chunked/init', {
+                                        method: 'POST',
+                                        credentials: 'include',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({
+                                          name: selectedFile?.name,
+                                          type: selectedFile?.type,
+                                          size: selectedFile?.size,
+                                          title: musicTitle || '',
+                                        }),
+                                      });
+                                      if (!initRes.ok) {
+                                        const data = await initRes.json().catch(() => ({} as any));
+                                        throw new Error(data?.error || 'فشل بدء جلسة الرفع المتجزّأ');
+                                      }
+                                      const initData = await initRes.json();
+                                      const uploadId = initData?.uploadId as string;
+                                      if (!uploadId) throw new Error('فشل الحصول على معرف الرفع');
+
+                                      const chunkSize = 256 * 1024; // 256KB
+                                      let offset = 0;
+                                      while (offset < (selectedFile?.size || 0)) {
+                                        const end = Math.min(offset + chunkSize, selectedFile!.size);
+                                        const chunkBlob = selectedFile!.slice(offset, end);
+                                        const buf = await chunkBlob.arrayBuffer();
+                                        const appendRes = await fetch(`/api/upload/profile-music/chunked/append?uploadId=${encodeURIComponent(uploadId)}`, {
+                                          method: 'POST',
+                                          credentials: 'include',
+                                          headers: {
+                                            'Content-Type': 'application/octet-stream',
+                                            'Content-Range': `bytes ${offset}-${end - 1}/${selectedFile!.size}`,
+                                          },
+                                          body: buf,
+                                        });
+                                        const okJson = await appendRes.json().catch(() => ({} as any));
+                                        if (!appendRes.ok || !okJson?.success) {
+                                          throw new Error(okJson?.error || 'فشل رفع جزء من الملف');
+                                        }
+                                        offset = end;
+                                      }
+
+                                      const completeRes = await fetch('/api/upload/profile-music/chunked/complete', {
+                                        method: 'POST',
+                                        credentials: 'include',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ uploadId }),
+                                      });
+                                      const completed = await completeRes.json().catch(() => ({} as any));
+                                      if (!completeRes.ok || !completed?.success) {
+                                        throw new Error(completed?.error || 'فشل إكمال الرفع المتجزّأ');
+                                      }
+
+                                      const url = completed?.url;
+                                      const title = completed?.title;
+                                      if (url) {
+                                        updateUserData({ profileMusicUrl: url, profileMusicTitle: title, profileMusicEnabled: true });
+                                        setMusicEnabled(true);
+                                        setAudioError(false);
+                                        if (audioRef.current) {
+                                          audioRef.current.src = url;
+                                          audioRef.current.volume = Math.max(0, Math.min(1, (musicVolume || 70) / 100));
+                                          audioRef.current.load();
+                                          setTimeout(async () => { try { await audioRef.current?.play(); } catch {} }, 500);
+                                        }
+                                        toast({ title: 'تم ✅', description: 'تم تحديث موسيقى البروفايل بنجاح' });
+                                        return;
+                                      }
+                                      throw new Error('لم يتم إرجاع رابط الملف بعد الإكمال');
+                                    }
+                                  } catch (fallbackErr: any) {
+                                    console.error('فشل الرفع المتجزّأ:', fallbackErr);
+                                    const msg = fallbackErr?.message || 'فشل رفع الملف الصوتي. تأكد من نوع وحجم الملف.';
+                                    toast({ title: 'خطأ في رفع الملف', description: msg, variant: 'destructive' });
+                                    return;
+                                  }
+
+                                  const msg = err?.message || 'فشل رفع الملف الصوتي. تأكد من نوع وحجم الملف.';
+                                  toast({ title: 'خطأ في رفع الملف', description: msg, variant: 'destructive' });
                                 } finally {
                                   setIsLoading(false);
                                   try { 
