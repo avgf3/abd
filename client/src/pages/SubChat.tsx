@@ -3,7 +3,6 @@ import { useRoute, useLocation } from 'wouter';
 import { getSubChatByPath } from '@/data/subChats';
 
 const ChatInterface = lazy(() => import('@/components/chat/ChatInterface'));
-const SubChatWelcomeScreen = lazy(() => import('@/components/chat/SubChatWelcomeScreen'));
 const RoomSelectorScreen = lazy(() => import('@/components/chat/RoomSelectorScreen'));
 import KickCountdown from '@/components/moderation/KickCountdown';
 import { useChat } from '@/hooks/useChat';
@@ -36,7 +35,7 @@ export default function SubChat() {
   })();
   const hasSavedUser = !!(initialSession as any)?.userId;
 
-  const [showWelcome, setShowWelcome] = useState(!hasSavedUser);
+  const [showWelcome, setShowWelcome] = useState(false);
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(() => {
     if (!hasSavedUser) return null;
     const roomId = (initialSession as any)?.roomId;
@@ -82,11 +81,11 @@ export default function SubChat() {
               chat.joinRoom(r);
             }
           } else {
-            setShowWelcome(true);
+            setShowWelcome(false);
           }
         }
       } catch {
-        if (!savedUserId) setShowWelcome(true);
+        if (!savedUserId) setShowWelcome(false);
       }
     })();
   }, []);
@@ -114,7 +113,7 @@ export default function SubChat() {
 
     clearSession();
     chat.disconnect();
-    setShowWelcome(true);
+    setShowWelcome(false);
     setSelectedRoomId(null);
   };
 
@@ -127,8 +126,6 @@ export default function SubChat() {
       <Suspense fallback={null}>
         {isRestoring ? (
           <div className="p-6 text-center">...جاري استعادة الجلسة</div>
-        ) : showWelcome ? (
-          <SubChatWelcomeScreen onUserLogin={handleUserLogin} subChatData={subChatData} />
         ) : selectedRoomId ? (
           <ChatInterface chat={chat} onLogout={handleLogout} />
         ) : (

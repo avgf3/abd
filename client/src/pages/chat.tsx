@@ -1,7 +1,6 @@
 import { lazy, Suspense, useState, useEffect } from 'react';
 
 const ChatInterface = lazy(() => import('@/components/chat/ChatInterface'));
-const WelcomeScreen = lazy(() => import('@/components/chat/WelcomeScreen'));
 // حذف المحدد المحلي للغرف لتجنب التكرار
 import KickCountdown from '@/components/moderation/KickCountdown';
 import { useChat } from '@/hooks/useChat';
@@ -42,7 +41,7 @@ export default function ChatPage() {
   })();
   const hasSavedUser = !!(initialSession as any)?.userId;
 
-  const [showWelcome, setShowWelcome] = useState(!hasSavedUser);
+  const [showWelcome, setShowWelcome] = useState(false);
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(() => {
     if (!hasSavedUser) return null;
     const roomId = (initialSession as any)?.roomId;
@@ -92,11 +91,11 @@ export default function ChatPage() {
               // الانضمام سيتم تلقائياً بعد authenticated
             }
           } else {
-            setShowWelcome(true);
+            setShowWelcome(false);
           }
         }
       } catch {
-        if (!savedUserId) setShowWelcome(true);
+        if (!savedUserId) setShowWelcome(false);
       }
     })();
   }, []);
@@ -125,7 +124,7 @@ export default function ChatPage() {
     
     clearSession(); // مسح بيانات الجلسة المحفوظة
     chat.disconnect();
-    setShowWelcome(true);
+    setShowWelcome(false);
     setSelectedRoomId(null);
   };
 
@@ -134,8 +133,6 @@ export default function ChatPage() {
       <Suspense fallback={null}>
         {isRestoring ? (
           <div className="p-6 text-center">...جاري استعادة الجلسة</div>
-        ) : showWelcome ? (
-          <WelcomeScreen onUserLogin={handleUserLogin} />
         ) : selectedRoomId ? (
           <ChatInterface chat={chat} onLogout={handleLogout} />
         ) : (
