@@ -3414,11 +3414,11 @@ export default function ProfileModal({
                                     return;
                                   }
                                   
-                                  // التحقق من حجم الملف (20 ميجا كحد أقصى)
-                                  if (file.size > 20 * 1024 * 1024) {
+                                  // التحقق من حجم الملف (10 ميجا كحد أقصى)
+                                  if (file.size > 10 * 1024 * 1024) {
                                     toast({
                                       title: 'حجم الملف كبير جداً',
-                                      description: 'الحد الأقصى لحجم الملف هو 20 ميجابايت',
+                                      description: 'الحد الأقصى لحجم الملف هو 10 ميجابايت',
                                       variant: 'destructive',
                                     });
                                     return;
@@ -3429,7 +3429,7 @@ export default function ProfileModal({
                                   fd.append('music', file);
                                   if (musicTitle) fd.append('title', musicTitle);
                                   
-                                  const res = await api.upload(`/api/upload/profile-music`, fd, { timeout: 120000 });
+                                  const res = await api.upload(`/api/upload/profile-music`, fd, { timeout: 0, onProgress: () => {} });
                                   
                                   if (!(res as any)?.success) {
                                     throw new Error((res as any)?.error || 'فشل رفع الملف');
@@ -3463,7 +3463,7 @@ export default function ProfileModal({
                                 } catch (err: any) {
                                   console.error('خطأ في رفع الموسيقى:', err);
                                   const msg = err?.status === 413
-                                    ? 'حجم الملف كبير جداً. الحد الأقصى هو 20 ميجابايت.'
+                                    ? 'حجم الملف كبير جداً. الحد الأقصى هو 10 ميجابايت.'
                                     : (err?.message || 'فشل رفع الملف الصوتي. تأكد من نوع وحجم الملف.');
                                   toast({ 
                                     title: 'خطأ في رفع الملف', 

@@ -174,7 +174,7 @@ const musicStorage = multer.diskStorage({
 const musicUpload = multer({
   storage: musicStorage,
   limits: { 
-    fileSize: 20 * 1024 * 1024, // 20MB
+    fileSize: 10 * 1024 * 1024, // 10MB
     files: 1, 
     fieldSize: 64 * 1024, 
     parts: 10 
@@ -559,9 +559,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.error('خطأ في رفع الملف:', err);
           if (err instanceof multer.MulterError) {
             if (err.code === 'LIMIT_FILE_SIZE') {
-              return res.status(400).json({ 
+              return res.status(413).json({ 
                 success: false,
-                error: 'حجم الملف كبير جداً. الحد الأقصى 20 ميجابايت' 
+                error: 'حجم الملف كبير جداً. الحد الأقصى 10 ميجابايت' 
               });
             }
             return res.status(400).json({ 
@@ -1683,21 +1683,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // تحسين مهلات HTTP للأداء العالي تحت الضغط
   try {
     // Keep-Alive timeout: مدة الانتظار قبل إغلاق الاتصال الخامل
-    // قيمة متوازنة: ليست قصيرة جداً (تسبب إعادة اتصال) ولا طويلة جداً (تستهلك موارد)
-    (httpServer as any).keepAliveTimeout = 65_000; // 65 ثانية (أقل من القيمة السابقة 75)
+    (httpServer as any).keepAliveTimeout = 65_000; // 65 ثانية
     
     // Headers timeout: يجب أن يكون أكبر من keepAliveTimeout
-    (httpServer as any).headersTimeout = 70_000; // 70 ثانية (أقل من القيمة السابقة 80)
+    (httpServer as any).headersTimeout = 70_000; // 70 ثانية
     
-    // Request timeout: الوقت المسموح للطلب بالكامل
+    // تعطيل مهلات الطلب والاتصال للسماح برفع الملفات بدون انقطاع
     try {
-      // Node 18+: تعيين مهلة معقولة للطلبات بدلاً من تعطيلها
-      (httpServer as any).requestTimeout = 300_000; // 5 دقائق للطلبات الطويلة (رفع الملفات مثلاً)
+      (httpServer as any).requestTimeout = 0; // 0 = بدون مهلة للطلب
     } catch {}
     
-    // إعدادات إضافية للأداء
     (httpServer as any).maxHeadersCount = 100; // حد أقصى لعدد الرؤوس
-    (httpServer as any).timeout = 120_000; // مهلة عامة للسوكت (120 ثانية)
+    (httpServer as any).timeout = 0; // 0 = بدون مهلة سوكت
   } catch (error) {
     console.warn('تحذير: لم يتم تطبيق بعض إعدادات HTTP timeout:', error);
   }
