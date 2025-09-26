@@ -180,6 +180,8 @@ const musicUpload = multer({
     parts: 20 
   },
   fileFilter: (_req, file, cb) => {
+    console.log(`🔍 فحص ملف: ${file.originalname}, نوع MIME: ${file.mimetype}`);
+    
     // قائمة أنواع الملفات المدعومة - محسنة
     const allowedMimeTypes = [
       'audio/mpeg',
@@ -202,10 +204,14 @@ const musicUpload = multer({
     const fileExtension = path.extname(file.originalname).toLowerCase();
     const isValidExtension = allowedExtensions.includes(fileExtension);
     
+    console.log(`🔍 نوع MIME صحيح: ${isValidMimeType}, امتداد صحيح: ${isValidExtension}`);
+    
     if (!isValidMimeType && !isValidExtension) {
+      console.log(`❌ رفض الملف في الفلتر: نوع غير مدعوم ${file.mimetype}`);
       return cb(new Error(`Unsupported audio file type: ${file.mimetype}. Supported types: MP3, WAV, OGG, M4A, AAC`));
     }
     
+    console.log(`✅ قبول الملف في الفلتر: ${file.originalname}`);
     cb(null, true);
   },
 });
@@ -592,14 +598,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
         try {
           const uploadedSize = (req.file as any)?.size || 0;
           const maxUserFileSize = 10 * 1024 * 1024;
+          
+          console.log(`📊 تحقق من حجم الملف: ${uploadedSize} بايت = ${(uploadedSize / (1024 * 1024)).toFixed(2)} ميجابايت`);
+          console.log(`📊 نوع الملف: ${req.file?.mimetype}`);
+          console.log(`📊 اسم الملف الأصلي: ${req.file?.originalname}`);
+          
+          // التحقق من الحد الأدنى للحجم (يجب أن يكون أكبر من 0)
+          if (uploadedSize === 0) {
+            console.log('❌ رفض الملف: حجم صفر');
+            try { await fsp.unlink(req.file.path).catch(() => {}); } catch {}
+            return res.status(400).json({
+              success: false,
+              error: 'الملف فارغ أو تالف'
+            });
+          }
+          
+          // التحقق من الحد الأقصى للحجم
           if (uploadedSize > maxUserFileSize) {
+            console.log(`❌ رفض الملف: حجم كبير جداً (${(uploadedSize / (1024 * 1024)).toFixed(2)} ميجابايت)`);
             try { await fsp.unlink(req.file.path).catch(() => {}); } catch {}
             return res.status(413).json({
               success: false,
-              error: 'حجم الملف يتجاوز الحد المسموح (10 ميجابايت)'
+              error: `حجم الملف يتجاوز الحد المسموح (10 ميجابايت). حجم الملف: ${(uploadedSize / (1024 * 1024)).toFixed(2)} ميجابايت`
             });
           }
-        } catch {}
+          
+          console.log('✅ تم قبول الملف: الحجم والنوع صحيحان');
+        } catch (sizeCheckError) {
+          console.error('❌ خطأ في فحص حجم الملف:', sizeCheckError);
+        }
 
         const userId = (req as any).user?.id as number;
         if (!userId || isNaN(userId)) {
