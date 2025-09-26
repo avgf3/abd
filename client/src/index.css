@@ -1539,6 +1539,9 @@ li > * > div.effect-crystal {
   align-items: center;
   gap: 0.25rem; /* gap-1 */
   white-space: nowrap;
+  /* اجعل ارتفاع الاسم مساوٍ لارتفاع سطر النص لضبط المحاذاة */
+  line-height: 1.6;
+  height: 1.6em;
 }
 
 /* النص يملأ السطر التالي بالكامل بعد نهاية ارتفاع الاسم */
@@ -1550,11 +1553,16 @@ li > * > div.effect-crystal {
   word-break: break-word;
   overflow-wrap: anywhere;
   white-space: pre-wrap;
+  /* عند إضافة margin-right ديناميكياً من React، سيبدأ النص تحت الاسم مباشرة */
 }
 
 /* تحسينات للجوال: نفس السلوك مع تقليل الفراغات */
 @media (max-width: 768px) {
-  .runin-name { gap: 0.25rem; }
+  .runin-name { 
+    gap: 0.25rem; 
+    /* تصحيح بسيط لمحاذاة السطر الأول بجانب الاسم على الجوال */
+    margin-top: 1px;
+  }
 }
 
 /* ========== MODERN ADVANCED DESIGN SYSTEM ========== */

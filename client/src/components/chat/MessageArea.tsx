@@ -142,6 +142,17 @@ export default function MessageArea({
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const virtuosoRef = useRef<VirtuosoHandle>(null);
   const prevMessagesLenRef = useRef<number>(0);
+  // قياس عرض اسم المستخدم لكل رسالة لعمل تعليق للنص تحت الاسم
+  const nameWidthMapRef = useRef<Map<number, number>>(new Map());
+  const [, forceNameMeasureTick] = useState(0);
+  const updateNameWidth = useCallback((id: number, width: number) => {
+    const rounded = Math.ceil(width) + 4; // إضافة هامش صغير
+    const prev = nameWidthMapRef.current.get(id) || 0;
+    if (Math.abs(prev - rounded) > 1) {
+      nameWidthMapRef.current.set(id, rounded);
+      forceNameMeasureTick((t) => (t + 1) % 1000000);
+    }
+  }, []);
 
   // State for improved scroll behavior
   const [isAtBottom, setIsAtBottom] = useState(true);
@@ -726,7 +737,17 @@ export default function MessageArea({
                       {/* Wrapper to handle run-in heading layout */}
                       <div className="flex-1 min-w-0">
                         <div className="runin-container">
-                          <span className="runin-name">
+                          <span
+                            className="runin-name"
+                            ref={(el) => {
+                              if (el) {
+                                try {
+                                  const w = el.getBoundingClientRect().width;
+                                  updateNameWidth(message.id, w);
+                                } catch {}
+                              }
+                            }}
+                          >
                             {message.sender && (message.sender.userType as any) !== 'bot' && (
                               <UserRoleBadge user={message.sender} showOnlyIcon={true} hideGuestAndGender={true} size={16} />
                             )}
@@ -739,7 +760,10 @@ export default function MessageArea({
                             </button>
                           </span>
 
-                          <div className={`runin-text text-gray-800 break-words message-content-fix ${isMobile ? 'line-clamp-4' : 'line-clamp-2'}`}>
+                          <div
+                            className={`runin-text text-gray-800 break-words message-content-fix`}
+                            style={{ marginRight: nameWidthMapRef.current.get(message.id) || undefined }}
+                          >
                             {message.messageType === 'image' ? (
                               <img
                                 src={message.content}
