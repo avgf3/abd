@@ -1552,6 +1552,10 @@ li > * > div.effect-crystal {
   min-width: 0;
   /* ضمان بدء سطر الرسالة من يمين الحاوية حتى لو بدأ النص بسمايل/إنجليزي */
   text-align: right;
+  /* تحسين التفاف النص العربي والسلاسل الطويلة جداً على الجوال */
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
 }
 
 /* تحسينات للجوال: نفس السلوك مع تقليل الفراغات */
