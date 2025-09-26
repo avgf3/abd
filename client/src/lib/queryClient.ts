@@ -196,9 +196,41 @@ export const api = {
             } catch {
               resolve(xhr.responseText as any);
             }
-          } else {
-            reject(new Error(`${xhr.status}: ${xhr.statusText}`));
+            return;
           }
+
+          // Try to parse JSON error body first
+          let message = xhr.statusText || '';
+          try {
+            const contentType = xhr.getResponseHeader('content-type') || '';
+            if (contentType.includes('application/json')) {
+              const parsed = JSON.parse(xhr.responseText || '{}');
+              message = parsed?.error || parsed?.message || message;
+            } else if (xhr.responseText) {
+              message = xhr.responseText;
+            }
+          } catch {
+            // ignore parse errors and fall back to statusText
+          }
+
+          // Provide clearer message for common status codes
+          if (xhr.status === 413) {
+            message = message && message.trim().length > 0
+              ? message
+              : 'حجم الملف كبير جداً أو تم رفضه من الخادم العكسي (413). الحد الأقصى 10 ميجابايت';
+          } else if (xhr.status === 401) {
+            message = message || 'يجب تسجيل الدخول للوصول لهذه الصفحة';
+          } else if (xhr.status === 403) {
+            message = message || 'ليس لديك صلاحية للوصول لهذا المحتوى';
+          } else if (xhr.status === 404) {
+            message = message || 'المورد المطلوب غير موجود';
+          } else if (xhr.status === 500) {
+            message = message || 'خطأ في الخادم - يرجى المحاولة لاحقاً';
+          }
+
+          const err = new Error(`${xhr.status}: ${message || 'فشل في رفع الملف'}`) as any;
+          err.status = xhr.status;
+          reject(err);
         });
 
         xhr.addEventListener('error', () => {
