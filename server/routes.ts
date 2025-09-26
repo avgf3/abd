@@ -175,7 +175,7 @@ const musicStorage = multer.diskStorage({
 const musicUpload = multer({
   storage: musicStorage,
   limits: { 
-    fileSize: 12 * 1024 * 1024, // margin over 10MB to account for multipart overhead
+    fileSize: 15 * 1024 * 1024, // زيادة الهامش لاستيعاب بروتوكول النقل
     files: 1, 
     fieldSize: 256 * 1024, 
     parts: 20 
@@ -184,34 +184,25 @@ const musicUpload = multer({
     console.log(`🔍 فحص ملف: ${file.originalname}, نوع MIME: ${file.mimetype}`);
     
     // قائمة أنواع الملفات المدعومة - محسنة
-    const allowedMimeTypes = [
-      'audio/mpeg',
-      'audio/mp3',
-      'audio/ogg',
-      'audio/webm',
-      'audio/wav',
-      'audio/m4a',
-      'audio/aac',
-      'audio/x-m4a',
-      'audio/mp4'
-    ];
-    
     const allowedExtensions = ['.mp3', '.wav', '.ogg', '.webm', '.m4a', '.aac', '.mp4'];
-    
-    // التحقق من نوع MIME
-    const isValidMimeType = allowedMimeTypes.includes(file.mimetype.toLowerCase());
-    
-    // التحقق من امتداد الملف
-    const fileExtension = path.extname(file.originalname).toLowerCase();
+    const mime = (file.mimetype || '').toLowerCase();
+    const isAudioMime = mime.startsWith('audio/');
+    const fileExtension = path.extname(file.originalname || '').toLowerCase();
     const isValidExtension = allowedExtensions.includes(fileExtension);
-    
-    console.log(`🔍 نوع MIME صحيح: ${isValidMimeType}, امتداد صحيح: ${isValidExtension}`);
-    
-    if (!isValidMimeType && !isValidExtension) {
-      console.log(`❌ رفض الملف في الفلتر: نوع غير مدعوم ${file.mimetype}`);
+
+    // لا نقبل mp4 إلا إذا كان Audio MP4 وليس فيديو
+    if (fileExtension === '.mp4' && mime !== 'audio/mp4') {
+      console.log(`❌ رفض الملف: mp4 ليس Audio (${mime})`);
+      return cb(new Error('Unsupported audio file type: expected audio/mp4 for .mp4'));
+    }
+
+    console.log(`🔍 MIME starts with audio: ${isAudioMime}, امتداد صحيح: ${isValidExtension}`);
+
+    if (!(isAudioMime && isValidExtension)) {
+      console.log(`❌ رفض الملف في الفلتر: نوع/امتداد غير مدعوم ${file.mimetype} ${fileExtension}`);
       return cb(new Error(`Unsupported audio file type: ${file.mimetype}. Supported types: MP3, WAV, OGG, M4A, AAC`));
     }
-    
+
     console.log(`✅ قبول الملف في الفلتر: ${file.originalname}`);
     cb(null, true);
   },
@@ -677,6 +668,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         // تكون الملفات ضمن /uploads/music
+        // إذا تم استخدام temp كوجهة (fallback)، انسخ الملف إلى المسار العام الصحيح لضمان صلاحية الرابط
+        const publicUploadsRoot = path.join(process.cwd(), 'client', 'public', 'uploads', 'music');
+        const isTempDest = req.file.path.includes(`${path.sep}temp${path.sep}uploads${path.sep}music${path.sep}`);
+        try { await fsp.mkdir(publicUploadsRoot, { recursive: true }); } catch {}
+
+        if (isTempDest) {
+          const targetPath = path.join(publicUploadsRoot, req.file.filename);
+          try {
+            await fsp.copyFile(req.file.path, targetPath);
+            await fsp.unlink(req.file.path).catch(() => {});
+            (req as any).file.path = targetPath;
+          } catch (copyErr) {
+            console.error('❌ فشل في نقل الملف من temp إلى public:', copyErr);
+            try { await fsp.unlink(req.file.path).catch(() => {}); } catch {}
+            return res.status(500).json({ success: false, error: 'فشل حفظ الملف الصوتي' });
+          }
+        }
+
         const fileUrl = `/uploads/music/${req.file.filename}`;
         const titleCandidate = (req.body?.title as string) || req.file.originalname;
         const profileMusicTitle = String(titleCandidate || 'موسيقى البروفايل')
