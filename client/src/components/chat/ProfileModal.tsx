@@ -3433,28 +3433,12 @@ export default function ProfileModal({
                                   let url: string | undefined;
                                   let title: string | undefined;
 
-                                  try {
-                                    const res = await api.upload(`/api/upload/profile-music`, fd, { timeout: 0, onProgress: () => {} });
-                                    if (!(res as any)?.success) {
-                                      throw Object.assign(new Error((res as any)?.error || 'فشل رفع الملف'), { status: 400 });
-                                    }
-                                    url = (res as any)?.url;
-                                    title = (res as any)?.title;
-                                  } catch (e: any) {
-                                    if (e?.status === 413) {
-                                      // بديل تلقائي: الرفع المجزّأ لتجاوز قيود الـ Proxy
-                                      const { uploadMusicChunked } = await import('@/lib/uploadChunked');
-                                      const result = await uploadMusicChunked(file, {
-                                        chunkSize: 1024 * 1024, // 1MB
-                                        title: musicTitle || undefined,
-                                        onProgress: () => {},
-                                      });
-                                      url = result.url;
-                                      title = result.title;
-                                    } else {
-                                      throw e;
-                                    }
+                                  const res = await api.upload(`/api/upload/profile-music`, fd, { timeout: 0, onProgress: () => {} });
+                                  if (!(res as any)?.success) {
+                                    throw new Error((res as any)?.error || 'فشل رفع الملف');
                                   }
+                                  url = (res as any)?.url;
+                                  title = (res as any)?.title;
                                   
                                   if (url) {
                                     updateUserData({ profileMusicUrl: url, profileMusicTitle: title, profileMusicEnabled: true });
