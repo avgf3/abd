@@ -726,20 +726,21 @@ export default function MessageArea({
                       {/* Wrapper to handle run-in heading layout */}
                       <div className="flex-1 min-w-0">
                         <div className="runin-container">
-                          <span className="runin-name">
-                            {message.sender && (message.sender.userType as any) !== 'bot' && (
-                              <UserRoleBadge user={message.sender} showOnlyIcon={true} hideGuestAndGender={true} size={16} />
-                            )}
-                            <button
-                              onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
-                              className="font-semibold hover:underline transition-colors duration-200 truncate"
-                              style={{ color: getFinalUsernameColor(message.sender) }}
-                            >
-                              {message.sender?.username || 'جاري التحميل...'}
-                            </button>
-                          </span>
+                          <div className="runin-first-line">
+                            <span className="runin-name">
+                              {message.sender && (message.sender.userType as any) !== 'bot' && (
+                                <UserRoleBadge user={message.sender} showOnlyIcon={true} hideGuestAndGender={true} size={16} />
+                              )}
+                              <button
+                                onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
+                                className="font-semibold hover:underline transition-colors duration-200 truncate"
+                                style={{ color: getFinalUsernameColor(message.sender) }}
+                              >
+                                {message.sender?.username || 'جاري التحميل...'}
+                              </button>
+                            </span>
 
-                          <div className={`runin-text text-gray-800 break-words message-content-fix ${isMobile ? 'line-clamp-4' : 'line-clamp-2'}`}>
+                            <div className={`runin-text text-gray-800 break-words message-content-fix ${isMobile ? 'line-clamp-4' : 'line-clamp-2'}`}>
                             {message.messageType === 'image' ? (
                               <img
                                 src={message.content}
@@ -805,6 +806,7 @@ export default function MessageArea({
                                 );
                               })()
                             )}
+                            </div>
                           </div>
                         </div>
                       </div>

@@ -1526,25 +1526,37 @@ li > * > div.effect-crystal {
   }
 }
 
-/* === محاذاة الرسائل: السطر الأول بجانب الاسم، وما بعده بعرض كامل من البداية === */
+/* === محاذاة الرسائل: الاسم والسطر الأول على نفس المستوى، والأسطر التالية تحت بداية الاسم === */
 .runin-container {
-  display: flow-root; /* يحتوي الـ float ويمنع تجاوز الحاوية */
+  display: block;
+  line-height: 1.6;
 }
 
-/* الاسم والشارة يوضعان في عمود مستقل ويصطفان مع أول سطر */
+/* السطر الأول: الاسم والشارة مع بداية النص */
+.runin-first-line {
+  display: block;
+  width: 100%;
+  /* استخدام hanging indent لجعل الأسطر التالية تبدأ تحت الاسم */
+  padding-right: 110px; /* مساحة للاسم والشارة */
+  text-indent: -110px; /* سحب السطر الأول للخلف */
+}
+
+/* الاسم والشارة */
 .runin-name {
-  float: right;
-  margin-left: 0.5rem; /* مسافة بين الاسم والنص */
   display: inline-flex;
   align-items: center;
   gap: 0.25rem; /* gap-1 */
   white-space: nowrap;
+  margin-left: 0.5rem; /* مسافة بين الاسم والنص */
+  vertical-align: baseline;
+  /* تأكد من أن الاسم لا يتجاوز المساحة المخصصة */
+  max-width: 105px;
+  overflow: hidden;
 }
 
-/* النص يملأ السطر التالي بالكامل بعد نهاية ارتفاع الاسم */
+/* النص - يبدأ inline مع الاسم ثم يكمل في أسطر جديدة تحت بداية الاسم */
 .runin-text {
-  display: block;
-  min-width: 0;
+  display: inline;
   text-align: start; /* يحترم RTL/LTR مع message-content-fix */
   /* تحسين التفاف النص العربي والسلاسل الطويلة جداً على الجوال */
   word-break: break-word;
@@ -1554,7 +1566,15 @@ li > * > div.effect-crystal {
 
 /* تحسينات للجوال: نفس السلوك مع تقليل الفراغات */
 @media (max-width: 768px) {
-  .runin-name { gap: 0.25rem; }
+  .runin-name { 
+    gap: 0.25rem;
+    max-width: 90px; /* مساحة أقل للأسماء على الجوال */
+  }
+  
+  .runin-first-line {
+    padding-right: 95px; /* مساحة أقل للاسم والشارة على الجوال */
+    text-indent: -95px; /* سحب السطر الأول للخلف على الجوال */
+  }
 }
 
 /* ========== MODERN ADVANCED DESIGN SYSTEM ========== */
