@@ -325,12 +325,13 @@ export default function ProfileModal({
   }, [localUser?.id]);
   const canShowLastSeen = (((localUser as any)?.privacy?.showLastSeen ?? (localUser as any)?.showLastSeen) ?? true) !== false;
   
-  // ضبط مستوى الصوت عند تحميل الصوت
+  // ضبط مستوى الصوت عند تحميل الصوت (معطل إن كانت إدارة الصوت خارجية)
   useEffect(() => {
+    if (externalAudioManaged) return;
     if (audioRef.current && localUser?.profileMusicUrl) {
       audioRef.current.volume = Math.max(0, Math.min(1, musicVolume / 100));
     }
-  }, [musicVolume, localUser?.profileMusicUrl]);
+  }, [musicVolume, localUser?.profileMusicUrl, externalAudioManaged]);
   
   // تشغيل الموسيقى تلقائياً عند فتح البروفايل (معطّل إذا كانت مُدارة خارجياً)
   useEffect(() => {
@@ -2707,7 +2708,7 @@ export default function ProfileModal({
             }}
           >
             {/* مشغل الموسيقى - يظهر أعلى يمين الغلاف */}
-            {localUser?.profileMusicUrl && musicEnabled && (
+            {localUser?.profileMusicUrl && musicEnabled && !externalAudioManaged && (
               <>
                 {/* مشغل مخفي لصاحب البروفايل - التشغيل التلقائي فقط */}
                 {localUser?.id === currentUser?.id && (
