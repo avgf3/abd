@@ -140,7 +140,9 @@ export default function CountryChat() {
   return (
     <div className="min-h-[100dvh] bg-background text-foreground font-['Cairo'] overflow-hidden" dir="rtl" style={{ minHeight: '100dvh' }}>
       <Suspense fallback={null}>
-        {showWelcome ? (
+        {isRestoring ? (
+          <div className="p-6 text-center">...جاري استعادة الجلسة</div>
+        ) : showWelcome ? (
           <CountryWelcomeScreen onUserLogin={handleUserLogin} countryData={countryData} />
         ) : selectedRoomId ? (
           <ChatInterface chat={chat} onLogout={handleLogout} />
