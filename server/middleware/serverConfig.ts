@@ -35,8 +35,8 @@ export function configureRequestLimits(app: Express): void {
   // حد حجم URL encoded
   app.use(express.urlencoded({ 
     extended: true, 
-    limit: '1mb',
-    parameterLimit: 1000
+    limit: '16mb',
+    parameterLimit: 5000
   }));
   
   // حد حجم النص الخام
@@ -47,7 +47,7 @@ export function configureRequestLimits(app: Express): void {
   
   // حد حجم البيانات الخام
   app.use(express.raw({ 
-    limit: '5mb',
+    limit: '16mb',
     type: 'application/octet-stream'
   }));
   
