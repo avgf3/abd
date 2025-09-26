@@ -263,9 +263,7 @@ export default function CityChat() {
     <div className="min-h-[100dvh] bg-background text-foreground font-['Cairo'] overflow-hidden" dir="rtl" style={{ minHeight: '100dvh' }}>
 
       <Suspense fallback={null}>
-        {isRestoring ? (
-          <div className="p-6 text-center">...جاري استعادة الجلسة</div>
-        ) : showWelcome ? (
+        {showWelcome ? (
           <CityWelcomeScreen onUserLogin={handleUserLogin} cityData={cityData} cityInfo={cityInfo} />
         ) : selectedRoomId ? (
           <ChatInterface chat={chat} onLogout={handleLogout} />
