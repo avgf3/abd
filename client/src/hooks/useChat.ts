@@ -898,14 +898,22 @@ export const useChat = () => {
           const updatedUser: ChatUser | undefined = (envelope as any).user;
           if (updatedUser && updatedUser.id) {
             const isCurrent = currentUserRef.current?.id === updatedUser.id;
-            // إذا أصبح المستخدم مخفياً، أزله من قائمة المتصلين فوراً
-            if ((updatedUser as any).isHidden === true) {
-              dispatch({ type: 'REMOVE_ONLINE_USER', payload: updatedUser.id });
+            const currentRoom = currentRoomIdRef.current;
+            const incomingRoom = (updatedUser as any)?.currentRoom as string | null | undefined;
+
+            // منع حقن المستخدمين عبر الغرف: لا تحدّث قائمة الغرفة الحالية إذا كان التحديث لغرفة أخرى
+            if (!isCurrent && currentRoom && incomingRoom && incomingRoom !== currentRoom) {
+              // ما يزال مسموحاً تحديث المستخدم الحالي فقط
+              // تجاهل إدراج المستخدم في قائمة هذه الغرفة
             } else {
-              // غير مخفي: حدّثه/أضِفه في قائمة المتصلين
-              dispatch({ type: 'UPSERT_ONLINE_USER', payload: updatedUser });
+              if ((updatedUser as any).isHidden === true) {
+                dispatch({ type: 'REMOVE_ONLINE_USER', payload: updatedUser.id });
+              } else {
+                dispatch({ type: 'UPSERT_ONLINE_USER', payload: updatedUser });
+              }
             }
-            // دمج فوري للحقول المتاحة للمستخدم الحالي أيضاً
+
+            // دمج فوري لبيانات المستخدم الحالي
             if (isCurrent && currentUserRef.current) {
               dispatch({
                 type: 'SET_CURRENT_USER',
@@ -913,7 +921,7 @@ export const useChat = () => {
               });
             }
 
-            // إذا كان البث خفيفاً (بدون profileImage/base64) والمستخدم الحالي يحتاج الصورة، اجلب نسخة كاملة مرة واحدة
+            // جلب نسخة كاملة عند الحاجة للمستخدم الحالي فقط
             if (
               isCurrent &&
               (!updatedUser.profileImage ||
@@ -924,7 +932,6 @@ export const useChat = () => {
                 apiRequest(`/api/users/${updatedUser.id}`)
                   .then((full: any) => {
                     if (full && full.id) {
-                      // تحديث الكاش مع البيانات الكاملة
                       setCachedUser(full as ChatUser);
                       if (currentUserRef.current?.id === updatedUser.id) {
                         dispatch({
