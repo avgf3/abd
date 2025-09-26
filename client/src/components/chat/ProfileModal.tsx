@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import PointsSentNotification from '@/components/ui/PointsSentNotification';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest, api } from '@/lib/queryClient';
+import { getAudioCompressionTips, canCompressAudio, formatFileSize } from '@/lib/uploadConfig';
 import type { ChatUser } from '@/types/chat';
 import { getProfileImageSrc, getBannerImageSrc } from '@/utils/imageUtils';
 import { formatPoints, getLevelInfo } from '@/utils/pointsUtils';
@@ -3414,12 +3415,12 @@ export default function ProfileModal({
                                     return;
                                   }
                                   
-                                  // التحقق من حجم الملف (10 ميجا كحد أقصى)
+                                  // التحقق من حجم الملف (3 ميجا كحد أقصى بسبب قيود الخادم)
                                   console.log('حجم الملف:', file.size, 'بايت =', (file.size / (1024 * 1024)).toFixed(2), 'ميجابايت');
-                                  if (file.size > 10 * 1024 * 1024) {
+                                  if (file.size > 3 * 1024 * 1024) {
                                     toast({
                                       title: 'حجم الملف كبير جداً',
-                                      description: `الحد الأقصى لحجم الملف هو 10 ميجابايت. حجم الملف الحالي: ${(file.size / (1024 * 1024)).toFixed(2)} ميجابايت`,
+                                      description: `الحد الأقصى لحجم الملف هو 3 ميجابايت. حجم الملف الحالي: ${(file.size / (1024 * 1024)).toFixed(2)} ميجابايت. يرجى ضغط الملف أو اختيار ملف أصغر.`,
                                       variant: 'destructive',
                                     });
                                     return;
@@ -3464,9 +3465,24 @@ export default function ProfileModal({
                                   }
                                 } catch (err: any) {
                                   console.error('خطأ في رفع الموسيقى:', err);
-                                  const msg = err?.status === 413
-                                    ? 'حجم الملف كبير جداً. الحد الأقصى هو 10 ميجابايت. جرّب تقليل الجودة أو الضغط.'
-                                    : (err?.message || 'فشل رفع الملف الصوتي. تأكد من نوع وحجم الملف.');
+                                  let msg = err?.message || 'فشل رفع الملف الصوتي. تأكد من نوع وحجم الملف.';
+                                  
+                                  if (err?.status === 413) {
+                                    const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
+                                    const tips = getAudioCompressionTips(parseFloat(fileSizeMB));
+                                    const canCompress = canCompressAudio(file);
+                                    
+                                    msg = `حجم الملف كبير جداً (${fileSizeMB} ميجابايت). هناك قيود في الخادم. الحد الأقصى الآمن هو 3 ميجابايت.\n\n`;
+                                    
+                                    if (canCompress) {
+                                      msg += `💡 يمكن ضغط هذا النوع من الملفات:\n`;
+                                    } else {
+                                      msg += `💡 نصائح لتقليل الحجم:\n`;
+                                    }
+                                    
+                                    msg += tips.slice(0, 2).join('\n');
+                                  }
+                                  
                                   toast({ 
                                     title: 'خطأ في رفع الملف', 
                                     description: msg, 

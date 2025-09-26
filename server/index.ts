@@ -125,8 +125,21 @@ app.use(
 );
 
 // إعدادات Express للتعامل مع البيانات
-app.use(express.json({ limit: '15mb' })); // دعم رفع الموسيقى حتى 12MB + margin
-app.use(express.urlencoded({ limit: '16mb', extended: true }));
+// إعدادات رفع الملفات - زيادة الحد لحل مشكلة 413
+app.use(express.json({ 
+  limit: '15mb',
+  verify: (req, res, buf) => {
+    // تسجيل حجم الطلب للتشخيص
+    if (req.path && req.path.includes('/upload/')) {
+      console.log(`📊 حجم الطلب: ${buf.length} بايت = ${(buf.length / (1024 * 1024)).toFixed(2)} ميجابايت`);
+    }
+  }
+}));
+app.use(express.urlencoded({ 
+  limit: '16mb', 
+  extended: true,
+  parameterLimit: 50000
+}));
 
 // خدمة الملفات الثابتة للصور المرفوعة - محسّنة مع كاش يعتمد على ?v=hash
 const uploadsPath = path.join(process.cwd(), 'client/public/uploads');
