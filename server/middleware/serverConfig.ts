@@ -25,9 +25,9 @@ export function configureServerLimits(app: Express, server: Server): void {
  * ضبط حدود حجم الطلبات
  */
 export function configureRequestLimits(app: Express): void {
-  // حد حجم JSON
+  // حد حجم JSON - محسن لدعم رفع الموسيقى
   app.use(express.json({ 
-    limit: '1mb',
+    limit: '15mb', // زيادة الحد لدعم رفع الموسيقى (حتى 12MB + margin)
     strict: true,
     type: ['application/json', 'text/plain']
   }));

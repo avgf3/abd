@@ -124,6 +124,8 @@ app.use(
   })
 );
 
+// إعدادات Express للتعامل مع البيانات
+app.use(express.json({ limit: '15mb' })); // دعم رفع الموسيقى حتى 12MB + margin
 app.use(express.urlencoded({ limit: '16mb', extended: true }));
 
 // خدمة الملفات الثابتة للصور المرفوعة - محسّنة مع كاش يعتمد على ?v=hash
