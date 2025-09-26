@@ -3404,8 +3404,8 @@ export default function ProfileModal({
                                   if (!file) return;
                                   
                                   // التحقق من نوع الملف
-                                  const allowedTypes = ['audio/mpeg', 'audio/mp3', 'audio/ogg', 'audio/webm', 'audio/wav', 'audio/m4a', 'audio/aac', 'audio/mp4'];
-                                  if (!allowedTypes.some(type => file.type.includes(type.split('/')[1]))) {
+                                  const allowedTypes = ['audio/mpeg', 'audio/mp3', 'audio/ogg', 'audio/webm', 'audio/wav', 'audio/m4a', 'audio/aac', 'audio/x-m4a', 'audio/mp4'];
+                                  if (!allowedTypes.includes(file.type)) {
                                     toast({
                                       title: 'نوع ملف غير مدعوم',
                                       description: 'يرجى اختيار ملف صوتي (MP3, WAV, OGG, M4A, MP4)',
@@ -3415,10 +3415,11 @@ export default function ProfileModal({
                                   }
                                   
                                   // التحقق من حجم الملف (10 ميجا كحد أقصى)
+                                  console.log('حجم الملف:', file.size, 'بايت =', (file.size / (1024 * 1024)).toFixed(2), 'ميجابايت');
                                   if (file.size > 10 * 1024 * 1024) {
                                     toast({
                                       title: 'حجم الملف كبير جداً',
-                                      description: 'الحد الأقصى لحجم الملف هو 10 ميجابايت',
+                                      description: `الحد الأقصى لحجم الملف هو 10 ميجابايت. حجم الملف الحالي: ${(file.size / (1024 * 1024)).toFixed(2)} ميجابايت`,
                                       variant: 'destructive',
                                     });
                                     return;
