@@ -7,15 +7,19 @@ import express from 'express';
  */
 export function configureServerLimits(app: Express, server: Server): void {
   // ضبط مهلات الخادم
-  server.keepAliveTimeout = 10000; // 10 ثواني بدل دقيقتين
-  server.headersTimeout = 15000; // 15 ثانية لإرسال الـ headers
-  server.timeout = 30000; // 30 ثانية للطلب الكامل
-  server.requestTimeout = 30000; // 30 ثانية لاستقبال الطلب
+  try {
+    server.keepAliveTimeout = 65_000; // موحد مع index/routes
+    server.headersTimeout = 70_000;
+  } catch {}
+  
+  // تعطيل المهلات لطلبات الرفع الطويلة
+  try { (server as any).timeout = 0; } catch {}
+  try { (server as any).requestTimeout = 0; } catch {}
   
   // حد أقصى للاتصالات المتزامنة
-  server.maxHeadersCount = 100;
+  try { server.maxHeadersCount = 100; } catch {}
   
-  }
+}
 
 /**
  * ضبط حدود حجم الطلبات
@@ -85,23 +89,9 @@ export function headerCountLimit(maxHeaders: number = 50) {
 /**
  * Middleware لمهلة الطلبات
  */
-export function requestTimeout(ms: number = 30000) {
-  return (req: Request, res: Response, next: NextFunction) => {
-    const timeout = setTimeout(() => {
-      if (!res.headersSent) {
-        res.status(408).json({ 
-          error: 'Request Timeout',
-          message: 'انتهت مهلة معالجة الطلب'
-        });
-      }
-    }, ms);
-    
-    // تنظيف المؤقت عند الانتهاء
-    res.on('finish', () => clearTimeout(timeout));
-    res.on('close', () => clearTimeout(timeout));
-    
-    next();
-  };
+export function requestTimeout(_ms: number = 0) {
+  // تعطيل مهلة الطلبات بالكامل
+  return (_req: Request, _res: Response, next: NextFunction) => next();
 }
 
 /**
