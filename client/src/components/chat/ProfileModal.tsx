@@ -1970,7 +1970,7 @@ export default function ProfileModal({
 
         .profile-cover {
           position: relative;
-          height: 220px;
+          height: 300px;
           background-size: cover;
           background-position: center;
           background-repeat: no-repeat;
