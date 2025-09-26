@@ -1134,14 +1134,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
               // إذا كانت الغرفة من نوع broadcast، استخدم BroadcastRoomInterface
               if (currentRoom?.isBroadcast) {
                 return (
-                  <Suspense fallback={
-                    <div className="flex-1 flex items-center justify-center bg-background">
-                      <div className="text-center">
-                        <div className="animate-spin rounded-full h-6 w-6 border-2 border-primary border-t-transparent mx-auto mb-2"></div>
-                        <div className="text-sm">جاري التحميل...</div>
-                      </div>
-                    </div>
-                  }>
+              <Suspense fallback={null}>
                     <BroadcastRoomInterface
                       currentUser={chat.currentUser}
                       room={currentRoom}
@@ -1202,14 +1195,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                     minHeight: isMobile ? 'var(--app-body-height)' : 'auto'
                   }}
                 >
-                  <Suspense fallback={
-                    <div className="flex-1 flex items-center justify-center bg-background">
-                      <div className="text-center">
-                        <div className="animate-spin rounded-full h-6 w-6 border-2 border-primary border-t-transparent mx-auto mb-2"></div>
-                        <div className="text-sm">جاري التحميل...</div>
-                      </div>
-                    </div>
-                  }>
+                  <Suspense fallback={null}>
                     <MessageArea
                       messages={chat.publicMessages}
                       currentUser={chat.currentUser}
@@ -1357,7 +1343,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
 
       {/* Modals and Popups */}
       {showProfile && (
-        <Suspense fallback={<div className="p-4 text-center">...جاري التحميل</div>}>
+        <Suspense fallback={null}>
           <>
             {profileUser && profileUser.id !== chat.currentUser?.id ? (
               <ProfileModal
@@ -1721,7 +1707,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             >
               ×
             </button>
-            <Suspense fallback={<div className="p-4 text-center">...جاري التحميل</div>}>
+            <Suspense fallback={null}>
               <UsernameColorPicker
                 currentUser={chat.currentUser}
                 onColorUpdate={(color) => {
@@ -1785,8 +1771,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             <div className="absolute inset-0 modal-overlay" />
             <div className="relative w-[90vw] max-w-[20rem] sm:max-w-[22rem] bg-card rounded-xl overflow-hidden shadow-2xl animate-fade-in">
               <div className="bg-primary p-3 text-primary-foreground flex items-center justify-center">
-                <div className="animate-pulse h-4 w-4 bg-primary-foreground/30 rounded mr-2" />
-                <span className="text-sm font-medium">جاري التحميل...</span>
+                <div className="animate-pulse h-4 w-4 bg-primary-foreground/30 rounded" />
               </div>
               <div className="p-3 space-y-1">
                 <div className="animate-pulse h-8 bg-muted/50 rounded" />
