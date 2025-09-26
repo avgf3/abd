@@ -1970,25 +1970,10 @@ export default function ProfileModal({
 
         .profile-cover {
           position: relative;
-          height: 220px;
+          height: 248px; /* 220px + 28px للامتداد الكامل */
           background-size: cover;
           background-position: center;
           background-repeat: no-repeat;
-        }
-
-        /* تمديد الخلفية أسفل الغلاف ليلتقي مع التبويبات بدون فراغ */
-        .profile-cover::after {
-          content: '';
-          position: absolute;
-          left: 0;
-          right: 0;
-          bottom: -28px; /* يساوي الحشوة العلوية لقسم الجسم على سطح المكتب */
-          height: 28px;
-          background: inherit;
-          background-size: inherit;
-          background-position: inherit;
-          background-repeat: inherit;
-          pointer-events: none;
         }
 
         .change-cover-btn {
@@ -2070,7 +2055,7 @@ export default function ProfileModal({
         }
 
         .profile-body {
-          padding: 28px 20px 10px;
+          padding: 0 20px 10px;
         }
 
         /* Reduce vertical padding on desktop only */
@@ -2675,14 +2660,13 @@ export default function ProfileModal({
             font-size: 12px;
           }
 
-          /* على الجوال، الحشوة العلوية أكبر، لذا نمد الغلاف أكثر */
-          .profile-cover::after {
-            bottom: -58px;
-            height: 58px;
+          /* على الجوال، نمد الغلاف بدون حشوة */
+          .profile-cover {
+            height: 278px; /* 220px + 58px للامتداد الكامل على الجوال */
           }
           
           .profile-body {
-            padding: 58px 12px 10px;
+            padding: 0 12px 10px;
           }
           
           .profile-info h3 {
