@@ -3447,9 +3447,7 @@ export default function ProfileModal({
                                       const result = await uploadMusicChunked(file, {
                                         chunkSize: 1024 * 1024, // 1MB
                                         title: musicTitle || undefined,
-                                        onProgress: (p) => {
-                                          try { setUploadProgress(Math.max(1, Math.min(99, Math.round(p)))); } catch {}
-                                        },
+                                        onProgress: () => {},
                                       });
                                       url = result.url;
                                       title = result.title;

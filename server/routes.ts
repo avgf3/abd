@@ -17,7 +17,6 @@ import { sanitizeUserData, sanitizeUsersArray } from './utils/data-sanitizer';
 
 import bcrypt from 'bcrypt';
 import type { Express } from 'express';
-import express from 'express';
 import multer from 'multer';
 import sharp from 'sharp';
 import { z } from 'zod';
