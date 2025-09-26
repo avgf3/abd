@@ -274,7 +274,7 @@ export function setupSecurity(app: Express): void {
   // Input sanitization
   app.use(
     express.json({
-      limit: '10mb',
+      limit: '15mb', // محسن لدعم رفع الموسيقى حتى 12MB + margin
       verify: (req: any, res: Response, buf: Buffer) => {
         // Prevent JSON pollution attacks, but only when body is non-empty and method expects a body
         try {
