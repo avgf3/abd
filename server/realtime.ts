@@ -301,19 +301,26 @@ export async function buildOnlineUsersForRoom(roomId: string) {
   const userMap = new Map<number, any>();
   for (const [_, entry] of connectedUsers.entries()) {
     // تحقق سريع عبر sockets دون مسح كامل
+    // نتحقق أولاً هل المستخدم في الغرفة المطلوبة
+    let userInRoom = false;
     for (const socketMeta of entry.sockets.values()) {
-      if (
-        socketMeta.room === roomId &&
-        entry.user &&
-        entry.user.id &&
-        entry.user.username &&
-        entry.user.userType &&
-        // استثناء المستخدمين المخفيين إن توفرت القيمة محلياً
-        (entry.user.isHidden !== true)
-      ) {
-        userMap.set(entry.user.id, entry.user);
-        // ✅ إزالة break للسماح بجمع جميع المستخدمين
+      if (socketMeta.room === roomId) {
+        userInRoom = true;
+        break;
       }
+    }
+    
+    // إضافة المستخدم للقائمة فقط إذا كان في الغرفة المطلوبة
+    if (
+      userInRoom &&
+      entry.user &&
+      entry.user.id &&
+      entry.user.username &&
+      entry.user.userType &&
+      // استثناء المستخدمين المخفيين إن توفرت القيمة محلياً
+      (entry.user.isHidden !== true)
+    ) {
+      userMap.set(entry.user.id, entry.user);
     }
   }
   const { sanitizeUsersArray } = await import('./utils/data-sanitizer');
