@@ -1536,9 +1536,10 @@ li > * > div.effect-crystal {
   float: right;
   margin-left: 0.5rem; /* مسافة بين الاسم والنص */
   display: inline-flex;
-  align-items: center;
+  align-items: baseline; /* محاذاة على السطر الأول مع النص */
   gap: 0.25rem; /* gap-1 */
   white-space: nowrap;
+  line-height: 1.6; /* مطابق لـ .message-content-fix لضبط الارتفاع */
 }
 
 /* النص يملأ السطر التالي بالكامل بعد نهاية ارتفاع الاسم */
