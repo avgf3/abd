@@ -91,8 +91,33 @@ export function formatFileSize(bytes: number): string {
 }
 
 // دالة للحصول على timeout مناسب
-export function getUploadTimeout(type: 'image' | 'video'): number {
-  return type === 'video'
-    ? UPLOAD_CONFIG.TIMEOUTS.VIDEO_UPLOAD
-    : UPLOAD_CONFIG.TIMEOUTS.IMAGE_UPLOAD;
+export function getUploadTimeout(type: 'image' | 'video' | 'audio'): number {
+  if (type === 'video') return UPLOAD_CONFIG.TIMEOUTS.VIDEO_UPLOAD;
+  if (type === 'audio') return UPLOAD_CONFIG.TIMEOUTS.IMAGE_UPLOAD; // نفس مهلة الصور
+  return UPLOAD_CONFIG.TIMEOUTS.IMAGE_UPLOAD;
+}
+
+// دالة لاقتراحات تقليل حجم الملفات الصوتية
+export function getAudioCompressionTips(currentSizeMB: number): string[] {
+  const tips: string[] = [];
+  
+  if (currentSizeMB > 5) {
+    tips.push('🎵 استخدم جودة أقل (128 kbps بدلاً من 320 kbps)');
+    tips.push('⏱️ اقطع الملف إلى جزء أقصر (30-60 ثانية)');
+  }
+  
+  if (currentSizeMB > 3) {
+    tips.push('🔧 استخدم تطبيقات ضغط الصوت مثل Audacity');
+    tips.push('📱 حول الملف إلى MP3 بدلاً من WAV');
+  }
+  
+  tips.push('💡 جرب موقع online-audio-converter.com للضغط');
+  
+  return tips;
+}
+
+// دالة للتحقق من إمكانية ضغط الملف الصوتي
+export function canCompressAudio(file: File): boolean {
+  const compressibleTypes = ['audio/wav', 'audio/flac', 'audio/aiff'];
+  return compressibleTypes.includes(file.type) || file.type.includes('uncompressed');
 }

@@ -30,8 +30,6 @@ services:
     healthCheckPath: /api/health
     numInstances: 1
     plan: free
-    # إعدادات رفع الملفات - زيادة الحد الأقصى لـ 15MB
-    maxRequestSize: 15MB
     # إعدادات محسنة لـ Socket.IO
     buildFilter:
       paths:

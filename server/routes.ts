@@ -174,7 +174,7 @@ const musicStorage = multer.diskStorage({
 const musicUpload = multer({
   storage: musicStorage,
   limits: { 
-    fileSize: 12 * 1024 * 1024, // margin over 10MB to account for multipart overhead
+    fileSize: 3 * 1024 * 1024, // 3MB limit due to server constraints
     files: 1, 
     fieldSize: 256 * 1024, 
     parts: 20 
@@ -558,6 +558,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     '/api/upload/profile-music',
     protect.auth,
     limiters.upload,
+    // middleware للتعامل مع خطأ 413 من nginx
+    (req, res, next) => {
+      console.log(`🔍 بدء رفع الملف - Content-Length: ${req.get('Content-Length')} بايت`);
+      
+      const contentLength = parseInt(req.get('Content-Length') || '0');
+      const maxSize = 10 * 1024 * 1024; // 10MB
+      
+      if (contentLength > maxSize) {
+        console.log(`❌ رفض الملف قبل المعالجة: ${(contentLength / (1024 * 1024)).toFixed(2)} ميجابايت > 10MB`);
+        return res.status(413).json({
+          success: false,
+          error: `حجم الملف كبير جداً (${(contentLength / (1024 * 1024)).toFixed(2)} ميجابايت). الحد الأقصى 10 ميجابايت`
+        });
+      }
+      
+      next();
+    },
     (req, res, next) => {
       // معالج multer مع معالجة أفضل للأخطاء
       musicUpload.single('music')(req, res, (err) => {
@@ -567,7 +584,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
             if (err.code === 'LIMIT_FILE_SIZE') {
               return res.status(413).json({ 
                 success: false,
-                error: 'حجم الملف كبير جداً. الحد الأقصى 10 ميجابايت' 
+                error: 'حجم الملف كبير جداً. الحد الأقصى الآمن هو 3 ميجابايت بسبب قيود الخادم. جرّب ضغط الملف أو تقليل الجودة.',
+                details: {
+                  maxSize: '3MB',
+                  suggestions: [
+                    'استخدم جودة أقل (128 kbps)',
+                    'حول الملف إلى MP3',
+                    'اقطع الملف لجزء أقصر'
+                  ]
+                }
               });
             }
             return res.status(400).json({ 

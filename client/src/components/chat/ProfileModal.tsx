@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import PointsSentNotification from '@/components/ui/PointsSentNotification';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest, api } from '@/lib/queryClient';
+import { getAudioCompressionTips, canCompressAudio, formatFileSize } from '@/lib/uploadConfig';
 import type { ChatUser } from '@/types/chat';
 import { getProfileImageSrc, getBannerImageSrc } from '@/utils/imageUtils';
 import { formatPoints, getLevelInfo } from '@/utils/pointsUtils';
@@ -3467,7 +3468,18 @@ export default function ProfileModal({
                                   
                                   if (err?.status === 413) {
                                     const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
-                                    msg = `حجم الملف كبير جداً (${fileSizeMB} ميجابايت). الحد الأقصى هو 10 ميجابايت. جرّب تقليل الجودة أو الضغط.`;
+                                    const tips = getAudioCompressionTips(parseFloat(fileSizeMB));
+                                    const canCompress = canCompressAudio(file);
+                                    
+                                    msg = `حجم الملف كبير جداً (${fileSizeMB} ميجابايت). هناك قيود في الخادم. الحد الأقصى الآمن هو 3 ميجابايت.\n\n`;
+                                    
+                                    if (canCompress) {
+                                      msg += `💡 يمكن ضغط هذا النوع من الملفات:\n`;
+                                    } else {
+                                      msg += `💡 نصائح لتقليل الحجم:\n`;
+                                    }
+                                    
+                                    msg += tips.slice(0, 2).join('\n');
                                   }
                                   
                                   toast({ 
