@@ -1553,6 +1553,7 @@ li > * > div.effect-crystal {
   word-break: break-word;
   overflow-wrap: anywhere;
   white-space: pre-wrap;
+  /* عند إضافة margin-right ديناميكياً من React، سيبدأ النص تحت الاسم مباشرة */
 }
 
 /* تحسينات للجوال: نفس السلوك مع تقليل الفراغات */
