@@ -122,12 +122,12 @@ export default function ProfileBanner({ currentUser, onBannerUpdate }: ProfileBa
       {/* صورة البروفايل البانر */}
       <div className="relative h-40 rounded-2xl overflow-hidden bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 shadow-2xl border border-white/20 backdrop-blur-sm">
         {preview ? (
-          <img src={preview} alt="معاينة صورة البانر" className="w-full h-full object-cover" />
+          <img src={preview} alt="معاينة صورة البانر" className="w-full h-full object-contain bg-black/20" />
         ) : currentUser?.profileBanner && currentUser.profileBanner !== '' ? (
           <img
             src={getBannerImageSrc(currentUser.profileBanner)}
             alt="صورة البانر"
-            className="w-full h-full object-cover"
+            className="w-full h-full object-contain bg-black/20"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-white relative">

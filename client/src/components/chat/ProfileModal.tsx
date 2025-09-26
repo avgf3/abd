@@ -1971,9 +1971,10 @@ export default function ProfileModal({
         .profile-cover {
           position: relative;
           height: 220px;
-          background-size: cover;
+          background-size: contain;
           background-position: center;
           background-repeat: no-repeat;
+          background-color: #0b1220;
         }
 
         .change-cover-btn {
@@ -2701,9 +2702,10 @@ export default function ProfileModal({
                 const src = getProfileBannerSrcLocal();
                 return src ? `url(${src})` : 'none';
               })(),
-              backgroundSize: 'cover',
+              backgroundSize: 'contain',
               backgroundPosition: 'center',
               backgroundRepeat: 'no-repeat',
+              backgroundColor: '#0b1220',
             }}
           >
             {/* مشغل الموسيقى - يظهر أعلى يمين الغلاف */}
