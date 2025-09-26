@@ -164,8 +164,9 @@ export default function ReportsLog({ currentUser, isVisible, onClose }: ReportsL
   // التحقق من الصلاحيات
   if (currentUser.userType !== 'admin' && currentUser.userType !== 'owner') {
     return (
-      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
-        <Card className="w-96 bg-popover border-border">
+      <div className="fixed inset-0 z-50 flex items-center justify-center">
+        <div className="absolute inset-0 modal-overlay" />
+        <Card className="relative w-96 bg-card border-border rounded-xl overflow-hidden shadow-2xl animate-fade-in">
           <CardHeader>
             <CardTitle className="text-center text-red-400">غير مصرح</CardTitle>
           </CardHeader>
@@ -185,9 +186,10 @@ export default function ReportsLog({ currentUser, isVisible, onClose }: ReportsL
   const buildUser = (id: number, name?: string) => getCachedUserWithMerge(id, name ? { username: name } : undefined);
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-4xl h-[80vh] bg-popover border-border">
-        <CardHeader className="border-b border-border">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 modal-overlay" onClick={onClose} />
+      <Card className="relative w-full max-w-4xl h-[80vh] bg-card border-border rounded-xl overflow-hidden shadow-2xl animate-fade-in">
+        <CardHeader className="border-b border-border modern-nav relative px-4 py-3">
           <div className="flex items-center justify-between">
             <CardTitle className="text-xl text-gray-100 flex items-center gap-2">
               <AlertTriangle className="w-6 h-6 text-red-400" />
@@ -199,12 +201,17 @@ export default function ReportsLog({ currentUser, isVisible, onClose }: ReportsL
               )}
             </CardTitle>
             <div className="flex items-center gap-2">
-              <Badge variant="outline" className="text-blue-400 border-blue-400">
+              <Badge variant="outline" className="text-primary border-primary">
                 {currentUser.userType === 'owner' ? 'المالك' : 'مشرف'}
               </Badge>
-              <Button onClick={onClose} variant="ghost" size="sm">
-                ✕
-              </Button>
+              <button
+                onClick={onClose}
+                className="px-2 py-1 hover:bg-red-100 text-red-600 text-sm font-medium absolute left-3 top-1/2 -translate-y-1/2"
+                aria-label="إغلاق"
+                title="إغلاق"
+              >
+                ✖️
+              </button>
             </div>
           </div>
         </CardHeader>
@@ -322,7 +329,7 @@ export default function ReportsLog({ currentUser, isVisible, onClose }: ReportsL
             )}
           </ScrollArea>
 
-          <div className="mt-6 pt-4 border-t border-gray-700">
+          <div className="mt-6 pt-4 border-t border-border">
             <div className="grid grid-cols-3 gap-4 text-center">
               <div>
                 <div className="text-2xl font-bold text-red-400">
