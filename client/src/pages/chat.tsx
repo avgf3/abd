@@ -42,7 +42,7 @@ export default function ChatPage() {
   })();
   const hasSavedUser = !!(initialSession as any)?.userId;
 
-  const [showWelcome, setShowWelcome] = useState(!hasSavedUser);
+  const [showWelcome, setShowWelcome] = useState(false);
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(() => {
     if (!hasSavedUser) return null;
     const roomId = (initialSession as any)?.roomId;
@@ -92,11 +92,11 @@ export default function ChatPage() {
               // الانضمام سيتم تلقائياً بعد authenticated
             }
           } else {
-            setShowWelcome(true);
+            setShowWelcome(false);
           }
         }
       } catch {
-        if (!savedUserId) setShowWelcome(true);
+        if (!savedUserId) setShowWelcome(false);
       }
     })();
   }, []);
@@ -125,7 +125,7 @@ export default function ChatPage() {
     
     clearSession(); // مسح بيانات الجلسة المحفوظة
     chat.disconnect();
-    setShowWelcome(true);
+    setShowWelcome(false);
     setSelectedRoomId(null);
   };
 
