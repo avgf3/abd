@@ -1976,6 +1976,20 @@ export default function ProfileModal({
           background-repeat: no-repeat;
         }
 
+        /* تمديد بصري لصورة الغلاف لأسفل لملء الفراغ قبل التبويبات */
+        .profile-cover::after {
+          content: '';
+          position: absolute;
+          left: 0;
+          right: 0;
+          bottom: -28px; /* يساوي مسافة الحشو العليا في profile-body على الديسكتوب */
+          height: 28px;
+          background: inherit; /* نفس صورة الغلاف */
+          background-size: inherit;
+          background-position: inherit;
+          pointer-events: none;
+        }
+
         .change-cover-btn {
           position: absolute;
           top: 12px;
@@ -2643,6 +2657,12 @@ export default function ProfileModal({
             max-width: 100%;
           }
           
+          /* على الجوال تكون المسافة أكبر، لذا نمد الغلاف أكثر */
+          .profile-cover::after {
+            bottom: -58px;
+            height: 58px;
+          }
+
           .profile-avatar {
             width: 100px;
             height: 100px;
