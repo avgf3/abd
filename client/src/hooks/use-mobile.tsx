@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 
 export function useIsMobile() {
+  console.log('🔴 [use-mobile] Initial render - isMobile will be FALSE');
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -18,9 +19,12 @@ export function useIsMobile() {
       // فحص إضافي للتأكد من كونه جهاز لمس
       const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
       
-      setIsMobile(isSmallScreen || (isMobileUserAgent && isTouchDevice));
+      const result = isSmallScreen || (isMobileUserAgent && isTouchDevice);
+      console.log(`✅ [use-mobile] Device check: width=${width}, result=${result}`);
+      setIsMobile(result);
     };
 
+    console.log('⚡ [use-mobile] useEffect running - will check device NOW');
     checkDevice();
     window.addEventListener('resize', checkDevice);
     

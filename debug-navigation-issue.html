@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إثبات مشكلة القائمة - Race Condition</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #1a1a1a;
+            color: white;
+            padding: 20px;
+        }
+        .navigation {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 56px;
+            background: #2a2a2a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            border-top: 2px solid #444;
+        }
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 300px;
+            height: 100vh;
+            background: #333;
+            padding: 20px;
+            transition: all 0.3s;
+        }
+        .sidebar.hidden {
+            transform: translateX(-100%);
+        }
+        .log-container {
+            background: #222;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .log-entry {
+            padding: 5px;
+            margin: 2px 0;
+            border-left: 3px solid #666;
+        }
+        .log-entry.error {
+            border-color: red;
+            background: rgba(255, 0, 0, 0.1);
+        }
+        .log-entry.success {
+            border-color: green;
+            background: rgba(0, 255, 0, 0.1);
+        }
+        .log-entry.warning {
+            border-color: orange;
+            background: rgba(255, 165, 0, 0.1);
+        }
+        button {
+            padding: 10px 20px;
+            background: #4a4a4a;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #5a5a5a;
+        }
+        .problem-indicator {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            text-align: center;
+            font-weight: bold;
+        }
+        .problem-detected {
+            background: rgba(255, 0, 0, 0.3);
+            border: 2px solid red;
+        }
+        .no-problem {
+            background: rgba(0, 255, 0, 0.3);
+            border: 2px solid green;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 إثبات مشكلة Race Condition في القائمة</h1>
+    
+    <div class="problem-indicator" id="problemIndicator">
+        جاري التحقق...
+    </div>
+
+    <h2>📊 السيناريو الحقيقي من موقعك:</h2>
+    <div class="log-container" id="realScenarioLog"></div>
+
+    <h2>🎯 محاكاة المشكلة:</h2>
+    <button onclick="simulateRaceCondition()">🔄 محاكاة Race Condition</button>
+    <button onclick="simulateNormalLoad()">✅ محاكاة التحميل الطبيعي</button>
+    <button onclick="clearLogs()">🗑️ مسح السجلات</button>
+    
+    <div class="log-container" id="logContainer"></div>
+
+    <div class="sidebar" id="sidebar">
+        <h3>القائمة الجانبية</h3>
+        <p>هذه تمثل قائمة المستخدمين/الغرف</p>
+    </div>
+
+    <div class="navigation">
+        <button onclick="toggleSidebar()">👥 المستخدمون</button>
+        <button>🏠 الغرف</button>
+        <button>📝 الحائط</button>
+    </div>
+
+    <script>
+        let logId = 0;
+        
+        function log(message, type = 'info') {
+            const container = document.getElementById('logContainer');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            const timestamp = new Date().toLocaleTimeString('ar-EG', { 
+                hour12: false, 
+                hour: '2-digit', 
+                minute: '2-digit', 
+                second: '2-digit',
+                fractionalSecondDigits: 3 
+            });
+            entry.innerHTML = `[${timestamp}] ${message}`;
+            container.appendChild(entry);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function realLog(message, type = 'info') {
+            const container = document.getElementById('realScenarioLog');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            const timestamp = new Date().toLocaleTimeString('ar-EG', { 
+                hour12: false, 
+                hour: '2-digit', 
+                minute: '2-digit', 
+                second: '2-digit',
+                fractionalSecondDigits: 3 
+            });
+            entry.innerHTML = `[${timestamp}] ${message}`;
+            container.appendChild(entry);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function clearLogs() {
+            document.getElementById('logContainer').innerHTML = '';
+            document.getElementById('realScenarioLog').innerHTML = '';
+        }
+
+        // محاكاة الكود الحقيقي من موقعك
+        class RealCodeSimulation {
+            constructor() {
+                // محاكاة useState
+                this.isMobile = false; // القيمة الابتدائية دائماً false
+                this.activeView = this.getInitialActiveView();
+                
+                realLog(`🔵 useState: isMobile = ${this.isMobile} (القيمة الابتدائية)`, 'warning');
+                realLog(`🔵 useState: activeView = '${this.activeView}' (محسوبة من window.innerWidth)`, 'warning');
+                
+                // محاكاة الـ render الأول
+                this.firstRender();
+                
+                // محاكاة useEffect (يحدث بعد الـ render)
+                setTimeout(() => {
+                    this.runUseEffect();
+                }, 100); // تأخير صغير يمثل دورة الـ React
+            }
+            
+            getInitialActiveView() {
+                const width = window.innerWidth;
+                return width < 768 ? 'hidden' : 'users';
+            }
+            
+            firstRender() {
+                realLog(`🎨 FIRST RENDER:`, 'success');
+                realLog(`  - isMobile = ${this.isMobile}`, 'info');
+                realLog(`  - activeView = '${this.activeView}'`, 'info');
+                
+                const shouldShowSidebar = !this.isMobile || this.activeView === 'hidden';
+                realLog(`  - الشرط: !isMobile || activeView === 'hidden'`, 'info');
+                realLog(`  - النتيجة: !${this.isMobile} || '${this.activeView}' === 'hidden' = ${shouldShowSidebar}`, 
+                    shouldShowSidebar ? 'error' : 'success');
+                
+                if (shouldShowSidebar && this.activeView !== 'hidden') {
+                    realLog(`❌ المشكلة: القائمة ستظهر رغم أننا على الموبايل!`, 'error');
+                    document.getElementById('problemIndicator').className = 'problem-indicator problem-detected';
+                    document.getElementById('problemIndicator').textContent = '⚠️ تم اكتشاف المشكلة! القائمة ظهرت خطأً';
+                }
+            }
+            
+            runUseEffect() {
+                realLog(`⚡ useEffect يعمل الآن (بعد الـ render):`, 'warning');
+                
+                // فحص حقيقي للجهاز
+                const width = window.innerWidth;
+                const userAgent = navigator.userAgent;
+                const isMobileUserAgent = /Android|webOS|iPhone|iPad|iPod/i.test(userAgent);
+                const isTouchDevice = 'ontouchstart' in window;
+                
+                this.isMobile = width <= 768 || (isMobileUserAgent && isTouchDevice);
+                
+                realLog(`  - تم تحديث isMobile إلى: ${this.isMobile}`, 'success');
+                realLog(`  - لكن الـ render الأول انتهى بالفعل!`, 'error');
+                
+                // الآن React سيعمل re-render
+                this.reRender();
+            }
+            
+            reRender() {
+                realLog(`🔄 RE-RENDER (بعد تحديث isMobile):`, 'success');
+                realLog(`  - isMobile = ${this.isMobile} (القيمة الصحيحة الآن)`, 'success');
+                realLog(`  - activeView = '${this.activeView}'`, 'info');
+                
+                const shouldShowSidebar = !this.isMobile || this.activeView === 'hidden';
+                realLog(`  - الشرط: !${this.isMobile} || '${this.activeView}' === 'hidden' = ${shouldShowSidebar}`, 
+                    shouldShowSidebar ? 'info' : 'success');
+                
+                if (!shouldShowSidebar) {
+                    realLog(`✅ القائمة اختفت الآن (لكن المستخدم رآها للحظة!)`, 'warning');
+                }
+            }
+        }
+
+        // محاكاة Race Condition
+        function simulateRaceCondition() {
+            clearLogs();
+            log('🚀 بداية محاكاة Race Condition...', 'warning');
+            log('');
+            
+            // Step 1: Initial State
+            log('📍 Step 1: Initial State (useState)', 'success');
+            let isMobile = false; // دائماً false في البداية
+            let activeView = window.innerWidth < 768 ? 'hidden' : 'users';
+            
+            log(`  isMobile = ${isMobile} (hardcoded في use-mobile.tsx:4)`, 'error');
+            log(`  activeView = '${activeView}' (من window.innerWidth)`, 'info');
+            log('');
+            
+            // Step 2: First Render
+            log('📍 Step 2: First Render (قبل useEffect)', 'success');
+            const condition1 = !isMobile || activeView === 'hidden';
+            log(`  الشرط: !isMobile || activeView === 'hidden'`, 'info');
+            log(`  التقييم: !${isMobile} || '${activeView}' === 'hidden' = ${condition1}`, condition1 ? 'error' : 'success');
+            
+            if (condition1 && activeView !== 'hidden') {
+                log(`  ⚠️ المشكلة: القائمة تظهر على الموبايل!`, 'error');
+                document.getElementById('sidebar').classList.remove('hidden');
+            }
+            log('');
+            
+            // Step 3: useEffect runs (after render)
+            setTimeout(() => {
+                log('📍 Step 3: useEffect يشتغل (بعد 100ms)', 'success');
+                
+                // الآن نفحص الجهاز بشكل صحيح
+                const width = window.innerWidth;
+                const isMobileDevice = width <= 768;
+                isMobile = isMobileDevice;
+                
+                log(`  isMobile محدث إلى: ${isMobile} (القيمة الصحيحة)`, 'success');
+                log('');
+                
+                // Step 4: Re-render
+                log('📍 Step 4: Re-render', 'success');
+                const condition2 = !isMobile || activeView === 'hidden';
+                log(`  الشرط: !isMobile || activeView === 'hidden'`, 'info');
+                log(`  التقييم: !${isMobile} || '${activeView}' === 'hidden' = ${condition2}`, 'info');
+                
+                if (!condition2) {
+                    log(`  القائمة تختفي الآن`, 'success');
+                    document.getElementById('sidebar').classList.add('hidden');
+                }
+                
+                log('');
+                log('🎯 النتيجة: المستخدم رأى القائمة لمدة 100ms ثم اختفت!', 'error');
+            }, 100);
+        }
+
+        function simulateNormalLoad() {
+            clearLogs();
+            log('✅ محاكاة التحميل الطبيعي (بدون race condition)...', 'success');
+            log('');
+            
+            // الحل الصحيح: تهيئة isMobile بالقيمة الصحيحة من البداية
+            const width = window.innerWidth;
+            const isMobileInitial = width <= 768;
+            
+            log('📍 الحل الصحيح:', 'success');
+            log(`  const [isMobile] = useState(() => window.innerWidth <= 768)`, 'success');
+            log(`  isMobile = ${isMobileInitial} (القيمة الصحيحة من البداية)`, 'success');
+            log('');
+            log('✅ لا توجد مشكلة! القائمة تعمل بشكل صحيح من أول render', 'success');
+        }
+
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('hidden');
+        }
+
+        // تشغيل السيناريو الحقيقي عند التحميل
+        window.addEventListener('load', () => {
+            realLog('🌐 تحميل الصفحة...', 'info');
+            realLog(`📱 عرض الشاشة: ${window.innerWidth}px`, 'info');
+            realLog(`📱 الجهاز: ${window.innerWidth <= 768 ? 'موبايل' : 'ديسكتوب'}`, 'info');
+            realLog('');
+            
+            new RealCodeSimulation();
+        });
+    </script>
+</body>
+</html>
