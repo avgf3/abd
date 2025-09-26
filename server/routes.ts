@@ -4674,11 +4674,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const payload = buildUserBroadcastPayload(user);
       if (payload && payload.id) {
-        getIO().emit('message', {
+        const envelope = {
           type: 'userUpdated',
           user: payload,
           timestamp: new Date().toISOString(),
-        });
+        };
+        // Scope broadcast to the user's active rooms instead of global
+        emitToUserRooms(payload.id, envelope);
       }
     } catch {}
   }
@@ -4701,7 +4703,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         rooms = ['general'];
       }
       for (const roomId of rooms) {
-        getIO().to(`room_${roomId}`).emit('message', payload);
+        // إذا كان الحدث userUpdated، اضبط currentRoom ليطابق الغرفة المستهدفة
+        const perRoomPayload = (() => {
+          try {
+            if (payload?.type === 'userUpdated' && payload?.user) {
+              return { ...payload, user: { ...payload.user, currentRoom: roomId } };
+            }
+          } catch {}
+          return payload;
+        })();
+        getIO().to(`room_${roomId}`).emit('message', perRoomPayload);
       }
     } catch {
       // fallback: عام كحل أخير
