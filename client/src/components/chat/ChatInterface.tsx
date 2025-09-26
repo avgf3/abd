@@ -88,7 +88,12 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   const [showAdminReports, setShowAdminReports] = useState(false);
   const [showStoriesSettings, setShowStoriesSettings] = useState(false);
   const [activeView, setActiveView] = useState<'hidden' | 'users' | 'walls' | 'rooms' | 'friends'>(
-    () => (typeof window !== 'undefined' && window.innerWidth < 768 ? 'hidden' : 'users')
+    () => {
+      const width = typeof window !== 'undefined' ? window.innerWidth : 1024;
+      const result = width < 768 ? 'hidden' : 'users';
+      console.log(`🔴 [activeView] Initial: width=${width}, result='${result}'`);
+      return result;
+    }
   );
   const isMobile = useIsMobile();
   const [showAddRoomDialog, setShowAddRoomDialog] = useState(false);
@@ -1127,7 +1132,12 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             </Suspense>
           </div>
         )}
-        {!isMobile || activeView === 'hidden'
+        {(() => {
+          console.log(`🔥 [CRITICAL CHECK] isMobile=${isMobile}, activeView='${activeView}'`);
+          console.log(`🔥 [CONDITION] !isMobile=${!isMobile}, activeView === 'hidden'=${activeView === 'hidden'}`);
+          console.log(`🔥 [RESULT] Will show main content: ${!isMobile || activeView === 'hidden'}`);
+          return !isMobile || activeView === 'hidden';
+        })()
           ? (() => {
               const currentRoom = rooms.find((room) => room.id === chat.currentRoomId);
 
