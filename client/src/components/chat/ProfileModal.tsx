@@ -1976,6 +1976,21 @@ export default function ProfileModal({
           background-repeat: no-repeat;
         }
 
+        /* تمديد الخلفية أسفل الغلاف ليلتقي مع التبويبات بدون فراغ */
+        .profile-cover::after {
+          content: '';
+          position: absolute;
+          left: 0;
+          right: 0;
+          bottom: -28px; /* يساوي الحشوة العلوية لقسم الجسم على سطح المكتب */
+          height: 28px;
+          background: inherit;
+          background-size: inherit;
+          background-position: inherit;
+          background-repeat: inherit;
+          pointer-events: none;
+        }
+
         .change-cover-btn {
           position: absolute;
           top: 12px;
@@ -2658,6 +2673,12 @@ export default function ProfileModal({
             height: 25px;
             line-height: 25px;
             font-size: 12px;
+          }
+
+          /* على الجوال، الحشوة العلوية أكبر، لذا نمد الغلاف أكثر */
+          .profile-cover::after {
+            bottom: -58px;
+            height: 58px;
           }
           
           .profile-body {
