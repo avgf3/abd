@@ -3041,9 +3041,9 @@ export default function ProfileModal({
                     fontSize: '13px',
                     fontStyle: 'italic'
                   }}
-                  title={localUser?.id === currentUser?.id ? 'اضغط لتعديل الحالة' : ''}
+                  title={localUser?.id === currentUser?.id ? (localUser?.status?.trim() ? 'اضغط لتعديل الحالة' : 'اضغط لإضافة حالة') : ''}
                 >
-                  {localUser?.status || ''}
+                  {localUser?.status?.trim() ? localUser.status : (localUser?.id === currentUser?.id ? 'اضغط لإضافة حالة' : '')}
                 </small>
               </div>
 
