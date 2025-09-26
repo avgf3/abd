@@ -1765,7 +1765,24 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
       {chat.currentUser && <WelcomeNotification user={chat.currentUser} />}
 
       {/* نافذة الأثرياء */}
-      <Suspense fallback={null}
+      <Suspense
+        fallback={
+          <div className="fixed inset-0 z-50 flex items-center justify-center">
+            <div className="absolute inset-0 modal-overlay" />
+            <div className="relative w-[90vw] max-w-[20rem] sm:max-w-[22rem] bg-card rounded-xl overflow-hidden shadow-2xl animate-fade-in">
+              <div className="bg-primary p-3 text-primary-foreground flex items-center justify-center">
+                <div className="animate-pulse h-4 w-4 bg-primary-foreground/30 rounded mr-2" />
+                <span className="text-sm font-medium">جاري التحميل...</span>
+              </div>
+              <div className="p-3 space-y-1">
+                <div className="animate-pulse h-8 bg-muted/50 rounded" />
+                <div className="animate-pulse h-8 bg-muted/50 rounded" />
+                <div className="animate-pulse h-8 bg-muted/50 rounded" />
+                <div className="animate-pulse h-8 bg-muted/50 rounded" />
+              </div>
+            </div>
+          </div>
+        }
       >
         <RichestModal
           isOpen={showRichest}
