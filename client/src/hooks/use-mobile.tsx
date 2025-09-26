@@ -1,7 +1,23 @@
 import { useState, useEffect } from 'react';
 
 export function useIsMobile() {
-  const [isMobile, setIsMobile] = useState(false);
+  // تهيئة القيمة الصحيحة من البداية بدلاً من false دائماً
+  const [isMobile, setIsMobile] = useState(() => {
+    // SSR-safe: تحقق من وجود window أولاً
+    if (typeof window === 'undefined') {
+      return false; // Default for SSR
+    }
+    
+    // نفس المنطق المستخدم في checkDevice لكن من البداية
+    const width = window.innerWidth;
+    const userAgent = navigator.userAgent;
+    const isSmallScreen = width <= 768;
+    const isMobileUserAgent = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
+    const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    
+    // حساب القيمة الابتدائية الصحيحة
+    return isSmallScreen || (isMobileUserAgent && isTouchDevice);
+  });
 
   useEffect(() => {
     const checkDevice = () => {
@@ -21,7 +37,8 @@ export function useIsMobile() {
       setIsMobile(isSmallScreen || (isMobileUserAgent && isTouchDevice));
     };
 
-    checkDevice();
+    // لا نحتاج checkDevice() هنا لأن القيمة الابتدائية صحيحة بالفعل
+    // فقط نستمع للـ resize events
     window.addEventListener('resize', checkDevice);
     
     return () => window.removeEventListener('resize', checkDevice);
