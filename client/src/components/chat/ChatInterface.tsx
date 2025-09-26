@@ -1382,6 +1382,11 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                   }
                   // تحديث/تنظيف الكاش دائماً للمستخدم الذي تم تحديثه
                   setCachedUser(updatedUser);
+                  // إيقاف الصوت الخارجي إذا تمت إزالة موسيقى البروفايل
+                  if (!updatedUser.profileMusicUrl) {
+                    try { profileAudioRef.current?.pause(); } catch {}
+                    try { if (profileAudioRef.current) profileAudioRef.current.src = ''; } catch {}
+                  }
                 }}
               />
             ) : (
@@ -1406,6 +1411,11 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                     });
                     // تحديث/تنظيف الكاش بعد التحديث الناجح
                     setCachedUser(updatedUser);
+                    // إيقاف الصوت الخارجي إذا تمت إزالة موسيقى البروفايل
+                    if (!updatedUser.profileMusicUrl) {
+                      try { profileAudioRef.current?.pause(); } catch {}
+                      try { if (profileAudioRef.current) profileAudioRef.current.src = ''; } catch {}
+                    }
                   }
                 }}
               />
