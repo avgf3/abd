@@ -1,7 +1,6 @@
 import { lazy, Suspense, useState, useEffect } from 'react';
 
 const ChatInterface = lazy(() => import('@/components/chat/ChatInterface'));
-const WelcomeScreen = lazy(() => import('@/components/chat/WelcomeScreen'));
 // حذف المحدد المحلي للغرف لتجنب التكرار
 import KickCountdown from '@/components/moderation/KickCountdown';
 import { useChat } from '@/hooks/useChat';
@@ -134,8 +133,6 @@ export default function ChatPage() {
       <Suspense fallback={null}>
         {isRestoring ? (
           <div className="p-6 text-center">...جاري استعادة الجلسة</div>
-        ) : showWelcome ? (
-          <WelcomeScreen onUserLogin={handleUserLogin} />
         ) : selectedRoomId ? (
           <ChatInterface chat={chat} onLogout={handleLogout} />
         ) : (

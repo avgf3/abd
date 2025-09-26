@@ -47,7 +47,6 @@ function UniversalCitySystem({ cityPath }: { cityPath: string }) {
 }
 
 const ChatInterface = lazy(() => import('@/components/chat/ChatInterface'));
-const CityWelcomeScreen = lazy(() => import('@/components/chat/CityWelcomeScreen'));
 const RoomSelectorScreen = lazy(() => import('@/components/chat/RoomSelectorScreen'));
 import KickCountdown from '@/components/moderation/KickCountdown';
 import { useChat } from '@/hooks/useChat';
@@ -265,8 +264,6 @@ export default function CityChat() {
       <Suspense fallback={null}>
         {isRestoring ? (
           <div className="p-6 text-center">...جاري استعادة الجلسة</div>
-        ) : showWelcome ? (
-          <CityWelcomeScreen onUserLogin={handleUserLogin} cityData={cityData} cityInfo={cityInfo} />
         ) : selectedRoomId ? (
           <ChatInterface chat={chat} onLogout={handleLogout} />
         ) : (

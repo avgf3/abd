@@ -3,7 +3,6 @@ import { useRoute, useLocation } from 'wouter';
 import { getSubChatByPath } from '@/data/subChats';
 
 const ChatInterface = lazy(() => import('@/components/chat/ChatInterface'));
-const SubChatWelcomeScreen = lazy(() => import('@/components/chat/SubChatWelcomeScreen'));
 const RoomSelectorScreen = lazy(() => import('@/components/chat/RoomSelectorScreen'));
 import KickCountdown from '@/components/moderation/KickCountdown';
 import { useChat } from '@/hooks/useChat';
@@ -127,8 +126,6 @@ export default function SubChat() {
       <Suspense fallback={null}>
         {isRestoring ? (
           <div className="p-6 text-center">...جاري استعادة الجلسة</div>
-        ) : showWelcome ? (
-          <SubChatWelcomeScreen onUserLogin={handleUserLogin} subChatData={subChatData} />
         ) : selectedRoomId ? (
           <ChatInterface chat={chat} onLogout={handleLogout} />
         ) : (
