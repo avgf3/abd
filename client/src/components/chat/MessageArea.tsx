@@ -754,6 +754,10 @@ export default function MessageArea({
 
                           <div
                             className={`runin-text text-gray-800 break-words message-content-fix`}
+                            style={{
+                              // إزاحة ثابتة لكل الأسطر بمقدار عرض الاسم، لتبدأ الأسطر 2+ من نفس موضع السطر الأول
+                              marginRight: (nameWidthMapRef.current.get(message.id) || 0) as number,
+                            }}
                           >
                             {message.messageType === 'image' ? (
                               <img
