@@ -1621,6 +1621,20 @@ li > * > div.effect-crystal {
   }
 }
 
+/* إصلاح فراغ السطر الأول: تطبيع ارتفاع أيقونة الشارة داخل الاسم إلى 1em */
+.runin-name img,
+.runin-name svg {
+  height: 1em !important;         /* نفس ارتفاع النص */
+  max-height: 1em !important;
+  width: auto !important;
+  vertical-align: -0.125em;        /* تقليل هبوط خط الأساس في iOS */
+}
+
+/* منع حاوية الشارة inline-flex من تكبير line-box */
+.runin-name .inline-flex {
+  line-height: 1;                 /* صندوق الأيقونة بارتفاع محكم */
+}
+
 /* ========== MODERN ADVANCED DESIGN SYSTEM ========== */
 
 /* Modern Glass Cards */
