@@ -1610,12 +1610,14 @@ li > * > div.effect-crystal {
   }
   .runin-name {
     display: inline;        /* الاسم inline في السطر الأول */
-    margin-left: 0.25rem;   /* مسافة صغيرة بعد الاسم */
+    margin-left: 0;         /* إزالة المسافة الزائدة */
   }
   .runin-text {
     display: inline;        /* النص يبدأ inline في نفس السطر */
     text-align: justify;    /* النص موزع بانتظام */
     line-height: 1.6;
+    margin-left: 0;         /* إزالة أي مسافة زائدة */
+    padding-left: 0;        /* إزالة أي حشو زائد */
   }
 }
 
