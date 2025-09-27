@@ -451,18 +451,21 @@ export default function PrivateMessageBox({
                         className="w-8 h-8"
                       />
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span
-                            className="font-semibold text-sm truncate"
-                            style={{ color: getFinalUsernameColor(m.sender || user) }}
-                          >
-                      {m.sender?.username || (isMe ? (currentUser?.username || '') : (user.username || '')) || 'جاري التحميل...'}
-                          </span>
-                          <span className="text-xs text-gray-500 whitespace-nowrap">
-                            {formatTime(m.timestamp)}
-                          </span>
-                        </div>
-                        <div className="text-gray-800 break-words message-content-fix">
+                        {/* New horizontal layout: name and content in same line */}
+                        <div className="flex items-start gap-2">
+                          {/* Name section - fixed width */}
+                          <div className="flex items-center gap-1 shrink-0">
+                            <span
+                              className="font-semibold text-sm"
+                              style={{ color: getFinalUsernameColor(m.sender || user) }}
+                            >
+                              {m.sender?.username || (isMe ? (currentUser?.username || '') : (user.username || '')) || 'جاري التحميل...'}
+                            </span>
+                            <span className="text-gray-400 mx-1">:</span>
+                          </div>
+
+                          {/* Content section - flexible width */}
+                          <div className="flex-1 min-w-0 text-gray-800 break-words message-content-fix">
                           {hasStoryContext && (
                             <div className="mb-2">
                               <div className="flex items-center gap-3 p-2 rounded-lg border bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200">
@@ -559,6 +562,12 @@ export default function PrivateMessageBox({
                               </span>
                             );
                           })()}
+                          </div>
+
+                          {/* Time section - fixed width */}
+                          <span className="text-xs text-gray-500 whitespace-nowrap shrink-0 self-start">
+                            {formatTime(m.timestamp)}
+                          </span>
                         </div>
                       </div>
                     </motion.div>
