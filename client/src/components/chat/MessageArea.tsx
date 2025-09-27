@@ -884,7 +884,6 @@ export default function MessageArea({
                           </DropdownMenuContent>
                         </DropdownMenu>
                       )}
-                    </div>
                   </>
                 )}
               </div>
