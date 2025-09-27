@@ -722,26 +722,24 @@ export default function MessageArea({
                       </div>
                     )}
 
-                    {/* تخطيط محسن: الاسم في سطر منفصل، والنص يبدأ من البداية */}
+                    {/* الاسم والنص: السطر الأول بجانب الاسم، والباقي تحت الاسم */}
                     <div className={`flex-1 min-w-0 flex items-start gap-2`}>
                       <div className="flex-1 min-w-0">
                         <div className="runin-container">
-                        {/* الاسم والشارة في سطر منفصل */}
-                        <div className="runin-name">
-                          {message.sender && (message.sender.userType as any) !== 'bot' && (
-                            <UserRoleBadge user={message.sender} showOnlyIcon={true} hideGuestAndGender={true} size={16} />
-                          )}
-                          <button
-                            onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
-                            className="font-semibold hover:underline transition-colors duration-200 truncate"
-                            style={{ color: getFinalUsernameColor(message.sender) }}
-                          >
-                            {message.sender?.username || 'جاري التحميل...'}
-                          </button>
-                        </div>
+                          <span className="runin-name">
+                            {message.sender && (message.sender.userType as any) !== 'bot' && (
+                              <UserRoleBadge user={message.sender} showOnlyIcon={true} hideGuestAndGender={true} size={16} />
+                            )}
+                            <button
+                              onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
+                              className="font-semibold hover:underline transition-colors duration-200 truncate"
+                              style={{ color: getFinalUsernameColor(message.sender) }}
+                            >
+                              {message.sender?.username || 'جاري التحميل...'}
+                            </button>
+                          </span>
 
-                        {/* النص يبدأ من أول السطر لآخره */}
-                        <div className={`runin-text text-gray-800 break-words message-content-fix`}>
+                          <div className={`runin-text text-gray-800 break-words message-content-fix`}>
                             {message.messageType === 'image' ? (
                               <img
                                 src={message.content}

@@ -1526,34 +1526,30 @@ li > * > div.effect-crystal {
   }
 }
 
-/* === محاذاة الرسائل المحسنة: السطر الأول بجانب الاسم، والأسطر التالية من البداية === */
+/* === محاذاة الرسائل: السطر الأول بجانب الاسم، والباقي تحت الاسم === */
 .runin-container {
   display: block;
-  width: 100%;
 }
 
-/* الاسم والشارة في سطر منفصل */
+/* الاسم يطفو على اليمين */
 .runin-name {
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
   white-space: nowrap;
   line-height: 1.6;
-  margin-bottom: 0.25rem;
-  /* إزالة float لحل مشكلة المحاذاة */
+  float: right;
+  margin-left: 0.5rem;
 }
 
-/* النص يبدأ من أول السطر بعد الاسم */
+/* النص: السطر الأول بجانب الاسم، والباقي تحت الاسم */
 .runin-text {
   display: block;
-  width: 100%;
-  min-width: 0;
   text-align: start;
   word-break: break-word;
   overflow-wrap: anywhere;
   white-space: pre-wrap;
   line-height: 1.6;
-  /* النص يبدأ من أول السطر لآخره */
 }
 
 /* ========== MODERN ADVANCED DESIGN SYSTEM ========== */
