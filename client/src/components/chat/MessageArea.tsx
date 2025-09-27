@@ -142,17 +142,7 @@ export default function MessageArea({
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const virtuosoRef = useRef<VirtuosoHandle>(null);
   const prevMessagesLenRef = useRef<number>(0);
-  // قياس عرض اسم المستخدم لكل رسالة لعمل تعليق للنص تحت الاسم
-  const nameWidthMapRef = useRef<Map<number, number>>(new Map());
-  const [, forceNameMeasureTick] = useState(0);
-  const updateNameWidth = useCallback((id: number, width: number) => {
-    const rounded = Math.ceil(width) + 4; // إضافة هامش صغير
-    const prev = nameWidthMapRef.current.get(id) || 0;
-    if (Math.abs(prev - rounded) > 1) {
-      nameWidthMapRef.current.set(id, rounded);
-      forceNameMeasureTick((t) => (t + 1) % 1000000);
-    }
-  }, []);
+  // تم إزالة نظام قياس العرض المعطل لحل مشكلة المحاذاة
 
   // State for improved scroll behavior
   const [isAtBottom, setIsAtBottom] = useState(true);
@@ -732,44 +722,26 @@ export default function MessageArea({
                       </div>
                     )}
 
-                    {/* Inline row: badge+name floating beside first line, text below from start */}
+                    {/* تخطيط محسن: الاسم في سطر منفصل، والنص يبدأ من البداية */}
                     <div className={`flex-1 min-w-0 flex items-start gap-2`}>
-                      {/* Wrapper to handle run-in heading layout */}
                       <div className="flex-1 min-w-0">
                         <div className="runin-container">
-                          <span
-                            className="runin-name"
-                            ref={(el) => {
-                              if (el) {
-                                try {
-                                  const w = el.getBoundingClientRect().width;
-                                  updateNameWidth(message.id, w);
-                                } catch {}
-                              }
-                            }}
+                        {/* الاسم والشارة في سطر منفصل */}
+                        <div className="runin-name">
+                          {message.sender && (message.sender.userType as any) !== 'bot' && (
+                            <UserRoleBadge user={message.sender} showOnlyIcon={true} hideGuestAndGender={true} size={16} />
+                          )}
+                          <button
+                            onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
+                            className="font-semibold hover:underline transition-colors duration-200 truncate"
+                            style={{ color: getFinalUsernameColor(message.sender) }}
                           >
-                            {message.sender && (message.sender.userType as any) !== 'bot' && (
-                              <UserRoleBadge user={message.sender} showOnlyIcon={true} hideGuestAndGender={true} size={16} />
-                            )}
-                            <button
-                              onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
-                              className="font-semibold hover:underline transition-colors duration-200 truncate"
-                              style={{ color: getFinalUsernameColor(message.sender) }}
-                            >
-                              {message.sender?.username || 'جاري التحميل...'}
-                            </button>
-                          </span>
+                            {message.sender?.username || 'جاري التحميل...'}
+                          </button>
+                        </div>
 
-                          <div
-                            className={`runin-text text-gray-800 break-words message-content-fix`}
-                            style={{
-                              // على الهاتف: دع الأسطر من الثانية فصاعداً تبدأ من بداية السطر (بدون هامش)
-                              // على سطح المكتب: استخدم الهامش لمحاذاة الأسطر تحت الاسم
-                              ...(isMobile
-                                ? {}
-                                : { marginRight: nameWidthMapRef.current.get(message.id) || undefined }),
-                            }}
-                          >
+                        {/* النص يبدأ من أول السطر لآخره */}
+                        <div className={`runin-text text-gray-800 break-words message-content-fix`}>
                             {message.messageType === 'image' ? (
                               <img
                                 src={message.content}
@@ -835,7 +807,7 @@ export default function MessageArea({
                                 );
                               })()
                             )}
-                          </div>
+                        </div>
                         </div>
                       </div>
 
@@ -843,9 +815,8 @@ export default function MessageArea({
                       <span className="text-xs text-gray-500 whitespace-nowrap ml-2 self-start">
                         {formatTime(message.timestamp)}
                       </span>
-
-                      {/* قائمة ثلاث نقاط موحدة للجوال وسطح المكتب */}
-                      {currentUser && (
+                    {/* قائمة ثلاث نقاط موحدة للجوال وسطح المكتب */}
+                    {currentUser && (
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <button
