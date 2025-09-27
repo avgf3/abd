@@ -453,16 +453,26 @@ export default function PrivateMessageBox({
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                           <span
-                            className="font-semibold text-sm truncate"
+                            className="font-semibold text-sm truncate runin-name"
                             style={{ color: getFinalUsernameColor(m.sender || user) }}
                           >
-                      {m.sender?.username || (isMe ? (currentUser?.username || '') : (user.username || '')) || 'جاري التحميل...'}
+                            {m.sender?.username || (isMe ? (currentUser?.username || '') : (user.username || '')) || 'جاري التحميل...'}
+                            {(() => {
+                              const raw = String(m.content || '');
+                              const { cleaned } = parseYouTubeFromText(raw);
+                              const base = cleaned || raw;
+                              const first = base.split('\n')[0];
+                              if (!first) return null;
+                              return (
+                                <span className="runin-firstline text-gray-700 message-content-fix truncate">{first}</span>
+                              );
+                            })()}
                           </span>
                           <span className="text-xs text-gray-500 whitespace-nowrap">
                             {formatTime(m.timestamp)}
                           </span>
                         </div>
-                        <div className="text-gray-800 break-words message-content-fix">
+                        <div className="text-gray-800 break-words message-content-fix runin-text">
                           {hasStoryContext && (
                             <div className="mb-2">
                               <div className="flex items-center gap-3 p-2 rounded-lg border bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200">
@@ -517,21 +527,25 @@ export default function PrivateMessageBox({
                               onClick={() => setImageLightbox({ open: true, src: m.content })}
                             />
                           ) : (() => {
-                            const { cleaned, ids } = parseYouTubeFromText(m.content);
+                            const raw = String(m.content || '');
+                            const { cleaned, ids } = parseYouTubeFromText(raw);
+                            const base = cleaned || raw;
+                            const parts = base.split('\n');
+                            const rest = parts.slice(1).join('\n');
                             if (ids.length > 0) {
                               const firstId = ids[0];
                               return (
                                 <span className="text-sm leading-relaxed inline-flex items-center gap-2">
-                                  {cleaned && (
+                                  {rest && (
                                     <span
-                                      className="truncate"
+                                      className=""
                                       style={
                                         currentUser && m.senderId === currentUser.id
                                           ? { color: composerTextColor, fontWeight: composerBold ? 600 : undefined }
                                           : undefined
                                       }
                                     >
-                                      {formatMessagePreview(cleaned, 100)}
+                                      {rest}
                                     </span>
                                   )}
                                   <button
@@ -555,7 +569,7 @@ export default function PrivateMessageBox({
                                     : undefined
                                 }
                               >
-                                {formatMessagePreview(m.content, 100)}
+                                {rest}
                               </span>
                             );
                           })()}

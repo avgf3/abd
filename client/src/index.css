@@ -1556,6 +1556,12 @@ li > * > div.effect-crystal {
   text-indent: 0;
 }
 
+/* السطر الأول بجانب الاسم */
+.runin-firstline {
+  margin-inline-start: 0.4rem;
+  color: inherit;
+}
+
 /* تحسينات للجوال */
 @media (max-width: 768px) {
   .runin-text {

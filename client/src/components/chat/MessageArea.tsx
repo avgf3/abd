@@ -689,8 +689,8 @@ export default function MessageArea({
                       >
                         {message.sender?.username || 'جاري التحميل...'}
                       </button>
-                      <div className={`text-red-600 break-words flex-1 min-w-0 message-content-fix ${isMobile ? 'line-clamp-4' : 'line-clamp-2'}`}>
-                        <span className={`${isMobile ? 'line-clamp-4' : 'line-clamp-2'}`}>
+                      <div className={`text-red-600 break-words flex-1 min-w-0 message-content-fix ${!isMobile ? 'line-clamp-2' : ''}`}>
+                        <span className={`${!isMobile ? 'line-clamp-2' : ''}`}>
                           {message.content}
                         </span>
                       </div>
@@ -731,6 +731,21 @@ export default function MessageArea({
                             >
                               {message.sender?.username || 'جاري التحميل...'}
                             </button>
+                            {message.messageType !== 'image' && (() => {
+                              const raw = String(message.content || '');
+                              const parsed = parseYouTubeFromText(raw);
+                              const base = parsed.cleaned || raw;
+                              const first = base.split('\n')[0];
+                              if (!first) return null;
+                              return (
+                                <span className="runin-firstline text-gray-700 message-content-fix">
+                                  {renderMessageWithAnimatedEmojis(
+                                    first,
+                                    (text) => renderMessageWithMentions(text, currentUser, onlineUsers)
+                                  )}
+                                </span>
+                              );
+                            })()}
                           </span>
 
                           <div
@@ -751,14 +766,18 @@ export default function MessageArea({
                               />
                             ) : (
                               (() => {
-                                const { cleaned, ids } = parseYouTubeFromText(message.content);
+                                const raw = String(message.content || '');
+                                const { cleaned, ids } = parseYouTubeFromText(raw);
+                                const base = cleaned || raw;
+                                const parts = base.split('\n');
+                                const rest = parts.slice(1).join('\n');
                                 if (ids.length > 0) {
                                   const firstId = ids[0];
                                   return (
-                                    <span className={`${isMobile ? 'line-clamp-4' : 'line-clamp-2'} ${!isMobile ? 'text-breathe' : ''} flex items-center gap-2`} onClick={() => isMobile && toggleMessageExpanded(message.id)}>
-                                      {cleaned ? (
+                                    <span className={`${!isMobile ? 'line-clamp-2 text-breathe' : ''} flex items-center gap-2`} onClick={() => isMobile && toggleMessageExpanded(message.id)}>
+                                      {rest ? (
                                         <span
-                                          className={`${isMobile ? 'line-clamp-4' : 'line-clamp-2'}`}
+                                          className={`${!isMobile ? 'line-clamp-2' : ''}`}
                                           style={
                                             currentUser && message.senderId === currentUser.id
                                               ? { color: composerTextColor, fontWeight: composerBold ? 600 : undefined }
@@ -766,7 +785,7 @@ export default function MessageArea({
                                           }
                                         >
                                           {renderMessageWithAnimatedEmojis(
-                                            cleaned,
+                                            rest,
                                             (text) => renderMessageWithMentions(text, currentUser, onlineUsers)
                                           )}
                                         </span>
@@ -785,7 +804,7 @@ export default function MessageArea({
                                 }
                                 return (
                                   <span
-                                    className={`${isMobile ? 'line-clamp-4' : 'line-clamp-2 text-breathe'}`}
+                                    className={`${!isMobile ? 'line-clamp-2 text-breathe' : ''}`}
                                     onClick={() => isMobile && toggleMessageExpanded(message.id)}
                                     style={
                                       currentUser && message.senderId === currentUser.id
@@ -794,7 +813,7 @@ export default function MessageArea({
                                     }
                                   >
                                     {renderMessageWithAnimatedEmojis(
-                                      message.content,
+                                      rest,
                                       (text) => renderMessageWithMentions(text, currentUser, onlineUsers)
                                     )}
                                   </span>
