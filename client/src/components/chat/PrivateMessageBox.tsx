@@ -47,6 +47,8 @@ export default function PrivateMessageBox({
   onViewStoryByUser,
 }: PrivateMessageBoxProps) {
   const [messageText, setMessageText] = useState('');
+  const MAX_CHARS = 192;
+  const clampToMaxChars = useCallback((text: string) => (text.length > MAX_CHARS ? text.slice(0, MAX_CHARS) : text), [MAX_CHARS]);
   const [isAtBottomPrivate, setIsAtBottomPrivate] = useState(true);
   const [isSending, setIsSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
@@ -209,7 +211,7 @@ export default function PrivateMessageBox({
 
   const handleSend = useCallback(async () => {
     if (isSending) return;
-    const text = messageText.trim();
+    const text = clampToMaxChars(messageText).trim();
     const hasText = !!text;
     const hasImage = !!imageFile;
     if (!hasText && !hasImage) return;
@@ -598,13 +600,14 @@ export default function PrivateMessageBox({
                   <Input
                     ref={inputRef}
                     value={messageText}
-                    onChange={(e) => setMessageText(e.target.value)}
+                    onChange={(e) => setMessageText(clampToMaxChars(e.target.value))}
                     onKeyDown={handleKeyDown}
                     onPaste={handlePaste}
                     placeholder="اكتب رسالتك هنا..."
                     className={`flex-1 bg-gray-50 border text-foreground placeholder:text-muted-foreground rounded-lg border-gray-300`}
                     disabled={false}
                     style={{ color: composerTextColor, fontWeight: composerBold ? 600 : undefined }}
+                    maxLength={MAX_CHARS}
                   />
                   {/* زر الإرسال بشكل أيقونة مثل غرف الدردشة */}
                   <Button
