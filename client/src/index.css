@@ -27,13 +27,65 @@
   overflow: hidden;
 }
 
-/* */
 /* للجوال: قيد 4 أسطر للنصوص الطويلة */
 .line-clamp-4 {
   display: -webkit-box;
   -webkit-line-clamp: 4;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+/* ========== NEW HORIZONTAL MESSAGE LAYOUT ========== */
+
+/* تخطيط أفقي محسن للرسائل - الاسم بجانب النص */
+.horizontal-message-layout {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+/* قسم الاسم - عرض ثابت */
+.message-name-section {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex-shrink: 0;
+  min-width: fit-content;
+  max-width: 120px; /* حد أقصى لعرض الاسم لمنع التداخل */
+}
+
+/* قسم المحتوى - عرض مرن */
+.message-content-section {
+  flex: 1;
+  min-width: 0;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+/* تحسينات للجوال */
+@media (max-width: 768px) {
+  .message-name-section {
+    max-width: 100px; /* تقليل عرض الاسم على الجوال */
+  }
+  
+  .horizontal-message-layout {
+    gap: 0.375rem; /* تقليل المسافة على الجوال */
+  }
+}
+
+/* تحسينات لضمان عدم تداخل النص مع منطقة الإدخال */
+.message-display-area {
+  padding-bottom: 1rem; /* مسافة إضافية من الأسفل */
+}
+
+/* تأكيد عدم تأثر منطقة الإدخال */
+.chat-input-area {
+  position: relative;
+  z-index: 20;
+  background: white;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 :root {
@@ -1527,43 +1579,53 @@ li > * > div.effect-crystal {
 }
 
 /* === محاذاة الرسائل الجديدة: الاسم في السطر الأول، النص تحته مباشرة === */
+/* ========== LEGACY RUNIN STYLES - UPDATED FOR HORIZONTAL LAYOUT ========== */
+
+/* تم تحديث هذه الكلاسات لدعم التخطيط الأفقي الجديد */
 .runin-container {
-  display: block;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  width: 100%;
 }
 
-/* الاسم والشارة في السطر الأول */
+/* الاسم والشارة - الآن يظهر بجانب النص */
 .runin-name {
   display: inline-flex;
   align-items: center;
-  gap: 0.25rem; /* gap-1 */
+  gap: 0.25rem;
   white-space: nowrap;
   line-height: 1.6;
-  margin-bottom: 0.125rem; /* مسافة صغيرة بين الاسم والنص */
+  flex-shrink: 0;
+  max-width: 120px;
 }
 
-/* النص: يبدأ من سطر جديد تحت الاسم مباشرة */
+/* النص: الآن يظهر بجانب الاسم في نفس السطر */
 .runin-text {
-  display: block;
+  flex: 1;
   min-width: 0;
-  text-align: start; /* يحترم RTL/LTR مع message-content-fix */
-  /* تحسين التفاف النص العربي والسلاسل الطويلة جداً على الجوال */
+  text-align: start;
   word-break: break-word;
   overflow-wrap: anywhere;
   white-space: pre-wrap;
-  /* إزالة أي إزاحة أو هامش لضمان البداية من تحت الاسم */
-  margin-right: 0;
-  padding-right: 0;
+  margin: 0;
+  padding: 0;
   text-indent: 0;
 }
 
 /* تحسينات للجوال */
 @media (max-width: 768px) {
-  .runin-text {
-    text-indent: 0;
+  .runin-container {
+    gap: 0.375rem;
   }
   
   .runin-name { 
+    max-width: 100px;
     gap: 0.25rem;
+  }
+  
+  .runin-text {
+    text-indent: 0;
   }
 }
 
