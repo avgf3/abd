@@ -174,7 +174,7 @@
     position: relative;
     overflow-x: hidden;
     font-size: 1rem;
-    line-height: 1.7;
+    line-height: 1.4;
     letter-spacing: 0.02em;
   }
   
@@ -204,7 +204,7 @@
   
   p {
     margin-bottom: 1rem;
-    line-height: 1.8;
+    line-height: 1.4;
   }
   
   /* Modern Spacing System */
@@ -1528,7 +1528,7 @@ li > * > div.effect-crystal {
 
 /* إصلاح موضع آخر كلمة في الرسائل */
 .message-content-fix {
-  line-height: 1.6;
+  line-height: 1.3;
   padding-bottom: 2px;
   padding-inline-end: 2px; /* منع قصّ آخر حرف في نهايات RTL/LTR على الهاتف */
   /* اجعل اتجاه الأساس RTL دائمًا مع عزل خلط اللغات داخل الرسالة */
@@ -1592,7 +1592,7 @@ li > * > div.effect-crystal {
   align-items: center;
   gap: 0.25rem;
   white-space: nowrap;
-  line-height: 1.6;
+  line-height: 1.3;
 }
 
 .runin-text {
@@ -1607,7 +1607,7 @@ li > * > div.effect-crystal {
 @media (max-width: 768px) {
   .runin-container {
     position: relative;
-    line-height: 1.6;       /* توحيد line-height للحاوي */
+    line-height: 1.3;       /* توحيد line-height للحاوي */
   }
   .runin-name {
     display: inline;        /* الاسم inline في السطر الأول */
