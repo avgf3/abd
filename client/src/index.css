@@ -1528,9 +1528,8 @@ li > * > div.effect-crystal {
 
 /* === محاذاة الرسائل: السطر الأول بجانب الاسم، والباقي تحت الاسم === */
 .runin-container {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
+  display: block;
+  width: 100%;
 }
 
 /* السطر الأول: الاسم والنص بجانب بعض */
@@ -1539,7 +1538,6 @@ li > * > div.effect-crystal {
   align-items: flex-start;
   gap: 0.5rem;
   width: 100%;
-  flex-wrap: wrap;
 }
 
 /* الاسم والشارة */
@@ -1552,16 +1550,14 @@ li > * > div.effect-crystal {
   flex-shrink: 0;
 }
 
-/* النص الأول بجانب الاسم، والباقي تحت */
+/* النص: السطر الأول بجانب الاسم، الباقي يكمل من تحت الاسم */
 .runin-text {
-  display: block;
   text-align: start;
   word-break: break-word;
   overflow-wrap: anywhere;
   white-space: pre-wrap;
   line-height: 1.6;
-  width: 100%;
-  margin-top: 0.25rem;
+  min-width: 0;
 }
 
 /* ========== MODERN ADVANCED DESIGN SYSTEM ========== */

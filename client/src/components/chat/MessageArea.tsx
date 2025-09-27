@@ -739,9 +739,8 @@ export default function MessageArea({
                                 {message.sender?.username || 'جاري التحميل...'}
                               </button>
                             </span>
-                          </div>
-
-                          <div className={`runin-text text-gray-800 break-words message-content-fix`}>
+                            
+                            <div className={`runin-text text-gray-800 break-words message-content-fix flex-1`}>
                             {message.messageType === 'image' ? (
                               <img
                                 src={message.content}
@@ -807,7 +806,8 @@ export default function MessageArea({
                                 );
                               })()
                             )}
-                        </div>
+                            </div>
+                          </div>
                         </div>
                       </div>
 
