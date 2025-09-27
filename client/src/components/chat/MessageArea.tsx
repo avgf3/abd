@@ -762,7 +762,13 @@ export default function MessageArea({
 
                           <div
                             className={`runin-text text-gray-800 break-words message-content-fix`}
-                            style={{ marginRight: nameWidthMapRef.current.get(message.id) || undefined }}
+                            style={{
+                              // على الهاتف: دع الأسطر من الثانية فصاعداً تبدأ من بداية السطر (بدون هامش)
+                              // على سطح المكتب: استخدم الهامش لمحاذاة الأسطر تحت الاسم
+                              ...(isMobile
+                                ? {}
+                                : { marginRight: nameWidthMapRef.current.get(message.id) || undefined }),
+                            }}
                           >
                             {message.messageType === 'image' ? (
                               <img
