@@ -1526,31 +1526,23 @@ li > * > div.effect-crystal {
   }
 }
 
-/* === محاذاة الرسائل: السطر الأول بجانب الاسم، والباقي تحت الاسم === */
+/* === الحل الأخير: نظام run-in حقيقي === */
 .runin-container {
-  display: block;
-  width: 100%;
+  display: flow-root;
 }
 
-/* السطر الأول: الاسم والنص بجانب بعض */
-.runin-first-line {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.5rem;
-  width: 100%;
-}
-
-/* الاسم والشارة */
+/* الاسم يطفو على اليمين */
 .runin-name {
+  float: right;
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
   white-space: nowrap;
   line-height: 1.6;
-  flex-shrink: 0;
+  margin-left: 0.5rem;
 }
 
-/* النص: السطر الأول بجانب الاسم، الباقي يكمل من تحت الاسم */
+/* النص: السطر الأول بجانب الاسم، الباقي من البداية */
 .runin-text {
   text-align: start;
   word-break: break-word;
@@ -1558,6 +1550,15 @@ li > * > div.effect-crystal {
   white-space: pre-wrap;
   line-height: 1.6;
   min-width: 0;
+}
+
+/* للجوال: إلغاء التأثيرات المعقدة */
+@media (max-width: 768px) {
+  .runin-text {
+    text-indent: 0;
+    margin-right: 0;
+    padding-right: 0;
+  }
 }
 
 /* ========== MODERN ADVANCED DESIGN SYSTEM ========== */
