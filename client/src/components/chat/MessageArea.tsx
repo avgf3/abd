@@ -664,8 +664,9 @@ export default function MessageArea({
                 key={message.id}
                 className={`flex ${isMobile ? 'items-start' : 'items-center'} gap-2 py-1.5 px-2 rounded-lg border-r-4 bg-white shadow-sm hover:shadow-md transition-all duration-300 room-message-pulse soft-entrance`}
                 style={{ borderRightColor: getDynamicBorderColor(message.sender) }}
+                data-message-type={message.messageType || 'normal'}
               >
-                {/* System message: one-line red without avatar/badge */}
+                {/* System message: optimized layout for both mobile and desktop */}
                 {message.messageType === 'system' ? (
                   <>
                     {message.sender && (
@@ -679,52 +680,30 @@ export default function MessageArea({
                       </div>
                     )}
                     <div className={`flex-1 min-w-0`}>
-                      {isMobile ? (
-                        <div className="runin-container">
-                          <div className="runin-name">
-                            {message.sender && (message.sender.userType as any) !== 'bot' && (
-                              <UserRoleBadge user={message.sender} showOnlyIcon={true} hideGuestAndGender={true} size={16} />
-                            )}
-                            <button
-                              onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
-                              className="font-semibold hover:underline transition-colors duration-200 text-sm"
-                              style={{ color: getFinalUsernameColor(message.sender) }}
-                            >
-                              {message.sender?.username || 'جاري التحميل...'}
-                            </button>
-                            <span className="text-red-400 mx-1">:</span>
-                          </div>
-                          <div className="runin-text text-red-600 message-content-fix">
-                            <span className={`${isMobile ? 'line-clamp-4' : 'line-clamp-2'}`}>
-                              {message.content}
-                            </span>
-                          </div>
+                      {/* Unified layout for both mobile and desktop */}
+                      <div className={`flex items-start gap-2 ${isMobile ? 'system-message-mobile' : ''}`}>
+                        {/* Name and badge section - fixed width */}
+                        <div className="flex items-center gap-1 shrink-0">
+                          {message.sender && (message.sender.userType as any) !== 'bot' && (
+                            <UserRoleBadge user={message.sender} showOnlyIcon={true} hideGuestAndGender={true} size={16} />
+                          )}
+                          <button
+                            onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
+                            className="font-semibold hover:underline transition-colors duration-200 text-sm"
+                            style={{ color: getFinalUsernameColor(message.sender) }}
+                          >
+                            {message.sender?.username || 'جاري التحميل...'}
+                          </button>
+                          <span className="text-red-400 mx-1">:</span>
                         </div>
-                      ) : (
-                        <div className="flex items-start gap-2">
-                          {/* Name and badge section - fixed width */}
-                          <div className="flex items-center gap-1 shrink-0">
-                            {message.sender && (message.sender.userType as any) !== 'bot' && (
-                              <UserRoleBadge user={message.sender} showOnlyIcon={true} hideGuestAndGender={true} size={16} />
-                            )}
-                            <button
-                              onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
-                              className="font-semibold hover:underline transition-colors duration-200 text-sm"
-                              style={{ color: getFinalUsernameColor(message.sender) }}
-                            >
-                              {message.sender?.username || 'جاري التحميل...'}
-                            </button>
-                            <span className="text-red-400 mx-1">:</span>
-                          </div>
 
-                          {/* Content section - flexible width */}
-                          <div className={`flex-1 min-w-0 text-red-600 break-words message-content-fix`}>
-                            <span className={`${isMobile ? 'line-clamp-4' : 'line-clamp-2'}`}>
-                              {message.content}
-                            </span>
-                          </div>
+                        {/* Content section - flexible width */}
+                        <div className={`flex-1 min-w-0 text-red-600 break-words message-content-fix ${isMobile ? 'system-message-content' : ''}`}>
+                          <span className="line-clamp-2">
+                            {message.content}
+                          </span>
                         </div>
-                      )}
+                      </div>
                     </div>
 
                     {/* Right side: time */}
