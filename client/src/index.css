@@ -1526,7 +1526,7 @@ li > * > div.effect-crystal {
   }
 }
 
-/* === محاذاة الرسائل: السطر الأول بجانب الاسم، وما بعده بعرض كامل من البداية === */
+/* === محاذاة الرسائل: السطر الأول بجانب الاسم، والأسطر التالية تبدأ من البداية (تحت الاسم) === */
 .runin-container {
   display: flow-root; /* يحتوي الـ float ويمنع تجاوز الحاوية */
 }
@@ -1546,7 +1546,7 @@ li > * > div.effect-crystal {
   padding-right: 0.25rem; /* يطابق gap المرئي ليُقاس العرض بدقة */
 }
 
-/* النص يملأ السطر التالي بالكامل بعد نهاية ارتفاع الاسم */
+/* النص: السطر الأول بجانب الاسم، والأسطر التالية تبدأ من البداية */
 .runin-text {
   display: block;
   min-width: 0;
@@ -1555,14 +1555,14 @@ li > * > div.effect-crystal {
   word-break: break-word;
   overflow-wrap: anywhere;
   white-space: pre-wrap;
-  /* عند إضافة margin-right ديناميكياً من React، سيبدأ النص تحت الاسم مباشرة */
+  /* الأسطر التالية ترجع لبداية السطر (تحت الاسم) للحصول على المظهر الطبيعي للدردشة */
 }
 
-/* إصلاح بداية الأسطر في الهاتف */
+/* إصلاح بداية الأسطر في الهاتف - تم إزالة !important المتعارض */
 @media (max-width: 768px) {
   .runin-text {
-    text-indent: 0 !important;
-    padding-right: 0 !important;
+    text-indent: 0;
+    /* تم إزالة padding-right: 0 !important لإصلاح مشكلة عرض الأسطر */
   }
 }
 
