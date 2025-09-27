@@ -1596,7 +1596,7 @@ li > * > div.effect-crystal {
 }
 
 .runin-text {
-  display: block;
+  display: inline;
   text-align: start;
   word-break: break-word;
   overflow-wrap: anywhere;
