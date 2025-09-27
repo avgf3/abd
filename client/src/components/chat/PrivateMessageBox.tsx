@@ -451,10 +451,9 @@ export default function PrivateMessageBox({
                         className="w-8 h-8"
                       />
                       <div className="flex-1 min-w-0">
-                        {/* New horizontal layout: name and content in same line */}
-                        <div className="flex items-start gap-2">
-                          {/* Name section - fixed width */}
-                          <div className="flex items-center gap-1 shrink-0">
+                        {/* run-in on mobile; horizontal on desktop */}
+                        <div className="runin-container">
+                          <div className="runin-name">
                             <span
                               className="font-semibold text-sm"
                               style={{ color: getFinalUsernameColor(m.sender || user) }}
@@ -464,8 +463,8 @@ export default function PrivateMessageBox({
                             <span className="text-gray-400 mx-1">:</span>
                           </div>
 
-                          {/* Content section - flexible width */}
-                          <div className="flex-1 min-w-0 text-gray-800 break-words message-content-fix">
+                          {/* Content section - full width under the name (mobile), inline on first line */}
+                          <div className="runin-text text-gray-800 break-words message-content-fix">
                           {hasStoryContext && (
                             <div className="mb-2">
                               <div className="flex items-center gap-3 p-2 rounded-lg border bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200">
@@ -527,14 +526,13 @@ export default function PrivateMessageBox({
                                 <span className="text-sm leading-relaxed inline-flex items-center gap-2">
                                   {cleaned && (
                                     <span
-                                      className="truncate"
                                       style={
                                         currentUser && m.senderId === currentUser.id
                                           ? { color: composerTextColor, fontWeight: composerBold ? 600 : undefined }
                                           : undefined
                                       }
                                     >
-                                      {formatMessagePreview(cleaned, 100)}
+                                      {cleaned}
                                     </span>
                                   )}
                                   <button
@@ -558,7 +556,7 @@ export default function PrivateMessageBox({
                                     : undefined
                                 }
                               >
-                                {formatMessagePreview(m.content, 100)}
+                                {m.content}
                               </span>
                             );
                           })()}
