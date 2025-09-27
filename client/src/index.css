@@ -1533,7 +1533,7 @@ li > * > div.effect-crystal {
 
 /* الاسم والشارة يوضعان في عمود مستقل ويصطفان مع أول سطر */
 .runin-name {
-  float: right;
+  float: none; /* إلغاء الالتفاف حول الاسم لضمان امتلاء الأسطر التالية كامل العرض */
   margin-left: 0.5rem; /* مسافة بين الاسم والنص */
   display: inline-flex;
   align-items: center;
