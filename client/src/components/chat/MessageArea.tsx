@@ -662,7 +662,7 @@ export default function MessageArea({
             itemContent={(index, message) => (
               <div
                 key={message.id}
-                className={`flex ${isMobile ? 'items-start' : 'items-center'} gap-2 py-1.5 px-2 rounded-lg border-r-4 bg-white shadow-sm hover:shadow-md transition-all duration-300 room-message-pulse soft-entrance`}
+                className={`flex ${isMobile ? 'items-start' : 'items-center'} gap-2 py-1 px-2 rounded-lg border-r-4 bg-white shadow-sm hover:shadow-md transition-all duration-300 room-message-pulse soft-entrance`}
                 style={{ borderRightColor: getDynamicBorderColor(message.sender) }}
                 data-message-type={message.messageType || 'normal'}
               >
@@ -674,7 +674,7 @@ export default function MessageArea({
                         <ProfileImage
                           user={message.sender}
                           size="small"
-                          className="w-7 h-7 cursor-pointer hover:scale-110 transition-transform duration-200"
+                          className="w-6 h-6 cursor-pointer hover:scale-110 transition-transform duration-200"
                           onClick={(e) => onUserClick && onUserClick(e, message.sender!)}
                         />
                       </div>
@@ -685,11 +685,11 @@ export default function MessageArea({
                         {/* Name and badge section - fixed width */}
                         <div className="flex items-center gap-1 shrink-0">
                           {message.sender && (message.sender.userType as any) !== 'bot' && (
-                            <UserRoleBadge user={message.sender} showOnlyIcon={true} hideGuestAndGender={true} size={16} />
+                            <UserRoleBadge user={message.sender} showOnlyIcon={true} hideGuestAndGender={true} size={14} />
                           )}
                           <button
                             onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
-                            className="font-semibold hover:underline transition-colors duration-200 text-sm"
+                            className="font-semibold hover:underline transition-colors duration-200 text-xs"
                             style={{ color: getFinalUsernameColor(message.sender) }}
                           >
                             {message.sender?.username || 'جاري التحميل...'}
@@ -719,7 +719,7 @@ export default function MessageArea({
                         <ProfileImage
                           user={message.sender}
                           size="small"
-                          className="w-7 h-7 cursor-pointer hover:scale-110 transition-transform duration-200"
+                          className="w-6 h-6 cursor-pointer hover:scale-110 transition-transform duration-200"
                           onClick={(e) => onUserClick && onUserClick(e, message.sender!)}
                         />
                       </div>
@@ -731,11 +731,11 @@ export default function MessageArea({
                         <div className="runin-container">
                           <div className="runin-name">
                             {message.sender && (message.sender.userType as any) !== 'bot' && (
-                              <UserRoleBadge user={message.sender} showOnlyIcon={true} hideGuestAndGender={true} size={16} />
+                              <UserRoleBadge user={message.sender} showOnlyIcon={true} hideGuestAndGender={true} size={14} />
                             )}
                             <button
                               onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
-                              className="font-semibold hover:underline transition-colors duration-200 text-sm"
+                              className="font-semibold hover:underline transition-colors duration-200 text-xs"
                               style={{ color: getFinalUsernameColor(message.sender) }}
                             >
                               {message.sender?.username || 'جاري التحميل...'}
@@ -814,11 +814,11 @@ export default function MessageArea({
                           {/* Name and badge section - fixed width */}
                           <div className="flex items-center gap-1 shrink-0">
                             {message.sender && (message.sender.userType as any) !== 'bot' && (
-                              <UserRoleBadge user={message.sender} showOnlyIcon={true} hideGuestAndGender={true} size={16} />
+                              <UserRoleBadge user={message.sender} showOnlyIcon={true} hideGuestAndGender={true} size={14} />
                             )}
                             <button
                               onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
-                              className="font-semibold hover:underline transition-colors duration-200 text-sm"
+                              className="font-semibold hover:underline transition-colors duration-200 text-xs"
                               style={{ color: getFinalUsernameColor(message.sender) }}
                             >
                               {message.sender?.username || 'جاري التحميل...'}
@@ -1207,7 +1207,7 @@ export default function MessageArea({
                   ...(isMobile ? { fontSize: '16px' } : {}),
                   color: composerTextColor,
                   fontWeight: composerBold ? 600 : undefined,
-                  lineHeight: `${isMobile ? 48 : 44}px`,
+                  lineHeight: `${isMobile ? 24 : 22}px`,
                 }}
               />
             ) : (
@@ -1226,7 +1226,7 @@ export default function MessageArea({
                   ...(isMobile ? { fontSize: '16px' } : {}),
                   color: composerTextColor,
                   fontWeight: composerBold ? 600 : undefined,
-                  lineHeight: !isMultiLine ? `${isMobile ? 48 : 44}px` : undefined,
+                  lineHeight: !isMultiLine ? `${isMobile ? 24 : 22}px` : undefined,
                 }}
               />
             )}
