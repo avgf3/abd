@@ -726,18 +726,20 @@ export default function MessageArea({
                     <div className={`flex-1 min-w-0 flex items-start gap-2`}>
                       <div className="flex-1 min-w-0">
                         <div className="runin-container">
-                          <span className="runin-name">
-                            {message.sender && (message.sender.userType as any) !== 'bot' && (
-                              <UserRoleBadge user={message.sender} showOnlyIcon={true} hideGuestAndGender={true} size={16} />
-                            )}
-                            <button
-                              onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
-                              className="font-semibold hover:underline transition-colors duration-200 truncate"
-                              style={{ color: getFinalUsernameColor(message.sender) }}
-                            >
-                              {message.sender?.username || 'جاري التحميل...'}
-                            </button>
-                          </span>
+                          <div className="runin-first-line">
+                            <span className="runin-name">
+                              {message.sender && (message.sender.userType as any) !== 'bot' && (
+                                <UserRoleBadge user={message.sender} showOnlyIcon={true} hideGuestAndGender={true} size={16} />
+                              )}
+                              <button
+                                onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
+                                className="font-semibold hover:underline transition-colors duration-200 truncate"
+                                style={{ color: getFinalUsernameColor(message.sender) }}
+                              >
+                                {message.sender?.username || 'جاري التحميل...'}
+                              </button>
+                            </span>
+                          </div>
 
                           <div className={`runin-text text-gray-800 break-words message-content-fix`}>
                             {message.messageType === 'image' ? (
