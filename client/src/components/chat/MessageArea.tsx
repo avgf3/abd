@@ -145,17 +145,6 @@ export default function MessageArea({
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const virtuosoRef = useRef<VirtuosoHandle>(null);
   const prevMessagesLenRef = useRef<number>(0);
-  // قياس عرض اسم المستخدم لكل رسالة لعمل تعليق للنص تحت الاسم
-  const nameWidthMapRef = useRef<Map<number, number>>(new Map());
-  const [, forceNameMeasureTick] = useState(0);
-  const updateNameWidth = useCallback((id: number, width: number) => {
-    const rounded = Math.ceil(width) + 8; // إضافة هامش يساوي margin-left: 0.5rem
-    const prev = nameWidthMapRef.current.get(id) || 0;
-    if (Math.abs(prev - rounded) > 1) {
-      nameWidthMapRef.current.set(id, rounded);
-      forceNameMeasureTick((t) => (t + 1) % 1000000);
-    }
-  }, []);
 
   // State for improved scroll behavior
   const [isAtBottom, setIsAtBottom] = useState(true);
@@ -731,14 +720,6 @@ export default function MessageArea({
                         <div className="runin-container">
                           <span
                             className="runin-name"
-                            ref={(el) => {
-                              if (el) {
-                                try {
-                                  const w = el.getBoundingClientRect().width;
-                                  updateNameWidth(message.id, w);
-                                } catch {}
-                              }
-                            }}
                           >
                             {message.sender && (message.sender.userType as any) !== 'bot' && (
                               <UserRoleBadge user={message.sender} showOnlyIcon={true} hideGuestAndGender={true} size={16} />
@@ -754,10 +735,6 @@ export default function MessageArea({
 
                           <div
                             className={`runin-text text-gray-800 break-words message-content-fix`}
-                            style={{
-                              // إزالة الإزاحة لجعل الأسطر التالية تبدأ من البداية (تحت الاسم)
-                              // marginRight: 0 - الأسطر التالية ترجع لبداية السطر
-                            }}
                           >
                             {message.messageType === 'image' ? (
                               <img
