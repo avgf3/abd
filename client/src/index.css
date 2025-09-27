@@ -1556,6 +1556,15 @@ li > * > div.effect-crystal {
   /* عند إضافة margin-right ديناميكياً من React، سيبدأ النص تحت الاسم مباشرة */
 }
 
+/* إصلاح بداية الأسطر في الهاتف */
+@media (max-width: 768px) {
+  .runin-text {
+    text-indent: 0 !important;
+    margin-right: 0 !important;
+    padding-right: 0 !important;
+  }
+}
+
 /* تحسينات للجوال: نفس السلوك مع تقليل الفراغات */
 @media (max-width: 768px) {
   .runin-name { 
