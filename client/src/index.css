@@ -1533,7 +1533,7 @@ li > * > div.effect-crystal {
 
 /* الاسم والشارة يوضعان في عمود مستقل ويصطفان مع أول سطر */
 .runin-name {
-  float: right;
+  float: right; /* الاسم يبقى بمحاذاة يمين السطر الأول */
   margin-left: 0.5rem; /* مسافة بين الاسم والنص */
   display: inline-flex;
   align-items: center;
@@ -1562,7 +1562,6 @@ li > * > div.effect-crystal {
 @media (max-width: 768px) {
   .runin-text {
     text-indent: 0 !important;
-    margin-right: 0 !important;
     padding-right: 0 !important;
   }
 }
