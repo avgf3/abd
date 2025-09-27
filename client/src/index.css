@@ -1603,14 +1603,19 @@ li > * > div.effect-crystal {
   white-space: pre-wrap;
 }
 
-/* تطبيق تأثير run-in باستخدام float على الشاشات الصغيرة فقط */
+/* تطبيق تأثير run-in محسّن للجوال */
 @media (max-width: 768px) {
+  .runin-container {
+    position: relative;
+  }
   .runin-name {
-    float: right;           /* في RTL: الاسم يطفو يمينًا ويأخذ ارتفاع سطر واحد */
-    margin-left: 0.5rem;    /* مسافة بين الاسم وبداية النص في السطر الأول */
+    display: inline;        /* الاسم inline في السطر الأول */
+    margin-left: 0.25rem;   /* مسافة صغيرة بعد الاسم */
   }
   .runin-text {
-    overflow: hidden;       /* يضمن أن بقية الأسطر تبدأ أسفل الاسم وبكامل العرض */
+    display: inline;        /* النص يبدأ inline في نفس السطر */
+    text-align: justify;    /* النص موزع بانتظام */
+    line-height: 1.6;
   }
 }
 
