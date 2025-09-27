@@ -1603,16 +1603,27 @@ li > * > div.effect-crystal {
   white-space: pre-wrap;
 }
 
-/* تطبيق تأثير run-in باستخدام float على الشاشات الصغيرة فقط */
+/* تطبيق run-in باستخدام Grid على الشاشات الصغيرة لضمان استغلال العرض بالكامل */
 @media (max-width: 768px) {
+  .runin-container {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    grid-template-areas:
+      "name text"
+      "text text";
+    column-gap: 0.5rem;
+    width: 100%;
+  }
   .runin-name {
-    float: right;           /* في RTL: الاسم يطفو يمينًا ويأخذ ارتفاع سطر واحد */
-    margin-left: 0.5rem;    /* مسافة بين الاسم وبداية النص في السطر الأول */
+    grid-area: name;
+    float: none;
+    margin-left: 0;
   }
   .runin-text {
-    /* اجعل النص يبدأ أسفل الاسم ويستغل كامل العرض */
-    clear: both;
+    grid-area: text;
+    clear: none;
     width: 100%;
+    overflow: visible;
   }
 }
 
