@@ -1563,6 +1563,13 @@ li > * > div.effect-crystal {
     /* تصحيح بسيط لمحاذاة السطر الأول بجانب الاسم على الجوال */
     margin-top: 1px;
   }
+  
+  /* إصلاح بداية الأسطر في النص العربي */
+  p, h1, h2, h3 {
+    text-align: start;
+    line-height: 1.6;
+    word-break: break-word;
+  }
 }
 
 /* ========== MODERN ADVANCED DESIGN SYSTEM ========== */
