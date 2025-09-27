@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار Run-in Layout</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            padding: 20px; 
+            background: #f0f0f0;
+        }
+        
+        .test-container {
+            background: white;
+            padding: 20px;
+            margin: 10px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        /* التطبيق الحالي - كما هو في الكود */
+        .runin-container {
+            display: block;
+            width: 100%;
+            border: 2px solid #e74c3c;
+            padding: 10px;
+            margin: 10px 0;
+        }
+        
+        .runin-name {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            white-space: nowrap;
+            line-height: 1.6;
+            background: #3498db;
+            color: white;
+            padding: 2px 4px;
+        }
+        
+        .runin-text {
+            display: block;
+            text-align: start;
+            word-break: break-word;
+            overflow-wrap: anywhere;
+            white-space: pre-wrap;
+            background: #2ecc71;
+            color: white;
+            padding: 2px 4px;
+        }
+        
+        /* قاعدة الموبايل */
+        @media (max-width: 768px) {
+            .runin-container {
+                border-color: #f39c12;
+            }
+            .runin-name {
+                display: inline;
+                margin-left: 0.25rem;
+                background: #e67e22;
+            }
+            .runin-text {
+                display: inline;
+                text-align: justify;
+                line-height: 1.6;
+                background: #27ae60;
+            }
+        }
+        
+        /* الحل المقترح - span بدلاً من div */
+        .solution-container {
+            display: block;
+            width: 100%;
+            border: 2px solid #9b59b6;
+            padding: 10px;
+            margin: 10px 0;
+        }
+        
+        .solution-name {
+            display: inline;
+            background: #8e44ad;
+            color: white;
+            padding: 2px 4px;
+        }
+        
+        .solution-text {
+            display: inline;
+            background: #16a085;
+            color: white;
+            padding: 2px 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>اختبار عرض الرسائل - Run-in Layout</h1>
+    
+    <div class="test-container">
+        <h2>🔴 التطبيق الحالي (div + div):</h2>
+        <div class="runin-container">
+            <div class="runin-name">أحمد:</div>
+            <div class="runin-text">مرحبا كيف حالك اليوم؟ أتمنى أن تكون بخير وأن يكون يومك جميل ومليء بالسعادة والفرح</div>
+        </div>
+    </div>
+    
+    <div class="test-container">
+        <h2>🟢 الحل المقترح (span + span):</h2>
+        <div class="solution-container">
+            <span class="solution-name">أحمد:</span>
+            <span class="solution-text">مرحبا كيف حالك اليوم؟ أتمنى أن تكون بخير وأن يكون يومك جميل ومليء بالسعادة والفرح</span>
+        </div>
+    </div>
+    
+    <div class="test-container">
+        <h2>🟡 حل بديل (نص مباشر):</h2>
+        <div class="solution-container">
+            <span class="solution-name">أحمد:</span> مرحبا كيف حالك اليوم؟ أتمنى أن تكون بخير وأن يكون يومك جميل ومليء بالسعادة والفرح
+        </div>
+    </div>
+    
+    <div class="test-container">
+        <h3>ملاحظات:</h3>
+        <ul>
+            <li>🔴 الأحمر: التطبيق الحالي - div + div</li>
+            <li>🟢 الأخضر: الحل المقترح - span + span</li>
+            <li>🟡 الأصفر: حل بديل - span + text node</li>
+            <li>اختبر على عرض أقل من 768px لرؤية تأثير media query</li>
+        </ul>
+    </div>
+    
+    <script>
+        // عرض معلومات الشاشة
+        function updateScreenInfo() {
+            const info = document.getElementById('screen-info') || document.createElement('div');
+            info.id = 'screen-info';
+            info.style.cssText = 'position: fixed; top: 10px; right: 10px; background: black; color: white; padding: 10px; border-radius: 5px; z-index: 1000;';
+            info.innerHTML = `
+                العرض: ${window.innerWidth}px<br>
+                الارتفاع: ${window.innerHeight}px<br>
+                موبايل: ${window.innerWidth <= 768 ? 'نعم' : 'لا'}
+            `;
+            if (!document.getElementById('screen-info')) {
+                document.body.appendChild(info);
+            }
+        }
+        
+        updateScreenInfo();
+        window.addEventListener('resize', updateScreenInfo);
+    </script>
+</body>
+</html>
