@@ -1621,6 +1621,18 @@ li > * > div.effect-crystal {
   }
 }
 
+/* إصلاح فراغ السطر الأول على الجوال: اجعل الشارة والرموز بمحاذاة قاع النص
+   حتى لا ترفع صندوق السطر الأول في تخطيط run-in */
+@media (max-width: 768px) {
+  .mobile-message-area .runin-name .inline-flex,
+  .mobile-message-area .runin-name img {
+    vertical-align: text-bottom !important;
+  }
+  .mobile-message-area .runin-name .inline-flex {
+    line-height: 1; /* يمنع تمدد السطر الأول بسبب عنصر inline-flex */
+  }
+}
+
 /* ========== MODERN ADVANCED DESIGN SYSTEM ========== */
 
 /* Modern Glass Cards */
