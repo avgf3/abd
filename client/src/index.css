@@ -61,7 +61,7 @@
   min-width: 0;
   word-break: break-word;
   overflow-wrap: anywhere;
-  white-space: normal;
+  white-space: pre-wrap;
 }
 
 /* تحسينات للجوال */
@@ -1601,7 +1601,7 @@ li > * > div.effect-crystal {
   text-align: start;
   word-break: break-word;
   overflow-wrap: anywhere;
-  white-space: normal;
+  white-space: pre-wrap;
 }
 
 /* تطبيق تأثير run-in محسّن للجوال - إصلاح التباعد */
@@ -2600,12 +2600,6 @@ li::before {
     font-size: inherit !important;
   }
 
-  /* تقليل التباعد بين الرسائل في الجوال */
-  .mobile-message-area [data-message-type="normal"],
-  .mobile-message-area [data-message-type="system"] {
-    margin: 2px 8px !important;
-    padding: 6px 12px !important;
-  }
   
   .mobile-message-area .runin-name {
     line-height: inherit !important;
