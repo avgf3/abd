@@ -77,64 +77,11 @@ export default function MessageArea({
   const [showLottieEmoji, setShowLottieEmoji] = useState(false);
   const [showEnhancedEmoji, setShowEnhancedEmoji] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
-  const [isMultiLine, setIsMultiLine] = useState(false);
   const isMobile = useIsMobile();
   const { textColor: composerTextColor, bold: composerBold } = useComposerStyle();
   // حد أقصى لعدد الأحرف في الكتابة (سطح المكتب والهاتف)
   const MAX_CHARS = 192;
-  // الحد الأقصى لأسطر الإدخال: 4 على الهاتف، و 2 على الويب (لأغراض الارتفاع فقط)
-  const MAX_LINES = isMobile ? 4 : 2;
   const clampToMaxChars = useCallback((text: string) => (text.length > MAX_CHARS ? text.slice(0, MAX_CHARS) : text), [MAX_CHARS]);
-  // Helper: فحص تجاوز سطرين بصريًا (مع احتساب الالتفاف)
-  const wouldExceedTwoLines = useCallback(
-    (el: HTMLTextAreaElement | null, nextValue: string): boolean => {
-      if (!el) return false;
-      const previousValue = el.value;
-      const previousHeight = el.style.height;
-      try {
-        el.value = nextValue;
-        el.style.height = 'auto';
-        const computed = window.getComputedStyle(el);
-        const parsedLineHeight = parseFloat(computed.lineHeight || '');
-        const fontSize = parseFloat(computed.fontSize || '16');
-        const lineHeight = Number.isFinite(parsedLineHeight) && parsedLineHeight > 0
-          ? parsedLineHeight
-          : (Number.isFinite(fontSize) && fontSize > 0 ? fontSize * 1.4 : 20);
-        const paddingTop = parseFloat(computed.paddingTop || '0') || 0;
-        const paddingBottom = parseFloat(computed.paddingBottom || '0') || 0;
-        const allowedHeight = lineHeight * MAX_LINES + paddingTop + paddingBottom;
-        const scrollH = el.scrollHeight; // includes padding
-        return scrollH > Math.ceil(allowedHeight + 1);
-      } catch {
-        return false;
-      } finally {
-        el.value = previousValue;
-        el.style.height = previousHeight;
-      }
-    },
-    [MAX_LINES]
-  );
-
-  // ضبط ارتفاع حقل الإدخال تلقائياً عند تعدد الأسطر (حتى الحد الأقصى)
-  const autoResizeTextarea = useCallback((el: HTMLTextAreaElement | null) => {
-    if (!el) return;
-    try {
-      el.style.height = 'auto';
-      const computed = window.getComputedStyle(el);
-      const parsedLineHeight = parseFloat(computed.lineHeight || '');
-      const fontSize = parseFloat(computed.fontSize || '16');
-      const lineHeight = Number.isFinite(parsedLineHeight) && parsedLineHeight > 0
-        ? parsedLineHeight
-        : (Number.isFinite(fontSize) && fontSize > 0 ? fontSize * 1.4 : 20);
-      const paddingTop = parseFloat(computed.paddingTop || '0') || 0;
-      const paddingBottom = parseFloat(computed.paddingBottom || '0') || 0;
-      const maxAllowed = lineHeight * MAX_LINES + paddingTop + paddingBottom;
-      const nextHeight = Math.min(el.scrollHeight, Math.ceil(maxAllowed + 1));
-      el.style.height = `${nextHeight}px`;
-    } catch {
-      // ignore
-    }
-  }, [MAX_LINES]);
 
 
   // Refs
@@ -385,38 +332,34 @@ export default function MessageArea({
       // إرسال الرسالة
       onSendMessage(trimmedMessage);
       setMessageText('');
-      setIsMultiLine(false);
 
       // Focus back to input
       inputRef.current?.focus();
     }
   }, [messageText, currentUser, onSendMessage]);
 
-  // Key press handler - إرسال بالـ Enter وترك Shift+Enter لسطور جديدة
+  // Key press handler - إرسال بالـ Enter فقط (منع Shift+Enter)
   const handleKeyPress = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
       if (e.key === 'Enter') {
-        if (!e.shiftKey) {
-          e.preventDefault();
-          handleSendMessage();
-          return;
-        }
+        e.preventDefault();
+        handleSendMessage();
+        return;
       }
     },
     [handleSendMessage]
   );
 
-  // Message text change handler مع تقليم إلى 192 حرفًا
+  // Message text change handler مع تقليم إلى 192 حرفًا ومنع الأسطر المتعددة
   const handleMessageChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const next = clampToMaxChars(e.target.value);
+    const next = clampToMaxChars(e.target.value.replace(/\n/g, ' ')); // استبدال أسطر جديدة بمسافات
     setMessageText(next);
-    setIsMultiLine((next.match(/\n/g)?.length || 0) + 1 > 1);
   }, [clampToMaxChars]);
 
-  // Paste handler مع تقليم إلى 192 حرفًا
+  // Paste handler مع تقليم إلى 192 حرفًا ومنع الأسطر المتعددة
   const handlePaste = useCallback((e: React.ClipboardEvent<HTMLTextAreaElement>) => {
     try {
-      const paste = e.clipboardData.getData('text');
+      const paste = e.clipboardData.getData('text').replace(/\n/g, ' '); // استبدال أسطر جديدة بمسافات
       const el = e.currentTarget;
       const selectionStart = el.selectionStart ?? messageText.length;
       const selectionEnd = el.selectionEnd ?? messageText.length;
@@ -425,31 +368,18 @@ export default function MessageArea({
       if (next !== combined) {
         e.preventDefault();
         setMessageText(next);
-        setIsMultiLine((next.match(/\n/g)?.length || 0) + 1 > 1);
       }
     } catch {
       // ignore
     }
   }, [messageText, clampToMaxChars]);
 
-  // إعادة ضبط الارتفاع تلقائياً عند تحديث النص أو تغيير وضع التعدد
-  useEffect(() => {
-    const el = inputRef.current;
-    if (!el) return;
-    if (isMobile && isMultiLine) {
-      autoResizeTextarea(el);
-    } else {
-      // اترك الكلاسات الافتراضية تتحكم بالارتفاع (h-11/h-12)
-      el.style.height = '';
-    }
-  }, [messageText, isMobile, isMultiLine, autoResizeTextarea]);
+  // تم إزالة منطق ضبط الارتفاع - الآن يعتمد على الكلاسات الافتراضية فقط
 
   // Emoji select handler
   const handleEmojiSelect = useCallback((emoji: string) => {
     const newText = clampToMaxChars(messageText + emoji);
     setMessageText(newText);
-    const lines = newText.split('\n').length;
-    setIsMultiLine(lines > 1);
     setShowEmojiPicker(false);
     inputRef.current?.focus();
   }, [messageText, clampToMaxChars]);
@@ -459,8 +389,6 @@ export default function MessageArea({
     // إدراج كود السمايل في الرسالة
     const newText = clampToMaxChars(messageText + ` [[emoji:${emoji.id}:${emoji.url}]] `);
     setMessageText(newText);
-    const lines = newText.split('\n').length;
-    setIsMultiLine(lines > 1);
     setShowAnimatedEmojiPicker(false);
     inputRef.current?.focus();
   }, [messageText, clampToMaxChars]);
@@ -476,8 +404,6 @@ export default function MessageArea({
       newText = clampToMaxChars(messageText + emoji.native);
     }
     setMessageText(newText);
-    const lines = newText.split('\n').length;
-    setIsMultiLine(lines > 1);
     setShowEmojiMart(false);
     inputRef.current?.focus();
   }, [messageText, clampToMaxChars]);
@@ -486,8 +412,6 @@ export default function MessageArea({
   const handleLottieEmojiSelect = useCallback((emoji: { id: string; name: string; url: string }) => {
     const newText = clampToMaxChars(messageText + ` [[lottie:${emoji.id}:${emoji.url}]] `);
     setMessageText(newText);
-    const lines = newText.split('\n').length;
-    setIsMultiLine(lines > 1);
     setShowLottieEmoji(false);
     inputRef.current?.focus();
   }, [messageText, clampToMaxChars]);
@@ -496,8 +420,6 @@ export default function MessageArea({
   const handleEnhancedEmojiSelect = useCallback((emoji: { id: string; emoji: string; name: string; code: string }) => {
     const newText = clampToMaxChars(messageText + emoji.emoji);
     setMessageText(newText);
-    const lines = newText.split('\n').length;
-    setIsMultiLine(lines > 1);
     setShowEnhancedEmoji(false);
     inputRef.current?.focus();
   }, [messageText, clampToMaxChars]);
@@ -571,10 +493,6 @@ export default function MessageArea({
       const separator = messageText.trim() ? ' ' : '';
       const newText = clampToMaxChars(messageText + separator + user.username + ' ');
       setMessageText(newText);
-      
-      // تحديث حالة الأسطر المتعددة
-      const lines = newText.split('\n').length;
-      setIsMultiLine(lines > 1);
 
       // التركيز على مربع النص
       inputRef.current?.focus();
@@ -1052,17 +970,14 @@ export default function MessageArea({
       <div
         className={`p-3 bg-white w-full z-20 shadow-lg chat-input soft-entrance`}
       >
-        {/* Typing Indicator */}
-        {typingUsers.size > 0 && (
-          <div className="mb-1.5 text-[11px] text-gray-500 animate-pulse">{typingDisplay}</div>
-        )}
+        {/* Typing Indicator - تم إزالته من الغرف */}
 
         <div
-          className={`flex ${isMobile ? 'gap-2 p-3' : 'gap-3 p-4'} ${isMultiLine ? 'flex-col items-start' : 'items-end'} max-w-full mx-auto bg-white/80 backdrop-blur-sm transition-all duration-300`}
+          className={`flex ${isMobile ? 'gap-2 p-3' : 'gap-3 p-4'} items-end max-w-full mx-auto bg-white/80 backdrop-blur-sm transition-all duration-300`}
           style={{ paddingBottom: isMobile ? 'calc(env(safe-area-inset-bottom) + 0.75rem)' : '1rem' }}
         >
           {/* First row: Emoji buttons and textarea */}
-          <div className={`flex ${isMultiLine ? 'w-full' : 'flex-1'} items-end gap-2`}>
+          <div className="flex flex-1 items-end gap-2">
             {/* Emoji Picker */}
             <div className="relative">
               <Button
@@ -1192,7 +1107,7 @@ export default function MessageArea({
                 onKeyPress={handleKeyPress}
                 onPaste={handlePaste}
                 placeholder={"اكتب رسالتك هنا..."}
-                className={`flex-1 resize-none bg-white placeholder:text-gray-500 ring-offset-white border border-gray-300 rounded-full px-4 ${isMultiLine ? 'h-auto py-3' : (isMobile ? 'h-12 py-0' : 'h-11 py-0')} transition-all duration-200 ${isMobile ? 'mobile-text' : ''}`}
+                className={`flex-1 resize-none bg-white placeholder:text-gray-500 ring-offset-white border border-gray-300 rounded-full px-4 ${isMobile ? 'h-12 py-0' : 'h-11 py-0'} transition-all duration-200 ${isMobile ? 'mobile-text' : ''}`}
                 maxLength={MAX_CHARS}
                 autoComplete="off"
                 rows={1}
@@ -1200,7 +1115,7 @@ export default function MessageArea({
                   ...(isMobile ? { fontSize: '16px' } : {}),
                   color: composerTextColor,
                   fontWeight: composerBold ? 600 : undefined,
-                  lineHeight: !isMultiLine ? `${isMobile ? 48 : 44}px` : undefined,
+                  lineHeight: `${isMobile ? 48 : 44}px`,
                 }}
               />
             )}
@@ -1218,16 +1133,14 @@ export default function MessageArea({
 
           {/* تم إزالة الملاحظة الخاصة بالسطر الثاني بناءً على الطلب */}
 
-          {/* Hidden File Input for single line mode */}
-          {!isMultiLine && (
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handleFileUpload}
-              className="hidden"
-            />
-          )}
+          {/* Hidden File Input */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleFileUpload}
+            className="hidden"
+          />
         </div>
 
         {/* Character Counter - تم إخفاء العرض مع الاحتفاظ بالوظيفة */}
