@@ -1510,9 +1510,6 @@ li > * > div.effect-crystal {
   animation: subtle-message-float 4s ease-in-out infinite;
 }
 
-.room-message-pulse {
-  animation: gentle-room-pulse 3.5s ease-in-out infinite;
-}
 
 .soft-entrance {
   animation: soft-entrance 0.6s ease-out;
