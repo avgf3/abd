@@ -1528,20 +1528,20 @@ li > * > div.effect-crystal {
 
 /* إصلاح موضع آخر كلمة في الرسائل */
 .message-content-fix {
-  line-height: 1.5;  /* تقليل line-height لتقليل التباعد */
-  padding-bottom: 2px;
-  padding-inline-end: 2px; /* منع قصّ آخر حرف في نهايات RTL/LTR على الهاتف */
+  line-height: 1.4;  /* line-height متسق مع الحاوي */
+  padding: 0;       /* إزالة جميع الحشو */
+  margin: 0;        /* إزالة جميع الهوامش */
   /* اجعل اتجاه الأساس RTL دائمًا مع عزل خلط اللغات داخل الرسالة */
   direction: rtl;
   unicode-bidi: isolate;
   text-align: start; /* يمين في RTL */
-  margin: 0;  /* إزالة أي هوامش */
 }
 
 .message-content-fix .truncate {
   line-height: inherit;
   vertical-align: baseline;
-  margin-bottom: 1px;
+  margin: 0;
+  padding: 0;
 }
 
 /* أنماط السمايلات المتحركة */
@@ -1608,7 +1608,7 @@ li > * > div.effect-crystal {
 @media (max-width: 768px) {
   .runin-container {
     position: relative;
-    line-height: 1.35;      /* تقليل line-height أكثر لتقليل التباعد */
+    line-height: 1.4;       /* line-height طبيعي ومتسق */
     display: block;
     width: 100%;
     margin: 0;
@@ -1617,7 +1617,7 @@ li > * > div.effect-crystal {
   .runin-name {
     display: inline;        /* الاسم inline في السطر الأول */
     margin-left: 0.25rem;   /* مسافة صغيرة بعد الاسم */
-    line-height: 1.35;      /* line-height ثابت ومتسق ومقلل */
+    line-height: inherit;   /* وراثة line-height من الحاوي */
     vertical-align: baseline; /* محاذاة خط الأساس */
     margin-top: 0;
     margin-bottom: 0;
@@ -1625,8 +1625,8 @@ li > * > div.effect-crystal {
   }
   .runin-text {
     display: inline;        /* النص يبدأ inline في نفس السطر */
-    text-align: justify;    /* النص موزع بانتظام */
-    line-height: 1.35;      /* line-height ثابت ومتسق ومقلل */
+    text-align: start;      /* محاذاة طبيعية */
+    line-height: inherit;   /* وراثة line-height من الحاوي */
     vertical-align: baseline; /* محاذاة خط الأساس */
     margin: 0;              /* إزالة أي هوامش */
     padding: 0;             /* إزالة أي حشو */
@@ -2593,7 +2593,7 @@ li::before {
 
   /* إصلاح نهائي للتباعد بين السطر الأول والثاني في الهاتف */
   .mobile-message-area .runin-container {
-    line-height: 1.35 !important;
+    line-height: 1.4 !important;
     margin: 0 !important;
     padding: 0 !important;
     display: block !important;
@@ -2601,16 +2601,17 @@ li::before {
   }
   
   .mobile-message-area .runin-name {
-    line-height: 1.35 !important;
+    line-height: inherit !important;
     margin: 0 !important;
     padding: 0 !important;
     vertical-align: baseline !important;
     display: inline !important;
     font-size: inherit !important;
+    margin-left: 0.25rem !important;
   }
   
   .mobile-message-area .runin-text {
-    line-height: 1.35 !important;
+    line-height: inherit !important;
     margin: 0 !important;
     padding: 0 !important;
     vertical-align: baseline !important;
@@ -2634,5 +2635,22 @@ li::before {
   .mobile-message-area .runin-text * {
     line-height: inherit !important;
     vertical-align: baseline !important;
+  }
+
+  /* إزالة أي مسافات إضافية قد تسبب سطر فارغ */
+  .mobile-message-area .runin-container::before,
+  .mobile-message-area .runin-container::after,
+  .mobile-message-area .runin-name::before,
+  .mobile-message-area .runin-name::after,
+  .mobile-message-area .runin-text::before,
+  .mobile-message-area .runin-text::after {
+    content: none !important;
+    display: none !important;
+  }
+
+  /* إزالة أي فواصل أسطر غير مرغوب فيها */
+  .mobile-message-area .runin-name br,
+  .mobile-message-area .runin-text br {
+    display: none !important;
   }
 }
