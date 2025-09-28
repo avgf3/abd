@@ -645,7 +645,7 @@ export default function MessageArea({
 
       {/* Messages Container - Virtualized */}
       <div
-        className={`relative flex-1 p-2 bg-gradient-to-b from-gray-50 to-white`}
+        className={`relative flex-1 p-1 bg-gradient-to-b from-gray-50 to-white`}
       >
         {validMessages.length === 0 ? (
           <div className="h-full"></div>
@@ -654,7 +654,7 @@ export default function MessageArea({
             ref={virtuosoRef}
             data={validMessages}
             className="!h-full"
-            style={{ paddingBottom: '24px' }}
+            style={{ paddingBottom: '12px' }}
             followOutput={'smooth'}
             atBottomThreshold={64}
             atBottomStateChange={handleAtBottomChange}
@@ -662,8 +662,8 @@ export default function MessageArea({
             itemContent={(index, message) => (
               <div
                 key={message.id}
-                className={`flex ${isMobile ? 'items-start' : 'items-center'} gap-2 py-1.5 px-2 rounded-lg border-r-4 bg-white shadow-sm hover:shadow-md transition-all duration-300 room-message-pulse soft-entrance`}
-                style={{ borderRightColor: getDynamicBorderColor(message.sender) }}
+                className={`flex items-start gap-2 py-1 px-2 rounded-lg border-r-4 bg-white shadow-sm hover:shadow-md transition-all duration-300 room-message-pulse soft-entrance`}
+                style={{ borderRightColor: getDynamicBorderColor(message.sender), lineHeight: '1.4' }}
                 data-message-type={message.messageType || 'normal'}
               >
                 {/* System message: optimized layout for both mobile and desktop */}
@@ -679,31 +679,46 @@ export default function MessageArea({
                         />
                       </div>
                     )}
-                    <div className={`flex-1 min-w-0`}>
-                      {/* Unified layout for both mobile and desktop */}
-                      <div className={`flex items-start gap-2 ${isMobile ? 'system-message-mobile' : ''}`}>
-                        {/* Name and badge section - fixed width */}
-                        <div className="flex items-center gap-1 shrink-0">
-                          {message.sender && (message.sender.userType as any) !== 'bot' && (
-                            <UserRoleBadge user={message.sender} showOnlyIcon={true} hideGuestAndGender={true} size={16} />
-                          )}
-                          <button
-                            onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
-                            className="font-semibold hover:underline transition-colors duration-200 text-sm"
-                            style={{ color: getFinalUsernameColor(message.sender) }}
-                          >
-                            {message.sender?.username || 'جاري التحميل...'}
-                          </button>
-                          <span className="text-red-400 mx-1">:</span>
-                        </div>
-
-                        {/* Content section - flexible width */}
-                        <div className={`flex-1 min-w-0 text-red-600 break-words message-content-fix ${isMobile ? 'system-message-content' : ''}`}>
-                          <span className="line-clamp-2">
+                    <div className="flex-1 min-w-0">
+                      {isMobile ? (
+                        <div className="runin-container message-content-fix">
+                          <span className="runin-name">
+                            {message.sender && (message.sender.userType as any) !== 'bot' && (
+                              <UserRoleBadge user={message.sender} showOnlyIcon={true} hideGuestAndGender={true} size={16} />
+                            )}
+                            <button
+                              onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
+                              className="font-semibold hover:underline transition-colors duration-200 text-sm"
+                              style={{ color: getFinalUsernameColor(message.sender) }}
+                            >
+                              {message.sender?.username || 'جاري التحميل...'}
+                            </button>
+                            <span className="mx-1 text-red-400">:</span>
+                          </span>
+                          <span className="runin-text text-red-600">
                             {message.content}
                           </span>
                         </div>
-                      </div>
+                      ) : (
+                        <div className="inline-message-layout">
+                          <span className="inline-name-section">
+                            {message.sender && (message.sender.userType as any) !== 'bot' && (
+                              <UserRoleBadge user={message.sender} showOnlyIcon={true} hideGuestAndGender={true} size={16} />
+                            )}
+                            <button
+                              onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
+                              className="font-semibold hover:underline transition-colors duration-200 text-sm"
+                              style={{ color: getFinalUsernameColor(message.sender) }}
+                            >
+                              {message.sender?.username || 'جاري التحميل...'}
+                            </button>
+                            <span className="text-red-400 mx-1">:</span>
+                          </span>
+                          <span className="inline-message-content text-red-600 message-content-fix">
+                            {message.content}
+                          </span>
+                        </div>
+                      )}
                     </div>
 
                     {/* Right side: time */}
@@ -725,11 +740,11 @@ export default function MessageArea({
                       </div>
                     )}
 
-                    {/* New horizontal layout on desktop, run-in on mobile */}
-                    <div className={`flex-1 min-w-0`}>
+                    {/* تخطيط الرسالة: run-in على الجوال، inline على سطح المكتب */}
+                    <div className="flex-1 min-w-0">
                       {isMobile ? (
-                        <div className="runin-container">
-                          <div className="runin-name">
+                        <div className="runin-container message-content-fix">
+                          <span className="runin-name">
                             {message.sender && (message.sender.userType as any) !== 'bot' && (
                               <UserRoleBadge user={message.sender} showOnlyIcon={true} hideGuestAndGender={true} size={16} />
                             )}
@@ -740,9 +755,9 @@ export default function MessageArea({
                             >
                               {message.sender?.username || 'جاري التحميل...'}
                             </button>
-                            <span className="text-gray-400 mx-1">:</span>
-                          </div>
-                          <div className="runin-text text-gray-800 message-content-fix">
+                            <span className="mx-1 text-gray-400">:</span>
+                          </span>
+                          <span className="runin-text text-gray-800">
                             {message.messageType === 'image' ? (
                               <img
                                 src={message.content}
@@ -762,10 +777,9 @@ export default function MessageArea({
                                 if (ids.length > 0) {
                                   const firstId = ids[0];
                                   return (
-                                    <span className={`flex items-start gap-2`} onClick={() => isMobile && toggleMessageExpanded(message.id)}>
-                                      {cleaned ? (
+                                    <>
+                                      {cleaned && (
                                         <span
-                                          className={`flex-1`}
                                           style={
                                             currentUser && message.senderId === currentUser.id
                                               ? { color: composerTextColor, fontWeight: composerBold ? 600 : undefined }
@@ -777,22 +791,21 @@ export default function MessageArea({
                                             (text) => renderMessageWithMentions(text, currentUser, onlineUsers)
                                           )}
                                         </span>
-                                      ) : null}
+                                      )}
                                       <button
                                         onClick={() => setYoutubeModal({ open: true, videoId: firstId })}
-                                        className="flex items-center justify-center w-8 h-6 rounded bg-red-600 hover:bg-red-700 transition-colors shrink-0"
+                                        className="inline-flex items-center justify-center w-8 h-6 rounded bg-red-600 hover:bg-red-700 transition-colors ml-2"
                                         title="فتح فيديو YouTube"
                                       >
                                         <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
                                           <path fill="#fff" d="M10 15l5.19-3L10 9v6z"></path>
                                         </svg>
                                       </button>
-                                    </span>
+                                    </>
                                   );
                                 }
                                 return (
                                   <span
-                                    onClick={() => isMobile && toggleMessageExpanded(message.id)}
                                     style={
                                       currentUser && message.senderId === currentUser.id
                                         ? { color: composerTextColor, fontWeight: composerBold ? 600 : undefined }
@@ -807,12 +820,11 @@ export default function MessageArea({
                                 );
                               })()
                             )}
-                          </div>
+                          </span>
                         </div>
                       ) : (
-                        <div className="flex items-start gap-2">
-                          {/* Name and badge section - fixed width */}
-                          <div className="flex items-center gap-1 shrink-0">
+                        <div className="inline-message-layout">
+                          <span className="inline-name-section">
                             {message.sender && (message.sender.userType as any) !== 'bot' && (
                               <UserRoleBadge user={message.sender} showOnlyIcon={true} hideGuestAndGender={true} size={16} />
                             )}
@@ -824,10 +836,8 @@ export default function MessageArea({
                               {message.sender?.username || 'جاري التحميل...'}
                             </button>
                             <span className="text-gray-400 mx-1">:</span>
-                          </div>
-
-                          {/* Content section - flexible width */}
-                          <div className={`flex-1 min-w-0 text-gray-800 break-words message-content-fix`}>
+                          </span>
+                          <span className="inline-message-content text-gray-800 message-content-fix">
                             {message.messageType === 'image' ? (
                               <img
                                 src={message.content}
@@ -847,10 +857,9 @@ export default function MessageArea({
                                 if (ids.length > 0) {
                                   const firstId = ids[0];
                                   return (
-                                    <span className={`${isMobile ? 'line-clamp-4' : 'line-clamp-2'} ${!isMobile ? 'text-breathe' : ''} flex items-start gap-2`} onClick={() => isMobile && toggleMessageExpanded(message.id)}>
-                                      {cleaned ? (
+                                    <>
+                                      {cleaned && (
                                         <span
-                                          className={`${isMobile ? 'line-clamp-4' : 'line-clamp-2'} flex-1`}
                                           style={
                                             currentUser && message.senderId === currentUser.id
                                               ? { color: composerTextColor, fontWeight: composerBold ? 600 : undefined }
@@ -862,23 +871,21 @@ export default function MessageArea({
                                             (text) => renderMessageWithMentions(text, currentUser, onlineUsers)
                                           )}
                                         </span>
-                                      ) : null}
+                                      )}
                                       <button
                                         onClick={() => setYoutubeModal({ open: true, videoId: firstId })}
-                                        className="flex items-center justify-center w-8 h-6 rounded bg-red-600 hover:bg-red-700 transition-colors shrink-0"
+                                        className="inline-flex items-center justify-center w-8 h-6 rounded bg-red-600 hover:bg-red-700 transition-colors ml-2"
                                         title="فتح فيديو YouTube"
                                       >
                                         <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
                                           <path fill="#fff" d="M10 15l5.19-3L10 9v6z"></path>
                                         </svg>
                                       </button>
-                                    </span>
+                                    </>
                                   );
                                 }
                                 return (
                                   <span
-                                    className={`${isMobile ? 'line-clamp-4' : 'line-clamp-2 text-breathe'}`}
-                                    onClick={() => isMobile && toggleMessageExpanded(message.id)}
                                     style={
                                       currentUser && message.senderId === currentUser.id
                                         ? { color: composerTextColor, fontWeight: composerBold ? 600 : undefined }
@@ -893,7 +900,7 @@ export default function MessageArea({
                                 );
                               })()
                             )}
-                          </div>
+                          </span>
                         </div>
                       )}
                     </div>
