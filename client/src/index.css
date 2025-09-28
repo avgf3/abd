@@ -2599,6 +2599,13 @@ li::before {
     display: block !important;
     font-size: inherit !important;
   }
+
+  /* تقليل التباعد بين الرسائل في الجوال */
+  .mobile-message-area [data-message-type="normal"],
+  .mobile-message-area [data-message-type="system"] {
+    margin: 2px 8px !important;
+    padding: 6px 12px !important;
+  }
   
   .mobile-message-area .runin-name {
     line-height: inherit !important;
