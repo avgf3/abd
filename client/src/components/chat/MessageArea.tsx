@@ -666,311 +666,165 @@ export default function MessageArea({
                 style={{ borderRightColor: getDynamicBorderColor(message.sender) }}
                 data-message-type={message.messageType || 'normal'}
               >
-                {/* System message: optimized layout for both mobile and desktop */}
-                {message.messageType === 'system' ? (
-                  <>
-                    {message.sender && (
-                      <div className="flex-shrink-0">
-                        <ProfileImage
-                          user={message.sender}
-                          size="small"
-                          className="w-7 h-7 cursor-pointer hover:scale-110 transition-transform duration-200"
-                          onClick={(e) => onUserClick && onUserClick(e, message.sender!)}
+                {message.sender && (
+                  <div className="flex-shrink-0">
+                    <ProfileImage
+                      user={message.sender}
+                      size="small"
+                      className="w-7 h-7 cursor-pointer hover:scale-110 transition-transform duration-200"
+                      onClick={(e) => onUserClick && onUserClick(e, message.sender!)}
+                    />
+                  </div>
+                )}
+
+                <div className={`flex-1 min-w-0`}>
+                  <div className={`horizontal-message-layout ${message.messageType === 'system' ? 'system-message-mobile' : ''}`}>
+                    <div className="message-name-section">
+                      {message.sender && (message.sender.userType as any) !== 'bot' && (
+                        <UserRoleBadge user={message.sender} showOnlyIcon={true} hideGuestAndGender={true} size={16} />
+                      )}
+                      <button
+                        onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
+                        className="font-semibold hover:underline transition-colors duration-200 text-sm"
+                        style={{ color: getFinalUsernameColor(message.sender) }}
+                      >
+                        {message.sender?.username || 'جاري التحميل...'}
+                      </button>
+                      <span className={`${message.messageType === 'system' ? 'text-red-400' : 'text-gray-400'} mx-1`}>:</span>
+                    </div>
+
+                    <div className={`message-content-section message-content-fix ${message.messageType === 'system' ? 'text-red-600' : 'text-gray-800'}`}>
+                      {message.messageType === 'image' ? (
+                        <img
+                          src={message.content}
+                          alt="صورة"
+                          className="max-w-[70%] md:max-w-[50%] max-h-64 rounded object-contain cursor-pointer"
+                          loading="lazy"
+                          onLoad={() => {
+                            if (isAtBottom) {
+                              scrollToBottom('auto');
+                            }
+                          }}
+                          onClick={() => setImageLightbox({ open: true, src: message.content })}
                         />
-                      </div>
-                    )}
-                    <div className={`flex-1 min-w-0`}>
-                      {/* Unified layout for both mobile and desktop */}
-                      <div className={`flex items-start gap-2 ${isMobile ? 'system-message-mobile' : ''}`}>
-                        {/* Name and badge section - fixed width */}
-                        <div className="flex items-center gap-1 shrink-0">
-                          {message.sender && (message.sender.userType as any) !== 'bot' && (
-                            <UserRoleBadge user={message.sender} showOnlyIcon={true} hideGuestAndGender={true} size={16} />
-                          )}
-                          <button
-                            onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
-                            className="font-semibold hover:underline transition-colors duration-200 text-sm"
-                            style={{ color: getFinalUsernameColor(message.sender) }}
+                      ) : (() => {
+                        const { cleaned, ids } = parseYouTubeFromText(message.content);
+                        const clampClass = isMessageExpanded(message.id) ? '' : (isMobile ? 'line-clamp-4' : 'line-clamp-2');
+                        const textStyle = currentUser && message.senderId === currentUser.id
+                          ? { color: composerTextColor, fontWeight: composerBold ? 600 : undefined }
+                          : undefined;
+
+                        if (ids.length > 0) {
+                          const firstId = ids[0];
+                          return (
+                            <span className={`flex items-start gap-2`}>
+                              {cleaned ? (
+                                <span
+                                  className={`flex-1 ${clampClass}`}
+                                  style={textStyle}
+                                  onClick={() => toggleMessageExpanded(message.id)}
+                                >
+                                  {renderMessageWithAnimatedEmojis(
+                                    cleaned,
+                                    (text) => renderMessageWithMentions(text, currentUser, onlineUsers)
+                                  )}
+                                </span>
+                              ) : null}
+                              <button
+                                onClick={() => setYoutubeModal({ open: true, videoId: firstId })}
+                                className="flex items-center justify-center w-9 h-7 rounded bg-red-600 hover:bg-red-700 transition-colors shrink-0"
+                                title="فتح فيديو YouTube"
+                              >
+                                <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                                  <path fill="#fff" d="M10 15l5.19-3L10 9v6z"></path>
+                                </svg>
+                              </button>
+                            </span>
+                          );
+                        }
+                        return (
+                          <span
+                            className={`${clampClass}`}
+                            onClick={() => toggleMessageExpanded(message.id)}
+                            style={textStyle}
                           >
-                            {message.sender?.username || 'جاري التحميل...'}
-                          </button>
-                          <span className="text-red-400 mx-1">:</span>
-                        </div>
-
-                        {/* Content section - flexible width */}
-                        <div className={`flex-1 min-w-0 text-red-600 break-words message-content-fix ${isMobile ? 'system-message-content' : ''}`}>
-                          <span className="line-clamp-2">
-                            {message.content}
+                            {renderMessageWithAnimatedEmojis(
+                              message.content,
+                              (text) => renderMessageWithMentions(text, currentUser, onlineUsers)
+                            )}
                           </span>
-                        </div>
-                      </div>
+                        );
+                      })()}
                     </div>
+                  </div>
+                </div>
 
-                    {/* Right side: time */}
-                    <span className="text-xs text-red-500 whitespace-nowrap ml-2 self-start">
-                      {formatTime(message.timestamp)}
-                    </span>
-                  </>
-                ) : (
-                  <>
-                    {/* Profile Image */}
-                    {message.sender && (
-                      <div className="flex-shrink-0">
-                        <ProfileImage
-                          user={message.sender}
-                          size="small"
-                          className="w-7 h-7 cursor-pointer hover:scale-110 transition-transform duration-200"
-                          onClick={(e) => onUserClick && onUserClick(e, message.sender!)}
-                        />
-                      </div>
-                    )}
+                <span className={`text-xs whitespace-nowrap ml-2 self-start ${message.messageType === 'system' ? 'text-red-500' : 'text-gray-500'}`}>
+                  {formatTime(message.timestamp)}
+                </span>
 
-                    {/* New horizontal layout on desktop, run-in on mobile */}
-                    <div className={`flex-1 min-w-0`}>
-                      {isMobile ? (
-                        <div className="runin-container">
-                          <div className="runin-name">
-                            {message.sender && (message.sender.userType as any) !== 'bot' && (
-                              <UserRoleBadge user={message.sender} showOnlyIcon={true} hideGuestAndGender={true} size={16} />
-                            )}
-                            <button
-                              onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
-                              className="font-semibold hover:underline transition-colors duration-200 text-sm"
-                              style={{ color: getFinalUsernameColor(message.sender) }}
-                            >
-                              {message.sender?.username || 'جاري التحميل...'}
-                            </button>
-                            <span className="text-gray-400 mx-1">:</span>
-                          </div>
-                          <div className="runin-text text-gray-800 message-content-fix">
-                            {message.messageType === 'image' ? (
-                              <img
-                                src={message.content}
-                                alt="صورة"
-                                className="max-h-7 rounded cursor-pointer"
-                                loading="lazy"
-                                onLoad={() => {
-                                  if (isAtBottom) {
-                                    scrollToBottom('auto');
-                                  }
-                                }}
-                                onClick={() => setImageLightbox({ open: true, src: message.content })}
-                              />
-                            ) : (
-                              (() => {
-                                const { cleaned, ids } = parseYouTubeFromText(message.content);
-                                if (ids.length > 0) {
-                                  const firstId = ids[0];
-                                  return (
-                                    <span className={`flex items-start gap-2`} onClick={() => isMobile && toggleMessageExpanded(message.id)}>
-                                      {cleaned ? (
-                                        <span
-                                          className={`flex-1`}
-                                          style={
-                                            currentUser && message.senderId === currentUser.id
-                                              ? { color: composerTextColor, fontWeight: composerBold ? 600 : undefined }
-                                              : undefined
-                                          }
-                                        >
-                                          {renderMessageWithAnimatedEmojis(
-                                            cleaned,
-                                            (text) => renderMessageWithMentions(text, currentUser, onlineUsers)
-                                          )}
-                                        </span>
-                                      ) : null}
-                                      <button
-                                        onClick={() => setYoutubeModal({ open: true, videoId: firstId })}
-                                        className="flex items-center justify-center w-8 h-6 rounded bg-red-600 hover:bg-red-700 transition-colors shrink-0"
-                                        title="فتح فيديو YouTube"
-                                      >
-                                        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-                                          <path fill="#fff" d="M10 15l5.19-3L10 9v6z"></path>
-                                        </svg>
-                                      </button>
-                                    </span>
-                                  );
-                                }
-                                return (
-                                  <span
-                                    onClick={() => isMobile && toggleMessageExpanded(message.id)}
-                                    style={
-                                      currentUser && message.senderId === currentUser.id
-                                        ? { color: composerTextColor, fontWeight: composerBold ? 600 : undefined }
-                                        : undefined
-                                    }
-                                  >
-                                    {renderMessageWithAnimatedEmojis(
-                                      message.content,
-                                      (text) => renderMessageWithMentions(text, currentUser, onlineUsers)
-                                    )}
-                                  </span>
-                                );
-                              })()
-                            )}
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="flex items-start gap-2">
-                          {/* Name and badge section - fixed width */}
-                          <div className="flex items-center gap-1 shrink-0">
-                            {message.sender && (message.sender.userType as any) !== 'bot' && (
-                              <UserRoleBadge user={message.sender} showOnlyIcon={true} hideGuestAndGender={true} size={16} />
-                            )}
-                            <button
-                              onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
-                              className="font-semibold hover:underline transition-colors duration-200 text-sm"
-                              style={{ color: getFinalUsernameColor(message.sender) }}
-                            >
-                              {message.sender?.username || 'جاري التحميل...'}
-                            </button>
-                            <span className="text-gray-400 mx-1">:</span>
-                          </div>
-
-                          {/* Content section - flexible width */}
-                          <div className={`flex-1 min-w-0 text-gray-800 break-words message-content-fix`}>
-                            {message.messageType === 'image' ? (
-                              <img
-                                src={message.content}
-                                alt="صورة"
-                                className="max-h-7 rounded cursor-pointer"
-                                loading="lazy"
-                                onLoad={() => {
-                                  if (isAtBottom) {
-                                    scrollToBottom('auto');
-                                  }
-                                }}
-                                onClick={() => setImageLightbox({ open: true, src: message.content })}
-                              />
-                            ) : (
-                              (() => {
-                                const { cleaned, ids } = parseYouTubeFromText(message.content);
-                                if (ids.length > 0) {
-                                  const firstId = ids[0];
-                                  return (
-                                    <span className={`${isMobile ? 'line-clamp-4' : 'line-clamp-2'} ${!isMobile ? 'text-breathe' : ''} flex items-start gap-2`} onClick={() => isMobile && toggleMessageExpanded(message.id)}>
-                                      {cleaned ? (
-                                        <span
-                                          className={`${isMobile ? 'line-clamp-4' : 'line-clamp-2'} flex-1`}
-                                          style={
-                                            currentUser && message.senderId === currentUser.id
-                                              ? { color: composerTextColor, fontWeight: composerBold ? 600 : undefined }
-                                              : undefined
-                                          }
-                                        >
-                                          {renderMessageWithAnimatedEmojis(
-                                            cleaned,
-                                            (text) => renderMessageWithMentions(text, currentUser, onlineUsers)
-                                          )}
-                                        </span>
-                                      ) : null}
-                                      <button
-                                        onClick={() => setYoutubeModal({ open: true, videoId: firstId })}
-                                        className="flex items-center justify-center w-8 h-6 rounded bg-red-600 hover:bg-red-700 transition-colors shrink-0"
-                                        title="فتح فيديو YouTube"
-                                      >
-                                        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-                                          <path fill="#fff" d="M10 15l5.19-3L10 9v6z"></path>
-                                        </svg>
-                                      </button>
-                                    </span>
-                                  );
-                                }
-                                return (
-                                  <span
-                                    className={`${isMobile ? 'line-clamp-4' : 'line-clamp-2 text-breathe'}`}
-                                    onClick={() => isMobile && toggleMessageExpanded(message.id)}
-                                    style={
-                                      currentUser && message.senderId === currentUser.id
-                                        ? { color: composerTextColor, fontWeight: composerBold ? 600 : undefined }
-                                        : undefined
-                                    }
-                                  >
-                                    {renderMessageWithAnimatedEmojis(
-                                      message.content,
-                                      (text) => renderMessageWithMentions(text, currentUser, onlineUsers)
-                                    )}
-                                  </span>
-                                );
-                              })()
-                            )}
-                          </div>
-                        </div>
+                {currentUser && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        className="h-6 w-6 p-0 text-gray-600 hover:text-gray-900 self-start ml-1"
+                        title="المزيد"
+                        aria-label="المزيد"
+                      >
+                        <MoreVertical className="w-4 h-4" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" sideOffset={6} className="min-w-[180px]">
+                      {!message.isPrivate && (["like","dislike","heart"] as const).map((r) => {
+                        const isMine = message.myReaction === r;
+                        const count = message.reactions?.[r] ?? 0;
+                        const label = r === 'like' ? '👍 إعجاب' : r === 'dislike' ? '👎 عدم إعجاب' : '❤️ قلب';
+                        const toggle = async () => {
+                          try {
+                            if (isMine) {
+                              await apiRequest(`/api/messages/${message.id}/reactions`, { method: 'DELETE' });
+                            } else {
+                              await apiRequest(`/api/messages/${message.id}/reactions`, { method: 'POST', body: { type: r } });
+                            }
+                          } catch (e) {
+                            console.error('reaction error', e);
+                          }
+                        };
+                        return (
+                          <DropdownMenuItem key={r} onClick={toggle} className={`flex items-center justify-between gap-2 ${isMine ? 'text-primary' : ''}`}>
+                            <span>{label}</span>
+                            <span className="text-xs text-gray-500">{count}</span>
+                          </DropdownMenuItem>
+                        );
+                      })}
+                      {onReportMessage && message.sender && currentUser && message.sender.id !== currentUser.id && (
+                        <DropdownMenuItem onClick={() => onReportMessage(message.sender!, message.content, message.id)}>
+                          🚩 تبليغ
+                        </DropdownMenuItem>
                       )}
-                    </div>
-
-                      {/* Right side: time */}
-                      <span className="text-xs text-gray-500 whitespace-nowrap ml-2 self-start">
-                        {formatTime(message.timestamp)}
-                      </span>
-
-                      {/* قائمة ثلاث نقاط موحدة للجوال وسطح المكتب */}
-                      {currentUser && (
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <button
-                              className="h-6 w-6 p-0 text-gray-600 hover:text-gray-900 self-start ml-1"
-                              title="المزيد"
-                              aria-label="المزيد"
-                            >
-                              <MoreVertical className="w-4 h-4" />
-                            </button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="start" sideOffset={6} className="min-w-[180px]">
-                            {/* Reactions */}
-                            {!message.isPrivate && (["like","dislike","heart"] as const).map((r) => {
-                              const isMine = message.myReaction === r;
-                              const count = message.reactions?.[r] ?? 0;
-                              const label = r === 'like' ? '👍 إعجاب' : r === 'dislike' ? '👎 عدم إعجاب' : '❤️ قلب';
-                              const toggle = async () => {
-                                try {
-                                  if (isMine) {
-                                    await apiRequest(`/api/messages/${message.id}/reactions`, { method: 'DELETE' });
-                                  } else {
-                                    await apiRequest(`/api/messages/${message.id}/reactions`, { method: 'POST', body: { type: r } });
-                                  }
-                                } catch (e) {
-                                  console.error('reaction error', e);
-                                }
-                              };
-                              return (
-                                <DropdownMenuItem key={r} onClick={toggle} className={`flex items-center justify-between gap-2 ${isMine ? 'text-primary' : ''}`}>
-                                  <span>{label}</span>
-                                  <span className="text-xs text-gray-500">{count}</span>
-                                </DropdownMenuItem>
-                              );
-                            })}
-                            {/* Report */}
-                            {onReportMessage && message.sender && currentUser && message.sender.id !== currentUser.id && (
-                              <DropdownMenuItem onClick={() => onReportMessage(message.sender!, message.content, message.id)}>
-                                🚩 تبليغ
-                              </DropdownMenuItem>
-                            )}
-                            {/* Delete */}
-                            {(() => {
-                              if (!message.sender || !currentUser) return null;
-                              const isOwner = currentUser.userType === 'owner';
-                              const isAdmin = currentUser.userType === 'admin';
-                              const isSender = currentUser.id === message.sender.id;
-                              const canDelete = isSender || isOwner || isAdmin;
-                              if (!canDelete) return null;
-                              const handleDelete = async () => {
-                                try {
-                                  await apiRequest(`/api/messages/${message.id}`, {
-                                    method: 'DELETE',
-                                    body: { userId: currentUser.id, roomId: message.roomId || 'general' },
-                                  });
-                                } catch (e) {
-                                  console.error('خطأ في حذف الرسالة', e);
-                                }
-                              };
-                              return (
-                                <DropdownMenuItem onClick={handleDelete}>🗑️ حذف</DropdownMenuItem>
-                              );
-                            })()}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      )}
-                  </>
+                      {(() => {
+                        if (!message.sender || !currentUser) return null;
+                        const isOwner = currentUser.userType === 'owner';
+                        const isAdmin = currentUser.userType === 'admin';
+                        const isSender = currentUser.id === message.sender.id;
+                        const canDelete = isSender || isOwner || isAdmin;
+                        if (!canDelete) return null;
+                        const handleDelete = async () => {
+                          try {
+                            await apiRequest(`/api/messages/${message.id}`, {
+                              method: 'DELETE',
+                              body: { userId: currentUser.id, roomId: message.roomId || 'general' },
+                            });
+                          } catch (e) {
+                            console.error('خطأ في حذف الرسالة', e);
+                          }
+                        };
+                        return (
+                          <DropdownMenuItem onClick={handleDelete}>🗑️ حذف</DropdownMenuItem>
+                        );
+                      })()}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 )}
               </div>
             )}
