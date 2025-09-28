@@ -453,7 +453,7 @@ export default function PrivateMessageBox({
                       <div className="flex-1 min-w-0">
                         {/* run-in on mobile; horizontal on desktop */}
                         <div className="runin-container">
-                          <div className="runin-name">
+                          <span className="runin-name">
                             <span
                               className="font-semibold text-sm"
                               style={{ color: getFinalUsernameColor(m.sender || user) }}
@@ -461,10 +461,10 @@ export default function PrivateMessageBox({
                               {m.sender?.username || (isMe ? (currentUser?.username || '') : (user.username || '')) || 'جاري التحميل...'}
                             </span>
                             <span className="text-gray-400 mx-1">:</span>
-                          </div>
+                          </span>
 
                           {/* Content section - full width under the name (mobile), inline on first line */}
-                          <div className="runin-text text-gray-800 break-words message-content-fix">
+                          <span className="runin-text text-gray-800 break-words message-content-fix">
                           {hasStoryContext && (
                             <div className="mb-2">
                               <div className="flex items-center gap-3 p-2 rounded-lg border bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200">
@@ -560,7 +560,7 @@ export default function PrivateMessageBox({
                               </span>
                             );
                           })()}
-                          </div>
+                          </span>
 
                           {/* Time section - fixed width */}
                           <span className="text-xs text-gray-500 whitespace-nowrap shrink-0 self-start">

@@ -85,6 +85,7 @@ export default function MessageArea({
   // الحد الأقصى لأسطر الإدخال: 4 على الهاتف، و 2 على الويب (لأغراض الارتفاع فقط)
   const MAX_LINES = isMobile ? 4 : 2;
   const clampToMaxChars = useCallback((text: string) => (text.length > MAX_CHARS ? text.slice(0, MAX_CHARS) : text), [MAX_CHARS]);
+  const normalizeNewlines = useCallback((s: string) => s.replace(/\r\n?/g, '\n'), []);
   // Helper: فحص تجاوز سطرين بصريًا (مع احتساب الالتفاف)
   const wouldExceedTwoLines = useCallback(
     (el: HTMLTextAreaElement | null, nextValue: string): boolean => {
@@ -389,7 +390,7 @@ export default function MessageArea({
 
   // Send message function - محسن
   const handleSendMessage = useCallback(() => {
-    const trimmedMessage = messageText.trim();
+    const trimmedMessage = normalizeNewlines(messageText).trim();
 
     if (trimmedMessage && currentUser) {
       // Clear typing state immediately
@@ -406,7 +407,7 @@ export default function MessageArea({
       // Focus back to input
       inputRef.current?.focus();
     }
-  }, [messageText, currentUser, onSendMessage]);
+  }, [messageText, currentUser, onSendMessage, normalizeNewlines]);
 
   // Key press handler - إرسال بالـ Enter وترك Shift+Enter لسطور جديدة (المحدد بالأحرف فقط)
   const handleKeyPress = useCallback(
@@ -427,19 +428,22 @@ export default function MessageArea({
 
   // Message text change handler مع تقليم إلى 192 حرفًا
   const handleMessageChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const next = clampToMaxChars(e.target.value);
+    const raw = e.target.value;
+    const normalized = normalizeNewlines(raw);
+    const next = clampToMaxChars(normalized);
     setMessageText(next);
     setIsMultiLine((next.match(/\n/g)?.length || 0) + 1 > 1);
-  }, [clampToMaxChars]);
+  }, [clampToMaxChars, normalizeNewlines]);
 
   // Paste handler مع تقليم إلى 192 حرفًا
   const handlePaste = useCallback((e: React.ClipboardEvent<HTMLTextAreaElement>) => {
     try {
       const paste = e.clipboardData.getData('text');
+      const pasteNormalized = normalizeNewlines(paste);
       const el = e.currentTarget;
       const selectionStart = el.selectionStart ?? messageText.length;
       const selectionEnd = el.selectionEnd ?? messageText.length;
-      const combined = messageText.slice(0, selectionStart) + paste + messageText.slice(selectionEnd);
+      const combined = messageText.slice(0, selectionStart) + pasteNormalized + messageText.slice(selectionEnd);
       const next = clampToMaxChars(combined);
       if (next !== combined) {
         e.preventDefault();
@@ -449,7 +453,7 @@ export default function MessageArea({
     } catch {
       // ignore
     }
-  }, [messageText, clampToMaxChars]);
+  }, [messageText, clampToMaxChars, normalizeNewlines]);
 
   // إعادة ضبط الارتفاع تلقائياً عند تحديث النص أو تغيير وضع التعدد
   useEffect(() => {
@@ -729,7 +733,7 @@ export default function MessageArea({
                     <div className={`flex-1 min-w-0`}>
                       {isMobile ? (
                         <div className="runin-container">
-                          <div className="runin-name">
+                          <span className="runin-name">
                             {message.sender && (message.sender.userType as any) !== 'bot' && (
                               <UserRoleBadge user={message.sender} showOnlyIcon={true} hideGuestAndGender={true} size={16} />
                             )}
@@ -741,8 +745,8 @@ export default function MessageArea({
                               {message.sender?.username || 'جاري التحميل...'}
                             </button>
                             <span className="text-gray-400 mx-1">:</span>
-                          </div>
-                          <div className="runin-text text-gray-800 message-content-fix">
+                          </span>
+                          <span className="runin-text text-gray-800 message-content-fix">
                             {message.messageType === 'image' ? (
                               <img
                                 src={message.content}
@@ -807,7 +811,7 @@ export default function MessageArea({
                                 );
                               })()
                             )}
-                          </div>
+                          </span>
                         </div>
                       ) : (
                         <div className="flex items-start gap-2">
