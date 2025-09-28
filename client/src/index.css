@@ -1603,19 +1603,21 @@ li > * > div.effect-crystal {
   white-space: pre-wrap;
 }
 
-/* تطبيق تأثير run-in محسّن للجوال */
+/* تطبيق تأثير run-in محسّن للجوال - مع توحيد line-height */
 @media (max-width: 768px) {
   .runin-container {
     position: relative;
+    line-height: 1.6; /* توحيد line-height للحاوي الكامل */
   }
   .runin-name {
     display: inline;        /* الاسم inline في السطر الأول */
     margin-left: 0.25rem;   /* مسافة صغيرة بعد الاسم */
+    line-height: inherit;   /* وراثة line-height من الحاوي */
   }
   .runin-text {
     display: inline;        /* النص يبدأ inline في نفس السطر */
     text-align: justify;    /* النص موزع بانتظام */
-    line-height: 1.6;
+    line-height: inherit;   /* وراثة line-height من الحاوي */
   }
 }
 
