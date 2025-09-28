@@ -366,26 +366,10 @@ export default function MessageArea({
     }
   }, [validMessages, currentUser]);
 
-  // Throttled typing function - محسن
+  // تم تعطيل إشعار الكتابة في غرف الدردشة العامة
   const handleTypingThrottled = useCallback(() => {
-    const now = Date.now();
-
-    // إرسال إشعار الكتابة مرة واحدة فقط كل 3 ثوانٍ
-    if (now - lastTypingTime.current > 3000) {
-      onTyping();
-      lastTypingTime.current = now;
-      setIsTyping(true);
-
-      // إيقاف إشعار الكتابة بعد 3 ثوانٍ
-      if (typingTimeoutRef.current) {
-        clearTimeout(typingTimeoutRef.current);
-      }
-
-      typingTimeoutRef.current = setTimeout(() => {
-        setIsTyping(false);
-      }, 3000);
-    }
-  }, [onTyping]);
+    return;
+  }, []);
 
   // Send message function - محسن
   const handleSendMessage = useCallback(() => {
@@ -408,7 +392,7 @@ export default function MessageArea({
     }
   }, [messageText, currentUser, onSendMessage]);
 
-  // Key press handler - إرسال بالـ Enter وترك Shift+Enter لسطور جديدة (المحدد بالأحرف فقط)
+  // Key press handler - إرسال بالـ Enter وترك Shift+Enter لسطور جديدة
   const handleKeyPress = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
       if (e.key === 'Enter') {
@@ -417,12 +401,9 @@ export default function MessageArea({
           handleSendMessage();
           return;
         }
-      } else {
-        // إرسال إشعار الكتابة فقط عند الكتابة الفعلية
-        handleTypingThrottled();
       }
     },
-    [handleSendMessage, handleTypingThrottled]
+    [handleSendMessage]
   );
 
   // Message text change handler مع تقليم إلى 192 حرفًا
@@ -601,14 +582,7 @@ export default function MessageArea({
     [messageText, clampToMaxChars]
   );
 
-  // Format typing users display
-  const typingDisplay = useMemo(() => {
-    const typingArray = Array.from(typingUsers);
-    if (typingArray.length === 0) return '';
-    if (typingArray.length === 1) return `${typingArray[0]} يكتب...`;
-    if (typingArray.length === 2) return `${typingArray[0]} و ${typingArray[1]} يكتبان...`;
-    return `${typingArray.length} أشخاص يكتبون...`;
-  }, [typingUsers]);
+  // تم تعطيل عرض مؤشر الكتابة في الغرف
 
   // Cleanup on unmount
   useEffect(() => {
