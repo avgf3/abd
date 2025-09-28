@@ -680,24 +680,45 @@ export default function MessageArea({
                       </div>
                     )}
                     <div className="flex-1 min-w-0">
-                      <div className="inline-message-layout">
-                        <span className="inline-name-section">
-                          {message.sender && (message.sender.userType as any) !== 'bot' && (
-                            <UserRoleBadge user={message.sender} showOnlyIcon={true} hideGuestAndGender={true} size={16} />
-                          )}
-                          <button
-                            onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
-                            className="font-semibold hover:underline transition-colors duration-200 text-sm"
-                            style={{ color: getFinalUsernameColor(message.sender) }}
-                          >
-                            {message.sender?.username || 'جاري التحميل...'}
-                          </button>
-                          <span className="text-red-400 mx-1">:</span>
-                        </span>
-                        <span className="inline-message-content text-red-600 message-content-fix">
-                          {message.content}
-                        </span>
-                      </div>
+                      {isMobile ? (
+                        <div className="runin-container message-content-fix">
+                          <span className="runin-name">
+                            {message.sender && (message.sender.userType as any) !== 'bot' && (
+                              <UserRoleBadge user={message.sender} showOnlyIcon={true} hideGuestAndGender={true} size={16} />
+                            )}
+                            <button
+                              onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
+                              className="font-semibold hover:underline transition-colors duration-200 text-sm"
+                              style={{ color: getFinalUsernameColor(message.sender) }}
+                            >
+                              {message.sender?.username || 'جاري التحميل...'}
+                            </button>
+                            <span className="mx-1 text-red-400">:</span>
+                          </span>
+                          <span className="runin-text text-red-600">
+                            {message.content}
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="inline-message-layout">
+                          <span className="inline-name-section">
+                            {message.sender && (message.sender.userType as any) !== 'bot' && (
+                              <UserRoleBadge user={message.sender} showOnlyIcon={true} hideGuestAndGender={true} size={16} />
+                            )}
+                            <button
+                              onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
+                              className="font-semibold hover:underline transition-colors duration-200 text-sm"
+                              style={{ color: getFinalUsernameColor(message.sender) }}
+                            >
+                              {message.sender?.username || 'جاري التحميل...'}
+                            </button>
+                            <span className="text-red-400 mx-1">:</span>
+                          </span>
+                          <span className="inline-message-content text-red-600 message-content-fix">
+                            {message.content}
+                          </span>
+                        </div>
+                      )}
                     </div>
 
                     {/* Right side: time */}
@@ -719,87 +740,169 @@ export default function MessageArea({
                       </div>
                     )}
 
-                    {/* تخطيط متراص مضغوط - الاسم والنص في سطر واحد مع استمرار النص في الأسطر التالية */}
+                    {/* تخطيط الرسالة: run-in على الجوال، inline على سطح المكتب */}
                     <div className="flex-1 min-w-0">
-                      <div className="inline-message-layout">
-                        <span className="inline-name-section">
-                          {message.sender && (message.sender.userType as any) !== 'bot' && (
-                            <UserRoleBadge user={message.sender} showOnlyIcon={true} hideGuestAndGender={true} size={16} />
-                          )}
-                          <button
-                            onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
-                            className="font-semibold hover:underline transition-colors duration-200 text-sm"
-                            style={{ color: getFinalUsernameColor(message.sender) }}
-                          >
-                            {message.sender?.username || 'جاري التحميل...'}
-                          </button>
-                          <span className="text-gray-400 mx-1">:</span>
-                        </span>
-                        <span className="inline-message-content text-gray-800 message-content-fix">
-                          {message.messageType === 'image' ? (
-                            <img
-                              src={message.content}
-                              alt="صورة"
-                              className="max-h-7 rounded cursor-pointer"
-                              loading="lazy"
-                              onLoad={() => {
-                                if (isAtBottom) {
-                                  scrollToBottom('auto');
-                                }
-                              }}
-                              onClick={() => setImageLightbox({ open: true, src: message.content })}
-                            />
-                          ) : (
-                            (() => {
-                              const { cleaned, ids } = parseYouTubeFromText(message.content);
-                              if (ids.length > 0) {
-                                const firstId = ids[0];
-                                return (
-                                  <>
-                                    {cleaned && (
-                                      <span
-                                        style={
-                                          currentUser && message.senderId === currentUser.id
-                                            ? { color: composerTextColor, fontWeight: composerBold ? 600 : undefined }
-                                            : undefined
-                                        }
-                                      >
-                                        {renderMessageWithAnimatedEmojis(
-                                          cleaned,
-                                          (text) => renderMessageWithMentions(text, currentUser, onlineUsers)
-                                        )}
-                                      </span>
-                                    )}
-                                    <button
-                                      onClick={() => setYoutubeModal({ open: true, videoId: firstId })}
-                                      className="inline-flex items-center justify-center w-8 h-6 rounded bg-red-600 hover:bg-red-700 transition-colors ml-2"
-                                      title="فتح فيديو YouTube"
-                                    >
-                                      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-                                        <path fill="#fff" d="M10 15l5.19-3L10 9v6z"></path>
-                                      </svg>
-                                    </button>
-                                  </>
-                                );
-                              }
-                              return (
-                                <span
-                                  style={
-                                    currentUser && message.senderId === currentUser.id
-                                      ? { color: composerTextColor, fontWeight: composerBold ? 600 : undefined }
-                                      : undefined
+                      {isMobile ? (
+                        <div className="runin-container message-content-fix">
+                          <span className="runin-name">
+                            {message.sender && (message.sender.userType as any) !== 'bot' && (
+                              <UserRoleBadge user={message.sender} showOnlyIcon={true} hideGuestAndGender={true} size={16} />
+                            )}
+                            <button
+                              onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
+                              className="font-semibold hover:underline transition-colors duration-200 text-sm"
+                              style={{ color: getFinalUsernameColor(message.sender) }}
+                            >
+                              {message.sender?.username || 'جاري التحميل...'}
+                            </button>
+                            <span className="mx-1 text-gray-400">:</span>
+                          </span>
+                          <span className="runin-text text-gray-800">
+                            {message.messageType === 'image' ? (
+                              <img
+                                src={message.content}
+                                alt="صورة"
+                                className="max-h-7 rounded cursor-pointer"
+                                loading="lazy"
+                                onLoad={() => {
+                                  if (isAtBottom) {
+                                    scrollToBottom('auto');
                                   }
-                                >
-                                  {renderMessageWithAnimatedEmojis(
-                                    message.content,
-                                    (text) => renderMessageWithMentions(text, currentUser, onlineUsers)
-                                  )}
-                                </span>
-                              );
-                            })()
-                          )}
-                        </span>
-                      </div>
+                                }}
+                                onClick={() => setImageLightbox({ open: true, src: message.content })}
+                              />
+                            ) : (
+                              (() => {
+                                const { cleaned, ids } = parseYouTubeFromText(message.content);
+                                if (ids.length > 0) {
+                                  const firstId = ids[0];
+                                  return (
+                                    <>
+                                      {cleaned && (
+                                        <span
+                                          style={
+                                            currentUser && message.senderId === currentUser.id
+                                              ? { color: composerTextColor, fontWeight: composerBold ? 600 : undefined }
+                                              : undefined
+                                          }
+                                        >
+                                          {renderMessageWithAnimatedEmojis(
+                                            cleaned,
+                                            (text) => renderMessageWithMentions(text, currentUser, onlineUsers)
+                                          )}
+                                        </span>
+                                      )}
+                                      <button
+                                        onClick={() => setYoutubeModal({ open: true, videoId: firstId })}
+                                        className="inline-flex items-center justify-center w-8 h-6 rounded bg-red-600 hover:bg-red-700 transition-colors ml-2"
+                                        title="فتح فيديو YouTube"
+                                      >
+                                        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                                          <path fill="#fff" d="M10 15l5.19-3L10 9v6z"></path>
+                                        </svg>
+                                      </button>
+                                    </>
+                                  );
+                                }
+                                return (
+                                  <span
+                                    style={
+                                      currentUser && message.senderId === currentUser.id
+                                        ? { color: composerTextColor, fontWeight: composerBold ? 600 : undefined }
+                                        : undefined
+                                    }
+                                  >
+                                    {renderMessageWithAnimatedEmojis(
+                                      message.content,
+                                      (text) => renderMessageWithMentions(text, currentUser, onlineUsers)
+                                    )}
+                                  </span>
+                                );
+                              })()
+                            )}
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="inline-message-layout">
+                          <span className="inline-name-section">
+                            {message.sender && (message.sender.userType as any) !== 'bot' && (
+                              <UserRoleBadge user={message.sender} showOnlyIcon={true} hideGuestAndGender={true} size={16} />
+                            )}
+                            <button
+                              onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
+                              className="font-semibold hover:underline transition-colors duration-200 text-sm"
+                              style={{ color: getFinalUsernameColor(message.sender) }}
+                            >
+                              {message.sender?.username || 'جاري التحميل...'}
+                            </button>
+                            <span className="text-gray-400 mx-1">:</span>
+                          </span>
+                          <span className="inline-message-content text-gray-800 message-content-fix">
+                            {message.messageType === 'image' ? (
+                              <img
+                                src={message.content}
+                                alt="صورة"
+                                className="max-h-7 rounded cursor-pointer"
+                                loading="lazy"
+                                onLoad={() => {
+                                  if (isAtBottom) {
+                                    scrollToBottom('auto');
+                                  }
+                                }}
+                                onClick={() => setImageLightbox({ open: true, src: message.content })}
+                              />
+                            ) : (
+                              (() => {
+                                const { cleaned, ids } = parseYouTubeFromText(message.content);
+                                if (ids.length > 0) {
+                                  const firstId = ids[0];
+                                  return (
+                                    <>
+                                      {cleaned && (
+                                        <span
+                                          style={
+                                            currentUser && message.senderId === currentUser.id
+                                              ? { color: composerTextColor, fontWeight: composerBold ? 600 : undefined }
+                                              : undefined
+                                          }
+                                        >
+                                          {renderMessageWithAnimatedEmojis(
+                                            cleaned,
+                                            (text) => renderMessageWithMentions(text, currentUser, onlineUsers)
+                                          )}
+                                        </span>
+                                      )}
+                                      <button
+                                        onClick={() => setYoutubeModal({ open: true, videoId: firstId })}
+                                        className="inline-flex items-center justify-center w-8 h-6 rounded bg-red-600 hover:bg-red-700 transition-colors ml-2"
+                                        title="فتح فيديو YouTube"
+                                      >
+                                        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                                          <path fill="#fff" d="M10 15l5.19-3L10 9v6z"></path>
+                                        </svg>
+                                      </button>
+                                    </>
+                                  );
+                                }
+                                return (
+                                  <span
+                                    style={
+                                      currentUser && message.senderId === currentUser.id
+                                        ? { color: composerTextColor, fontWeight: composerBold ? 600 : undefined }
+                                        : undefined
+                                    }
+                                  >
+                                    {renderMessageWithAnimatedEmojis(
+                                      message.content,
+                                      (text) => renderMessageWithMentions(text, currentUser, onlineUsers)
+                                    )}
+                                  </span>
+                                );
+                              })()
+                            )}
+                          </span>
+                        </div>
+                      )}
                     </div>
 
                       {/* Right side: time */}

@@ -1608,7 +1608,7 @@ li > * > div.effect-crystal {
 .inline-name-section span {
   display: inline !important;
   vertical-align: baseline !important;
-  line-height: 1 !important;
+  line-height: inherit !important;
 }
 
 /* تصغير حجم الأيقونات لتتناسب مع النص */
@@ -1638,7 +1638,7 @@ li > * > div.effect-crystal {
 
 /* ضمان عدم وجود كسر أسطر غير مرغوب فيه */
 .inline-message-content {
-  text-align: justify;
+  text-align: start;
 }
 
 /* تحسين عرض أزرار يوتيوب */
@@ -1709,7 +1709,7 @@ li > * > div.effect-crystal {
   }
   .runin-text {
     display: inline;              /* النص يبدأ inline في نفس السطر */
-    text-align: justify;          /* النص موزع بانتظام */
+    text-align: start;            /* محاذاة طبيعية حسب الاتجاه */
     line-height: inherit;         /* وراثة line-height من الحاوي */
   }
 
