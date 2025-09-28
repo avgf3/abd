@@ -559,36 +559,69 @@ export default function MessageArea({
                       </div>
                     )}
                     <div className={`flex-1 min-w-0`}>
-                      {/* Unified layout for both mobile and desktop */}
-                      <div className={`flex items-start gap-2 ${isMobile ? 'system-message-mobile' : ''}`}>
-                        {/* Name and badge section - fixed width */}
-                        <div className="flex items-center gap-1 shrink-0">
-                          {message.sender && (message.sender.userType as any) !== 'bot' && (
-                            <UserRoleBadge user={message.sender} showOnlyIcon={true} hideGuestAndGender={true} size={16} />
-                          )}
-                          <button
-                            onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
-                            className="font-semibold hover:underline transition-colors duration-200 text-sm"
-                            style={{ color: getFinalUsernameColor(message.sender) }}
-                          >
-                            {message.sender?.username || 'جاري التحميل...'}
-                          </button>
-                          <span className="text-red-400 mx-1">:</span>
-                        </div>
-
-                        {/* Content section - flexible width */}
-                        <div className={`flex-1 min-w-0 text-red-600 break-words message-content-fix ${isMobile ? 'system-message-content' : ''}`}>
-                          <span className={isMobile ? '' : 'line-clamp-2'}>
+                      {/* Mobile run-in layout to fully utilize line width */}
+                      {isMobile ? (
+                        <div className="mobile-message-optimized">
+                          <span className="mobile-name-inline">
+                            {message.sender && (message.sender.userType as any) !== 'bot' && (
+                              <UserRoleBadge user={message.sender} showOnlyIcon={true} hideGuestAndGender={true} size={14} />
+                            )}
+                            <button
+                              onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
+                              className="font-semibold hover:underline transition-colors duration-200"
+                              style={{ 
+                                color: getFinalUsernameColor(message.sender),
+                                fontSize: '14px',
+                                lineHeight: '1.35'
+                              }}
+                            >
+                              {message.sender?.username || 'جاري التحميل...'}
+                            </button>
+                            <span className="text-red-400" style={{ margin: '0 2px' }}>:</span>
+                          </span>
+                          <span className="mobile-text-flow message-content-fix system-message-content text-red-600">
                             {message.content}
                           </span>
+                          <div className="mobile-meta-row">
+                            <span className="text-xs text-red-500 whitespace-nowrap">
+                              {formatTime(message.timestamp)}
+                            </span>
+                          </div>
                         </div>
-                      </div>
+                      ) : (
+                        /* Desktop: keep horizontal layout with fixed name column */
+                        <div className={`flex items-start gap-2`}>
+                          {/* Name and badge section - fixed width */}
+                          <div className="flex items-center gap-1 shrink-0">
+                            {message.sender && (message.sender.userType as any) !== 'bot' && (
+                              <UserRoleBadge user={message.sender} showOnlyIcon={true} hideGuestAndGender={true} size={16} />
+                            )}
+                            <button
+                              onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
+                              className="font-semibold hover:underline transition-colors duration-200 text-sm"
+                              style={{ color: getFinalUsernameColor(message.sender) }}
+                            >
+                              {message.sender?.username || 'جاري التحميل...'}
+                            </button>
+                            <span className="text-red-400 mx-1">:</span>
+                          </div>
+
+                          {/* Content section - flexible width */}
+                          <div className={`flex-1 min-w-0 text-red-600 break-words message-content-fix`}>
+                            <span className={'line-clamp-2'}>
+                              {message.content}
+                            </span>
+                          </div>
+                        </div>
+                      )}
                     </div>
 
-                    {/* Right side: time */}
-                    <span className="text-xs text-red-500 whitespace-nowrap ml-2 self-start">
-                      {formatTime(message.timestamp)}
-                    </span>
+                    {/* Right side: time (desktop only) */}
+                    {!isMobile && (
+                      <span className="text-xs text-red-500 whitespace-nowrap ml-2 self-start">
+                        {formatTime(message.timestamp)}
+                      </span>
+                    )}
                   </>
                 ) : (
                   <>
@@ -682,6 +715,78 @@ export default function MessageArea({
                               })()
                             )}
                           </span>
+                          {/* Mobile-only meta row: time + menu below content to free full width */}
+                          <div className="mobile-meta-row">
+                            <span className="text-xs text-gray-500 whitespace-nowrap">
+                              {formatTime(message.timestamp)}
+                            </span>
+                            {currentUser && (
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <button
+                                    className="h-6 w-6 p-0 text-gray-600 hover:text-gray-900"
+                                    title="المزيد"
+                                    aria-label="المزيد"
+                                  >
+                                    <MoreVertical className="w-4 h-4" />
+                                  </button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="start" sideOffset={6} className="min-w-[180px]">
+                                  {/* Reactions */}
+                                  {!message.isPrivate && (["like","dislike","heart"] as const).map((r) => {
+                                    const isMine = message.myReaction === r;
+                                    const count = message.reactions?.[r] ?? 0;
+                                    const label = r === 'like' ? '👍 إعجاب' : r === 'dislike' ? '👎 عدم إعجاب' : '❤️ قلب';
+                                    const toggle = async () => {
+                                      try {
+                                        if (isMine) {
+                                          await apiRequest(`/api/messages/${message.id}/reactions`, { method: 'DELETE' });
+                                        } else {
+                                          await apiRequest(`/api/messages/${message.id}/reactions`, { method: 'POST', body: { type: r } });
+                                        }
+                                      } catch (e) {
+                                        console.error('reaction error', e);
+                                      }
+                                    };
+                                    return (
+                                      <DropdownMenuItem key={r} onClick={toggle} className={`flex items-center justify-between gap-2 ${isMine ? 'text-primary' : ''}`}>
+                                        <span>{label}</span>
+                                        <span className="text-xs text-gray-500">{count}</span>
+                                      </DropdownMenuItem>
+                                    );
+                                  })}
+                                  {/* Report */}
+                                  {onReportMessage && message.sender && currentUser && message.sender.id !== currentUser.id && (
+                                    <DropdownMenuItem onClick={() => onReportMessage(message.sender!, message.content, message.id)}>
+                                      🚩 تبليغ
+                                    </DropdownMenuItem>
+                                  )}
+                                  {/* Delete */}
+                                  {(() => {
+                                    if (!message.sender || !currentUser) return null;
+                                    const isOwner = currentUser.userType === 'owner';
+                                    const isAdmin = currentUser.userType === 'admin';
+                                    const isSender = currentUser.id === message.sender.id;
+                                    const canDelete = isSender || isOwner || isAdmin;
+                                    if (!canDelete) return null;
+                                    const handleDelete = async () => {
+                                      try {
+                                        await apiRequest(`/api/messages/${message.id}`, {
+                                          method: 'DELETE',
+                                          body: { userId: currentUser.id, roomId: message.roomId || 'general' },
+                                        });
+                                      } catch (e) {
+                                        console.error('خطأ في حذف الرسالة', e);
+                                      }
+                                    };
+                                    return (
+                                      <DropdownMenuItem onClick={handleDelete}>🗑️ حذف</DropdownMenuItem>
+                                    );
+                                  })()}
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            )}
+                          </div>
                         </div>
                       ) : (
                         <div className="flex items-start gap-2">
@@ -771,77 +876,79 @@ export default function MessageArea({
                       )}
                     </div>
 
-                      {/* Right side: time */}
-                      <span className="text-xs text-gray-500 whitespace-nowrap ml-2 self-start">
-                        {formatTime(message.timestamp)}
-                      </span>
-
-                      {/* قائمة ثلاث نقاط موحدة للجوال وسطح المكتب */}
-                      {currentUser && (
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <button
-                              className="h-6 w-6 p-0 text-gray-600 hover:text-gray-900 self-start ml-1"
-                              title="المزيد"
-                              aria-label="المزيد"
-                            >
-                              <MoreVertical className="w-4 h-4" />
-                            </button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="start" sideOffset={6} className="min-w-[180px]">
-                            {/* Reactions */}
-                            {!message.isPrivate && (["like","dislike","heart"] as const).map((r) => {
-                              const isMine = message.myReaction === r;
-                              const count = message.reactions?.[r] ?? 0;
-                              const label = r === 'like' ? '👍 إعجاب' : r === 'dislike' ? '👎 عدم إعجاب' : '❤️ قلب';
-                              const toggle = async () => {
-                                try {
-                                  if (isMine) {
-                                    await apiRequest(`/api/messages/${message.id}/reactions`, { method: 'DELETE' });
-                                  } else {
-                                    await apiRequest(`/api/messages/${message.id}/reactions`, { method: 'POST', body: { type: r } });
-                                  }
-                                } catch (e) {
-                                  console.error('reaction error', e);
-                                }
-                              };
-                              return (
-                                <DropdownMenuItem key={r} onClick={toggle} className={`flex items-center justify-between gap-2 ${isMine ? 'text-primary' : ''}`}>
-                                  <span>{label}</span>
-                                  <span className="text-xs text-gray-500">{count}</span>
-                                </DropdownMenuItem>
-                              );
-                            })}
-                            {/* Report */}
-                            {onReportMessage && message.sender && currentUser && message.sender.id !== currentUser.id && (
-                              <DropdownMenuItem onClick={() => onReportMessage(message.sender!, message.content, message.id)}>
-                                🚩 تبليغ
-                              </DropdownMenuItem>
-                            )}
-                            {/* Delete */}
-                            {(() => {
-                              if (!message.sender || !currentUser) return null;
-                              const isOwner = currentUser.userType === 'owner';
-                              const isAdmin = currentUser.userType === 'admin';
-                              const isSender = currentUser.id === message.sender.id;
-                              const canDelete = isSender || isOwner || isAdmin;
-                              if (!canDelete) return null;
-                              const handleDelete = async () => {
-                                try {
-                                  await apiRequest(`/api/messages/${message.id}`, {
-                                    method: 'DELETE',
-                                    body: { userId: currentUser.id, roomId: message.roomId || 'general' },
-                                  });
-                                } catch (e) {
-                                  console.error('خطأ في حذف الرسالة', e);
-                                }
-                              };
-                              return (
-                                <DropdownMenuItem onClick={handleDelete}>🗑️ حذف</DropdownMenuItem>
-                              );
-                            })()}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                      {/* Right side: time + menu (desktop only) */}
+                      {!isMobile && (
+                        <>
+                          <span className="text-xs text-gray-500 whitespace-nowrap ml-2 self-start">
+                            {formatTime(message.timestamp)}
+                          </span>
+                          {currentUser && (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <button
+                                  className="h-6 w-6 p-0 text-gray-600 hover:text-gray-900 self-start ml-1"
+                                  title="المزيد"
+                                  aria-label="المزيد"
+                                >
+                                  <MoreVertical className="w-4 h-4" />
+                                </button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="start" sideOffset={6} className="min-w-[180px]">
+                                {/* Reactions */}
+                                {!message.isPrivate && (["like","dislike","heart"] as const).map((r) => {
+                                  const isMine = message.myReaction === r;
+                                  const count = message.reactions?.[r] ?? 0;
+                                  const label = r === 'like' ? '👍 إعجاب' : r === 'dislike' ? '👎 عدم إعجاب' : '❤️ قلب';
+                                  const toggle = async () => {
+                                    try {
+                                      if (isMine) {
+                                        await apiRequest(`/api/messages/${message.id}/reactions`, { method: 'DELETE' });
+                                      } else {
+                                        await apiRequest(`/api/messages/${message.id}/reactions`, { method: 'POST', body: { type: r } });
+                                      }
+                                    } catch (e) {
+                                      console.error('reaction error', e);
+                                    }
+                                  };
+                                  return (
+                                    <DropdownMenuItem key={r} onClick={toggle} className={`flex items-center justify-between gap-2 ${isMine ? 'text-primary' : ''}`}>
+                                      <span>{label}</span>
+                                      <span className="text-xs text-gray-500">{count}</span>
+                                    </DropdownMenuItem>
+                                  );
+                                })}
+                                {/* Report */}
+                                {onReportMessage && message.sender && currentUser && message.sender.id !== currentUser.id && (
+                                  <DropdownMenuItem onClick={() => onReportMessage(message.sender!, message.content, message.id)}>
+                                    🚩 تبليغ
+                                  </DropdownMenuItem>
+                                )}
+                                {/* Delete */}
+                                {(() => {
+                                  if (!message.sender || !currentUser) return null;
+                                  const isOwner = currentUser.userType === 'owner';
+                                  const isAdmin = currentUser.userType === 'admin';
+                                  const isSender = currentUser.id === message.sender.id;
+                                  const canDelete = isSender || isOwner || isAdmin;
+                                  if (!canDelete) return null;
+                                  const handleDelete = async () => {
+                                    try {
+                                      await apiRequest(`/api/messages/${message.id}`, {
+                                        method: 'DELETE',
+                                        body: { userId: currentUser.id, roomId: message.roomId || 'general' },
+                                      });
+                                    } catch (e) {
+                                      console.error('خطأ في حذف الرسالة', e);
+                                    }
+                                  };
+                                  return (
+                                    <DropdownMenuItem onClick={handleDelete}>🗑️ حذف</DropdownMenuItem>
+                                  );
+                                })()}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          )}
+                        </>
                       )}
                   </>
                 )}
