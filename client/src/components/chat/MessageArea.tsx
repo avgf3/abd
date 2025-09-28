@@ -571,13 +571,13 @@ export default function MessageArea({
                               className="font-semibold hover:underline transition-colors duration-200"
                               style={{ 
                                 color: getFinalUsernameColor(message.sender),
-                                fontSize: '14px',
-                                lineHeight: '1.35'
+                                fontSize: '15px',
+                                lineHeight: '1.3'
                               }}
                             >
                               {message.sender?.username || 'جاري التحميل...'}
                             </button>
-                            <span className="text-red-400" style={{ margin: '0 2px' }}>:</span>
+                            <span className="text-red-400" style={{ margin: '0 1px' }}>:</span>
                           </span>
                           <span className="mobile-text-flow message-content-fix system-message-content text-red-600">
                             {message.content}
@@ -651,13 +651,13 @@ export default function MessageArea({
                               className="font-semibold hover:underline transition-colors duration-200"
                               style={{ 
                                 color: getFinalUsernameColor(message.sender),
-                                fontSize: '14px',
-                                lineHeight: '1.35'
+                                fontSize: '15px',
+                                lineHeight: '1.3'
                               }}
                             >
                               {message.sender?.username || 'جاري التحميل...'}
                             </button>
-                            <span className="text-gray-400" style={{ margin: '0 2px' }}>:</span>
+                            <span className="text-gray-400" style={{ margin: '0 1px' }}>:</span>
                           </span>
                           {/* النص يكمل في نفس السطر ثم ينتقل للأسطر التالية */}
                           <span 
