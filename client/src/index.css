@@ -1592,6 +1592,9 @@ li > * > div.effect-crystal {
   text-align: start;
   direction: rtl;
   unicode-bidi: isolate;
+  /* إضافة padding-right للمحاذاة مع الاسم */
+  padding-right: 0;
+  margin-right: 0;
 }
 
 /* الاسم والسطر الأول - جنباً إلى جنب */
@@ -1602,6 +1605,8 @@ li > * > div.effect-crystal {
   line-height: 1.3;
   margin-left: 4px;
   white-space: nowrap;
+  /* تحديد عرض الاسم لحساب المحاذاة */
+  position: relative;
 }
 
 /* النص بعد الاسم - يكمل في نفس السطر ثم ينتقل للأسطر التالية */
@@ -1611,6 +1616,8 @@ li > * > div.effect-crystal {
   line-height: 1.3;
   word-spacing: -0.5px; /* تقليل المسافة بين الكلمات لتوفير مساحة */
   letter-spacing: -0.2px; /* تقليل المسافة بين الأحرف */
+  /* ضبط المحاذاة للأسطر التالية */
+  text-indent: 0;
 }
 
 /* حاوية الرسالة المحسنة للجوال */
@@ -1628,6 +1635,8 @@ li > * > div.effect-crystal {
     -webkit-box-orient: unset !important;
     overflow: visible !important;
     display: block !important;
+    /* إضافة hanging indent لجعل النص يبدأ تحت الاسم */
+    position: relative;
   }
   
   .mobile-message-optimized .line-clamp-4,
@@ -1643,6 +1652,100 @@ li > * > div.effect-crystal {
     width: 100%;
     max-width: 100%;
     box-sizing: border-box;
+    /* تحسين التخطيط للجوال - التأكد من أن النص يلتف بشكل صحيح */
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  /* منطقة المحتوى - تحسين التخطيط للجوال */
+  .mobile-message-container .flex-1 {
+    min-width: 0;
+    flex: 1;
+    position: relative;
+  }
+
+  /* حل مشكلة محاذاة النص - استخدام تقنية flexbox محسنة */
+  .mobile-message-container .mobile-message-optimized {
+    /* تخطيط بسيط مع تحكم في المحاذاة */
+    position: relative;
+    width: 100%;
+  }
+
+  /* تجميع الاسم والنص في حاوية واحدة - حل بسيط وموثوق */
+  .mobile-message-container .mobile-content-wrapper {
+    /* استخدام hanging indent بسيط */
+    text-indent: -80px; /* تراجع ثابت للأسطر التالية */
+    padding-right: 80px; /* تعويض التراجع */
+    line-height: 1.3;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    position: relative;
+  }
+
+  /* الاسم - سيظهر في المنطقة المحجوزة */
+  .mobile-message-container .mobile-name-inline {
+    display: inline;
+    margin-left: 4px;
+    white-space: nowrap;
+    font-weight: 600;
+    position: relative;
+  }
+
+  /* النص - سيتبع التخطيط الطبيعي مع التراجع */
+  .mobile-message-container .mobile-text-flow {
+    display: inline;
+    word-break: break-word;
+    overflow-wrap: break-word;
+  }
+
+  /* صف الميتا - منفصل عن النص الرئيسي */
+  .mobile-message-container .mobile-meta-row {
+    margin-top: 4px;
+    width: 100%;
+  }
+
+  /* تحسين تخطيط النص للجوال - تخطيط بسيط وموثوق */
+  .mobile-message-optimized {
+    /* إعداد التخطيط الأساسي */
+    display: block;
+    width: 100%;
+    position: relative;
+  }
+
+  /* تخطيط السطر الأول - الاسم والنص في نفس السطر */
+  .mobile-first-line {
+    display: block;
+    width: 100%;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+
+  /* تحسين محاذاة الاسم */
+  .mobile-name-inline {
+    display: inline;
+    margin-left: 4px;
+    margin-bottom: 0;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  /* تحسين تدفق النص - سيلتف بشكل طبيعي */
+  .mobile-text-flow {
+    display: inline;
+    word-break: break-word;
+    overflow-wrap: break-word;
+  }
+
+  /* إضافة تخطيط خاص للأسطر المتعددة */
+  .mobile-text-continuation {
+    display: block;
+    margin-right: 0;
+    padding-right: 0;
+    margin-top: 0;
+    line-height: 1.3;
+    word-break: break-word;
+    overflow-wrap: break-word;
   }
   
   /* ضبط المسافات بين الرسائل */
@@ -1663,6 +1766,7 @@ li > * > div.effect-crystal {
     align-items: center;
     gap: 8px;
     margin-top: 4px;
+    clear: both; /* التأكد من أنه يظهر تحت النص */
   }
   
   /* تحسين عرض أزرار اليوتيوب */

@@ -562,26 +562,29 @@ export default function MessageArea({
                       {/* Mobile run-in layout to fully utilize line width */}
                       {isMobile ? (
                         <div className="mobile-message-optimized">
-                          <span className="mobile-name-inline">
-                            {message.sender && (message.sender.userType as any) !== 'bot' && (
-                              <UserRoleBadge user={message.sender} showOnlyIcon={true} hideGuestAndGender={true} size={14} />
-                            )}
-                            <button
-                              onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
-                              className="font-semibold hover:underline transition-colors duration-200"
-                              style={{ 
-                                color: getFinalUsernameColor(message.sender),
-                                fontSize: '15px',
-                                lineHeight: '1.3'
-                              }}
-                            >
-                              {message.sender?.username || 'جاري التحميل...'}
-                            </button>
-                            <span className="text-red-400" style={{ margin: '0 1px' }}>:</span>
-                          </span>
-                          <span className="mobile-text-flow message-content-fix system-message-content text-red-600">
-                            {message.content}
-                          </span>
+                          {/* حاوية المحتوى مع hanging indent */}
+                          <div className="mobile-content-wrapper">
+                            <span className="mobile-name-inline">
+                              {message.sender && (message.sender.userType as any) !== 'bot' && (
+                                <UserRoleBadge user={message.sender} showOnlyIcon={true} hideGuestAndGender={true} size={14} />
+                              )}
+                              <button
+                                onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
+                                className="font-semibold hover:underline transition-colors duration-200"
+                                style={{ 
+                                  color: getFinalUsernameColor(message.sender),
+                                  fontSize: '15px',
+                                  lineHeight: '1.3'
+                                }}
+                              >
+                                {message.sender?.username || 'جاري التحميل...'}
+                              </button>
+                              <span className="text-red-400" style={{ margin: '0 1px' }}>:</span>
+                            </span>
+                            <span className="mobile-text-flow message-content-fix system-message-content text-red-600">
+                              {message.content}
+                            </span>
+                          </div>
                           <div className="mobile-meta-row">
                             <span className="text-xs text-red-500 whitespace-nowrap">
                               {formatTime(message.timestamp)}
@@ -641,33 +644,35 @@ export default function MessageArea({
                     <div className={`flex-1 min-w-0`}>
                       {isMobile ? (
                         <div className="mobile-message-optimized">
-                          {/* الاسم والسطر الأول inline */}
-                          <span className="mobile-name-inline">
-                            {message.sender && (message.sender.userType as any) !== 'bot' && (
-                              <UserRoleBadge user={message.sender} showOnlyIcon={true} hideGuestAndGender={true} size={14} />
-                            )}
-                            <button
-                              onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
-                              className="font-semibold hover:underline transition-colors duration-200"
-                              style={{ 
-                                color: getFinalUsernameColor(message.sender),
-                                fontSize: '15px',
-                                lineHeight: '1.3'
-                              }}
+                          {/* حاوية المحتوى مع hanging indent */}
+                          <div className="mobile-content-wrapper">
+                            {/* الاسم والسطر الأول inline */}
+                            <span className="mobile-name-inline">
+                              {message.sender && (message.sender.userType as any) !== 'bot' && (
+                                <UserRoleBadge user={message.sender} showOnlyIcon={true} hideGuestAndGender={true} size={14} />
+                              )}
+                              <button
+                                onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
+                                className="font-semibold hover:underline transition-colors duration-200"
+                                style={{ 
+                                  color: getFinalUsernameColor(message.sender),
+                                  fontSize: '15px',
+                                  lineHeight: '1.3'
+                                }}
+                              >
+                                {message.sender?.username || 'جاري التحميل...'}
+                              </button>
+                              <span className="text-gray-400" style={{ margin: '0 1px' }}>:</span>
+                            </span>
+                            {/* النص يكمل في نفس السطر ثم ينتقل للأسطر التالية */}
+                            <span 
+                              className="mobile-text-flow"
+                              style={
+                                currentUser && message.senderId === currentUser.id
+                                  ? { color: composerTextColor, fontWeight: composerBold ? 600 : undefined }
+                                  : { color: '#374151' }
+                              }
                             >
-                              {message.sender?.username || 'جاري التحميل...'}
-                            </button>
-                            <span className="text-gray-400" style={{ margin: '0 1px' }}>:</span>
-                          </span>
-                          {/* النص يكمل في نفس السطر ثم ينتقل للأسطر التالية */}
-                          <span 
-                            className="mobile-text-flow"
-                            style={
-                              currentUser && message.senderId === currentUser.id
-                                ? { color: composerTextColor, fontWeight: composerBold ? 600 : undefined }
-                                : { color: '#374151' }
-                            }
-                          >
                             {message.messageType === 'image' ? (
                               <img
                                 src={message.content}
@@ -714,7 +719,8 @@ export default function MessageArea({
                                 );
                               })()
                             )}
-                          </span>
+                            </span>
+                          </div>
                           {/* Mobile-only meta row: time + menu below content to free full width */}
                           <div className="mobile-meta-row">
                             <span className="text-xs text-gray-500 whitespace-nowrap">
