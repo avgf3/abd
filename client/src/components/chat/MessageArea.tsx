@@ -109,20 +109,7 @@ export default function MessageArea({
     src: null,
   });
 
-  // Track expanded messages on mobile (for toggling clamp)
-  const [expandedMessageIds, setExpandedMessageIds] = useState<Set<number>>(new Set());
-  const isMessageExpanded = useCallback(
-    (id: number) => expandedMessageIds.has(id),
-    [expandedMessageIds]
-  );
-  const toggleMessageExpanded = useCallback((id: number) => {
-    setExpandedMessageIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  }, []);
+  // Mobile message optimization - no more line clamping, full content display
 
   // Check if user is restricted from chatting
   const isChatRestricted = useMemo(() => {
@@ -554,7 +541,7 @@ export default function MessageArea({
             itemContent={(index, message) => (
               <div
                 key={message.id}
-                className={`flex ${isMobile ? 'items-start' : 'items-center'} gap-2 py-1.5 px-2 rounded-lg border-r-4 bg-white shadow-sm hover:shadow-md transition-all duration-300 room-message-pulse soft-entrance`}
+                className={`flex ${isMobile ? 'items-start mobile-message-container' : 'items-center'} gap-2 ${isMobile ? '' : 'py-1.5 px-2'} rounded-lg border-r-4 bg-white shadow-sm hover:shadow-md transition-all duration-300 room-message-pulse soft-entrance`}
                 style={{ borderRightColor: getDynamicBorderColor(message.sender) }}
                 data-message-type={message.messageType || 'normal'}
               >
@@ -620,26 +607,39 @@ export default function MessageArea({
                     {/* New horizontal layout on desktop, run-in on mobile */}
                     <div className={`flex-1 min-w-0`}>
                       {isMobile ? (
-                        <div className="runin-container">
-                          <div className="runin-name">
+                        <div className="mobile-message-optimized">
+                          {/* الاسم والسطر الأول inline */}
+                          <span className="mobile-name-inline">
                             {message.sender && (message.sender.userType as any) !== 'bot' && (
-                              <UserRoleBadge user={message.sender} showOnlyIcon={true} hideGuestAndGender={true} size={16} />
+                              <UserRoleBadge user={message.sender} showOnlyIcon={true} hideGuestAndGender={true} size={14} />
                             )}
                             <button
                               onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
-                              className="font-semibold hover:underline transition-colors duration-200 text-sm"
-                              style={{ color: getFinalUsernameColor(message.sender) }}
+                              className="font-semibold hover:underline transition-colors duration-200"
+                              style={{ 
+                                color: getFinalUsernameColor(message.sender),
+                                fontSize: '14px',
+                                lineHeight: '1.35'
+                              }}
                             >
                               {message.sender?.username || 'جاري التحميل...'}
                             </button>
-                            <span className="text-gray-400 mx-1">:</span>
-                          </div>
-                          <div className="runin-text text-gray-800 message-content-fix">
+                            <span className="text-gray-400" style={{ margin: '0 2px' }}>:</span>
+                          </span>
+                          {/* النص يكمل في نفس السطر ثم ينتقل للأسطر التالية */}
+                          <span 
+                            className="mobile-text-flow"
+                            style={
+                              currentUser && message.senderId === currentUser.id
+                                ? { color: composerTextColor, fontWeight: composerBold ? 600 : undefined }
+                                : { color: '#374151' }
+                            }
+                          >
                             {message.messageType === 'image' ? (
                               <img
                                 src={message.content}
                                 alt="صورة"
-                                className="max-h-7 rounded cursor-pointer"
+                                className="max-h-20 rounded cursor-pointer inline-block ml-2"
                                 loading="lazy"
                                 onLoad={() => {
                                   if (isAtBottom) {
@@ -654,52 +654,34 @@ export default function MessageArea({
                                 if (ids.length > 0) {
                                   const firstId = ids[0];
                                   return (
-                                    <span className={`flex items-start gap-2`} onClick={() => isMobile && toggleMessageExpanded(message.id)}>
-                                      {cleaned ? (
-                                        <span
-                                          className={`flex-1`}
-                                          style={
-                                            currentUser && message.senderId === currentUser.id
-                                              ? { color: composerTextColor, fontWeight: composerBold ? 600 : undefined }
-                                              : undefined
-                                          }
-                                        >
+                                    <>
+                                      {cleaned && (
+                                        <span>
                                           {renderMessageWithAnimatedEmojis(
                                             cleaned,
                                             (text) => renderMessageWithMentions(text, currentUser, onlineUsers)
                                           )}
                                         </span>
-                                      ) : null}
+                                      )}
                                       <button
                                         onClick={() => setYoutubeModal({ open: true, videoId: firstId })}
-                                        className="flex items-center justify-center w-8 h-6 rounded bg-red-600 hover:bg-red-700 transition-colors shrink-0"
+                                        className="inline-flex items-center justify-center w-6 h-5 rounded bg-red-600 hover:bg-red-700 transition-colors ml-1"
                                         title="فتح فيديو YouTube"
                                       >
-                                        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                                        <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
                                           <path fill="#fff" d="M10 15l5.19-3L10 9v6z"></path>
                                         </svg>
                                       </button>
-                                    </span>
+                                    </>
                                   );
                                 }
-                                return (
-                                  <span
-                                    onClick={() => isMobile && toggleMessageExpanded(message.id)}
-                                    style={
-                                      currentUser && message.senderId === currentUser.id
-                                        ? { color: composerTextColor, fontWeight: composerBold ? 600 : undefined }
-                                        : undefined
-                                    }
-                                  >
-                                    {renderMessageWithAnimatedEmojis(
-                                      message.content,
-                                      (text) => renderMessageWithMentions(text, currentUser, onlineUsers)
-                                    )}
-                                  </span>
+                                return renderMessageWithAnimatedEmojis(
+                                  message.content,
+                                  (text) => renderMessageWithMentions(text, currentUser, onlineUsers)
                                 );
                               })()
                             )}
-                          </div>
+                          </span>
                         </div>
                       ) : (
                         <div className="flex items-start gap-2">
@@ -739,10 +721,10 @@ export default function MessageArea({
                                 if (ids.length > 0) {
                                   const firstId = ids[0];
                                   return (
-                                    <span className={`${isMobile ? 'line-clamp-4' : 'line-clamp-2'} ${!isMobile ? 'text-breathe' : ''} flex items-start gap-2`} onClick={() => isMobile && toggleMessageExpanded(message.id)}>
+                                    <span className={`${!isMobile ? 'text-breathe' : ''} flex items-start gap-2`}>
                                       {cleaned ? (
                                         <span
-                                          className={`${isMobile ? 'line-clamp-4' : 'line-clamp-2'} flex-1`}
+                                          className="flex-1"
                                           style={
                                             currentUser && message.senderId === currentUser.id
                                               ? { color: composerTextColor, fontWeight: composerBold ? 600 : undefined }
@@ -769,8 +751,7 @@ export default function MessageArea({
                                 }
                                 return (
                                   <span
-                                    className={`${isMobile ? 'line-clamp-4' : 'line-clamp-2 text-breathe'}`}
-                                    onClick={() => isMobile && toggleMessageExpanded(message.id)}
+                                    className={`${!isMobile ? 'text-breathe' : ''}`}
                                     style={
                                       currentUser && message.senderId === currentUser.id
                                         ? { color: composerTextColor, fontWeight: composerBold ? 600 : undefined }
