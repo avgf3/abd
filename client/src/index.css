@@ -1589,7 +1589,7 @@ li > * > div.effect-crystal {
   word-break: break-word;
   overflow-wrap: break-word;
   hyphens: auto;
-  text-align: justify;
+  text-align: start;
   direction: rtl;
   unicode-bidi: isolate;
 }
@@ -2554,6 +2554,21 @@ li::before {
   .mobile-message-area .message-content {
     word-break: break-word;
     overflow-wrap: break-word;
+  }
+
+  /* Disable moving animations in the message list on mobile */
+  .mobile-message-area .room-message-pulse,
+  .mobile-message-area .text-breathe,
+  .mobile-message-area .soft-entrance {
+    animation: none !important;
+  }
+
+  /* Remove clamps for system messages on mobile */
+  .mobile-message-area [data-message-type="system"] .line-clamp-2 {
+    -webkit-line-clamp: unset !important;
+    -webkit-box-orient: unset !important;
+    overflow: visible !important;
+    display: inline !important;
   }
   
   /* تحسين إدخال الرسائل للجوال */
