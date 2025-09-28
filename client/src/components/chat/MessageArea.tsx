@@ -729,7 +729,7 @@ export default function MessageArea({
                     <div className={`flex-1 min-w-0`}>
                       {isMobile ? (
                         <div className="runin-container">
-                          <div className="runin-name">
+                          <span className="runin-name">
                             {message.sender && (message.sender.userType as any) !== 'bot' && (
                               <UserRoleBadge user={message.sender} showOnlyIcon={true} hideGuestAndGender={true} size={16} />
                             )}
@@ -741,8 +741,8 @@ export default function MessageArea({
                               {message.sender?.username || 'جاري التحميل...'}
                             </button>
                             <span className="text-gray-400 mx-1">:</span>
-                          </div>
-                          <div className="runin-text text-gray-800 message-content-fix">
+                          </span>
+                          <span className="runin-text text-gray-800 message-content-fix">
                             {message.messageType === 'image' ? (
                               <img
                                 src={message.content}
@@ -807,7 +807,7 @@ export default function MessageArea({
                                 );
                               })()
                             )}
-                          </div>
+                          </span>
                         </div>
                       ) : (
                         <div className="flex items-start gap-2">
