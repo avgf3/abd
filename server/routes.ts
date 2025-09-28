@@ -3700,6 +3700,136 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update user profile (parameterized) - يفرض التحقق عبر :userId في المسار
+  app.post('/api/users/:userId/update-profile', protect.ownership, async (req, res) => {
+    try {
+      const userIdParam = req.params.userId;
+      const userIdNum = parseInt(String(userIdParam));
+
+      if (!userIdParam || isNaN(userIdNum)) {
+        console.error('❌ معرف المستخدم غير صالح في المسار:', userIdParam);
+        return res.status(400).json({
+          error: 'معرف المستخدم في المسار غير صالح',
+          received: { userIdParam },
+        });
+      }
+
+      const updates = { ...(req.body || {}) } as any;
+
+      const user = await storage.getUser(userIdNum);
+      if (!user) {
+        console.error('❌ المستخدم غير موجود:', userIdNum);
+        return res.status(404).json({ error: 'المستخدم غير موجود' });
+      }
+
+      // التحقق من صحة البيانات المُدخلة
+      const validatedUpdates: any = {};
+
+      if (updates.username !== undefined) {
+        if (typeof updates.username !== 'string' || updates.username.trim().length === 0) {
+          return res.status(400).json({ error: 'اسم المستخدم يجب أن يكون نص غير فارغ' });
+        }
+        const uname = updates.username.trim();
+        if (uname.length > 14) {
+          return res.status(400).json({ error: 'اسم المستخدم يجب ألا يتجاوز 14 حرف' });
+        }
+        validatedUpdates.username = uname;
+      }
+
+      if (updates.status !== undefined) {
+        if (typeof updates.status !== 'string') {
+          return res.status(400).json({ error: 'الحالة يجب أن تكون نص' });
+        }
+        validatedUpdates.status = String(updates.status || '').trim();
+      }
+
+      if (updates.gender !== undefined) {
+        const validGenders = ['ذكر', 'أنثى', ''];
+        if (!validGenders.includes(updates.gender)) {
+          return res.status(400).json({
+            error: 'الجنس يجب أن يكون "ذكر" أو "أنثى"',
+            received: updates.gender,
+            valid: validGenders,
+          });
+        }
+        validatedUpdates.gender = updates.gender;
+      }
+
+      if (updates.country !== undefined) {
+        if (typeof updates.country !== 'string') {
+          return res.status(400).json({ error: 'البلد يجب أن يكون نص' });
+        }
+        validatedUpdates.country = updates.country.trim();
+      }
+
+      if (updates.age !== undefined) {
+        let age;
+        if (typeof updates.age === 'string') {
+          age = parseInt(updates.age);
+        } else if (typeof updates.age === 'number') {
+          age = updates.age;
+        } else {
+          return res.status(400).json({
+            error: 'العمر يجب أن يكون رقم',
+            received: { age: updates.age, type: typeof updates.age },
+          });
+        }
+        if (isNaN(age) || age < 18 || age > 120) {
+          return res.status(400).json({ error: 'العمر يجب أن يكون رقم بين 18 و 120', received: age });
+        }
+        validatedUpdates.age = age;
+      }
+
+      if (updates.relation !== undefined) {
+        if (typeof updates.relation !== 'string') {
+          return res.status(400).json({ error: 'الحالة الاجتماعية يجب أن تكون نص' });
+        }
+        validatedUpdates.relation = updates.relation.trim();
+      }
+
+      // دعم حقول موسيقى البروفايل
+      if (updates.profileMusicUrl !== undefined) {
+        return res.status(400).json({ error: 'غير مسموح بتحديث رابط الموسيقى يدوياً. استخدم رفع الملف.' });
+      }
+      if (updates.profileMusicTitle !== undefined) {
+        if (typeof updates.profileMusicTitle !== 'string' || updates.profileMusicTitle.length > 200) {
+          return res.status(400).json({ error: 'عنوان الموسيقى غير صالح' });
+        }
+        validatedUpdates.profileMusicTitle = updates.profileMusicTitle.trim();
+      }
+      if (updates.profileMusicEnabled !== undefined) {
+        validatedUpdates.profileMusicEnabled = Boolean(updates.profileMusicEnabled);
+      }
+      if (updates.profileMusicVolume !== undefined) {
+        let vol = parseInt(String(updates.profileMusicVolume));
+        if (!Number.isFinite(vol)) vol = 70;
+        validatedUpdates.profileMusicVolume = Math.max(0, Math.min(100, vol));
+      }
+
+      // تحديث البيانات
+      const updatedUser = await storage.updateUser(userIdNum, validatedUpdates);
+      if (!updatedUser) {
+        console.error('❌ فشل في تحديث قاعدة البيانات');
+        return res.status(500).json({ error: 'فشل في تحديث البيانات في قاعدة البيانات' });
+      }
+
+      // بث التحديث
+      try {
+        const sanitizedUser = sanitizeUserData(updatedUser);
+        emitUserUpdatedToUser(userIdNum, sanitizedUser);
+        emitUserUpdatedToAll(sanitizedUser);
+        console.log(`✅ تم بث تحديث البروفايل للمستخدم ${userIdNum}`);
+      } catch (broadcastErr) {
+        console.error('❌ خطأ في بث تحديث البروفايل:', broadcastErr);
+      }
+
+      res.json({ success: true, message: 'تم تحديث البروفايل بنجاح', user: updatedUser });
+    } catch (error) {
+      console.error('❌ خطأ في تحديث البروفايل (param):', error);
+      res.status(500).json({ error: 'خطأ في الخادم', details: error instanceof Error ? error.message : 'خطأ غير معروف' });
+    }
+  });
+
   // Get user by ID - للحصول على بيانات المستخدم
   app.get('/api/users/:id', async (req, res) => {
     try {

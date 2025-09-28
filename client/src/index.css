@@ -1589,18 +1589,19 @@ li > * > div.effect-crystal {
 
 .runin-name {
   display: inline-flex;
-  align-items: center;
+  align-items: baseline; /* baseline alignment to avoid extra gap after first line */
   gap: 0.25rem;
   white-space: nowrap;
-  line-height: 1.6;
+  line-height: 1.4;
 }
 
 .runin-text {
-  display: block;
+  display: inline; /* start inline with the name, wraps to next lines */
   text-align: start;
   word-break: break-word;
   overflow-wrap: anywhere;
   white-space: pre-wrap;
+  line-height: 1.4;
 }
 
 /* تطبيق تأثير run-in محسّن للجوال */
@@ -1609,13 +1610,15 @@ li > * > div.effect-crystal {
     position: relative;
   }
   .runin-name {
-    display: inline;        /* الاسم inline في السطر الأول */
-    margin-left: 0.25rem;   /* مسافة صغيرة بعد الاسم */
+    display: inline-flex;     /* keep badge + name aligned */
+    align-items: baseline;
+    margin-left: 0.25rem;
+    line-height: 1.4;
   }
   .runin-text {
-    display: inline;        /* النص يبدأ inline في نفس السطر */
-    text-align: justify;    /* النص موزع بانتظام */
-    line-height: 1.6;
+    display: inline;
+    text-align: start;
+    line-height: 1.4;
   }
 }
 

@@ -85,6 +85,7 @@ export default function ProfileModal({
           audioRef.current.pause();
           audioRef.current.currentTime = 0;
           audioRef.current.src = '';
+          try { audioRef.current.load(); } catch {}
         }
       } else {
         // تنظيف كامل عند الإغلاق
@@ -104,6 +105,7 @@ export default function ProfileModal({
           audioRef.current.pause();
           audioRef.current.currentTime = 0;
           audioRef.current.src = '';
+          try { audioRef.current.load(); } catch {}
         }
       }
     } else if (user && localUser) {
@@ -390,6 +392,7 @@ export default function ProfileModal({
               document.removeEventListener('touchstart', handleUserInteraction);
             };
             
+            ;(window as any).__arbyaProfileMusicTryPlay__ = handleUserInteraction;
             document.addEventListener('click', handleUserInteraction, { once: true });
             document.addEventListener('touchstart', handleUserInteraction, { once: true });
           }
@@ -466,6 +469,25 @@ export default function ProfileModal({
       audio.removeEventListener('ended', handleEnded);
     };
   }, [localUser?.profileMusicUrl]);
+
+  // Cleanup audio reliably on unmount/close
+  useEffect(() => {
+    return () => {
+      try {
+        if (audioRef.current) {
+          audioRef.current.pause();
+          audioRef.current.currentTime = 0;
+          audioRef.current.src = '';
+          try { audioRef.current.load(); } catch {}
+        }
+      } finally {
+        audioRef.current = null;
+        // Remove any document listeners that might have been added for autoplay retry
+        try { document.removeEventListener('click', (window as any).__arbyaProfileMusicTryPlay__); } catch {}
+        try { document.removeEventListener('touchstart', (window as any).__arbyaProfileMusicTryPlay__); } catch {}
+      }
+    };
+  }, []);
   
 
   // تحديث الحالة المحلية عند تغيير المستخدم مع الحفاظ على التحديثات المحلية
@@ -1373,9 +1395,9 @@ export default function ProfileModal({
           fieldName = 'relation';
           break;
       }
-      const response = await apiRequest('/api/users/update-profile', {
+      const response = await apiRequest(`/api/users/${currentUser?.id}/update-profile`, {
         method: 'POST',
-        body: { userId: currentUser?.id, [fieldName]: editValue },
+        body: { [fieldName]: editValue },
       });
       if ((response as any).success) {
         if (currentUser?.id) {
