@@ -2622,7 +2622,7 @@ li::before {
     line-height: 1.4 !important;
     margin: 0 !important;
     padding: 0 !important;
-    display: contents !important; /* استخدام contents لإزالة الحاوي من التخطيط */
+    display: block !important; /* تغيير من contents إلى block لإزالة الفراغ */
     font-size: inherit !important;
   }
   
@@ -2635,6 +2635,7 @@ li::before {
     font-size: inherit !important;
     margin-left: 0.25rem !important;
     white-space: nowrap !important; /* منع التفاف الاسم */
+    margin-bottom: 0 !important; /* منع أي هامش سفلي */
   }
   
   .mobile-message-area .runin-text {
@@ -2645,6 +2646,7 @@ li::before {
     display: inline !important;
     font-size: inherit !important;
     white-space: pre-wrap !important; /* السماح بفواصل الأسطر الطبيعية فقط */
+    margin-top: 0 !important; /* منع أي هامش علوي */
   }
 
   /* إصلاح الأيقونات والشارات داخل الرسائل */
