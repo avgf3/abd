@@ -1610,14 +1610,33 @@ li > * > div.effect-crystal {
     line-height: 1.6; /* توحيد line-height للحاوي الكامل */
   }
   .runin-name {
-    display: inline;        /* الاسم inline في السطر الأول */
-    margin-left: 0.25rem;   /* مسافة صغيرة بعد الاسم */
-    line-height: inherit;   /* وراثة line-height من الحاوي */
+    display: inline;              /* الاسم inline في السطر الأول */
+    margin-left: 0.25rem;         /* مسافة صغيرة بعد الاسم */
+    line-height: inherit;         /* وراثة line-height من الحاوي */
+    vertical-align: baseline;     /* تثبيت المحاذاة */
   }
   .runin-text {
-    display: inline;        /* النص يبدأ inline في نفس السطر */
-    text-align: justify;    /* النص موزع بانتظام */
-    line-height: inherit;   /* وراثة line-height من الحاوي */
+    display: inline;              /* النص يبدأ inline في نفس السطر */
+    text-align: justify;          /* النص موزع بانتظام */
+    line-height: inherit;         /* وراثة line-height من الحاوي */
+  }
+
+  /* إصلاح فراغ السطر الأول على الهاتف: قياس الأيقونات داخل الاسم إلى 1em
+     ومنع inline-flex من تكبير line-box للسطر الأول */
+  .runin-container .runin-name span.inline-flex {
+    display: inline-block !important;
+    line-height: 1 !important;
+    height: 1em !important;
+    vertical-align: -0.15em !important;
+  }
+  .runin-container .runin-name img,
+  .runin-container .runin-name svg,
+  .runin-container .runin-name .emoji {
+    display: inline-block;
+    height: 1em !important;
+    width: auto !important;
+    line-height: 1 !important;
+    vertical-align: -0.15em !important;
   }
 }
 
