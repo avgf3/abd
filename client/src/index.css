@@ -61,7 +61,7 @@
   min-width: 0;
   word-break: break-word;
   overflow-wrap: anywhere;
-  white-space: pre-wrap;
+  white-space: normal;
 }
 
 /* تحسينات للجوال */
@@ -1601,7 +1601,7 @@ li > * > div.effect-crystal {
   text-align: start;
   word-break: break-word;
   overflow-wrap: anywhere;
-  white-space: pre-wrap;
+  white-space: normal;
 }
 
 /* تطبيق تأثير run-in محسّن للجوال - إصلاح التباعد */
