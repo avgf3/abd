@@ -1578,44 +1578,94 @@ li > * > div.effect-crystal {
   }
 }
 
-/* === محاذاة الرسائل الجديدة: الاسم في السطر الأول، النص تحته مباشرة === */
-/* ========== LEGACY RUNIN STYLES - UPDATED FOR MOBILE FLOAT RUN-IN ========== */
+/* ===== MOBILE MESSAGE LAYOUT - OPTIMIZED FOR 192 CHARS IN 4.5 LINES ===== */
 
-/* أسلوب run-in للجوال: الاسم يظهر في السطر الأول فقط، وبقية الأسطر تمتد بكامل العرض */
-.runin-container {
+/* نظام الرسائل المحسن للجوال - 192 حرف في 4.5 أسطر */
+.mobile-message-optimized {
   display: block;
   width: 100%;
-}
-
-.runin-name {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  white-space: nowrap;
-  line-height: 1.6;
-}
-
-.runin-text {
-  display: block;
-  text-align: start;
+  font-size: 15px !important;
+  line-height: 1.35 !important; /* مضغوط للاستغلال الأمثل */
   word-break: break-word;
-  overflow-wrap: anywhere;
-  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  hyphens: auto;
+  text-align: justify;
+  direction: rtl;
+  unicode-bidi: isolate;
 }
 
-/* تطبيق تأثير run-in محسّن للجوال */
+/* الاسم والسطر الأول - جنباً إلى جنب */
+.mobile-name-inline {
+  display: inline;
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 1.35;
+  margin-left: 4px;
+  white-space: nowrap;
+}
+
+/* النص بعد الاسم - يكمل في نفس السطر ثم ينتقل للأسطر التالية */
+.mobile-text-flow {
+  display: inline;
+  font-size: 15px;
+  line-height: 1.35;
+  word-spacing: -0.5px; /* تقليل المسافة بين الكلمات لتوفير مساحة */
+  letter-spacing: -0.2px; /* تقليل المسافة بين الأحرف */
+}
+
+/* حاوية الرسالة المحسنة للجوال */
+.mobile-message-container {
+  padding: 8px 12px;
+  margin: 4px 8px;
+  line-height: 1.35;
+  max-height: none; /* إزالة أي قيود على الارتفاع */
+}
+
+/* إزالة كل قيود line-clamp للجوال */
 @media (max-width: 768px) {
-  .runin-container {
-    position: relative;
+  .mobile-message-optimized {
+    -webkit-line-clamp: unset !important;
+    -webkit-box-orient: unset !important;
+    overflow: visible !important;
+    display: block !important;
   }
-  .runin-name {
-    display: inline;        /* الاسم inline في السطر الأول */
-    margin-left: 0.25rem;   /* مسافة صغيرة بعد الاسم */
+  
+  .mobile-message-optimized .line-clamp-4,
+  .mobile-message-optimized .line-clamp-2 {
+    -webkit-line-clamp: unset !important;
+    -webkit-box-orient: unset !important;
+    overflow: visible !important;
+    display: inline !important;
   }
-  .runin-text {
-    display: inline;        /* النص يبدأ inline في نفس السطر */
-    text-align: justify;    /* النص موزع بانتظام */
-    line-height: 1.6;
+
+  /* تحسين الاستغلال الأمثل للمساحة */
+  .mobile-message-container {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+  
+  /* ضبط المسافات بين الرسائل */
+  .mobile-message-container + .mobile-message-container {
+    margin-top: 2px;
+  }
+  
+  /* تحسين عرض الصور في الرسائل */
+  .mobile-message-optimized img {
+    max-width: 100%;
+    height: auto;
+    vertical-align: middle;
+  }
+  
+  /* تحسين عرض أزرار اليوتيوب */
+  .mobile-message-optimized button {
+    vertical-align: middle;
+    flex-shrink: 0;
+  }
+  
+  /* ضمان عدم كسر التخطيط */
+  .mobile-message-optimized * {
+    box-sizing: border-box;
   }
 }
 
