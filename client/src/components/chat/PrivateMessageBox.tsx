@@ -56,9 +56,11 @@ export default function PrivateMessageBox({
   const [isLoadingOlder, setIsLoadingOlder] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [isTyping, setIsTyping] = useState(false);
   const virtuosoRef = useRef<VirtuosoHandle>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const typingTimeoutRef = useRef<NodeJS.Timeout>();
   const { textColor: composerTextColor, bold: composerBold } = useComposerStyle();
   const isDmClosed = (user as any)?.dmPrivacy === 'none';
 
@@ -67,6 +69,24 @@ export default function PrivateMessageBox({
       onViewProfile && onViewProfile(user);
     } catch {}
   }, [onViewProfile, user]);
+
+  // معالج الكتابة للدردشة الخاصة
+  const handleTyping = useCallback(() => {
+    if (!isTyping) {
+      setIsTyping(true);
+      // يمكن إضافة إرسال إشعار الكتابة للطرف الآخر هنا إذا لزم الأمر
+    }
+    
+    // إعادة تعيين المؤقت
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+    
+    // توقف عن الكتابة بعد 3 ثوان من عدم النشاط
+    typingTimeoutRef.current = setTimeout(() => {
+      setIsTyping(false);
+    }, 3000);
+  }, [isTyping]);
 
   // YouTube modal state
   const [youtubeModal, setYoutubeModal] = useState<{ open: boolean; videoId: string | null }>(
@@ -216,6 +236,12 @@ export default function PrivateMessageBox({
     const hasImage = !!imageFile;
     if (!hasText && !hasImage) return;
 
+    // إيقاف مؤشر الكتابة فوراً
+    setIsTyping(false);
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+
     // لا نحجب الواجهة أثناء الإرسال لتحسين الشعور بالاستجابة
     setIsSending(true);
     setSendError(null);
@@ -313,6 +339,15 @@ export default function PrivateMessageBox({
       setIsLoadingOlder(false);
     }
   }, [isLoadingOlder, hasMore, onLoadMore]);
+
+  // تنظيف المؤقتات عند إغلاق النافذة
+  useEffect(() => {
+    return () => {
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // لون الحد والقص باستخدام دوال موحدة
 
@@ -584,6 +619,12 @@ export default function PrivateMessageBox({
               </div>
             ) : (
               <>
+                {/* مؤشر الكتابة للدردشة الخاصة */}
+                {isTyping && (
+                  <div className="mb-2 text-xs text-gray-500 animate-pulse">
+                    يكتب...
+                  </div>
+                )}
                 <div className="flex gap-3 items-end">
                   {/* زر اختيار الصورة */}
                   <input
@@ -607,7 +648,10 @@ export default function PrivateMessageBox({
                   <Input
                     ref={inputRef}
                     value={messageText}
-                    onChange={(e) => setMessageText(clampToMaxChars(e.target.value))}
+                    onChange={(e) => {
+                      setMessageText(clampToMaxChars(e.target.value));
+                      handleTyping(); // تفعيل مؤشر الكتابة
+                    }}
                     onKeyDown={handleKeyDown}
                     onPaste={handlePaste}
                     placeholder="اكتب رسالتك هنا..."
