@@ -1230,12 +1230,7 @@ export default function MessageArea({
           )}
         </div>
 
-        {/* Character Counter */}
-        {messageText.length > 0 && (
-          <div className="mt-1 text-[11px] text-gray-500 text-left">
-            {messageText.length}/{MAX_CHARS} حرف
-          </div>
-        )}
+        {/* Character Counter - تم إخفاء العرض مع الاحتفاظ بالوظيفة */}
       </div>
     </section>
   );
