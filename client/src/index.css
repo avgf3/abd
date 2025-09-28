@@ -1608,46 +1608,72 @@ li > * > div.effect-crystal {
 @media (max-width: 768px) {
   .runin-container {
     position: relative;
-    line-height: 1.4;       /* line-height طبيعي ومتسق */
+    line-height: 1.4 !important;       /* line-height طبيعي ومتسق */
     display: block;
     width: 100%;
-    margin: 0;
-    padding: 0;
+    margin: 0 !important;
+    padding: 0 !important;
+    font-size: inherit;
   }
   .runin-name {
-    display: inline;        /* الاسم inline في السطر الأول */
-    margin-left: 0.25rem;   /* مسافة صغيرة بعد الاسم */
-    line-height: inherit;   /* وراثة line-height من الحاوي */
-    vertical-align: baseline; /* محاذاة خط الأساس */
-    margin-top: 0;
-    margin-bottom: 0;
-    padding: 0;
+    display: inline !important;        /* الاسم inline في السطر الأول */
+    margin-left: 0.25rem !important;   /* مسافة صغيرة بعد الاسم */
+    line-height: 1.4 !important;   /* line-height ثابت ومتسق */
+    vertical-align: baseline !important; /* محاذاة خط الأساس */
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    margin-right: 0 !important;
+    padding: 0 !important;
+    font-size: inherit;
   }
   .runin-text {
-    display: inline;        /* النص يبدأ inline في نفس السطر */
+    display: inline !important;        /* النص يبدأ inline في نفس السطر */
     text-align: start;      /* محاذاة طبيعية */
-    line-height: inherit;   /* وراثة line-height من الحاوي */
-    vertical-align: baseline; /* محاذاة خط الأساس */
-    margin: 0;              /* إزالة أي هوامش */
-    padding: 0;             /* إزالة أي حشو */
+    line-height: 1.4 !important;   /* line-height ثابت ومتسق */
+    vertical-align: baseline !important; /* محاذاة خط الأساس */
+    margin: 0 !important;              /* إزالة أي هوامش */
+    padding: 0 !important;             /* إزالة أي حشو */
+    font-size: inherit;
   }
 }
 
 /* إصلاح فراغ السطر الأول: تطبيع ارتفاع أيقونة الشارة داخل الاسم إلى 1em */
 .runin-name img,
 .runin-name svg {
-  height: 0.9em !important;       /* أصغر قليلاً من النص لتقليل التأثير على line-height */
-  max-height: 0.9em !important;
+  height: 0.8em !important;       /* أصغر من النص لتقليل التأثير على line-height */
+  max-height: 0.8em !important;
   width: auto !important;
-  vertical-align: -0.05em;        /* تقليل هبوط خط الأساس */
+  vertical-align: -0.1em !important;        /* تقليل هبوط خط الأساس */
+  margin: 0 !important;
+  padding: 0 !important;
+  line-height: 1 !important;
 }
 
 /* منع حاوية الشارة inline-flex من تكبير line-box */
 .runin-name .inline-flex {
-  line-height: 1;                 /* صندوق الأيقونة بارتفاع محكم */
-  vertical-align: baseline;       /* محاذاة خط الأساس */
-  display: inline-flex;
+  line-height: 1 !important;                 /* صندوق الأيقونة بارتفاع محكم */
+  vertical-align: baseline !important;       /* محاذاة خط الأساس */
+  display: inline-flex !important;
   align-items: center;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* إصلاح إضافي للجوال - منع أي عناصر من كسر التدفق */
+@media (max-width: 768px) {
+  .runin-name * {
+    line-height: 1.4 !important;
+    vertical-align: baseline !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+  }
+  
+  .runin-text * {
+    line-height: 1.4 !important;
+    vertical-align: baseline !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+  }
 }
 
 /* ========== MODERN ADVANCED DESIGN SYSTEM ========== */
@@ -2596,7 +2622,7 @@ li::before {
     line-height: 1.4 !important;
     margin: 0 !important;
     padding: 0 !important;
-    display: block !important;
+    display: contents !important; /* استخدام contents لإزالة الحاوي من التخطيط */
     font-size: inherit !important;
   }
   
@@ -2608,6 +2634,7 @@ li::before {
     display: inline !important;
     font-size: inherit !important;
     margin-left: 0.25rem !important;
+    white-space: nowrap !important; /* منع التفاف الاسم */
   }
   
   .mobile-message-area .runin-text {
@@ -2617,17 +2644,19 @@ li::before {
     vertical-align: baseline !important;
     display: inline !important;
     font-size: inherit !important;
+    white-space: pre-wrap !important; /* السماح بفواصل الأسطر الطبيعية فقط */
   }
 
   /* إصلاح الأيقونات والشارات داخل الرسائل */
   .mobile-message-area .runin-name img,
   .mobile-message-area .runin-name svg {
-    height: 0.9em !important;
-    max-height: 0.9em !important;
-    vertical-align: -0.05em !important;
+    height: 0.8em !important;
+    max-height: 0.8em !important;
+    vertical-align: -0.1em !important;
     margin: 0 !important;
     padding: 0 !important;
     display: inline !important;
+    line-height: 1 !important;
   }
 
   /* إصلاح مشكلة التباعد الإضافي بين السطور على الهاتف */
@@ -2652,5 +2681,26 @@ li::before {
   .mobile-message-area .runin-name br,
   .mobile-message-area .runin-text br {
     display: none !important;
+  }
+  
+  /* التأكد من عدم وجود مسافات إضافية في العناصر الفرعية */
+  .mobile-message-area .runin-container > * {
+    margin: 0 !important;
+    padding: 0 !important;
+    line-height: inherit !important;
+    vertical-align: baseline !important;
+  }
+  
+  /* إزالة أي تباعد قد يسببه flex أو grid في العناصر الأبوية */
+  .mobile-message-area .runin-container {
+    gap: 0 !important;
+    white-space: normal !important;
+  }
+  
+  /* التأكد من أن الحاوي الأبوي للرسالة لا يسبب مسافات إضافية */
+  .mobile-message-area .flex-1.min-w-0 {
+    line-height: 1.4 !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
 }
