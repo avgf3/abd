@@ -578,7 +578,7 @@ export default function MessageArea({
 
                         {/* Content section - flexible width */}
                         <div className={`flex-1 min-w-0 text-red-600 break-words message-content-fix ${isMobile ? 'system-message-content' : ''}`}>
-                          <span className="line-clamp-2">
+                          <span className={isMobile ? '' : 'line-clamp-2'}>
                             {message.content}
                           </span>
                         </div>
