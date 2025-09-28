@@ -1656,6 +1656,14 @@ li > * > div.effect-crystal {
     height: auto;
     vertical-align: middle;
   }
+
+  /* صف ميتا تحت النص لتوسيع عرض السطر الأول بالكامل */
+  .mobile-meta-row {
+    display: flex !important;
+    align-items: center;
+    gap: 8px;
+    margin-top: 4px;
+  }
   
   /* تحسين عرض أزرار اليوتيوب */
   .mobile-message-optimized button {
