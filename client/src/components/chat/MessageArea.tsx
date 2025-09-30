@@ -77,64 +77,11 @@ export default function MessageArea({
   const [showLottieEmoji, setShowLottieEmoji] = useState(false);
   const [showEnhancedEmoji, setShowEnhancedEmoji] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
-  const [isMultiLine, setIsMultiLine] = useState(false);
   const isMobile = useIsMobile();
   const { textColor: composerTextColor, bold: composerBold } = useComposerStyle();
   // حد أقصى لعدد الأحرف في الكتابة (سطح المكتب والهاتف)
   const MAX_CHARS = 192;
-  // الحد الأقصى لأسطر الإدخال: 4 على الهاتف، و 2 على الويب (لأغراض الارتفاع فقط)
-  const MAX_LINES = isMobile ? 4 : 2;
   const clampToMaxChars = useCallback((text: string) => (text.length > MAX_CHARS ? text.slice(0, MAX_CHARS) : text), [MAX_CHARS]);
-  // Helper: فحص تجاوز سطرين بصريًا (مع احتساب الالتفاف)
-  const wouldExceedTwoLines = useCallback(
-    (el: HTMLTextAreaElement | null, nextValue: string): boolean => {
-      if (!el) return false;
-      const previousValue = el.value;
-      const previousHeight = el.style.height;
-      try {
-        el.value = nextValue;
-        el.style.height = 'auto';
-        const computed = window.getComputedStyle(el);
-        const parsedLineHeight = parseFloat(computed.lineHeight || '');
-        const fontSize = parseFloat(computed.fontSize || '16');
-        const lineHeight = Number.isFinite(parsedLineHeight) && parsedLineHeight > 0
-          ? parsedLineHeight
-          : (Number.isFinite(fontSize) && fontSize > 0 ? fontSize * 1.4 : 20);
-        const paddingTop = parseFloat(computed.paddingTop || '0') || 0;
-        const paddingBottom = parseFloat(computed.paddingBottom || '0') || 0;
-        const allowedHeight = lineHeight * MAX_LINES + paddingTop + paddingBottom;
-        const scrollH = el.scrollHeight; // includes padding
-        return scrollH > Math.ceil(allowedHeight + 1);
-      } catch {
-        return false;
-      } finally {
-        el.value = previousValue;
-        el.style.height = previousHeight;
-      }
-    },
-    [MAX_LINES]
-  );
-
-  // ضبط ارتفاع حقل الإدخال تلقائياً عند تعدد الأسطر (حتى الحد الأقصى)
-  const autoResizeTextarea = useCallback((el: HTMLTextAreaElement | null) => {
-    if (!el) return;
-    try {
-      el.style.height = 'auto';
-      const computed = window.getComputedStyle(el);
-      const parsedLineHeight = parseFloat(computed.lineHeight || '');
-      const fontSize = parseFloat(computed.fontSize || '16');
-      const lineHeight = Number.isFinite(parsedLineHeight) && parsedLineHeight > 0
-        ? parsedLineHeight
-        : (Number.isFinite(fontSize) && fontSize > 0 ? fontSize * 1.4 : 20);
-      const paddingTop = parseFloat(computed.paddingTop || '0') || 0;
-      const paddingBottom = parseFloat(computed.paddingBottom || '0') || 0;
-      const maxAllowed = lineHeight * MAX_LINES + paddingTop + paddingBottom;
-      const nextHeight = Math.min(el.scrollHeight, Math.ceil(maxAllowed + 1));
-      el.style.height = `${nextHeight}px`;
-    } catch {
-      // ignore
-    }
-  }, [MAX_LINES]);
 
 
   // Refs
@@ -142,7 +89,7 @@ export default function MessageArea({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
   const lastTypingTime = useRef<number>(0);
-  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const virtuosoRef = useRef<VirtuosoHandle>(null);
   const prevMessagesLenRef = useRef<number>(0);
 
@@ -401,22 +348,18 @@ export default function MessageArea({
       // إرسال الرسالة
       onSendMessage(trimmedMessage);
       setMessageText('');
-      setIsMultiLine(false);
 
       // Focus back to input
       inputRef.current?.focus();
     }
   }, [messageText, currentUser, onSendMessage]);
 
-  // Key press handler - إرسال بالـ Enter وترك Shift+Enter لسطور جديدة (المحدد بالأحرف فقط)
+  // Key press handler - إرسال بالـ Enter
   const handleKeyPress = useCallback(
-    (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-      if (e.key === 'Enter') {
-        if (!e.shiftKey) {
-          e.preventDefault();
-          handleSendMessage();
-          return;
-        }
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        handleSendMessage();
       } else {
         // إرسال إشعار الكتابة فقط عند الكتابة الفعلية
         handleTypingThrottled();
@@ -426,14 +369,13 @@ export default function MessageArea({
   );
 
   // Message text change handler مع تقليم إلى 192 حرفًا
-  const handleMessageChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
+  const handleMessageChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const next = clampToMaxChars(e.target.value);
     setMessageText(next);
-    setIsMultiLine((next.match(/\n/g)?.length || 0) + 1 > 1);
   }, [clampToMaxChars]);
 
   // Paste handler مع تقليم إلى 192 حرفًا
-  const handlePaste = useCallback((e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+  const handlePaste = useCallback((e: React.ClipboardEvent<HTMLInputElement>) => {
     try {
       const paste = e.clipboardData.getData('text');
       const el = e.currentTarget;
@@ -444,31 +386,16 @@ export default function MessageArea({
       if (next !== combined) {
         e.preventDefault();
         setMessageText(next);
-        setIsMultiLine((next.match(/\n/g)?.length || 0) + 1 > 1);
       }
     } catch {
       // ignore
     }
   }, [messageText, clampToMaxChars]);
 
-  // إعادة ضبط الارتفاع تلقائياً عند تحديث النص أو تغيير وضع التعدد
-  useEffect(() => {
-    const el = inputRef.current;
-    if (!el) return;
-    if (isMobile && isMultiLine) {
-      autoResizeTextarea(el);
-    } else {
-      // اترك الكلاسات الافتراضية تتحكم بالارتفاع (h-11/h-12)
-      el.style.height = '';
-    }
-  }, [messageText, isMobile, isMultiLine, autoResizeTextarea]);
-
   // Emoji select handler
   const handleEmojiSelect = useCallback((emoji: string) => {
     const newText = clampToMaxChars(messageText + emoji);
     setMessageText(newText);
-    const lines = newText.split('\n').length;
-    setIsMultiLine(lines > 1);
     setShowEmojiPicker(false);
     inputRef.current?.focus();
   }, [messageText, clampToMaxChars]);
@@ -478,8 +405,6 @@ export default function MessageArea({
     // إدراج كود السمايل في الرسالة
     const newText = clampToMaxChars(messageText + ` [[emoji:${emoji.id}:${emoji.url}]] `);
     setMessageText(newText);
-    const lines = newText.split('\n').length;
-    setIsMultiLine(lines > 1);
     setShowAnimatedEmojiPicker(false);
     inputRef.current?.focus();
   }, [messageText, clampToMaxChars]);
@@ -495,8 +420,6 @@ export default function MessageArea({
       newText = clampToMaxChars(messageText + emoji.native);
     }
     setMessageText(newText);
-    const lines = newText.split('\n').length;
-    setIsMultiLine(lines > 1);
     setShowEmojiMart(false);
     inputRef.current?.focus();
   }, [messageText, clampToMaxChars]);
@@ -505,8 +428,6 @@ export default function MessageArea({
   const handleLottieEmojiSelect = useCallback((emoji: { id: string; name: string; url: string }) => {
     const newText = clampToMaxChars(messageText + ` [[lottie:${emoji.id}:${emoji.url}]] `);
     setMessageText(newText);
-    const lines = newText.split('\n').length;
-    setIsMultiLine(lines > 1);
     setShowLottieEmoji(false);
     inputRef.current?.focus();
   }, [messageText, clampToMaxChars]);
@@ -515,8 +436,6 @@ export default function MessageArea({
   const handleEnhancedEmojiSelect = useCallback((emoji: { id: string; emoji: string; name: string; code: string }) => {
     const newText = clampToMaxChars(messageText + emoji.emoji);
     setMessageText(newText);
-    const lines = newText.split('\n').length;
-    setIsMultiLine(lines > 1);
     setShowEnhancedEmoji(false);
     inputRef.current?.focus();
   }, [messageText, clampToMaxChars]);
@@ -590,10 +509,6 @@ export default function MessageArea({
       const separator = messageText.trim() ? ' ' : '';
       const newText = clampToMaxChars(messageText + separator + user.username + ' ');
       setMessageText(newText);
-      
-      // تحديث حالة الأسطر المتعددة
-      const lines = newText.split('\n').length;
-      setIsMultiLine(lines > 1);
 
       // التركيز على مربع النص
       inputRef.current?.focus();
@@ -725,183 +640,94 @@ export default function MessageArea({
                       </div>
                     )}
 
-                    {/* New horizontal layout on desktop, run-in on mobile */}
+                    {/* Unified run-in layout for both mobile and desktop */}
                     <div className={`flex-1 min-w-0`}>
-                      {isMobile ? (
-                        <div className="runin-container">
-                          <div className="runin-name">
-                            {message.sender && (message.sender.userType as any) !== 'bot' && (
-                              <UserRoleBadge user={message.sender} showOnlyIcon={true} hideGuestAndGender={true} size={16} />
-                            )}
-                            <button
-                              onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
-                              className="font-semibold hover:underline transition-colors duration-200 text-sm"
-                              style={{ color: getFinalUsernameColor(message.sender) }}
-                            >
-                              {message.sender?.username || 'جاري التحميل...'}
-                            </button>
-                            <span className="text-gray-400 mx-1">:</span>
-                          </div>
-                          <div className="runin-text text-gray-800 message-content-fix">
-                            {message.messageType === 'image' ? (
-                              <img
-                                src={message.content}
-                                alt="صورة"
-                                className="max-h-7 rounded cursor-pointer"
-                                loading="lazy"
-                                onLoad={() => {
-                                  if (isAtBottom) {
-                                    scrollToBottom('auto');
-                                  }
-                                }}
-                                onClick={() => setImageLightbox({ open: true, src: message.content })}
-                              />
-                            ) : (
-                              (() => {
-                                const { cleaned, ids } = parseYouTubeFromText(message.content);
-                                if (ids.length > 0) {
-                                  const firstId = ids[0];
-                                  return (
-                                    <span className={`flex items-start gap-2`} onClick={() => isMobile && toggleMessageExpanded(message.id)}>
-                                      {cleaned ? (
-                                        <span
-                                          className={`flex-1`}
-                                          style={
-                                            currentUser && message.senderId === currentUser.id
-                                              ? { color: composerTextColor, fontWeight: composerBold ? 600 : undefined }
-                                              : undefined
-                                          }
-                                        >
-                                          {renderMessageWithAnimatedEmojis(
-                                            cleaned,
-                                            (text) => renderMessageWithMentions(text, currentUser, onlineUsers)
-                                          )}
-                                        </span>
-                                      ) : null}
-                                      <button
-                                        onClick={() => setYoutubeModal({ open: true, videoId: firstId })}
-                                        className="flex items-center justify-center w-8 h-6 rounded bg-red-600 hover:bg-red-700 transition-colors shrink-0"
-                                        title="فتح فيديو YouTube"
-                                      >
-                                        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-                                          <path fill="#fff" d="M10 15l5.19-3L10 9v6z"></path>
-                                        </svg>
-                                      </button>
-                                    </span>
-                                  );
+                      <div className="runin-container">
+                        <div className="runin-name">
+                          {message.sender && (message.sender.userType as any) !== 'bot' && (
+                            <UserRoleBadge user={message.sender} showOnlyIcon={true} hideGuestAndGender={true} size={16} />
+                          )}
+                          <button
+                            onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
+                            className="font-semibold hover:underline transition-colors duration-200 text-sm"
+                            style={{ color: getFinalUsernameColor(message.sender) }}
+                          >
+                            {message.sender?.username || 'جاري التحميل...'}
+                          </button>
+                          <span className="text-gray-400 mx-1">:</span>
+                        </div>
+                        <div className="runin-text text-gray-800 message-content-fix">
+                          {message.messageType === 'image' ? (
+                            <img
+                              src={message.content}
+                              alt="صورة"
+                              className="max-h-40 rounded-lg cursor-pointer shadow-sm hover:shadow-md transition-shadow"
+                              loading="lazy"
+                              onLoad={() => {
+                                if (isAtBottom) {
+                                  scrollToBottom('auto');
                                 }
+                              }}
+                              onClick={() => setImageLightbox({ open: true, src: message.content })}
+                            />
+                          ) : (
+                            (() => {
+                              const { cleaned, ids } = parseYouTubeFromText(message.content);
+                              if (ids.length > 0) {
+                                const firstId = ids[0];
                                 return (
-                                  <span
-                                    onClick={() => isMobile && toggleMessageExpanded(message.id)}
-                                    style={
-                                      currentUser && message.senderId === currentUser.id
-                                        ? { color: composerTextColor, fontWeight: composerBold ? 600 : undefined }
-                                        : undefined
-                                    }
-                                  >
-                                    {renderMessageWithAnimatedEmojis(
-                                      message.content,
-                                      (text) => renderMessageWithMentions(text, currentUser, onlineUsers)
+                                  <span className="text-sm leading-relaxed inline-flex items-center gap-2">
+                                    {cleaned && (
+                                      <span
+                                        style={
+                                          currentUser && message.senderId === currentUser.id
+                                            ? { color: composerTextColor, fontWeight: composerBold ? 600 : undefined }
+                                            : undefined
+                                        }
+                                      >
+                                        {renderMessageWithAnimatedEmojis(
+                                          cleaned,
+                                          (text) => renderMessageWithMentions(text, currentUser, onlineUsers)
+                                        )}
+                                      </span>
                                     )}
+                                    <button
+                                      onClick={() => setYoutubeModal({ open: true, videoId: firstId })}
+                                      className="flex items-center justify-center w-8 h-6 rounded bg-red-600 hover:bg-red-700 transition-colors"
+                                      title="فتح فيديو YouTube"
+                                    >
+                                      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                                        <path fill="#fff" d="M10 15l5.19-3L10 9v6z"></path>
+                                      </svg>
+                                    </button>
                                   </span>
                                 );
-                              })()
-                            )}
-                          </div>
+                              }
+                              return (
+                                <span
+                                  className="text-sm leading-relaxed"
+                                  style={
+                                    currentUser && message.senderId === currentUser.id
+                                      ? { color: composerTextColor, fontWeight: composerBold ? 600 : undefined }
+                                      : undefined
+                                  }
+                                >
+                                  {renderMessageWithAnimatedEmojis(
+                                    message.content,
+                                    (text) => renderMessageWithMentions(text, currentUser, onlineUsers)
+                                  )}
+                                </span>
+                              );
+                            })()
+                          )}
                         </div>
-                      ) : (
-                        <div className="flex items-start gap-2">
-                          {/* Name and badge section - fixed width */}
-                          <div className="flex items-center gap-1 shrink-0">
-                            {message.sender && (message.sender.userType as any) !== 'bot' && (
-                              <UserRoleBadge user={message.sender} showOnlyIcon={true} hideGuestAndGender={true} size={16} />
-                            )}
-                            <button
-                              onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
-                              className="font-semibold hover:underline transition-colors duration-200 text-sm"
-                              style={{ color: getFinalUsernameColor(message.sender) }}
-                            >
-                              {message.sender?.username || 'جاري التحميل...'}
-                            </button>
-                            <span className="text-gray-400 mx-1">:</span>
-                          </div>
 
-                          {/* Content section - flexible width */}
-                          <div className={`flex-1 min-w-0 text-gray-800 break-words message-content-fix`}>
-                            {message.messageType === 'image' ? (
-                              <img
-                                src={message.content}
-                                alt="صورة"
-                                className="max-h-7 rounded cursor-pointer"
-                                loading="lazy"
-                                onLoad={() => {
-                                  if (isAtBottom) {
-                                    scrollToBottom('auto');
-                                  }
-                                }}
-                                onClick={() => setImageLightbox({ open: true, src: message.content })}
-                              />
-                            ) : (
-                              (() => {
-                                const { cleaned, ids } = parseYouTubeFromText(message.content);
-                                if (ids.length > 0) {
-                                  const firstId = ids[0];
-                                  return (
-                                    <span className={`${isMobile ? 'line-clamp-4' : 'line-clamp-2'} ${!isMobile ? 'text-breathe' : ''} flex items-start gap-2`} onClick={() => isMobile && toggleMessageExpanded(message.id)}>
-                                      {cleaned ? (
-                                        <span
-                                          className={`${isMobile ? 'line-clamp-4' : 'line-clamp-2'} flex-1`}
-                                          style={
-                                            currentUser && message.senderId === currentUser.id
-                                              ? { color: composerTextColor, fontWeight: composerBold ? 600 : undefined }
-                                              : undefined
-                                          }
-                                        >
-                                          {renderMessageWithAnimatedEmojis(
-                                            cleaned,
-                                            (text) => renderMessageWithMentions(text, currentUser, onlineUsers)
-                                          )}
-                                        </span>
-                                      ) : null}
-                                      <button
-                                        onClick={() => setYoutubeModal({ open: true, videoId: firstId })}
-                                        className="flex items-center justify-center w-8 h-6 rounded bg-red-600 hover:bg-red-700 transition-colors shrink-0"
-                                        title="فتح فيديو YouTube"
-                                      >
-                                        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-                                          <path fill="#fff" d="M10 15l5.19-3L10 9v6z"></path>
-                                        </svg>
-                                      </button>
-                                    </span>
-                                  );
-                                }
-                                return (
-                                  <span
-                                    className={`${isMobile ? 'line-clamp-4' : 'line-clamp-2 text-breathe'}`}
-                                    onClick={() => isMobile && toggleMessageExpanded(message.id)}
-                                    style={
-                                      currentUser && message.senderId === currentUser.id
-                                        ? { color: composerTextColor, fontWeight: composerBold ? 600 : undefined }
-                                        : undefined
-                                    }
-                                  >
-                                    {renderMessageWithAnimatedEmojis(
-                                      message.content,
-                                      (text) => renderMessageWithMentions(text, currentUser, onlineUsers)
-                                    )}
-                                  </span>
-                                );
-                              })()
-                            )}
-                          </div>
-                        </div>
-                      )}
+                        {/* Time section - fixed width */}
+                        <span className="text-xs text-gray-500 whitespace-nowrap shrink-0 self-start">
+                          {formatTime(message.timestamp)}
+                        </span>
+                      </div>
                     </div>
-
-                      {/* Right side: time */}
-                      <span className="text-xs text-gray-500 whitespace-nowrap ml-2 self-start">
-                        {formatTime(message.timestamp)}
-                      </span>
 
                       {/* قائمة ثلاث نقاط موحدة للجوال وسطح المكتب */}
                       {currentUser && (
@@ -1084,11 +910,11 @@ export default function MessageArea({
         )}
 
         <div
-          className={`flex ${isMobile ? 'gap-2 p-3' : 'gap-3 p-4'} ${isMultiLine ? 'flex-col items-start' : 'items-end'} max-w-full mx-auto bg-white/80 backdrop-blur-sm transition-all duration-300`}
+          className={`flex ${isMobile ? 'gap-2 p-3' : 'gap-3 p-4'} items-end max-w-full mx-auto bg-white/80 backdrop-blur-sm transition-all duration-300`}
           style={{ paddingBottom: isMobile ? 'calc(env(safe-area-inset-bottom) + 0.75rem)' : '1rem' }}
         >
-          {/* First row: Emoji buttons and textarea */}
-          <div className={`flex ${isMultiLine ? 'w-full' : 'flex-1'} items-end gap-2`}>
+          {/* Input row: Emoji buttons, input field, and send button */}
+          <div className={`flex flex-1 items-end gap-2`}>
             {/* Emoji Picker */}
             <div className="relative">
               <Button
@@ -1194,42 +1020,19 @@ export default function MessageArea({
               <Send className="w-4 h-4" />
             </Button>
 
-            {/* Message Input - render centered disabled input if restricted, otherwise 2-line textarea */}
-            {(!currentUser || isChatRestricted) ? (
-              <input
-                type="text"
-                value={''}
-                onChange={() => {}}
-                placeholder={getRestrictionMessage || 'هذه الخاصية غير متوفرة الآن'}
-                className={`flex-1 bg-white placeholder:text-gray-500 ring-offset-white border border-gray-300 rounded-full px-4 ${isMobile ? 'h-12' : 'h-11'} transition-all duration-200 cursor-not-allowed opacity-60`}
-                disabled
-                style={{
-                  ...(isMobile ? { fontSize: '16px' } : {}),
-                  color: composerTextColor,
-                  fontWeight: composerBold ? 600 : undefined,
-                  lineHeight: `${isMobile ? 48 : 44}px`,
-                }}
-              />
-            ) : (
-              <textarea
-                ref={inputRef}
-                value={messageText}
-                onChange={handleMessageChange}
-                onKeyPress={handleKeyPress}
-                onPaste={handlePaste}
-                placeholder={"اكتب رسالتك هنا..."}
-                className={`flex-1 resize-none bg-white placeholder:text-gray-500 ring-offset-white border border-gray-300 rounded-full px-4 ${isMultiLine ? 'h-auto py-3' : (isMobile ? 'h-12 py-0' : 'h-11 py-0')} transition-all duration-200 ${isMobile ? 'mobile-text' : ''}`}
-                maxLength={MAX_CHARS}
-                autoComplete="off"
-                rows={1}
-                style={{
-                  ...(isMobile ? { fontSize: '16px' } : {}),
-                  color: composerTextColor,
-                  fontWeight: composerBold ? 600 : undefined,
-                  lineHeight: !isMultiLine ? `${isMobile ? 48 : 44}px` : undefined,
-                }}
-              />
-            )}
+            {/* Message Input - simple input field like PrivateMessageBox */}
+            <Input
+              ref={inputRef}
+              value={messageText}
+              onChange={handleMessageChange}
+              onKeyDown={handleKeyPress}
+              onPaste={handlePaste}
+              placeholder={!currentUser || isChatRestricted ? (getRestrictionMessage || 'هذه الخاصية غير متوفرة الآن') : "اكتب رسالتك هنا..."}
+              className={`flex-1 bg-white border text-foreground placeholder:text-muted-foreground rounded-lg border-gray-300`}
+              disabled={!currentUser || isChatRestricted}
+              style={{ color: composerTextColor, fontWeight: composerBold ? 600 : undefined }}
+              maxLength={MAX_CHARS}
+            />
 
             {/* Composer Plus Menu moved to the end */}
             <React.Suspense fallback={null}>
@@ -1242,18 +1045,14 @@ export default function MessageArea({
             </React.Suspense>
           </div>
 
-          {/* تم إزالة الملاحظة الخاصة بالسطر الثاني بناءً على الطلب */}
-
-          {/* Hidden File Input for single line mode */}
-          {!isMultiLine && (
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handleFileUpload}
-              className="hidden"
-            />
-          )}
+          {/* Hidden File Input */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleFileUpload}
+            className="hidden"
+          />
         </div>
 
         {/* Character Counter */}
