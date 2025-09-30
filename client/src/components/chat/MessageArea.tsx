@@ -896,7 +896,7 @@ export default function MessageArea({
 
       {/* Message Input - تحسين التثبيت لمنع التداخل */}
       <div
-        className={`p-3 bg-white w-full z-20 shadow-lg chat-input soft-entrance`}
+        className={`p-2 bg-white w-full z-20 shadow-lg chat-input soft-entrance`}
       >
         {/* Typing Indicator */}
         {typingUsers.size > 0 && (
@@ -998,7 +998,7 @@ export default function MessageArea({
               onKeyDown={handleKeyPress}
               onPaste={handlePaste}
               placeholder={!currentUser || isChatRestricted ? (getRestrictionMessage || 'هذه الخاصية غير متوفرة الآن') : "اكتب رسالتك هنا..."}
-              className={`rooms-message-input flex-1 bg-white text-foreground placeholder:text-muted-foreground rounded-lg border border-gray-300 h-9`}
+              className={`rooms-message-input flex-1 bg-white text-foreground placeholder:text-muted-foreground rounded-lg border border-gray-300 h-9 focus:border-transparent focus:ring-offset-0 focus-visible:ring-offset-0`}
               disabled={!currentUser || isChatRestricted}
               style={{ color: composerTextColor, fontWeight: composerBold ? 600 : undefined }}
               maxLength={MAX_CHARS}
