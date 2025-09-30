@@ -1588,11 +1588,14 @@ li > * > div.effect-crystal {
 }
 
 .runin-name {
-  display: inline-flex;
-  align-items: baseline; /* baseline alignment to avoid extra gap after first line */
-  gap: 0.25rem;
+  display: inline;
   white-space: nowrap;
   line-height: 1.4;
+}
+
+.runin-name > * {
+  display: inline;
+  vertical-align: baseline;
 }
 
 .runin-text {
@@ -1610,10 +1613,13 @@ li > * > div.effect-crystal {
     position: relative;
   }
   .runin-name {
-    display: inline-flex;     /* keep badge + name aligned */
-    align-items: baseline;
+    display: inline;
     margin-left: 0.25rem;
     line-height: 1.4;
+  }
+  .runin-name > * {
+    display: inline;
+    vertical-align: baseline;
   }
   .runin-text {
     display: inline;
