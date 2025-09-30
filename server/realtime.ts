@@ -106,16 +106,26 @@ async function updateUserLastSeen(userId: number, lastSeen: Date): Promise<void>
 }
 
 // Utility: get online user counts per room based on active sockets
-export function getOnlineUserCountsForRooms(roomIds: string[]): Record<string, number> {
+export function getOnlineUserCountsForRooms(
+  roomIds: string[],
+  options?: { includeBots?: boolean }
+): Record<string, number> {
   try {
     const target = new Set<string>((roomIds || []).map((r) => String(r)));
     const counts: Record<string, number> = {};
     for (const id of target) counts[id] = 0;
 
     for (const [, entry] of connectedUsers.entries()) {
-      // استثناء البوتات من العدّ المباشر للمستخدمين في الغرف
+      // التحكم في شمول/استثناء البوتات من العدّ
+      const includeBots = !!options?.includeBots;
       try {
-        if (entry?.user?.userType === 'bot') {
+        if (!includeBots && entry?.user?.userType === 'bot') {
+          continue;
+        }
+      } catch {}
+      // استثناء المستخدمين المخفيين لضمان تطابق العداد مع قائمة المتصلين
+      try {
+        if ((entry as any)?.user?.isHidden === true) {
           continue;
         }
       } catch {}
