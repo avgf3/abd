@@ -2093,6 +2093,13 @@ li > * > div.effect-crystal {
     inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
+/* Rooms chat input: keep only blue focus ring, remove black border on focus */
+.chat-input .rooms-message-input:focus,
+.chat-input .rooms-message-input:focus-visible {
+  border-color: transparent !important;
+  outline: none !important;
+}
+
 /* Modern Room Cards */
 .room-card {
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.02) 100%);
@@ -2181,6 +2188,13 @@ li > * > div.effect-crystal {
   background: rgba(100, 200, 255, 0.3);
   color: white;
 }
+
+  /* Rooms chat send input: keep only blue ring on focus (remove inner black border) */
+  .rooms-message-input:focus,
+  .rooms-message-input:focus-visible {
+    border-color: transparent !important;
+    outline: none !important;
+  }
 
 /* Modern Focus States */
 :focus-visible {
