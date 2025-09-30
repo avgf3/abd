@@ -1614,7 +1614,6 @@ li > * > div.effect-crystal {
   }
   .runin-name {
     display: inline;
-    margin-left: 0.25rem;
     line-height: 1.4;
   }
   .runin-name > * {
