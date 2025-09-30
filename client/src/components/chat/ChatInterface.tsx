@@ -205,9 +205,14 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
     try {
       const { getSocket } = require('@/lib/socket');
       const s = getSocket();
-      const onRoomUpdate = (_payload: any) => {
-        // جلب مُجبر لتحديث القائمة فوراً
-        fetchRooms(true).catch(() => {});
+      const onRoomUpdate = (payload: any) => {
+        // معالجة تحديث عدد المستخدمين في الوقت الفعلي
+        if (payload.type === 'userCountUpdate' && payload.roomId && typeof payload.userCount === 'number') {
+          updateRoomUserCount(payload.roomId, payload.userCount);
+        } else {
+          // جلب مُجبر لتحديث القائمة فوراً لباقي التحديثات
+          fetchRooms(true).catch(() => {});
+        }
       };
       
       const onChatLockUpdate = (payload: any) => {

@@ -177,7 +177,7 @@ const RoomCard: React.FC<RoomCardProps> = ({
         <CardContent className="pt-0">
           <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground mb-3">
             <Users className="w-4 h-4" />
-            <span>{room.userCount || 0} متصل الآن</span>
+            <span>{room.userCount || 0} متصل</span>
           </div>
 
                   <Button 

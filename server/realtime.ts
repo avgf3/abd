@@ -577,6 +577,22 @@ async function joinRoom(
     timestamp: Date.now(),
   });
 
+  // 🔥 بث تحديث عدد المستخدمين في الغرفة لجميع المتصلين
+  try {
+    const room = await roomService.getRoom(roomId);
+    if (room) {
+      const userCount = users.length;
+      io.emit('roomUpdate', {
+        type: 'userCountUpdate',
+        roomId,
+        userCount,
+        room: { ...room, userCount },
+      });
+    }
+  } catch (err) {
+    console.error('❌ فشل بث تحديث عدد المستخدمين:', err);
+  }
+
   // بث userUpdated للمستخدم نفسه وللغرفة لتحديث currentRoom و lastSeen و isHidden فوراً على الواجهة
   try {
     // جلب lastSeen و currentRoom من قاعدة البيانات
@@ -687,6 +703,22 @@ async function leaveRoom(
       source: 'leave_immediate',
       timestamp: Date.now(),
     });
+    
+    // 🔥 بث تحديث عدد المستخدمين في الغرفة لجميع المتصلين
+    try {
+      const room = await roomService.getRoom(roomId);
+      if (room) {
+        const userCount = updatedUsers.length;
+        io.emit('roomUpdate', {
+          type: 'userCountUpdate',
+          roomId,
+          userCount,
+          room: { ...room, userCount },
+        });
+      }
+    } catch (err) {
+      console.error('❌ فشل بث تحديث عدد المستخدمين:', err);
+    }
   } catch {}
 
   // بث userUpdated بتفريغ currentRoom وتحديث lastSeen و isHidden ليظهر فوراً في الواجهة
@@ -1417,6 +1449,22 @@ export function setupRealtime(httpServer: HttpServer): IOServer<ClientToServerEv
                   } as any;
                   io.to(`room_${lastRoom}`).emit('message', { type: 'userUpdated', user: updatedUser });
                   io.to(userId.toString()).emit('message', { type: 'userUpdated', user: updatedUser });
+                  
+                  // 🔥 بث تحديث عدد المستخدمين في الغرفة لجميع المتصلين
+                  try {
+                    const room = await roomService.getRoom(lastRoom);
+                    if (room) {
+                      const userCount = users.length;
+                      io.emit('roomUpdate', {
+                        type: 'userCountUpdate',
+                        roomId: lastRoom,
+                        userCount,
+                        room: { ...room, userCount },
+                      });
+                    }
+                  } catch (err) {
+                    console.error('❌ فشل بث تحديث عدد المستخدمين:', err);
+                  }
                   
                   console.log(`📡 تم إشعار الغرفة ${lastRoom} بانقطاع المستخدم ${userId}`);
                 } catch (emitError) {

@@ -10,7 +10,7 @@ interface RoomSelectorScreenProps {
 }
 
 export default function RoomSelectorScreen({ currentUser, onSelectRoom }: RoomSelectorScreenProps) {
-	const { rooms, loading, error, fetchRooms } = useRoomManager({ autoRefresh: false, cacheTimeout: 5 * 60 * 1000 });
+	const { rooms, loading, error, fetchRooms, updateRoomUserCount } = useRoomManager({ autoRefresh: false, cacheTimeout: 5 * 60 * 1000 });
 
 	const handleSelect = (roomId: string) => {
 		try {
@@ -23,9 +23,15 @@ export default function RoomSelectorScreen({ currentUser, onSelectRoom }: RoomSe
 		let mounted = true;
 		try {
 			const s = getSocket();
-			const onUpdate = (_payload: any) => {
+			const onUpdate = (payload: any) => {
 				if (!mounted) return;
-				fetchRooms(true);
+				// معالجة تحديث عدد المستخدمين في الوقت الفعلي
+				if (payload.type === 'userCountUpdate' && payload.roomId && typeof payload.userCount === 'number') {
+					updateRoomUserCount(payload.roomId, payload.userCount);
+				} else {
+					// لباقي التحديثات، نجلب قائمة الغرف
+					fetchRooms(true);
+				}
 			};
 			s.on('roomUpdate', onUpdate);
 			return () => {
@@ -35,7 +41,7 @@ export default function RoomSelectorScreen({ currentUser, onSelectRoom }: RoomSe
 		} catch {
 			return () => {};
 		}
-	}, [fetchRooms]);
+	}, [fetchRooms, updateRoomUserCount]);
 
 	// تمت إزالة polling الاحتياطي؛ نعتمد على أحداث socket 'roomUpdate'
 
