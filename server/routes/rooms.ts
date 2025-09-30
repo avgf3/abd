@@ -103,10 +103,13 @@ router.get('/', async (req, res) => {
 
     const rooms = await roomService.getAllRooms();
 
-    // Attach live userCount from realtime connected sockets
+    // Attach live userCount from realtime connected sockets (including bots)
     try {
       const { getOnlineUserCountsForRooms } = await import('../realtime');
-      const counts = getOnlineUserCountsForRooms(rooms.map((r: any) => String(r.id)));
+      const counts = getOnlineUserCountsForRooms(
+        rooms.map((r: any) => String(r.id)),
+        { includeBots: true }
+      );
       for (const r of rooms as any[]) {
         const id = String(r.id);
         const live = Number(counts[id] || 0);

@@ -106,16 +106,26 @@ async function updateUserLastSeen(userId: number, lastSeen: Date): Promise<void>
 }
 
 // Utility: get online user counts per room based on active sockets
-export function getOnlineUserCountsForRooms(roomIds: string[]): Record<string, number> {
+export function getOnlineUserCountsForRooms(
+  roomIds: string[],
+  options?: { includeBots?: boolean }
+): Record<string, number> {
   try {
     const target = new Set<string>((roomIds || []).map((r) => String(r)));
     const counts: Record<string, number> = {};
     for (const id of target) counts[id] = 0;
 
     for (const [, entry] of connectedUsers.entries()) {
-      // استثناء البوتات من العدّ المباشر للمستخدمين في الغرف
+      // التحكم في شمول/استثناء البوتات من العدّ
+      const includeBots = !!options?.includeBots;
       try {
-        if (entry?.user?.userType === 'bot') {
+        if (!includeBots && entry?.user?.userType === 'bot') {
+          continue;
+        }
+      } catch {}
+      // استثناء المستخدمين المخفيين لضمان تطابق العداد مع قائمة المتصلين
+      try {
+        if ((entry as any)?.user?.isHidden === true) {
           continue;
         }
       } catch {}
@@ -1179,6 +1189,19 @@ export function setupRealtime(httpServer: HttpServer): IOServer<ClientToServerEv
             roomId: previousRoom,
             source: 'switch_room',
           });
+        // 🔥 بث تحديث عدد المستخدمين للغرفة السابقة أيضاً لضمان تزامن واجهة قائمة الغرف
+        try {
+          const prevRoom = await roomService.getRoom(previousRoom);
+          if (prevRoom) {
+            const prevCount = prevUsers.length;
+            io.emit('roomUpdate', {
+              type: 'userCountUpdate',
+              roomId: previousRoom,
+              userCount: prevCount,
+              room: { ...prevRoom, userCount: prevCount },
+            });
+          }
+        } catch {}
         }
       } catch (e: any) {
         // الرسالة تم إرسالها بالفعل من joinRoom، لكن نتأكد من إرسالها مرة أخرى إذا لم تُرسل
