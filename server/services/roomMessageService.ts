@@ -69,6 +69,8 @@ class RoomMessageService {
     messageType?: string;
     isPrivate?: boolean;
     receiverId?: number;
+    textColor?: string;
+    bold?: boolean;
   }): Promise<RoomMessage | null> {
     try {
       if (!db || dbType === 'disabled') {
@@ -144,6 +146,8 @@ class RoomMessageService {
         isPrivate: messageData.isPrivate || false,
         receiverId: messageData.receiverId || null,
         roomId: messageData.roomId,
+        textColor: messageData.textColor,
+        bold: messageData.bold,
         attachments: (() => {
           try {
             const profileImage: string = (sender as any)?.profileImage || '';

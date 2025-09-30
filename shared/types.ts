@@ -65,6 +65,9 @@ export interface ChatMessage {
   myReaction?: 'like' | 'dislike' | 'heart' | null;
   // اختياري: مرفقات الرسالة
   attachments?: any[];
+  // لون الخط والخط الغامق
+  textColor?: string;
+  bold?: boolean;
 }
 
 export interface PrivateConversation {

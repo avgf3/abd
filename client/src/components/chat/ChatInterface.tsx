@@ -1146,7 +1146,12 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                       currentUser={chat.currentUser}
                       room={currentRoom}
                       onlineUsers={chat.onlineUsers}
-                      onSendMessage={(content) => chat.sendRoomMessage(content, chat.currentRoomId)}
+                      onSendMessage={(content, messageType, textColor, bold) => {
+                        // Get composer style values
+                        const finalTextColor = textColor || '#000000';
+                        const finalBold = bold || false;
+                        chat.sendMessage(content, messageType || 'text', undefined, chat.currentRoomId, finalTextColor, finalBold);
+                      }}
                       onTyping={(_isTyping) => chat.sendTyping()}
                       typingUsers={Array.from(chat.typingUsers)}
                       onReportMessage={handleReportUser}
@@ -1206,7 +1211,12 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                     <MessageArea
                       messages={chat.publicMessages}
                       currentUser={chat.currentUser}
-                      onSendMessage={(content) => chat.sendRoomMessage(content, chat.currentRoomId)}
+                      onSendMessage={(content, messageType, textColor, bold) => {
+                        // Get composer style values
+                        const finalTextColor = textColor || '#000000';
+                        const finalBold = bold || false;
+                        chat.sendMessage(content, messageType || 'text', undefined, chat.currentRoomId, finalTextColor, finalBold);
+                      }}
                       onTyping={() => chat.sendTyping()}
                       typingUsers={chat.typingUsers}
                       onReportMessage={handleReportUser}

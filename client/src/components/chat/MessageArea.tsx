@@ -40,7 +40,7 @@ import {
 interface MessageAreaProps {
   messages: ChatMessage[];
   currentUser: ChatUser | null;
-  onSendMessage: (content: string, messageType?: string) => void;
+  onSendMessage: (content: string, messageType?: string, textColor?: string, bold?: boolean) => void;
   onTyping: () => void;
   typingUsers: Set<string>;
   onReportMessage?: (user: ChatUser, messageContent: string, messageId: number) => void;
@@ -345,14 +345,14 @@ export default function MessageArea({
         clearTimeout(typingTimeoutRef.current);
       }
 
-      // إرسال الرسالة
-      onSendMessage(trimmedMessage);
+      // إرسال الرسالة مع اللون والخط
+      onSendMessage(trimmedMessage, 'text', composerTextColor, composerBold);
       setMessageText('');
 
       // Focus back to input
       inputRef.current?.focus();
     }
-  }, [messageText, currentUser, onSendMessage]);
+  }, [messageText, currentUser, onSendMessage, composerTextColor, composerBold]);
 
   // Key press handler - إرسال بالـ Enter
   const handleKeyPress = useCallback(
@@ -673,11 +673,10 @@ export default function MessageArea({
                                   <span className="text-sm leading-relaxed inline-flex items-center gap-2">
                                     {cleaned && (
                                       <span
-                                        style={
-                                          currentUser && message.senderId === currentUser.id
-                                            ? { color: composerTextColor, fontWeight: composerBold ? 700 : undefined }
-                                            : undefined
-                                        }
+                                        style={{
+                                          color: message.textColor || '#000000',
+                                          fontWeight: message.bold ? 700 : undefined
+                                        }}
                                       >
                                         {renderMessageWithAnimatedEmojis(
                                           cleaned,
@@ -700,11 +699,10 @@ export default function MessageArea({
                               return (
                                 <span
                                   className="text-sm leading-relaxed"
-                                  style={
-                                    currentUser && message.senderId === currentUser.id
-                                      ? { color: composerTextColor, fontWeight: composerBold ? 700 : undefined }
-                                      : undefined
-                                  }
+                                  style={{
+                                    color: message.textColor || '#000000',
+                                    fontWeight: message.bold ? 700 : undefined
+                                  }}
                                 >
                                   {renderMessageWithAnimatedEmojis(
                                     message.content,

@@ -75,6 +75,8 @@ export const messages = pgTable(
     isPrivate: boolean('is_private').default(false),
     roomId: text('room_id').default('general'), // معرف الغرفة
     attachments: jsonb('attachments').default([]),
+    textColor: text('text_color'), // لون الخط
+    bold: boolean('bold').default(false), // الخط الغامق
     editedAt: timestamp('edited_at'),
     deletedAt: timestamp('deleted_at'),
     timestamp: timestamp('timestamp').defaultNow(),
