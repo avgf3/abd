@@ -20,6 +20,8 @@ export function mapDbMessageToChatMessage(msg: any, fallbackRoomId?: string): Ch
     reactions: msg.reactions || msg.reactionCounts || { like: 0, dislike: 0, heart: 0 },
     myReaction: msg.myReaction ?? null,
     attachments: msg.attachments || [],
+    textColor: msg.textColor,
+    bold: msg.bold,
   } as ChatMessage;
 }
 
