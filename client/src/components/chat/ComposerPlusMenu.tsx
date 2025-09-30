@@ -40,10 +40,11 @@ export default function ComposerPlusMenu({ onOpenImagePicker, disabled, isMobile
           variant="outline"
           size={isMobile ? 'lg' : 'lg'}
           disabled={disabled}
-          className={`mobile-touch-button rounded-full ${isMobile ? 'min-w-[48px] min-h-[48px]' : 'min-w-[42px] min-h-[42px]'} px-0 bg-primary/10 text-primary border-primary/20 hover:bg-primary/15 shadow-sm`}
+          className={`mobile-touch-button rounded-full ${isMobile ? 'min-w-[48px] min-h-[48px]' : 'min-w-[44px] min-h-[44px]'} px-0 bg-white text-primary border-primary/30 hover:bg-primary/5 shadow-sm`}
           title="خيارات"
+          aria-label="زر الخيارات"
         >
-          <Plus className={`${isMobile ? 'w-5 h-5' : 'w-4.5 h-4.5'} shrink-0`} />
+          <Plus className={`${isMobile ? 'w-6 h-6' : 'w-5 h-5'} shrink-0`} strokeWidth={2.5} />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-[12rem]">
