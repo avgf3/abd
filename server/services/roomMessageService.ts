@@ -43,6 +43,8 @@ export interface RoomMessage {
   senderAvatar?: string;
   sender?: any;
   attachments?: any;
+  textColor?: string;
+  bold?: boolean;
 }
 
 export interface MessagePagination {
@@ -194,6 +196,8 @@ class RoomMessageService {
         senderAvatar: (sender as any).profileImage || null,
         sender,
         attachments: (message as any)?.attachments || [],
+        textColor: (message as any)?.textColor,
+        bold: (message as any)?.bold,
       };
 
       // إضافة الرسالة للذاكرة المؤقتة
@@ -311,6 +315,8 @@ class RoomMessageService {
               senderAvatar: (sender as any)?.profileImage || null,
               sender,
               attachments: (msg as any)?.attachments || [],
+              textColor: (msg as any)?.textColor,
+              bold: (msg as any)?.bold,
             };
             messages.push(roomMessage);
           } catch (err) {
@@ -465,6 +471,8 @@ class RoomMessageService {
             senderAvatar: (sender as any)?.profileImage || null,
             sender,
             attachments: (msg as any)?.attachments || [],
+            textColor: (msg as any)?.textColor,
+            bold: (msg as any)?.bold,
           };
           messages.push(roomMessage);
         } catch (err) {
