@@ -1449,6 +1449,16 @@ export const storage: LegacyStorage = {
       return false;
     }
   },
+
+  // حذف المستخدم نهائياً
+  async deleteUser(userId: number): Promise<boolean> {
+    try {
+      return await databaseService.deleteUser(userId);
+    } catch (error) {
+      console.error('Error deleting user from storage:', error);
+      return false;
+    }
+  },
 };
 
 // Export the database service for direct access if needed

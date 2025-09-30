@@ -30,7 +30,11 @@
     "test:supabase": "tsx test-supabase-connection.ts",
     "clean-logs": "node tools/remove-console-logs.js",
     "build-production": "npm run clean-logs && npm run build",
-    "smoke": "node scripts/smoke-api.js"
+    "smoke": "node scripts/smoke-api.js",
+    "delete-blocked-users": "tsx delete-blocked-users.ts",
+    "find-blocked-users": "tsx find-blocked-users.ts",
+    "unblock-user": "tsx unblock-user.ts",
+    "db:stats": "tsx database-stats.ts"
   },
   "dependencies": {
     "@emoji-mart/data": "^1.2.1",

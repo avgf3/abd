@@ -1875,6 +1875,106 @@ export class DatabaseService {
     }
   }
 
+  // حذف المستخدم نهائياً من قاعدة البيانات
+  async deleteUser(userId: number): Promise<boolean> {
+    if (!this.isConnected()) return false;
+
+    try {
+      if (this.type === 'postgresql') {
+        // حذف البيانات المرتبطة بالمستخدم أولاً لتجنب مشاكل المراجع الخارجية
+        
+        // حذف الرسائل
+        await (this.db as any)
+          .delete(schema.messages)
+          .where(or(
+            eq(schema.messages.senderId, userId),
+            eq(schema.messages.receiverId, userId)
+          ));
+
+        // حذف تفاعلات الرسائل
+        await (this.db as any)
+          .delete(schema.messageReactions)
+          .where(eq(schema.messageReactions.userId, userId));
+
+        // حذف الأصدقاء
+        await (this.db as any)
+          .delete(schema.friends)
+          .where(or(
+            eq(schema.friends.userId, userId),
+            eq(schema.friends.friendId, userId)
+          ));
+
+        // حذف الإشعارات
+        await (this.db as any)
+          .delete(schema.notifications)
+          .where(eq(schema.notifications.userId, userId));
+
+        // حذف الأجهزة المحجوبة
+        await (this.db as any)
+          .delete(schema.blockedDevices)
+          .where(eq(schema.blockedDevices.userId, userId));
+
+        // حذف عضوية VIP
+        await (this.db as any)
+          .delete(schema.vipUsers)
+          .where(eq(schema.vipUsers.userId, userId));
+
+        // حذف تاريخ النقاط
+        await (this.db as any)
+          .delete(schema.pointsHistory)
+          .where(eq(schema.pointsHistory.userId, userId));
+
+        // حذف منشورات الحائط
+        await (this.db as any)
+          .delete(schema.wallPosts)
+          .where(eq(schema.wallPosts.userId, userId));
+
+        // حذف تفاعلات الحائط
+        await (this.db as any)
+          .delete(schema.wallReactions)
+          .where(eq(schema.wallReactions.userId, userId));
+
+        // حذف الحالات (Stories)
+        await (this.db as any)
+          .delete(schema.stories)
+          .where(eq(schema.stories.userId, userId));
+
+        // حذف مشاهدات الحالات
+        await (this.db as any)
+          .delete(schema.storyViews)
+          .where(eq(schema.storyViews.viewerId, userId));
+
+        // حذف تفاعلات الحالات
+        await (this.db as any)
+          .delete(schema.storyReactions)
+          .where(eq(schema.storyReactions.userId, userId));
+
+        // حذف عضوية الغرف
+        await (this.db as any)
+          .delete(schema.roomUsers)
+          .where(eq(schema.roomUsers.userId, userId));
+
+        // حذف عضوية الغرف المتقدمة
+        await (this.db as any)
+          .delete(schema.roomMembers)
+          .where(eq(schema.roomMembers.userId, userId));
+
+        // أخيراً، حذف المستخدم نفسه
+        const result = await (this.db as any)
+          .delete(schema.users)
+          .where(eq(schema.users.id, userId));
+
+        return true;
+      } else {
+        // SQLite has no users table, so this will return false
+        return false;
+      }
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      return false;
+    }
+  }
+
   // Notification operations
   async createNotification(notificationData: Partial<Notification>): Promise<Notification | null> {
     if (!this.isConnected()) return null;
