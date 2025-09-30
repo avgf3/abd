@@ -611,20 +611,7 @@ export default function FriendsTabPanel({
         )}
       </div>
 
-      {!isAtBottomFriends && (
-        <div className="absolute bottom-4 right-4 z-10">
-          <Button
-            size="sm"
-            onClick={() => {
-              const el = friendsScrollRef.current;
-              if (el) el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
-            }}
-            className="px-3 py-1.5 rounded-full text-xs bg-primary text-primary-foreground shadow"
-          >
-            الانتقال لأسفل
-          </Button>
-        </div>
-      )}
+      {false}
     </div>
   );
 }
