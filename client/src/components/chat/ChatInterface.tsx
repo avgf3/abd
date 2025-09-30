@@ -68,6 +68,7 @@ import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser, ChatRoom } from '@/types/chat';
 import { setCachedUser, getCachedUserWithMerge } from '@/utils/userCacheManager';
 import { getPmLastOpened, setPmListLastOpened } from '@/utils/messageUtils';
+import { getFinalUsernameColor } from '@/utils/themeUtils';
 
 interface ChatInterfaceProps {
   chat: UseChatReturn;
@@ -298,8 +299,8 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   const [showIgnoredUsers, setShowIgnoredUsers] = useState(false);
   const [showThemeSelector, setShowThemeSelector] = useState(false);
   const [showUsernameColorPicker, setShowUsernameColorPicker] = useState(false);
-  // تفاصيل المستخدمين المتجاهلين (اسم دائمًا)
-  const [ignoredUsersData, setIgnoredUsersData] = useState<Map<number, { id: number; username: string }>>(new Map());
+  // تفاصيل المستخدمين المتجاهلين (اسم + معلومات إضافية إن توفرت للّون)
+  const [ignoredUsersData, setIgnoredUsersData] = useState<Map<number, Partial<ChatUser> & { id: number; username: string }>>(new Map());
 
   // عند فتح نافذة المتجاهلين: اجلب قائمة المتجاهلين بأسمائهم مباشرة (بدون كاش)
   useEffect(() => {
@@ -316,14 +317,14 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
         
         if (cancelled) return;
         
-        const map = new Map<number, { id: number; username: string }>();
-        const list: Array<{ id: number; username: string }> = Array.isArray((data as any)?.users)
+        const map = new Map<number, Partial<ChatUser> & { id: number; username: string }>();
+        const list: Array<Partial<ChatUser> & { id: number; username: string }> = Array.isArray((data as any)?.users)
           ? (data as any).users
           : [];
         
-        list.forEach((u) => { 
+        list.forEach((u) => {
           if (u && typeof u.id === 'number' && u.username) {
-            map.set(u.id, u); 
+            map.set(u.id, u);
           }
         });
         
@@ -1795,12 +1796,12 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
 
       {showIgnoredUsers && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-4">
+          <div className="bg-card text-foreground border border-border rounded-lg shadow-xl w-full max-w-md p-4">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-lg font-semibold">المستخدمون المتجاهلون</h3>
               <button
                 onClick={() => setShowIgnoredUsers(false)}
-                className="text-gray-500 hover:text-gray-700"
+                className="text-muted-foreground hover:text-foreground"
                 aria-label="إغلاق"
               >
                 ×
@@ -1808,7 +1809,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             </div>
             <div className="space-y-2 max-h-[60vh] overflow-y-auto">
               {(!chat.ignoredUsers || chat.ignoredUsers.size === 0) ? (
-                <div className="text-center py-8 text-gray-500">
+                <div className="text-center py-8 text-muted-foreground">
                   <div className="mb-3">✅</div>
                   <p className="text-sm">لا توجد مستخدمين متجاهلين</p>
                 </div>
@@ -1817,18 +1818,19 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                 const ignoredUser = ignoredUsersData.get(id);
                 const onlineUser = chat.onlineUsers.find((u) => u.id === id);
                 const user = ignoredUser || onlineUser;
+                const colorUser = onlineUser || ignoredUser;
                 
                 return (
-                  <div key={id} className="flex items-center justify-between p-2 border rounded">
+                  <div key={id} className="flex items-center justify-between p-2 border border-border rounded bg-background/60 hover:bg-accent/10 transition-colors">
                     <div className="flex items-center gap-2">
                       {user ? (
-                        <ProfileImage user={user} size="small" />
+                        <ProfileImage user={user as ChatUser} size="small" />
                       ) : (
-                        <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-500">
+                        <div className="w-8 h-8 rounded-full bg-muted/40 flex items-center justify-center text-muted-foreground">
                           👤
                         </div>
                       )}
-                      <span className="font-medium">
+                      <span className="font-medium" style={{ color: colorUser ? getFinalUsernameColor(colorUser as any) : undefined }}>
                         {user?.username}
                       </span>
                     </div>
