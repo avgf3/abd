@@ -13,10 +13,8 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { apiRequest, api } from '@/lib/queryClient';
 import type { ChatMessage, ChatUser } from '@/types/chat';
 import {
-  findMentions,
   playMentionSound,
   renderMessageWithMentions,
-  insertMention,
 } from '@/utils/mentionUtils';
 import { getDynamicBorderColor } from '@/utils/messageUtils';
 import { getFinalUsernameColor } from '@/utils/themeUtils';
@@ -70,67 +68,14 @@ export default function MessageArea({
   const { textColor: composerTextColor, bold: composerBold } = useComposerStyle();
   // حد أقصى لعدد الأحرف في الكتابة (سطح المكتب والهاتف)
   const MAX_CHARS = 192;
-  // الحد الأقصى لأسطر الإدخال: 4 على الهاتف، و 2 على الويب (لأغراض الارتفاع فقط)
-  const MAX_LINES = isMobile ? 4 : 2;
   const clampToMaxChars = useCallback((text: string) => (text.length > MAX_CHARS ? text.slice(0, MAX_CHARS) : text), [MAX_CHARS]);
-  // Helper: فحص تجاوز سطرين بصريًا (مع احتساب الالتفاف)
-  const wouldExceedTwoLines = useCallback(
-    (el: HTMLTextAreaElement | null, nextValue: string): boolean => {
-      if (!el) return false;
-      const previousValue = el.value;
-      const previousHeight = el.style.height;
-      try {
-        el.value = nextValue;
-        el.style.height = 'auto';
-        const computed = window.getComputedStyle(el);
-        const parsedLineHeight = parseFloat(computed.lineHeight || '');
-        const fontSize = parseFloat(computed.fontSize || '16');
-        const lineHeight = Number.isFinite(parsedLineHeight) && parsedLineHeight > 0
-          ? parsedLineHeight
-          : (Number.isFinite(fontSize) && fontSize > 0 ? fontSize * 1.4 : 20);
-        const paddingTop = parseFloat(computed.paddingTop || '0') || 0;
-        const paddingBottom = parseFloat(computed.paddingBottom || '0') || 0;
-        const allowedHeight = lineHeight * MAX_LINES + paddingTop + paddingBottom;
-        const scrollH = el.scrollHeight; // includes padding
-        return scrollH > Math.ceil(allowedHeight + 1);
-      } catch {
-        return false;
-      } finally {
-        el.value = previousValue;
-        el.style.height = previousHeight;
-      }
-    },
-    [MAX_LINES]
-  );
-
-  // ضبط ارتفاع حقل الإدخال تلقائياً عند تعدد الأسطر (حتى الحد الأقصى)
-  const autoResizeTextarea = useCallback((el: HTMLTextAreaElement | null) => {
-    if (!el) return;
-    try {
-      el.style.height = 'auto';
-      const computed = window.getComputedStyle(el);
-      const parsedLineHeight = parseFloat(computed.lineHeight || '');
-      const fontSize = parseFloat(computed.fontSize || '16');
-      const lineHeight = Number.isFinite(parsedLineHeight) && parsedLineHeight > 0
-        ? parsedLineHeight
-        : (Number.isFinite(fontSize) && fontSize > 0 ? fontSize * 1.4 : 20);
-      const paddingTop = parseFloat(computed.paddingTop || '0') || 0;
-      const paddingBottom = parseFloat(computed.paddingBottom || '0') || 0;
-      const maxAllowed = lineHeight * MAX_LINES + paddingTop + paddingBottom;
-      const nextHeight = Math.min(el.scrollHeight, Math.ceil(maxAllowed + 1));
-      el.style.height = `${nextHeight}px`;
-    } catch {
-      // ignore
-    }
-  }, [MAX_LINES]);
-
 
   // Refs
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const typingTimeoutRef = useRef<NodeJS.Timeout>();
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastTypingTime = useRef<number>(0);
-  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const inputRef = useRef<HTMLInputElement | null>(null);
   const virtuosoRef = useRef<VirtuosoHandle>(null);
   const prevMessagesLenRef = useRef<number>(0);
 
@@ -168,36 +113,24 @@ export default function MessageArea({
   // Check if user is restricted from chatting
   const isChatRestricted = useMemo(() => {
     if (!currentUser) return true;
-    
     const isOwner = currentUser.userType === 'owner';
     const isGuest = currentUser.userType === 'guest';
-    
-    // Owner can always chat
     if (isOwner) return false;
-    
-    // If chat is locked for all users, only owner can chat
     if (chatLockAll) return true;
-    
-    // If chat is locked for visitors only, restrict guests
     if (chatLockVisitors && isGuest) return true;
-    
     return false;
   }, [currentUser, chatLockAll, chatLockVisitors]);
 
   // Get restriction message
   const getRestrictionMessage = useMemo(() => {
     if (!currentUser || !isChatRestricted) return '';
-    
     const isGuest = currentUser.userType === 'guest';
-    
     if (chatLockAll) {
       return 'هذه الخاصية غير متوفرة الآن';
     }
-    
     if (chatLockVisitors && isGuest) {
       return 'هذه الخاصية غير متوفرة الآن';
     }
-    
     return '';
   }, [currentUser, isChatRestricted, chatLockAll, chatLockVisitors]);
 
@@ -261,11 +194,9 @@ export default function MessageArea({
 
   // 🔥 SIMPLIFIED message filtering - حذف الفلترة المعقدة التي تخفي رسائل صحيحة
   const validMessages = useMemo(() => {
-    // ✅ فلترة بسيطة فقط لإزالة الرسائل الفارغة تماماً
     const base = messages.filter(
-      (msg) => msg && msg.content && msg.content.trim() !== '' && msg.sender // التأكد من وجود بيانات المرسل الأساسية
+      (msg) => msg && msg.content && msg.content.trim() !== '' && msg.sender
     );
-    // ✅ حجب رسائل المستخدمين المتجاهَلين (حماية واجهة فقط؛ الخادم يمنع أيضاً للخاص)
     if (ignoredUserIds && ignoredUserIds.size > 0) {
       return base.filter((msg) => !ignoredUserIds.has(msg.senderId));
     }
@@ -303,8 +234,6 @@ export default function MessageArea({
   useEffect(() => {
     const prevLen = prevMessagesLenRef.current;
     const currLen = validMessages.length;
-    
-    // Handle room change or first load - always scroll to bottom
     if (prevLen === 0 && currLen > 0) {
       scrollToBottom('auto');
       setIsAtBottom(true);
@@ -312,28 +241,20 @@ export default function MessageArea({
       prevMessagesLenRef.current = currLen;
       return;
     }
-
     if (currLen <= prevLen) return;
-
     const lastMessage = validMessages[currLen - 1];
     const sentByMe = !!(currentUser && lastMessage?.sender?.id === currentUser.id);
-
-    // If user is at bottom, or the last message was sent by me, autoscroll
     if (isAtBottom || sentByMe) {
       scrollToBottom('smooth');
       setUnreadCount(0);
     } else {
       setUnreadCount((count) => count + (currLen - prevLen));
     }
-
     prevMessagesLenRef.current = currLen;
   }, [validMessages.length, isAtBottom, currentUser, scrollToBottom]);
 
-  // Ensure initial prev length is set on mount and auto-scroll
   useEffect(() => {
     prevMessagesLenRef.current = validMessages.length;
-    // Always scroll to bottom on first mount, even if no messages yet
-    // This ensures proper positioning when entering a room
     scrollToBottom('auto');
     setIsAtBottom(true);
   }, [scrollToBottom]);
@@ -342,9 +263,6 @@ export default function MessageArea({
   useEffect(() => {
     if (validMessages.length > 0 && currentUser) {
       const lastMessage = validMessages[validMessages.length - 1];
-
-      // فحص إذا كانت الرسالة الأخيرة تحتوي على منشن للمستخدم الحالي
-      // وليست من المستخدم الحالي نفسه
       if (
         lastMessage.sender?.id !== currentUser.id &&
         lastMessage.content.includes(currentUser.username)
@@ -357,18 +275,13 @@ export default function MessageArea({
   // Throttled typing function - محسن
   const handleTypingThrottled = useCallback(() => {
     const now = Date.now();
-
-    // إرسال إشعار الكتابة مرة واحدة فقط كل 3 ثوانٍ
     if (now - lastTypingTime.current > 3000) {
       onTyping();
       lastTypingTime.current = now;
       setIsTyping(true);
-
-      // إيقاف إشعار الكتابة بعد 3 ثوانٍ
       if (typingTimeoutRef.current) {
         clearTimeout(typingTimeoutRef.current);
       }
-
       typingTimeoutRef.current = setTimeout(() => {
         setIsTyping(false);
       }, 3000);
@@ -378,150 +291,27 @@ export default function MessageArea({
   // Send message function - محسن
   const handleSendMessage = useCallback(() => {
     const trimmedMessage = messageText.trim();
-
     if (trimmedMessage && currentUser) {
-      // Clear typing state immediately
       setIsTyping(false);
       if (typingTimeoutRef.current) {
         clearTimeout(typingTimeoutRef.current);
       }
-
-      // إرسال الرسالة
       onSendMessage(trimmedMessage);
       setMessageText('');
-      setIsMultiLine(false);
-
-      // Focus back to input
       inputRef.current?.focus();
     }
   }, [messageText, currentUser, onSendMessage]);
-
-  // Key press handler - إرسال بالـ Enter وترك Shift+Enter لسطور جديدة (المحدد بالأحرف فقط)
-  const handleKeyPress = useCallback(
-    (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-      if (e.key === 'Enter') {
-        if (!e.shiftKey) {
-          e.preventDefault();
-          handleSendMessage();
-          return;
-        }
-      } else {
-        // إرسال إشعار الكتابة فقط عند الكتابة الفعلية
-        handleTypingThrottled();
-      }
-    },
-    [handleSendMessage, handleTypingThrottled]
-  );
-
-  // Message text change handler مع تقليم إلى 192 حرفًا
-  const handleMessageChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const next = clampToMaxChars(e.target.value);
-    setMessageText(next);
-    setIsMultiLine((next.match(/\n/g)?.length || 0) + 1 > 1);
-  }, [clampToMaxChars]);
-
-  // Paste handler مع تقليم إلى 192 حرفًا
-  const handlePaste = useCallback((e: React.ClipboardEvent<HTMLTextAreaElement>) => {
-    try {
-      const paste = e.clipboardData.getData('text');
-      const el = e.currentTarget;
-      const selectionStart = el.selectionStart ?? messageText.length;
-      const selectionEnd = el.selectionEnd ?? messageText.length;
-      const combined = messageText.slice(0, selectionStart) + paste + messageText.slice(selectionEnd);
-      const next = clampToMaxChars(combined);
-      if (next !== combined) {
-        e.preventDefault();
-        setMessageText(next);
-        setIsMultiLine((next.match(/\n/g)?.length || 0) + 1 > 1);
-      }
-    } catch {
-      // ignore
-    }
-  }, [messageText, clampToMaxChars]);
-
-  // إعادة ضبط الارتفاع تلقائياً عند تحديث النص أو تغيير وضع التعدد
-  useEffect(() => {
-    const el = inputRef.current;
-    if (!el) return;
-    if (isMobile && isMultiLine) {
-      autoResizeTextarea(el);
-    } else {
-      // اترك الكلاسات الافتراضية تتحكم بالارتفاع (h-11/h-12)
-      el.style.height = '';
-    }
-  }, [messageText, isMobile, isMultiLine, autoResizeTextarea]);
-
-  // Emoji select handler
-  const handleEmojiSelect = useCallback((emoji: string) => {
-    const newText = clampToMaxChars(messageText + emoji);
-    setMessageText(newText);
-    const lines = newText.split('\n').length;
-    setIsMultiLine(lines > 1);
-    setShowEmojiPicker(false);
-    inputRef.current?.focus();
-  }, [messageText, clampToMaxChars]);
-
-  // Animated Emoji select handler
-  const handleAnimatedEmojiSelect = useCallback((emoji: { id: string; url: string; name: string; code: string }) => {
-    // إدراج كود السمايل في الرسالة
-    const newText = clampToMaxChars(messageText + ` [[emoji:${emoji.id}:${emoji.url}]] `);
-    setMessageText(newText);
-    const lines = newText.split('\n').length;
-    setIsMultiLine(lines > 1);
-    setShowAnimatedEmojiPicker(false);
-    inputRef.current?.focus();
-  }, [messageText, clampToMaxChars]);
-
-  // Emoji Mart handler
-  const handleEmojiMartSelect = useCallback((emoji: any) => {
-    let newText;
-    if (emoji.src) {
-      // إيموجي مخصص (GIF)
-      newText = clampToMaxChars(messageText + ` [[emoji:${emoji.id}:${emoji.src}]] `);
-    } else {
-      // إيموجي عادي
-      newText = clampToMaxChars(messageText + emoji.native);
-    }
-    setMessageText(newText);
-    const lines = newText.split('\n').length;
-    setIsMultiLine(lines > 1);
-    setShowEmojiMart(false);
-    inputRef.current?.focus();
-  }, [messageText, clampToMaxChars]);
-
-  // Lottie Emoji handler
-  const handleLottieEmojiSelect = useCallback((emoji: { id: string; name: string; url: string }) => {
-    const newText = clampToMaxChars(messageText + ` [[lottie:${emoji.id}:${emoji.url}]] `);
-    setMessageText(newText);
-    const lines = newText.split('\n').length;
-    setIsMultiLine(lines > 1);
-    setShowLottieEmoji(false);
-    inputRef.current?.focus();
-  }, [messageText, clampToMaxChars]);
-
-  // Enhanced Emoji handler
-  const handleEnhancedEmojiSelect = useCallback((emoji: { id: string; emoji: string; name: string; code: string }) => {
-    const newText = clampToMaxChars(messageText + emoji.emoji);
-    setMessageText(newText);
-    const lines = newText.split('\n').length;
-    setIsMultiLine(lines > 1);
-    setShowEnhancedEmoji(false);
-    inputRef.current?.focus();
-  }, [messageText, clampToMaxChars]);
 
   // File upload handler - محسن
   const handleFileUpload = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
       if (!file || !currentUser) return;
-
-      // التحقق من الصلاحيات
       const isAuthorized = currentUser && (
-        currentUser.userType === 'owner' || 
-        currentUser.userType === 'admin' || 
+        currentUser.userType === 'owner' ||
+        currentUser.userType === 'admin' ||
         currentUser.userType === 'moderator'
       );
-      
       if (!isAuthorized) {
         alert('هذه الميزة متاحة للمشرفين فقط');
         if (fileInputRef.current) {
@@ -529,7 +319,6 @@ export default function MessageArea({
         }
         return;
       }
-
       if (!file.type.startsWith('image/')) {
         alert('يرجى اختيار ملف صورة صحيح');
         if (fileInputRef.current) {
@@ -537,7 +326,6 @@ export default function MessageArea({
         }
         return;
       }
-
       if (file.size > 5 * 1024 * 1024) {
         alert('حجم الصورة كبير جداً. الحد الأقصى 5MB');
         if (fileInputRef.current) {
@@ -545,14 +333,12 @@ export default function MessageArea({
         }
         return;
       }
-
       try {
         const form = new FormData();
         form.append('image', file);
         form.append('senderId', String(currentUser.id));
         form.append('roomId', currentRoomId || 'general');
         await api.upload('/api/upload/message-image', form, { timeout: 60000 });
-        // سيتم بث الرسالة عبر الـ socket من الخادم فلا داعي لاستدعاء onSendMessage محلياً
       } catch (err) {
         console.error('رفع الصورة فشل:', err);
         alert('تعذر رفع الصورة، حاول مرة أخرى');
@@ -565,25 +351,13 @@ export default function MessageArea({
     [currentUser, currentRoomId]
   );
 
-  // تم نقل دالة formatTime إلى utils/timeUtils.ts لتجنب التكرار
-
-  // لون حد الرسالة موحد عبر أداة utils
-
-  // Username click handler - معالج النقر على اسم المستخدم لإدراج المنشن
+  // Username click handler - إدراج المنشن
   const handleUsernameClick = useCallback(
     (event: React.MouseEvent, user: ChatUser) => {
       event.stopPropagation();
-
-      // إدراج اسم المستخدم في مربع النص بدون رمز @
       const separator = messageText.trim() ? ' ' : '';
       const newText = clampToMaxChars(messageText + separator + user.username + ' ');
       setMessageText(newText);
-      
-      // تحديث حالة الأسطر المتعددة
-      const lines = newText.split('\n').length;
-      setIsMultiLine(lines > 1);
-
-      // التركيز على مربع النص
       inputRef.current?.focus();
     },
     [messageText, clampToMaxChars]
@@ -632,9 +406,7 @@ export default function MessageArea({
       )}
 
       {/* Messages Container - Virtualized */}
-      <div
-        className={`relative flex-1 p-2 bg-gradient-to-b from-gray-50 to-white`}
-      >
+      <div className={`relative flex-1 p-2 bg-gradient-to-b from-gray-50 to-white`}>
         {validMessages.length === 0 ? (
           <div className="h-full"></div>
         ) : (
@@ -951,7 +723,7 @@ export default function MessageArea({
             />
           ) : (
             <Input
-              ref={inputRef as any}
+              ref={inputRef}
               value={messageText}
               onChange={(e) => setMessageText(clampToMaxChars(e.target.value))}
               onKeyDown={(e) => {
