@@ -215,7 +215,7 @@ class SmartImageService {
     switch (type) {
       case 'avatar':
         sharpInstance = sharpInstance
-          .resize(512, 512, { fit: 'cover', position: 'center' })
+          .resize(400, 400, { fit: 'cover', position: 'center' })
           .webp({ 
             quality: buffer.length > 1024 * 1024 ? 75 : 85,
             effort: 6,
