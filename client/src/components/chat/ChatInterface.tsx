@@ -279,6 +279,37 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
     }
   }, [rooms, updateRoomUserCount]);
 
+  // 🔄 تحديث عدد المستخدمين في الغرف بناءً على قائمة onlineUsers
+  useEffect(() => {
+    if (!chat.onlineUsers || chat.onlineUsers.length === 0) {
+      // إذا لم يكن هناك مستخدمين، تأكد من تحديث جميع الغرف إلى 0
+      rooms.forEach(room => {
+        updateRoomUserCount(room.id, 0);
+      });
+      return;
+    }
+    
+    // حساب عدد المستخدمين لكل غرفة من قائمة onlineUsers
+    const roomUserCounts = new Map<string, number>();
+    
+    chat.onlineUsers.forEach(user => {
+      const userRoom = user.currentRoom || 'general';
+      roomUserCounts.set(userRoom, (roomUserCounts.get(userRoom) || 0) + 1);
+    });
+    
+    // تحديث عدد المستخدمين لكل غرفة
+    roomUserCounts.forEach((count, roomId) => {
+      updateRoomUserCount(roomId, count);
+    });
+    
+    // تحديث الغرف التي ليس فيها مستخدمين إلى 0
+    rooms.forEach(room => {
+      if (!roomUserCounts.has(room.id)) {
+        updateRoomUserCount(room.id, 0);
+      }
+    });
+  }, [chat.onlineUsers, rooms, updateRoomUserCount]);
+
   const [showNotifications, setShowNotifications] = useState(false);
 
   const [showMessages, setShowMessages] = useState(false);

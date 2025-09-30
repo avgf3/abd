@@ -53,7 +53,7 @@ function scheduleUserListUpdate(roomId: string): void {
     }
     updateQueue.clear();
     updateTimeout = null;
-  }, 100); // تحديث كل 100ms
+  }, 50); // تحديث كل 50ms (أسرع استجابة)
 }
 
 const GENERAL_ROOM = 'general';
@@ -567,6 +567,15 @@ async function joinRoom(
   // إرسال التأكيد للمستخدم المنضم فقط
   const users = await buildOnlineUsersForRoom(roomId);
   socket.emit('message', { type: 'roomJoined', roomId, users });
+  
+  // 🔥 بث قائمة المستخدمين المحدثة للغرفة فوراً
+  io.to(`room_${roomId}`).emit('message', {
+    type: 'onlineUsers',
+    users,
+    roomId,
+    source: 'join_immediate',
+    timestamp: Date.now(),
+  });
 
   // بث userUpdated للمستخدم نفسه وللغرفة لتحديث currentRoom و lastSeen و isHidden فوراً على الواجهة
   try {
@@ -667,6 +676,18 @@ async function leaveRoom(
 
   // ✅ استخدام التحديث المجمع
   scheduleUserListUpdate(roomId);
+  
+  // 🔥 بث قائمة المستخدمين المحدثة للغرفة فوراً بعد المغادرة
+  try {
+    const updatedUsers = await buildOnlineUsersForRoom(roomId);
+    io.to(`room_${roomId}`).emit('message', {
+      type: 'onlineUsers',
+      users: updatedUsers,
+      roomId,
+      source: 'leave_immediate',
+      timestamp: Date.now(),
+    });
+  } catch {}
 
   // بث userUpdated بتفريغ currentRoom وتحديث lastSeen و isHidden ليظهر فوراً في الواجهة
   try {
