@@ -1265,6 +1265,8 @@ export function setupRealtime(httpServer: HttpServer): IOServer<ClientToServerEv
           content: sanitizedContent,
           messageType: data?.messageType || 'text',
           isPrivate: false,
+          textColor: data?.textColor,
+          bold: data?.bold,
         });
         if (!created) {
           socket.emit('message', { type: 'error', message: 'فشل في إرسال الرسالة' });

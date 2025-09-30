@@ -1714,7 +1714,7 @@ export const useChat = () => {
 
   // 🔥 SIMPLIFIED Send message function
   const sendMessage = useCallback(
-    (content: string, messageType: string = 'text', receiverId?: number, roomId?: string) => {
+    (content: string, messageType: string = 'text', receiverId?: number, roomId?: string, textColor?: string, bold?: boolean) => {
       if (!state.currentUser || !socket.current?.connected) {
         console.error('❌ لا يمكن إرسال الرسالة - المستخدم غير متصل');
         return;
@@ -1737,6 +1737,8 @@ export const useChat = () => {
         isPrivate: !!receiverId,
         receiverId,
         roomId: roomId || state.currentRoomId,
+        textColor,
+        bold,
       };
 
       if (receiverId) {
@@ -1749,6 +1751,8 @@ export const useChat = () => {
             receiverId,
             content: messageData.content,
             messageType: messageData.messageType || 'text',
+            textColor: messageData.textColor,
+            bold: messageData.bold,
           },
         }).catch(() => {});
       } else {
