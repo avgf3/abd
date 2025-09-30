@@ -281,7 +281,7 @@ export default function RoomComponent({
   const [roomImage, setRoomImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [isAtBottomRooms, setIsAtBottomRooms] = useState(true);
+  // إزالة زر الانتقال لأسفل: لم نعد نتتبع الوصول لأسفل
   const [roomIdToChangeIcon, setRoomIdToChangeIcon] = useState<string | null>(null);
   const { updateRoomIcon, toggleRoomLock } = useRoomManager();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -555,14 +555,7 @@ export default function RoomComponent({
       {/* المحتوى */}
       <div
         ref={listScrollRef}
-        onScroll={() => {
-          const el = listScrollRef.current;
-          if (!el) return;
-          const threshold = 80;
-          const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight <= threshold;
-          setIsAtBottomRooms(atBottom);
-        }}
-        className="relative flex-1 min-h-0 overflow-y-auto cursor-grab bg-background"
+        className="relative flex-1 min-h-0 overflow-hidden bg-background"
       >
         {/* العنوان - مشابه لقائمة المتصلين */}
         <div className="bg-primary text-primary-foreground mb-1 mx-0 mt-0 rounded-none">
@@ -613,7 +606,7 @@ export default function RoomComponent({
               />
             ))
           ) : (
-            <div className="px-0">
+            <div className="px-0 h-full">
               {filteredRooms.length === 0 ? (
                 <div className="text-center text-gray-500 py-6">
                   <div className="mb-3">{searchQuery ? '🔍' : '🏠'}</div>
@@ -631,7 +624,7 @@ export default function RoomComponent({
                 </div>
               ) : (
                 <Virtuoso
-                  style={{ height: 'calc(var(--app-body-height) - 204px)' }}
+                  style={{ height: '100%' }}
                   totalCount={filteredRooms.length}
                   itemContent={(index) => {
                     const room = filteredRooms[index];
@@ -665,20 +658,6 @@ export default function RoomComponent({
           style={{ display: 'none' }}
           onChange={handleFileSelected}
         />
-        {!isAtBottomRooms && (
-          <div className="absolute bottom-4 right-4 z-10">
-            <Button
-              size="sm"
-              onClick={() => {
-                const el = listScrollRef.current;
-                if (el) el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
-              }}
-              className="px-3 py-1.5 rounded-full text-xs bg-primary text-primary-foreground shadow"
-            >
-              الانتقال لأسفل
-            </Button>
-          </div>
-        )}
       </div>
 
       {/* شريط التحكم الصوتي */}

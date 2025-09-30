@@ -1065,7 +1065,9 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
         className={`flex flex-1 overflow-hidden min-h-0 ${isMobile ? 'flex-col' : 'flex-col sm:flex-row'}`}
         style={{ 
           paddingTop: 'var(--app-header-height)', 
-          paddingBottom: isMobile ? 'calc(var(--app-footer-height) + env(safe-area-inset-bottom))' : 'var(--app-footer-height)', 
+          paddingBottom: isMobile 
+            ? (activeView === 'rooms' ? 'env(safe-area-inset-bottom)' : 'calc(var(--app-footer-height) + env(safe-area-inset-bottom))') 
+            : (activeView === 'rooms' ? '0' : 'var(--app-footer-height)'), 
           height: isMobile ? 'var(--app-body-height)' : undefined 
         }}
       >
@@ -1078,9 +1080,13 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                 : activeView === 'walls' ? 'w-full sm:w-96' : activeView === 'friends' ? 'w-full sm:w-80' : 'w-full sm:w-64'
             } max-w-full sm:shrink-0 transition-all duration-300 min-h-0 flex flex-col`}
             style={{ 
-              maxHeight: isMobile ? '100dvh' : 'calc(100dvh - var(--app-header-height) - var(--app-footer-height))',
+              maxHeight: isMobile 
+                ? '100dvh' 
+                : (activeView === 'rooms' 
+                    ? 'calc(100dvh - var(--app-header-height))' 
+                    : 'calc(100dvh - var(--app-header-height) - var(--app-footer-height))'),
               paddingTop: isMobile ? 'var(--app-header-height)' : '0',
-              paddingBottom: isMobile ? 'var(--app-footer-height)' : '0'
+              paddingBottom: isMobile ? (activeView === 'rooms' ? '0' : 'var(--app-footer-height)') : '0'
             }}
           >
             {/* زر إغلاق للجوال */}
@@ -1226,7 +1232,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
       </main>
 
       {/* Modern Footer Navigation */}
-      {!showRichest && (
+      {!showRichest && activeView !== 'rooms' && (
       <footer
         className={`fixed bottom-0 left-0 right-0 z-[60] modern-nav app-footer safe-area-bottom h-14 px-2 sm:px-4 flex justify-start items-center ${isMobile ? 'mobile-footer' : ''}`}
       >
