@@ -164,12 +164,14 @@ export default function UnifiedSidebar({
         return 2;
       case 'moderator':
         return 3;
+      case 'bot':
+        return 4; // البوتات بعد المشرفين
       case 'member':
-        return 4;
-      case 'guest':
         return 5;
-      default:
+      case 'guest':
         return 6;
+      default:
+        return 7;
     }
   };
 
