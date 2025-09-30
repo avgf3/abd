@@ -528,11 +528,15 @@ export default function PrivateMessageBox({
                                     <span
                                       style={{
                                         color:
-                                          currentUser && m.senderId === currentUser.id
-                                            ? composerTextColor
-                                            : getFinalUsernameColor(m.sender || user),
+                                          (m as any).textColor || (
+                                            currentUser && m.senderId === currentUser.id
+                                              ? composerTextColor
+                                              : getFinalUsernameColor(m.sender || user)
+                                          ),
                                         fontWeight:
-                                          currentUser && m.senderId === currentUser.id && composerBold
+                                          (m as any).bold
+                                            ? 700
+                                            : currentUser && m.senderId === currentUser.id && composerBold
                                             ? 700
                                             : undefined,
                                       }}
@@ -557,11 +561,15 @@ export default function PrivateMessageBox({
                                 className="text-sm leading-relaxed"
                                 style={{
                                   color:
-                                    currentUser && m.senderId === currentUser.id
-                                      ? composerTextColor
-                                      : getFinalUsernameColor(m.sender || user),
+                                    (m as any).textColor || (
+                                      currentUser && m.senderId === currentUser.id
+                                        ? composerTextColor
+                                        : getFinalUsernameColor(m.sender || user)
+                                    ),
                                   fontWeight:
-                                    currentUser && m.senderId === currentUser.id && composerBold
+                                    (m as any).bold
+                                      ? 700
+                                      : currentUser && m.senderId === currentUser.id && composerBold
                                       ? 700
                                       : undefined,
                                 }}

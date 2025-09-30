@@ -55,6 +55,9 @@ export interface ChatMessage {
   timestamp: string;
   sender?: ChatUser;
   roomId?: string;
+  // نمط نص الرسالة القادم من واجهة المرسل (تبويب الزائد)
+  textColor?: string;
+  bold?: boolean;
   // اختياري: معلومات التفاعلات
   reactions?: {
     like: number;

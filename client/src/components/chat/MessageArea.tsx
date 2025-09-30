@@ -675,11 +675,15 @@ export default function MessageArea({
                                       <span
                                         style={{
                                           color:
-                                            currentUser && message.senderId === currentUser.id
-                                              ? composerTextColor
-                                              : getFinalUsernameColor(message.sender),
+                                            (message as any).textColor || (
+                                              currentUser && message.senderId === currentUser.id
+                                                ? composerTextColor
+                                                : getFinalUsernameColor(message.sender)
+                                            ),
                                           fontWeight:
-                                            currentUser && message.senderId === currentUser.id && composerBold
+                                            (message as any).bold
+                                              ? 700
+                                              : currentUser && message.senderId === currentUser.id && composerBold
                                               ? 700
                                               : undefined,
                                         }}
@@ -707,11 +711,15 @@ export default function MessageArea({
                                   className="text-sm leading-relaxed"
                                   style={{
                                     color:
-                                      currentUser && message.senderId === currentUser.id
-                                        ? composerTextColor
-                                        : getFinalUsernameColor(message.sender),
+                                      (message as any).textColor || (
+                                        currentUser && message.senderId === currentUser.id
+                                          ? composerTextColor
+                                          : getFinalUsernameColor(message.sender)
+                                      ),
                                     fontWeight:
-                                      currentUser && message.senderId === currentUser.id && composerBold
+                                      (message as any).bold
+                                        ? 700
+                                        : currentUser && message.senderId === currentUser.id && composerBold
                                         ? 700
                                         : undefined,
                                   }}

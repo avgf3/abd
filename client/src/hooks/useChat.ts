@@ -1730,7 +1730,17 @@ export const useChat = () => {
       const detectedType =
         messageType === 'text' && trimmed.startsWith('data:image') ? 'image' : messageType;
 
-      const messageData = {
+      // قراءة إعداد لون/غامق من تبويب الزائد (ComposerStyle)
+      let authorTextColor: string | undefined;
+      let authorBold: boolean | undefined;
+      try {
+        const c = localStorage.getItem('composer.textColor');
+        const b = localStorage.getItem('composer.bold');
+        authorTextColor = c || undefined;
+        authorBold = b === '1';
+      } catch {}
+
+      const messageData: any = {
         senderId: state.currentUser.id,
         content: trimmed,
         messageType: detectedType,
@@ -1738,6 +1748,8 @@ export const useChat = () => {
         receiverId,
         roomId: roomId || state.currentRoomId,
       };
+      if (authorTextColor) messageData.textColor = authorTextColor;
+      if (authorBold !== undefined) messageData.bold = authorBold;
 
       if (receiverId) {
         // إرسال خاص عبر مسار منفصل كلياً

@@ -1278,6 +1278,9 @@ export function setupRealtime(httpServer: HttpServer): IOServer<ClientToServerEv
             ...created,
             sender,
             roomId,
+            // تمرير إعدادات المرسل (تبويب الزائد) كي يراها الجميع
+            textColor: typeof data?.textColor === 'string' ? data.textColor : undefined,
+            bold: typeof data?.bold === 'boolean' ? data.bold : (String(data?.bold) === '1' ? true : undefined),
             reactions: { like: 0, dislike: 0, heart: 0 },
             myReaction: null,
           },
