@@ -1992,11 +1992,8 @@ export default function ProfileModal({
 
         .profile-cover {
           position: relative;
-          height: 248px; /* 220px + 28px للامتداد الكامل */
-          background-size: contain;
-          background-position: center;
-          background-repeat: no-repeat;
-          background-color: rgba(0,0,0,0.6);
+          height: auto;
+          background: transparent;
         }
 
         .change-cover-btn {
@@ -2722,18 +2719,18 @@ export default function ProfileModal({
           </button>
 
           {/* Cover Section - completely stable */}
-          <div
-            className="profile-cover"
-            style={{
-              backgroundImage: (() => {
-                const src = getProfileBannerSrcLocal();
-                return src ? `url(${src})` : 'none';
-              })(),
-              backgroundSize: 'contain',
-              backgroundPosition: 'center',
-              backgroundRepeat: 'no-repeat',
-            }}
-          >
+          <div className="profile-cover">
+            {(() => {
+              const src = getProfileBannerSrcLocal();
+              if (!src) return null;
+              return (
+                <img
+                  src={src}
+                  alt="صورة الغلاف"
+                  style={{ width: '100%', height: 'auto', display: 'block' }}
+                />
+              );
+            })()}
             {/* مشغل الموسيقى - يظهر أعلى يمين الغلاف */}
             {localUser?.profileMusicUrl && musicEnabled && !externalAudioManaged && (
               <>
