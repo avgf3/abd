@@ -1025,12 +1025,10 @@ export default function MessageArea({
           />
         </div>
 
-        {/* Character Counter */}
-        {messageText.length > 0 && (
-          <div className="mt-1 text-[11px] text-gray-500 text-left">
-            {messageText.length}/{MAX_CHARS} حرف
-          </div>
-        )}
+        {/* Character Counter hidden: keep space for stability */}
+        <div className="mt-1 text-[11px] text-gray-500 text-left invisible select-none">
+          {messageText.length}/{MAX_CHARS} حرف
+        </div>
       </div>
     </section>
   );
