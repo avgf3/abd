@@ -24,6 +24,7 @@ import { ensureBotsTable } from './database-adapter';
 import { ensureChatLockColumns } from './database-adapter';
 import { ensureUserPreferencesColumns } from './database-adapter';
 import { ensureUsernameColorDefaultBlue } from './database-adapter';
+import { ensureMessageTextStylingColumns } from './database-adapter';
 import { optimizeDatabaseIndexes } from './utils/database-optimization';
 
 // إعادة تصدير دالة التهيئة من المحول
@@ -287,6 +288,13 @@ export async function initializeSystem(): Promise<boolean> {
       await ensureUserPreferencesColumns();
     } catch (e) {
       console.warn('⚠️ تعذر ضمان أعمدة تفضيلات المستخدم:', (e as any)?.message || e);
+    }
+
+    // ضمان أعمدة تنسيق النص في جدول الرسائل (text_color, bold)
+    try {
+      await ensureMessageTextStylingColumns();
+    } catch (e) {
+      console.warn('⚠️ تعذر ضمان أعمدة تنسيق النص للرسائل:', (e as any)?.message || e);
     }
 
     // ضمان اللون الافتراضي للاسم أزرق وتطهير القيم البيضاء

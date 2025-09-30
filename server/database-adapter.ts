@@ -427,6 +427,63 @@ export async function ensureRoomsColumns(): Promise<void> {
   }
 }
 
+// Ensure message text styling columns exist on messages table
+export async function ensureMessageTextStylingColumns(): Promise<void> {
+  try {
+    if (!dbAdapter.client) return;
+
+    // Check existing columns
+    const rows = (await dbAdapter.client`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_schema = 'public' 
+        AND table_name = 'messages' 
+        AND column_name IN ('text_color','bold','attachments','edited_at','deleted_at')
+    `) as any[];
+    const existing = new Set((rows || []).map((r: any) => r.column_name));
+
+    if (!existing.has('text_color')) {
+      await dbAdapter.client.unsafe(
+        `ALTER TABLE messages ADD COLUMN IF NOT EXISTS text_color TEXT`
+      );
+    }
+    if (!existing.has('bold')) {
+      await dbAdapter.client.unsafe(
+        `ALTER TABLE messages ADD COLUMN IF NOT EXISTS bold BOOLEAN DEFAULT false`
+      );
+      // Backfill NULLs to false just in case
+      await dbAdapter.client.unsafe(`UPDATE messages SET bold = false WHERE bold IS NULL`);
+    }
+
+    if (!existing.has('attachments')) {
+      await dbAdapter.client.unsafe(
+        `ALTER TABLE messages ADD COLUMN IF NOT EXISTS attachments JSONB DEFAULT '[]'::jsonb`
+      );
+    } else {
+      // Ensure default exists to avoid explicit nulls
+      await dbAdapter.client.unsafe(
+        `ALTER TABLE messages ALTER COLUMN attachments SET DEFAULT '[]'::jsonb`
+      );
+      await dbAdapter.client.unsafe(`UPDATE messages SET attachments = '[]'::jsonb WHERE attachments IS NULL`);
+    }
+
+    if (!existing.has('edited_at')) {
+      await dbAdapter.client.unsafe(`ALTER TABLE messages ADD COLUMN IF NOT EXISTS edited_at TIMESTAMP`);
+    }
+
+    if (!existing.has('deleted_at')) {
+      await dbAdapter.client.unsafe(`ALTER TABLE messages ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP`);
+    }
+
+    // Helpful index for styling-related filters (idempotent)
+    await dbAdapter.client.unsafe(
+      `CREATE INDEX IF NOT EXISTS idx_messages_text_styling ON messages(text_color, bold)`
+    );
+  } catch (e) {
+    console.error('❌ خطأ في ضمان أعمدة text styling للرسائل:', (e as any)?.message || e);
+  }
+}
+
 // دالة لضمان وجود جدول البوتات
 export async function ensureBotsTable(): Promise<void> {
   try {
