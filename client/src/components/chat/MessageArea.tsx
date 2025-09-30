@@ -928,7 +928,7 @@ export default function MessageArea({
                 className={`aspect-square mobile-touch-button ${isMobile ? 'min-w-[44px] min-h-[44px]' : ''} ${isChatRestricted ? 'opacity-60 cursor-not-allowed' : ''} bg-primary/10 text-primary border-primary/20 hover:bg-primary/15`}
                 title="سمايلات متحركة متقدمة"
               >
-                <Sparkles className="w-4 h-4" />
+                <Smile className="w-4 h-4" />
               </Button>
               
               {/* Enhanced Emoji Picker (Default) */}
