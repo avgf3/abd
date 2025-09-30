@@ -1993,9 +1993,10 @@ export default function ProfileModal({
         .profile-cover {
           position: relative;
           height: 248px; /* 220px + 28px للامتداد الكامل */
-          background-size: cover;
+          background-size: contain;
           background-position: center;
           background-repeat: no-repeat;
+          background-color: rgba(0,0,0,0.6);
         }
 
         .change-cover-btn {
@@ -2728,7 +2729,7 @@ export default function ProfileModal({
                 const src = getProfileBannerSrcLocal();
                 return src ? `url(${src})` : 'none';
               })(),
-              backgroundSize: 'cover',
+              backgroundSize: 'contain',
               backgroundPosition: 'center',
               backgroundRepeat: 'no-repeat',
             }}

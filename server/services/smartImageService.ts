@@ -224,8 +224,9 @@ class SmartImageService {
         break;
         
       case 'banner':
+        // استخدم contain لتجنب القص المفرط، مع خلفية سوداء لملء الفراغات
         sharpInstance = sharpInstance
-          .resize(1200, 400, { fit: 'cover', position: 'center' })
+          .resize(1200, 400, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 1 } })
           .webp({ 
             quality: buffer.length > 2 * 1024 * 1024 ? 70 : 80,
             effort: 6,
