@@ -1,15 +1,9 @@
-import { Send, Smile, ChevronDown, Sparkles, MoreVertical, Lock, UserX } from 'lucide-react';
+import { Send, Image as ImageIcon, MoreVertical, Lock, UserX } from 'lucide-react';
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { Virtuoso, type VirtuosoHandle } from 'react-virtuoso';
 
-const EmojiPicker = React.lazy(() => import('./EmojiPicker'));
-const AnimatedEmojiPicker = React.lazy(() => import('./AnimatedEmojiPicker'));
-const EmojiMartPicker = React.lazy(() => import('./EmojiMartPicker'));
-const LottieEmojiPicker = React.lazy(() => import('./LottieEmojiPicker'));
-const AnimatedEmojiEnhanced = React.lazy(() => import('./AnimatedEmojiEnhanced'));
-const ComposerPlusMenu = React.lazy(() => import('./ComposerPlusMenu'));
+// Emoji pickers and ComposerPlusMenu removed to match DM composer style
 import ProfileImage from './ProfileImage';
-import UserRoleBadge from './UserRoleBadge';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,7 +23,7 @@ import { getFinalUsernameColor } from '@/utils/themeUtils';
 import { formatTime } from '@/utils/timeUtils';
 // Removed ComposerPlusMenu (ready/quick options)
 import { useComposerStyle } from '@/contexts/ComposerStyleContext';
-import { renderMessageWithAnimatedEmojis, convertTextToAnimatedEmojis } from '@/utils/animatedEmojiUtils';
+import { renderMessageWithAnimatedEmojis } from '@/utils/animatedEmojiUtils';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -71,13 +65,7 @@ export default function MessageArea({
   chatLockVisitors = false,
 }: MessageAreaProps) {
   const [messageText, setMessageText] = useState('');
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const [showAnimatedEmojiPicker, setShowAnimatedEmojiPicker] = useState(false);
-  const [showEmojiMart, setShowEmojiMart] = useState(false);
-  const [showLottieEmoji, setShowLottieEmoji] = useState(false);
-  const [showEnhancedEmoji, setShowEnhancedEmoji] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
-  const [isMultiLine, setIsMultiLine] = useState(false);
   const isMobile = useIsMobile();
   const { textColor: composerTextColor, bold: composerBold } = useComposerStyle();
   // حد أقصى لعدد الأحرف في الكتابة (سطح المكتب والهاتف)
@@ -660,173 +648,169 @@ export default function MessageArea({
             atBottomStateChange={handleAtBottomChange}
             increaseViewportBy={{ top: 400, bottom: 400 }}
             itemContent={(index, message) => (
-              <div
-                key={message.id}
-                className={`flex ${isMobile ? 'items-start' : 'items-center'} gap-2 py-1.5 px-2 rounded-lg border-r-4 bg-white shadow-sm hover:shadow-md transition-all duration-300 soft-entrance`}
-                style={{ borderRightColor: getDynamicBorderColor(message.sender) }}
-                data-message-type={message.messageType || 'normal'}
-              >
-                {message.sender && (
-                  <div className="flex-shrink-0">
-                    <ProfileImage
-                      user={message.sender}
-                      size="small"
-                      className="w-7 h-7 cursor-pointer hover:scale-110 transition-transform duration-200"
-                      onClick={(e) => onUserClick && onUserClick(e, message.sender!)}
-                    />
-                  </div>
-                )}
-
-                <div className={`flex-1 min-w-0`}>
-                  <div className={`horizontal-message-layout ${message.messageType === 'system' ? 'system-message-mobile' : ''}`}>
-                    <div className="message-name-section">
-                      {message.sender && (message.sender.userType as any) !== 'bot' && (
-                        <UserRoleBadge user={message.sender} showOnlyIcon={true} hideGuestAndGender={true} size={16} />
-                      )}
-                      <button
-                        onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
-                        className="font-semibold hover:underline transition-colors duration-200 text-sm"
-                        style={{ color: getFinalUsernameColor(message.sender) }}
-                      >
-                        {message.sender?.username || 'جاري التحميل...'}
-                      </button>
-                      <span className={`${message.messageType === 'system' ? 'text-red-400' : 'text-gray-400'} mx-1`}>:</span>
-                    </div>
-
-                    <div className={`message-content-section message-content-fix ${message.messageType === 'system' ? 'text-red-600' : 'text-gray-800'}`}>
-                      {message.messageType === 'image' ? (
-                        <img
-                          src={message.content}
-                          alt="صورة"
-                          className="max-w-[70%] md:max-w-[50%] max-h-64 rounded object-contain cursor-pointer"
-                          loading="lazy"
-                          onLoad={() => {
-                            if (isAtBottom) {
-                              scrollToBottom('auto');
-                            }
-                          }}
-                          onClick={() => setImageLightbox({ open: true, src: message.content })}
-                        />
-                      ) : (() => {
-                        const { cleaned, ids } = parseYouTubeFromText(message.content);
-                        const clampClass = isMessageExpanded(message.id) ? '' : (isMobile ? 'line-clamp-4' : 'line-clamp-2');
-                        const textStyle = currentUser && message.senderId === currentUser.id
-                          ? { color: composerTextColor, fontWeight: composerBold ? 600 : undefined }
-                          : undefined;
-
-                        if (ids.length > 0) {
-                          const firstId = ids[0];
-                          return (
-                            <span className={`flex items-start gap-2`}>
-                              {cleaned ? (
-                                <span
-                                  className={`flex-1 ${clampClass}`}
-                                  style={textStyle}
-                                  onClick={() => toggleMessageExpanded(message.id)}
-                                >
-                                  {renderMessageWithAnimatedEmojis(
-                                    cleaned,
-                                    (text) => renderMessageWithMentions(text, currentUser, onlineUsers)
-                                  )}
-                                </span>
-                              ) : null}
-                              <button
-                                onClick={() => setYoutubeModal({ open: true, videoId: firstId })}
-                                className="flex items-center justify-center w-9 h-7 rounded bg-red-600 hover:bg-red-700 transition-colors shrink-0"
-                                title="فتح فيديو YouTube"
-                              >
-                                <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-                                  <path fill="#fff" d="M10 15l5.19-3L10 9v6z"></path>
-                                </svg>
-                              </button>
-                            </span>
-                          );
-                        }
-                        return (
-                          <span
-                            className={`${clampClass}`}
-                            onClick={() => toggleMessageExpanded(message.id)}
-                            style={textStyle}
+              (() => {
+                const isMe = !!(currentUser && message.senderId === currentUser.id);
+                const textStyle = currentUser && message.senderId === currentUser.id
+                  ? { color: composerTextColor, fontWeight: composerBold ? 600 : undefined }
+                  : undefined;
+                return (
+                  <div
+                    key={message.id}
+                    className={`flex items-start gap-3 p-3 rounded-lg transition-all duration-300 ${isMe ? 'bg-blue-50/80 border-r-4 ml-4' : 'bg-green-50/80 border-r-4 mr-4'}`}
+                    style={{ borderRightColor: getDynamicBorderColor(message.sender) }}
+                    data-message-type={message.messageType || 'normal'}
+                  >
+                    {message.sender && (
+                      <ProfileImage
+                        user={message.sender}
+                        size="small"
+                        className="w-8 h-8 cursor-pointer hover:scale-110 transition-transform duration-200"
+                        onClick={(e) => onUserClick && onUserClick(e, message.sender!)}
+                      />
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <div className="runin-container">
+                        <div className="runin-name">
+                          <button
+                            onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
+                            className="font-semibold text-sm hover:underline"
+                            style={{ color: getFinalUsernameColor(message.sender) }}
                           >
-                            {renderMessageWithAnimatedEmojis(
-                              message.content,
-                              (text) => renderMessageWithMentions(text, currentUser, onlineUsers)
-                            )}
-                          </span>
-                        );
-                      })()}
-                    </div>
-                  </div>
-                </div>
-
-                <span className={`text-xs whitespace-nowrap ml-2 self-start ${message.messageType === 'system' ? 'text-red-500' : 'text-gray-500'}`}>
-                  {formatTime(message.timestamp)}
-                </span>
-
-                {currentUser && (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <button
-                        className="h-6 w-6 p-0 text-gray-600 hover:text-gray-900 self-start ml-1"
-                        title="المزيد"
-                        aria-label="المزيد"
-                      >
-                        <MoreVertical className="w-4 h-4" />
-                      </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="start" sideOffset={6} className="min-w-[180px]">
-                      {!message.isPrivate && (["like","dislike","heart"] as const).map((r) => {
-                        const isMine = message.myReaction === r;
-                        const count = message.reactions?.[r] ?? 0;
-                        const label = r === 'like' ? '👍 إعجاب' : r === 'dislike' ? '👎 عدم إعجاب' : '❤️ قلب';
-                        const toggle = async () => {
-                          try {
-                            if (isMine) {
-                              await apiRequest(`/api/messages/${message.id}/reactions`, { method: 'DELETE' });
-                            } else {
-                              await apiRequest(`/api/messages/${message.id}/reactions`, { method: 'POST', body: { type: r } });
+                            {message.sender?.username || 'جاري التحميل...'}
+                          </button>
+                          <span className={`${message.messageType === 'system' ? 'text-red-400' : 'text-gray-400'} mx-1`}>:</span>
+                        </div>
+                        <div className={`runin-text ${message.messageType === 'system' ? 'text-red-600' : 'text-gray-800'} break-words message-content-fix`}>
+                          {message.messageType === 'image' ? (
+                            <img
+                              src={message.content}
+                              alt="صورة"
+                              className="max-h-40 rounded-lg cursor-pointer shadow-sm hover:shadow-md transition-shadow"
+                              loading="lazy"
+                              onLoad={() => {
+                                if (isAtBottom) {
+                                  scrollToBottom('auto');
+                                }
+                              }}
+                              onClick={() => setImageLightbox({ open: true, src: message.content })}
+                            />
+                          ) : (() => {
+                            const { cleaned, ids } = parseYouTubeFromText(message.content);
+                            const clampClass = isMessageExpanded(message.id) ? '' : (isMobile ? 'line-clamp-4' : 'line-clamp-2');
+                            if (ids.length > 0) {
+                              const firstId = ids[0];
+                              return (
+                                <span className="text-sm leading-relaxed inline-flex items-center gap-2">
+                                  {cleaned && (
+                                    <span
+                                      className={`flex-1 ${clampClass}`}
+                                      style={textStyle}
+                                      onClick={() => toggleMessageExpanded(message.id)}
+                                    >
+                                      {renderMessageWithAnimatedEmojis(
+                                        cleaned,
+                                        (text) => renderMessageWithMentions(text, currentUser, onlineUsers)
+                                      )}
+                                    </span>
+                                  )}
+                                  <button
+                                    onClick={() => setYoutubeModal({ open: true, videoId: firstId })}
+                                    className="flex items-center justify-center w-8 h-6 rounded bg-red-600 hover:bg-red-700 transition-colors"
+                                    title="فتح فيديو YouTube"
+                                  >
+                                    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                                      <path fill="#fff" d="M10 15l5.19-3L10 9v6z"></path>
+                                    </svg>
+                                  </button>
+                                </span>
+                              );
                             }
-                          } catch (e) {
-                            console.error('reaction error', e);
-                          }
-                        };
-                        return (
-                          <DropdownMenuItem key={r} onClick={toggle} className={`flex items-center justify-between gap-2 ${isMine ? 'text-primary' : ''}`}>
-                            <span>{label}</span>
-                            <span className="text-xs text-gray-500">{count}</span>
-                          </DropdownMenuItem>
-                        );
-                      })}
-                      {onReportMessage && message.sender && currentUser && message.sender.id !== currentUser.id && (
-                        <DropdownMenuItem onClick={() => onReportMessage(message.sender!, message.content, message.id)}>
-                          🚩 تبليغ
-                        </DropdownMenuItem>
-                      )}
-                      {(() => {
-                        if (!message.sender || !currentUser) return null;
-                        const isOwner = currentUser.userType === 'owner';
-                        const isAdmin = currentUser.userType === 'admin';
-                        const isSender = currentUser.id === message.sender.id;
-                        const canDelete = isSender || isOwner || isAdmin;
-                        if (!canDelete) return null;
-                        const handleDelete = async () => {
-                          try {
-                            await apiRequest(`/api/messages/${message.id}`, {
-                              method: 'DELETE',
-                              body: { userId: currentUser.id, roomId: message.roomId || 'general' },
-                            });
-                          } catch (e) {
-                            console.error('خطأ في حذف الرسالة', e);
-                          }
-                        };
-                        return (
-                          <DropdownMenuItem onClick={handleDelete}>🗑️ حذف</DropdownMenuItem>
-                        );
-                      })()}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                )}
-              </div>
+                            return (
+                              <span
+                                className={`text-sm leading-relaxed ${clampClass}`}
+                                style={textStyle}
+                                onClick={() => toggleMessageExpanded(message.id)}
+                              >
+                                {renderMessageWithAnimatedEmojis(
+                                  message.content,
+                                  (text) => renderMessageWithMentions(text, currentUser, onlineUsers)
+                                )}
+                              </span>
+                            );
+                          })()}
+                        </div>
+                        <span className="text-xs text-gray-500 whitespace-nowrap shrink-0 self-start">
+                          {formatTime(message.timestamp)}
+                        </span>
+                      </div>
+                    </div>
+
+                    {currentUser && (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button
+                            className="h-6 w-6 p-0 text-gray-600 hover:text-gray-900 self-start ml-1"
+                            title="المزيد"
+                            aria-label="المزيد"
+                          >
+                            <MoreVertical className="w-4 h-4" />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start" sideOffset={6} className="min-w-[180px]">
+                          {!message.isPrivate && (["like","dislike","heart"] as const).map((r) => {
+                            const isMine = message.myReaction === r;
+                            const count = message.reactions?.[r] ?? 0;
+                            const label = r === 'like' ? '👍 إعجاب' : r === 'dislike' ? '👎 عدم إعجاب' : '❤️ قلب';
+                            const toggle = async () => {
+                              try {
+                                if (isMine) {
+                                  await apiRequest(`/api/messages/${message.id}/reactions`, { method: 'DELETE' });
+                                } else {
+                                  await apiRequest(`/api/messages/${message.id}/reactions`, { method: 'POST', body: { type: r } });
+                                }
+                              } catch (e) {
+                                console.error('reaction error', e);
+                              }
+                            };
+                            return (
+                              <DropdownMenuItem key={r} onClick={toggle} className={`flex items-center justify-between gap-2 ${isMine ? 'text-primary' : ''}`}>
+                                <span>{label}</span>
+                                <span className="text-xs text-gray-500">{count}</span>
+                              </DropdownMenuItem>
+                            );
+                          })}
+                          {onReportMessage && message.sender && currentUser && message.sender.id !== currentUser.id && (
+                            <DropdownMenuItem onClick={() => onReportMessage(message.sender!, message.content, message.id)}>
+                              🚩 تبليغ
+                            </DropdownMenuItem>
+                          )}
+                          {(() => {
+                            if (!message.sender || !currentUser) return null;
+                            const isOwner = currentUser.userType === 'owner';
+                            const isAdmin = currentUser.userType === 'admin';
+                            const isSender = currentUser.id === message.sender.id;
+                            const canDelete = isSender || isOwner || isAdmin;
+                            if (!canDelete) return null;
+                            const handleDelete = async () => {
+                              try {
+                                await apiRequest(`/api/messages/${message.id}`, {
+                                  method: 'DELETE',
+                                  body: { userId: currentUser.id, roomId: message.roomId || 'general' },
+                                });
+                              } catch (e) {
+                                console.error('خطأ في حذف الرسالة', e);
+                              }
+                            };
+                            return (
+                              <DropdownMenuItem onClick={handleDelete}>🗑️ حذف</DropdownMenuItem>
+                            );
+                          })()}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
+                  </div>
+                );
+              })()
             )}
           />
         )}
@@ -928,194 +912,87 @@ export default function MessageArea({
         }}
       />
 
-      {/* Message Input - تحسين التثبيت لمنع التداخل */}
-      <div
-        className={`p-3 bg-white w-full z-20 shadow-lg chat-input soft-entrance`}
-      >
+      {/* Message Input - مطابقة الخاص */}
+      <div className={`p-4 border-t border-border modern-nav`}>
         {/* Typing Indicator */}
         {typingUsers.size > 0 && (
           <div className="mb-1.5 text-[11px] text-gray-500 animate-pulse">{typingDisplay}</div>
         )}
 
-        <div
-          className={`flex ${isMobile ? 'gap-2 p-3' : 'gap-3 p-4'} ${isMultiLine ? 'flex-col items-start' : 'items-end'} max-w-full mx-auto bg-white/80 backdrop-blur-sm transition-all duration-300`}
-          style={{ paddingBottom: isMobile ? 'calc(env(safe-area-inset-bottom) + 0.75rem)' : '1rem' }}
-        >
-          {/* First row: Emoji buttons and textarea */}
-          <div className={`flex ${isMultiLine ? 'w-full' : 'flex-1'} items-end gap-2`}>
-            {/* Emoji Picker */}
-            <div className="relative">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                disabled={isChatRestricted}
-                className={`aspect-square mobile-touch-button ${isMobile ? 'min-w-[44px] min-h-[44px]' : ''} ${isChatRestricted ? 'opacity-60 cursor-not-allowed' : ''} bg-primary/10 text-primary border-primary/20 hover:bg-primary/15`}
-              >
-                <Smile className="w-4 h-4" />
-              </Button>
-              {showEmojiPicker && (
-                <div className="absolute bottom-full mb-2 z-30">
-                  <React.Suspense fallback={null}>
-                    <EmojiPicker
-                      onEmojiSelect={handleEmojiSelect}
-                      onClose={() => setShowEmojiPicker(false)}
-                    />
-                  </React.Suspense>
-                </div>
-              )}
-            </div>
-
-            {/* Animated Emoji Options */}
-            <div className="relative">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  // إغلاق جميع المنتقات الأخرى
-                  setShowEmojiPicker(false);
-                  setShowAnimatedEmojiPicker(false);
-                  setShowEmojiMart(false);
-                  setShowLottieEmoji(false);
-                  // فتح المنتقي المحسن
-                  setShowEnhancedEmoji(!showEnhancedEmoji);
-                }}
-                disabled={isChatRestricted}
-                className={`aspect-square mobile-touch-button ${isMobile ? 'min-w-[44px] min-h-[44px]' : ''} ${isChatRestricted ? 'opacity-60 cursor-not-allowed' : ''} bg-primary/10 text-primary border-primary/20 hover:bg-primary/15`}
-                title="سمايلات متحركة متقدمة"
-              >
-                <Sparkles className="w-4 h-4" />
-              </Button>
-              
-              {/* Enhanced Emoji Picker (Default) */}
-              {showEnhancedEmoji && (
-                <div className="absolute bottom-full mb-2 z-30">
-                  <React.Suspense fallback={null}>
-                    <AnimatedEmojiEnhanced
-                      onEmojiSelect={handleEnhancedEmojiSelect}
-                      onClose={() => setShowEnhancedEmoji(false)}
-                    />
-                  </React.Suspense>
-                </div>
-              )}
-              
-              {/* Original Animated Emoji Picker */}
-              {showAnimatedEmojiPicker && (
-                <div className="absolute bottom-full mb-2 z-30">
-                  <React.Suspense fallback={null}>
-                    <AnimatedEmojiPicker
-                      onEmojiSelect={handleAnimatedEmojiSelect}
-                      onClose={() => setShowAnimatedEmojiPicker(false)}
-                    />
-                  </React.Suspense>
-                </div>
-              )}
-              
-              {/* Emoji Mart Picker */}
-              {showEmojiMart && (
-                <div className="absolute bottom-full mb-2 z-30">
-                  <React.Suspense fallback={null}>
-                    <EmojiMartPicker
-                      onEmojiSelect={handleEmojiMartSelect}
-                      onClose={() => setShowEmojiMart(false)}
-                    />
-                  </React.Suspense>
-                </div>
-              )}
-              
-              {/* Lottie Emoji Picker */}
-              {showLottieEmoji && (
-                <div className="absolute bottom-full mb-2 z-30">
-                  <React.Suspense fallback={null}>
-                    <LottieEmojiPicker
-                      onEmojiSelect={handleLottieEmojiSelect}
-                      onClose={() => setShowLottieEmoji(false)}
-                    />
-                  </React.Suspense>
-                </div>
-              )}
-            </div>
-
-            {/* Send Button moved next to emoji buttons (in place of +) */}
-            <Button
-              onClick={handleSendMessage}
-              disabled={!messageText.trim() || !currentUser || isChatRestricted}
-              className={`aspect-square bg-primary hover:bg-primary/90 text-primary-foreground rounded-full mobile-touch-button ${isMobile ? 'min-w-[44px] min-h-[44px]' : ''} ${isChatRestricted ? 'opacity-60 cursor-not-allowed' : ''}`}
-              title="إرسال"
-            >
-              <Send className="w-4 h-4" />
-            </Button>
-
-            {/* Message Input - render centered disabled input if restricted, otherwise 2-line textarea */}
-            {(!currentUser || isChatRestricted) ? (
-              <input
-                type="text"
-                value={''}
-                onChange={() => {}}
-                placeholder={getRestrictionMessage || 'هذه الخاصية غير متوفرة الآن'}
-                className={`flex-1 bg-white placeholder:text-gray-500 ring-offset-white border border-gray-300 rounded-full px-4 ${isMobile ? 'h-12' : 'h-11'} transition-all duration-200 cursor-not-allowed opacity-60`}
-                disabled
-                style={{
-                  ...(isMobile ? { fontSize: '16px' } : {}),
-                  color: composerTextColor,
-                  fontWeight: composerBold ? 600 : undefined,
-                  lineHeight: `${isMobile ? 48 : 44}px`,
-                }}
-              />
-            ) : (
-              <textarea
-                ref={inputRef}
-                value={messageText}
-                onChange={handleMessageChange}
-                onKeyPress={handleKeyPress}
-                onPaste={handlePaste}
-                placeholder={"اكتب رسالتك هنا..."}
-                className={`flex-1 resize-none bg-white placeholder:text-gray-500 ring-offset-white border border-gray-300 rounded-full px-4 ${isMultiLine ? 'h-auto py-3' : (isMobile ? 'h-12 py-0' : 'h-11 py-0')} transition-all duration-200 ${isMobile ? 'mobile-text' : ''}`}
-                maxLength={MAX_CHARS}
-                autoComplete="off"
-                rows={1}
-                style={{
-                  ...(isMobile ? { fontSize: '16px' } : {}),
-                  color: composerTextColor,
-                  fontWeight: composerBold ? 600 : undefined,
-                  lineHeight: !isMultiLine ? `${isMobile ? 48 : 44}px` : undefined,
-                }}
-              />
-            )}
-
-            {/* Composer Plus Menu moved to the end */}
-            <React.Suspense fallback={null}>
-              <ComposerPlusMenu
-                onOpenImagePicker={() => fileInputRef.current?.click()}
-                disabled={!currentUser || isChatRestricted}
-                isMobile={isMobile}
-                currentUser={currentUser}
-              />
-            </React.Suspense>
-          </div>
-
-          {/* تم إزالة الملاحظة الخاصة بالسطر الثاني بناءً على الطلب */}
-
-          {/* Hidden File Input for single line mode */}
-          {!isMultiLine && (
+        <div className="flex gap-3 items-end">
+          {/* زر اختيار الصورة */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleFileUpload}
+            className="hidden"
+          />
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => fileInputRef.current?.click()}
+            className="aspect-square mobile-touch-button min-w-[40px] min-h-[40px] bg-primary/10 text-primary border-primary/20 hover:bg-primary/15"
+            disabled={!currentUser || isChatRestricted}
+            title="إرسال صورة"
+          >
+            <ImageIcon className="w-4 h-4" />
+          </Button>
+          {(!currentUser || isChatRestricted) ? (
             <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handleFileUpload}
-              className="hidden"
+              type="text"
+              value={''}
+              onChange={() => {}}
+              placeholder={getRestrictionMessage || 'هذه الخاصية غير متوفرة الآن'}
+              className={`flex-1 bg-gray-50 border text-foreground placeholder:text-muted-foreground rounded-lg border-gray-300 ${isMobile ? 'h-12' : 'h-11'} px-4`}
+              disabled
+              style={{ color: composerTextColor, fontWeight: composerBold ? 600 : undefined }}
+            />
+          ) : (
+            <Input
+              ref={inputRef as any}
+              value={messageText}
+              onChange={(e) => setMessageText(clampToMaxChars(e.target.value))}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSendMessage();
+                } else {
+                  handleTypingThrottled();
+                }
+              }}
+              onPaste={(e) => {
+                try {
+                  const paste = e.clipboardData.getData('text');
+                  const el = e.currentTarget as HTMLInputElement;
+                  const selectionStart = el.selectionStart ?? messageText.length;
+                  const selectionEnd = el.selectionEnd ?? messageText.length;
+                  const combined = messageText.slice(0, selectionStart) + paste + messageText.slice(selectionEnd);
+                  const next = clampToMaxChars(combined);
+                  if (next !== combined) {
+                    e.preventDefault();
+                    setMessageText(next);
+                  }
+                } catch {}
+              }}
+              placeholder="اكتب رسالتك هنا..."
+              className={`flex-1 bg-gray-50 border text-foreground placeholder:text-muted-foreground rounded-lg border-gray-300`}
+              disabled={false}
+              style={{ color: composerTextColor, fontWeight: composerBold ? 600 : undefined }}
+              maxLength={MAX_CHARS}
             />
           )}
+          {/* زر الإرسال */}
+          <Button
+            onClick={handleSendMessage}
+            disabled={!messageText.trim() || !currentUser || isChatRestricted}
+            className="aspect-square bg-primary hover:bg-primary/90 mobile-touch-button min-w-[40px] min-h-[40px]"
+            title="إرسال"
+          >
+            <Send className="w-4 h-4" />
+          </Button>
         </div>
-
-        {/* Character Counter */}
-        {messageText.length > 0 && (
-          <div className="mt-1 text-[11px] text-gray-500 text-left">
-            {messageText.length}/{MAX_CHARS} حرف
-          </div>
-        )}
       </div>
     </section>
   );
