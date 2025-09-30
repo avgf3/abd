@@ -1,4 +1,4 @@
-import { Camera, Upload, X } from 'lucide-react';
+import { Camera, Upload, X, Move, Check } from 'lucide-react';
 import { useState, useRef } from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -20,6 +20,12 @@ export default function ProfileBanner({ currentUser, onBannerUpdate }: ProfileBa
   const [preview, setPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
+  
+  // حالات جديدة للتحكم بموضع الصورة
+  const [isAdjusting, setIsAdjusting] = useState(false);
+  const [imagePosition, setImagePosition] = useState({ x: 50, y: 50 });
+  const [isDragging, setIsDragging] = useState(false);
+  const bannerRef = useRef<HTMLDivElement>(null);
 
   // استخدام دالة التحقق الموحدة من uploadConfig
 
@@ -58,6 +64,8 @@ export default function ProfileBanner({ currentUser, onBannerUpdate }: ProfileBa
       const reader = new FileReader();
       reader.onload = (e) => {
         setPreview(e.target?.result as string);
+        setIsAdjusting(false); // عرض المعاينة بدون تعديل في البداية
+        setImagePosition({ x: 50, y: 50 }); // إعادة تعيين الموضع
       };
       reader.readAsDataURL(file);
 
@@ -113,21 +121,126 @@ export default function ProfileBanner({ currentUser, onBannerUpdate }: ProfileBa
 
   const removePreview = () => {
     setPreview(null);
+    setIsAdjusting(false);
+    setImagePosition({ x: 50, y: 50 });
     if (fileInputRef.current) fileInputRef.current.value = '';
     if (cameraInputRef.current) cameraInputRef.current.value = '';
+  };
+
+  // دوال التحكم بموضع الصورة بالسحب والإفلات
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (isAdjusting && preview) {
+      setIsDragging(true);
+      e.preventDefault();
+    }
+  };
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isDragging || !bannerRef.current) return;
+    
+    const rect = bannerRef.current.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    
+    setImagePosition({
+      x: Math.max(0, Math.min(100, x)),
+      y: Math.max(0, Math.min(100, y))
+    });
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  // دالة حفظ الصورة مع الموضع المحدد
+  const saveImageWithPosition = async () => {
+    if (!preview || !currentUser) return;
+
+    setUploading(true);
+    try {
+      // تحويل المعاينة إلى Blob
+      const response = await fetch(preview);
+      const blob = await response.blob();
+      const file = new File([blob], 'banner.jpg', { type: blob.type });
+
+      // رفع الصورة للخادم
+      const formData = new FormData();
+      formData.append('banner', file);
+      formData.append('userId', currentUser.id.toString());
+      formData.append('position', JSON.stringify(imagePosition));
+
+      const result = await api.upload('/api/upload/profile-banner', formData);
+
+      if (!result.success) {
+        throw new Error(result.error || 'فشل في رفع صورة البانر');
+      }
+
+      if (onBannerUpdate && result.bannerUrl) {
+        onBannerUpdate(result.bannerUrl);
+      }
+      
+      setPreview(null);
+      setIsAdjusting(false);
+      toast({
+        title: 'تم بنجاح',
+        description: 'تم تحديث صورة البانر',
+        variant: 'default',
+      });
+    } catch (error: any) {
+      toast({
+        title: 'خطأ',
+        description: error.message || 'فشل في رفع صورة البانر',
+        variant: 'destructive',
+      });
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      if (cameraInputRef.current) cameraInputRef.current.value = '';
+    }
   };
 
   return (
     <div className="relative">
       {/* صورة البروفايل البانر */}
-      <div className="relative h-40 rounded-2xl overflow-hidden bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 shadow-2xl border border-white/20 backdrop-blur-sm">
+      <div 
+        ref={bannerRef}
+        className={`relative aspect-[3/1] rounded-2xl overflow-hidden bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 shadow-2xl border border-white/20 backdrop-blur-sm ${
+          isAdjusting && preview ? 'cursor-move' : ''
+        }`}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
+      >
         {preview ? (
-          <img src={preview} alt="معاينة صورة البانر" className="w-full h-full object-cover" />
+          <>
+            <img 
+              src={preview} 
+              alt="معاينة صورة البانر" 
+              className="w-full h-full object-cover select-none"
+              style={{ 
+                objectPosition: `${imagePosition.x}% ${imagePosition.y}%`,
+                pointerEvents: 'none'
+              }}
+              draggable={false}
+            />
+            {/* مؤشر السحب */}
+            {isAdjusting && (
+              <div className="absolute inset-0 pointer-events-none">
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white/20 backdrop-blur-sm rounded-full p-3 shadow-lg">
+                  <Move size={24} className="text-white" />
+                </div>
+                {isDragging && (
+                  <div className="absolute inset-0 border-2 border-blue-400 bg-blue-400/10" />
+                )}
+              </div>
+            )}
+          </>
         ) : currentUser?.profileBanner && currentUser.profileBanner !== '' ? (
           <img
             src={getBannerImageSrc(currentUser.profileBanner)}
             alt="صورة البانر"
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover object-top"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-white relative">
@@ -142,52 +255,109 @@ export default function ProfileBanner({ currentUser, onBannerUpdate }: ProfileBa
           </div>
         )}
 
-        {/* زر إزالة المعاينة */}
-        {preview && (
-          <button
-            onClick={removePreview}
-            className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
-          >
-            <X size={16} />
-          </button>
+        {/* أزرار التحكم في المعاينة */}
+        {preview && !isAdjusting && (
+          <div className="absolute bottom-3 right-3 flex gap-2">
+            <Button
+              onClick={saveImageWithPosition}
+              disabled={uploading}
+              size="sm"
+              className="bg-green-600/90 hover:bg-green-700 text-white backdrop-blur-md border border-white/30 shadow-lg"
+            >
+              <Check size={16} className="ml-1" />
+              حفظ
+            </Button>
+            <Button
+              onClick={() => setIsAdjusting(true)}
+              disabled={uploading}
+              size="sm"
+              className="bg-blue-600/90 hover:bg-blue-700 text-white backdrop-blur-md border border-white/30 shadow-lg"
+            >
+              <Move size={16} className="ml-1" />
+              تعديل الموضع
+            </Button>
+            <Button
+              onClick={removePreview}
+              disabled={uploading}
+              size="sm"
+              variant="destructive"
+              className="backdrop-blur-md border border-white/30 shadow-lg"
+            >
+              <X size={16} />
+            </Button>
+          </div>
         )}
 
-        {/* أزرار التحكم */}
-        <div className="absolute bottom-3 right-3 flex gap-3">
-          {/* زر الكاميرا */}
-          {(() => {
-            const isModerator = !!currentUser && ['owner', 'admin', 'moderator'].includes(currentUser.userType);
-            const lvl = Number(currentUser?.level || 1);
-            const canUploadBanner = isModerator || lvl >= 20;
-            return canUploadBanner ? (
-              <Button
-                onClick={() => cameraInputRef.current?.click()}
-                disabled={uploading}
-                size="sm"
-                className="bg-white/20 backdrop-blur-md hover:bg-white/30 text-white border border-white/30 rounded-full w-10 h-10 p-0 shadow-lg transition-all duration-200 hover:scale-110"
-              >
-                <Camera size={16} />
-              </Button>
-            ) : null;
-          })()}
+        {/* أزرار التحكم أثناء التعديل */}
+        {preview && isAdjusting && (
+          <div className="absolute bottom-0 inset-x-0 bg-black/80 backdrop-blur-md p-3">
+            <div className="flex items-center justify-between">
+              <div className="text-white text-sm">
+                اسحب الصورة لتحديد الموضع المناسب
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  onClick={() => setIsAdjusting(false)}
+                  size="sm"
+                  variant="outline"
+                  className="text-white border-white/50 hover:bg-white/20"
+                >
+                  إلغاء
+                </Button>
+                <Button
+                  onClick={() => {
+                    setIsAdjusting(false);
+                    saveImageWithPosition();
+                  }}
+                  size="sm"
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  <Check size={16} className="ml-1" />
+                  تم
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
 
-          {/* زر رفع الملف */}
-          {(() => {
-            const isModerator = !!currentUser && ['owner', 'admin', 'moderator'].includes(currentUser.userType);
-            const lvl = Number(currentUser?.level || 1);
-            const canUploadBanner = isModerator || lvl >= 20;
-            return canUploadBanner ? (
-              <Button
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploading}
-                size="sm"
-                className="bg-white/20 backdrop-blur-md hover:bg-white/30 text-white border border-white/30 rounded-full w-10 h-10 p-0 shadow-lg transition-all duration-200 hover:scale-110"
-              >
-                <Upload size={16} />
-              </Button>
-            ) : null;
-          })()}
-        </div>
+        {/* أزرار التحكم - تظهر فقط إذا لم يكن هناك معاينة */}
+        {!preview && (
+          <div className="absolute bottom-3 right-3 flex gap-3">
+            {/* زر الكاميرا */}
+            {(() => {
+              const isModerator = !!currentUser && ['owner', 'admin', 'moderator'].includes(currentUser.userType);
+              const lvl = Number(currentUser?.level || 1);
+              const canUploadBanner = isModerator || lvl >= 20;
+              return canUploadBanner ? (
+                <Button
+                  onClick={() => cameraInputRef.current?.click()}
+                  disabled={uploading}
+                  size="sm"
+                  className="bg-white/20 backdrop-blur-md hover:bg-white/30 text-white border border-white/30 rounded-full w-10 h-10 p-0 shadow-lg transition-all duration-200 hover:scale-110"
+                >
+                  <Camera size={16} />
+                </Button>
+              ) : null;
+            })()}
+
+            {/* زر رفع الملف */}
+            {(() => {
+              const isModerator = !!currentUser && ['owner', 'admin', 'moderator'].includes(currentUser.userType);
+              const lvl = Number(currentUser?.level || 1);
+              const canUploadBanner = isModerator || lvl >= 20;
+              return canUploadBanner ? (
+                <Button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                  size="sm"
+                  className="bg-white/20 backdrop-blur-md hover:bg-white/30 text-white border border-white/30 rounded-full w-10 h-10 p-0 shadow-lg transition-all duration-200 hover:scale-110"
+                >
+                  <Upload size={16} />
+                </Button>
+              ) : null;
+            })()}
+          </div>
+        )}
       </div>
 
       {/* حقول الإدخال المخفية */}
