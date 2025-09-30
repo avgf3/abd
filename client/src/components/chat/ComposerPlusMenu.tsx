@@ -38,12 +38,13 @@ export default function ComposerPlusMenu({ onOpenImagePicker, disabled, isMobile
         <Button
           type="button"
           variant="outline"
-          size="sm"
+          size={isMobile ? 'icon' : 'icon'}
           disabled={disabled}
-          className={`aspect-square mobile-touch-button ${isMobile ? 'min-w-[44px] min-h-[44px]' : ''} bg-primary/10 text-primary border-primary/20 hover:bg-primary/15`}
+          className={`mobile-touch-button ${isMobile ? 'h-11 w-11' : 'h-10 w-10'} rounded-lg px-0 bg-white text-gray-700 border-gray-300 hover:bg-gray-50`}
           title="خيارات"
+          aria-label="زر الخيارات"
         >
-          <Plus className="w-4 h-4" />
+          <Plus className={`${isMobile ? 'w-6 h-6' : 'w-5 h-5'} shrink-0`} strokeWidth={2.25} />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-[12rem]">
