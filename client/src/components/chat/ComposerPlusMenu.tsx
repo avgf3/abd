@@ -40,14 +40,14 @@ export default function ComposerPlusMenu({ onOpenImagePicker, disabled, isMobile
           variant="outline"
           size={isMobile ? 'icon' : 'icon'}
           disabled={disabled}
-          className={`mobile-touch-button ${isMobile ? 'h-11 w-11' : 'h-10 w-10'} rounded-lg px-0 bg-white text-gray-700 border-gray-300 hover:bg-gray-50`}
+          className={`mobile-touch-button ${isMobile ? 'h-11 w-11' : 'h-10 w-10'} rounded-lg px-0 border border-input bg-background text-foreground hover:bg-accent hover:text-accent-foreground`}
           title="خيارات"
           aria-label="زر الخيارات"
         >
           <Plus className={`${isMobile ? 'w-6 h-6' : 'w-5 h-5'} shrink-0`} strokeWidth={2.25} />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="min-w-[12rem]">
+      <DropdownMenuContent align="end" className="min-w-[12rem] bg-popover text-popover-foreground border border-border">
         <DropdownMenuLabel>خيارات إضافية</DropdownMenuLabel>
         {isAuthorized && (
           <DropdownMenuItem onClick={() => onOpenImagePicker && onOpenImagePicker()}>

@@ -675,7 +675,7 @@ export default function MessageArea({
                                       <span
                                         style={
                                           currentUser && message.senderId === currentUser.id
-                                            ? { color: composerTextColor, fontWeight: composerBold ? 600 : undefined }
+                                            ? { color: composerTextColor, fontWeight: composerBold ? 700 : undefined }
                                             : undefined
                                         }
                                       >
@@ -702,7 +702,7 @@ export default function MessageArea({
                                   className="text-sm leading-relaxed"
                                   style={
                                     currentUser && message.senderId === currentUser.id
-                                      ? { color: composerTextColor, fontWeight: composerBold ? 600 : undefined }
+                                      ? { color: composerTextColor, fontWeight: composerBold ? 700 : undefined }
                                       : undefined
                                   }
                                 >
@@ -914,7 +914,7 @@ export default function MessageArea({
               <Button
                 type="button"
                 variant="outline"
-                size="sm"
+                size={isMobile ? 'icon' : 'icon'}
                 onClick={() => {
                   // إغلاق جميع المنتقات الأخرى
                   setShowEmojiPicker(false);
@@ -925,10 +925,10 @@ export default function MessageArea({
                   setShowEnhancedEmoji(!showEnhancedEmoji);
                 }}
                 disabled={isChatRestricted}
-                className={`aspect-square mobile-touch-button ${isMobile ? 'min-w-[44px] min-h-[44px]' : ''} ${isChatRestricted ? 'opacity-60 cursor-not-allowed' : ''} bg-primary/10 text-primary border-primary/20 hover:bg-primary/15`}
+                className={`aspect-square mobile-touch-button ${isMobile ? 'min-w-[44px] min-h-[44px]' : ''} ${isChatRestricted ? 'opacity-60 cursor-not-allowed' : ''} rounded-lg border border-input bg-background text-foreground hover:bg-accent hover:text-accent-foreground`}
                 title="سمايلات متحركة متقدمة"
               >
-                <Smile className="w-4 h-4" />
+                <Smile className={`${isMobile ? 'w-5 h-5' : 'w-4 h-4'}`} />
               </Button>
               
               {/* Enhanced Emoji Picker (Default) */}
@@ -1000,7 +1000,7 @@ export default function MessageArea({
               placeholder={!currentUser || isChatRestricted ? (getRestrictionMessage || 'هذه الخاصية غير متوفرة الآن') : "اكتب رسالتك هنا..."}
               className={`rooms-message-input flex-1 bg-white text-foreground placeholder:text-muted-foreground rounded-lg border border-gray-300 h-9 focus:border-transparent focus:ring-offset-0 focus-visible:ring-offset-0`}
               disabled={!currentUser || isChatRestricted}
-              style={{ color: composerTextColor, fontWeight: composerBold ? 600 : undefined }}
+              style={{ color: composerTextColor, fontWeight: composerBold ? 700 : undefined }}
               maxLength={MAX_CHARS}
             />
 

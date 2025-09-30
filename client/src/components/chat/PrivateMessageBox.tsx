@@ -528,7 +528,7 @@ export default function PrivateMessageBox({
                                     <span
                                       style={
                                         currentUser && m.senderId === currentUser.id
-                                          ? { color: composerTextColor, fontWeight: composerBold ? 600 : undefined }
+                                          ? { color: composerTextColor, fontWeight: composerBold ? 700 : undefined }
                                           : undefined
                                       }
                                     >
@@ -552,7 +552,7 @@ export default function PrivateMessageBox({
                                 className="text-sm leading-relaxed"
                                 style={
                                   currentUser && m.senderId === currentUser.id
-                                    ? { color: composerTextColor, fontWeight: composerBold ? 600 : undefined }
+                                    ? { color: composerTextColor, fontWeight: composerBold ? 700 : undefined }
                                     : undefined
                                 }
                               >
@@ -613,7 +613,7 @@ export default function PrivateMessageBox({
                     placeholder="اكتب رسالتك هنا..."
                     className={`flex-1 bg-gray-50 border text-foreground placeholder:text-muted-foreground rounded-lg border-gray-300`}
                     disabled={false}
-                    style={{ color: composerTextColor, fontWeight: composerBold ? 600 : undefined }}
+                    style={{ color: composerTextColor, fontWeight: composerBold ? 700 : undefined }}
                     maxLength={MAX_CHARS}
                   />
                   {/* زر الإرسال بشكل أيقونة مثل غرف الدردشة */}
