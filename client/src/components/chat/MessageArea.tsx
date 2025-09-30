@@ -650,7 +650,7 @@ export default function MessageArea({
                           </button>
                           <span className="text-gray-400 mx-1">:</span>
                         </div>
-                        <div className="runin-text message-content-fix">
+                        <div className="runin-text text-gray-800 message-content-fix">
                           {message.messageType === 'image' ? (
                             <img
                               src={message.content}
@@ -678,7 +678,7 @@ export default function MessageArea({
                                             (message as any).textColor || (
                                               currentUser && message.senderId === currentUser.id
                                                 ? composerTextColor
-                                                : getFinalUsernameColor(message.sender)
+                                                : undefined
                                             ),
                                           fontWeight:
                                             (message as any).bold
@@ -714,7 +714,7 @@ export default function MessageArea({
                                       (message as any).textColor || (
                                         currentUser && message.senderId === currentUser.id
                                           ? composerTextColor
-                                          : getFinalUsernameColor(message.sender)
+                                          : undefined
                                       ),
                                     fontWeight:
                                       (message as any).bold
