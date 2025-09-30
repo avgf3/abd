@@ -2564,7 +2564,7 @@ li::before {
   }
 
   /* تحسين عرض رسائل النظام على الجوال - إزالة الفراغات الزائدة */
-  .mobile-message-area [data-message-type="system"] {
+  .mobile-message-area [data-message-type] {
     padding: 8px 12px !important;
     margin: 4px 8px !important;
     min-height: auto;
