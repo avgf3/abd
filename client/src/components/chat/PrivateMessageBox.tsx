@@ -464,7 +464,7 @@ export default function PrivateMessageBox({
                           </div>
 
                           {/* Content section - full width under the name (mobile), inline on first line */}
-                          <div className="runin-text text-gray-800 break-words message-content-fix">
+                          <div className="runin-text break-words message-content-fix">
                           {hasStoryContext && (
                             <div className="mb-2">
                               <div className="flex items-center gap-3 p-2 rounded-lg border bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200">
@@ -526,11 +526,16 @@ export default function PrivateMessageBox({
                                 <span className="text-sm leading-relaxed inline-flex items-center gap-2">
                                   {cleaned && (
                                     <span
-                                      style={
-                                        currentUser && m.senderId === currentUser.id
-                                          ? { color: composerTextColor, fontWeight: composerBold ? 700 : undefined }
-                                          : undefined
-                                      }
+                                      style={{
+                                        color:
+                                          currentUser && m.senderId === currentUser.id
+                                            ? composerTextColor
+                                            : getFinalUsernameColor(m.sender || user),
+                                        fontWeight:
+                                          currentUser && m.senderId === currentUser.id && composerBold
+                                            ? 700
+                                            : undefined,
+                                      }}
                                     >
                                       {cleaned}
                                     </span>
@@ -550,11 +555,16 @@ export default function PrivateMessageBox({
                             return (
                               <span
                                 className="text-sm leading-relaxed"
-                                style={
-                                  currentUser && m.senderId === currentUser.id
-                                    ? { color: composerTextColor, fontWeight: composerBold ? 700 : undefined }
-                                    : undefined
-                                }
+                                style={{
+                                  color:
+                                    currentUser && m.senderId === currentUser.id
+                                      ? composerTextColor
+                                      : getFinalUsernameColor(m.sender || user),
+                                  fontWeight:
+                                    currentUser && m.senderId === currentUser.id && composerBold
+                                      ? 700
+                                      : undefined,
+                                }}
                               >
                                 {m.content}
                               </span>

@@ -650,7 +650,7 @@ export default function MessageArea({
                           </button>
                           <span className="text-gray-400 mx-1">:</span>
                         </div>
-                        <div className="runin-text text-gray-800 message-content-fix">
+                        <div className="runin-text message-content-fix">
                           {message.messageType === 'image' ? (
                             <img
                               src={message.content}
@@ -673,11 +673,16 @@ export default function MessageArea({
                                   <span className="text-sm leading-relaxed inline-flex items-center gap-2">
                                     {cleaned && (
                                       <span
-                                        style={
-                                          currentUser && message.senderId === currentUser.id
-                                            ? { color: composerTextColor, fontWeight: composerBold ? 700 : undefined }
-                                            : undefined
-                                        }
+                                        style={{
+                                          color:
+                                            currentUser && message.senderId === currentUser.id
+                                              ? composerTextColor
+                                              : getFinalUsernameColor(message.sender),
+                                          fontWeight:
+                                            currentUser && message.senderId === currentUser.id && composerBold
+                                              ? 700
+                                              : undefined,
+                                        }}
                                       >
                                         {renderMessageWithAnimatedEmojis(
                                           cleaned,
@@ -700,11 +705,16 @@ export default function MessageArea({
                               return (
                                 <span
                                   className="text-sm leading-relaxed"
-                                  style={
-                                    currentUser && message.senderId === currentUser.id
-                                      ? { color: composerTextColor, fontWeight: composerBold ? 700 : undefined }
-                                      : undefined
-                                  }
+                                  style={{
+                                    color:
+                                      currentUser && message.senderId === currentUser.id
+                                        ? composerTextColor
+                                        : getFinalUsernameColor(message.sender),
+                                    fontWeight:
+                                      currentUser && message.senderId === currentUser.id && composerBold
+                                        ? 700
+                                        : undefined,
+                                  }}
                                 >
                                   {renderMessageWithAnimatedEmojis(
                                     message.content,
