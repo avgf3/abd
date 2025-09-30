@@ -268,15 +268,6 @@ export default function AnimatedEmojiEnhanced({ onEmojiSelect, onClose }: Animat
             ))}
           </div>
         </Tabs>
-
-        <div className="mt-3 p-2 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg">
-          <p className="text-xs text-gray-600 text-center">
-            {selectedCategory === 'regular' 
-              ? '💡 نصيحة: اختر السمايل المناسب للتعبير عن مشاعرك' 
-              : `💡 نصيحة: يمكنك كتابة الكود مباشرة مثل ${animatedEmojis[selectedCategory]?.[0]?.code || ''}`
-            }
-          </p>
-        </div>
       </motion.div>
     </AnimatePresence>
   );
