@@ -656,8 +656,8 @@ export default function RoomComponent({
         />
       </div>
 
-      {/* شريط التحكم الصوتي - مخفي في تبويب الغرف */}
-      {viewMode !== 'list' && isVoiceConnected && currentVoiceRoom && (
+      {/* شريط التحكم الصوتي */}
+      {isVoiceConnected && currentVoiceRoom && (
         <div className="border-t bg-card p-3 flex-shrink-0">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
