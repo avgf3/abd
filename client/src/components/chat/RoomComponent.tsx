@@ -555,7 +555,7 @@ export default function RoomComponent({
       {/* المحتوى */}
       <div
         ref={listScrollRef}
-        className="relative flex-1 min-h-0 overflow-hidden bg-background"
+        className="relative flex-1 min-h-0 overflow-hidden bg-background flex flex-col"
       >
         {/* العنوان - مشابه لقائمة المتصلين */}
         <div className="bg-primary text-primary-foreground mb-1 mx-0 mt-0 rounded-none">
@@ -587,8 +587,8 @@ export default function RoomComponent({
         <div
           className=
             {viewMode === 'grid'
-              ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-4'
-              : 'space-y-0 h-full'}
+              ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-4 flex-1 min-h-0'
+              : 'flex-1 min-h-0'}
         >
           {viewMode === 'grid' ? (
             filteredRooms.map((room) => (
