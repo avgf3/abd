@@ -425,6 +425,14 @@ export const useChat = () => {
 
   // 🔥 SIMPLIFIED Socket event handling - حذف التضارب
   const setupSocketListeners = useCallback((socketInstance: Socket) => {
+    // امنع تكرار تسجيل مستمعي الواجهة على نفس الـ socket
+    try {
+      const anySocket = socketInstance as any;
+      if (anySocket.__uiListenersAttached) {
+        return;
+      }
+      anySocket.__uiListenersAttached = true;
+    } catch {}
     // 🔥 تهيئة Service Worker للحفاظ على الاتصال في الخلفية
     const initServiceWorker = async () => {
       try {
@@ -1576,25 +1584,20 @@ export const useChat = () => {
       dispatch({ type: 'SET_LOADING', payload: true });
 
       try {
-        // تنظيف الاتصال السابق
-        if (socket.current) {
-          socket.current.removeAllListeners();
-          socket.current.disconnect();
-          socket.current = null;
-          if (pingIntervalRef.current) {
-            clearInterval(pingIntervalRef.current);
-            pingIntervalRef.current = null;
-          }
-        }
-        
-        // استخدام عميل Socket الموحد
-        const s = connectSocket();
+        // إعادة استخدام socket الحالي إن وجد بدلاً من قطع الاتصال وإعادة إنشائه
+        const existing = socket.current;
+        const s = existing ?? connectSocket();
         socket.current = s;
+        try {
+          if (!s.connected) {
+            s.connect();
+          }
+        } catch {}
         
         // حفظ الجلسة
         saveSession({ userId: user.id, username: user.username, userType: user.userType });
 
-        // إعداد المستمعين
+        // إعداد المستمعين (مرة واحدة فقط لكل socket)
         setupSocketListeners(s);
 
         // إذا كان متصلاً بالفعل، أرسل المصادقة فقط، والانضمام سيتم بعد التأكيد
@@ -1606,68 +1609,66 @@ export const useChat = () => {
           });
         }
 
-        // إرسال المصادقة عند الاتصال/إعادة الاتصال يتم من خلال الوحدة المشتركة
-        s.on('connect', () => {
-          dispatch({ type: 'SET_CONNECTION_STATUS', payload: true });
-          dispatch({ type: 'SET_CONNECTION_ERROR', payload: null });
-          dispatch({ type: 'SET_LOADING', payload: false });
+        // ربط معالجات connect/reconnect_failed/disconnect/connect_error مرة واحدة فقط
+        const sAny = s as any;
+        if (!sAny.__uiCoreHandlersAttached) {
+          s.on('connect', () => {
+            dispatch({ type: 'SET_CONNECTION_STATUS', payload: true });
+            dispatch({ type: 'SET_CONNECTION_ERROR', payload: null });
+            dispatch({ type: 'SET_LOADING', payload: false });
 
-          // إعادة إرسال المصادقة فقط، والانضمام للغرفة بعد Event roomJoined
-          try {
-            s.emit('auth', {
-              userId: user.id,
-              username: user.username,
-              userType: user.userType,
-            });
-          } catch {}
+            // إعادة إرسال المصادقة فقط، والانضمام للغرفة بعد Event roomJoined
+            try {
+              s.emit('auth', {
+                userId: user.id,
+                username: user.username,
+                userType: user.userType,
+              });
+            } catch {}
 
-          // Prefetch expected data shortly after connection success
-          try {
-            // غُصن خفيف لتفادي إزعاج الشبكة فوراً
-            setTimeout(() => {
-              try {
-                // Prefetch rooms list
-                queryClient.prefetchQuery({
-                  queryKey: ['/api/rooms', user.id],
-                  queryFn: async () => apiRequest('/api/rooms'),
-                  staleTime: 60_000,
-                });
-                // Prefetch notifications count
-                queryClient.prefetchQuery({
-                  queryKey: ['/api/notifications/unread-count', user.id],
-                  queryFn: async () => apiRequest(`/api/notifications/${user.id}/unread-count`),
-                  staleTime: 60_000,
-                });
-                // Prefetch friends list (if endpoint supported)
-                queryClient.prefetchQuery({
-                  queryKey: ['/api/friends', user.id],
-                  queryFn: async () => apiRequest(`/api/friends/${user.id}`),
-                  staleTime: 60_000,
-                });
-              } catch {}
-            }, 300);
-          } catch {}
-        });
-
-        // معالج فشل إعادة الاتصال النهائي
-        s.on('reconnect_failed', () => {
-          console.warn('⚠️ فشل في إعادة الاتصال بعد عدة محاولات');
-          dispatch({
-            type: 'SET_CONNECTION_ERROR',
-            payload: 'فقدان الاتصال. يرجى إعادة تحميل الصفحة.',
+            // Prefetch expected data shortly after connection success
+            try {
+              setTimeout(() => {
+                try {
+                  queryClient.prefetchQuery({
+                    queryKey: ['/api/rooms', user.id],
+                    queryFn: async () => apiRequest('/api/rooms'),
+                    staleTime: 60_000,
+                  });
+                  queryClient.prefetchQuery({
+                    queryKey: ['/api/notifications/unread-count', user.id],
+                    queryFn: async () => apiRequest(`/api/notifications/${user.id}/unread-count`),
+                    staleTime: 60_000,
+                  });
+                  queryClient.prefetchQuery({
+                    queryKey: ['/api/friends', user.id],
+                    queryFn: async () => apiRequest(`/api/friends/${user.id}`),
+                    staleTime: 60_000,
+                  });
+                } catch {}
+              }, 300);
+            } catch {}
           });
-        });
 
-        // تحديث حالة الاتصال عند الانفصال
-        s.on('disconnect', () => {
-          dispatch({ type: 'SET_CONNECTION_STATUS', payload: false });
-        });
+          s.on('reconnect_failed', () => {
+            console.warn('⚠️ فشل في إعادة الاتصال بعد عدة محاولات');
+            dispatch({
+              type: 'SET_CONNECTION_ERROR',
+              payload: 'فقدان الاتصال. يرجى إعادة تحميل الصفحة.',
+            });
+          });
 
-        // معالجة أخطاء الاتصال
-        s.on('connect_error', (error) => {
-          console.error('❌ خطأ في الاتصال:', error);
-          dispatch({ type: 'SET_CONNECTION_ERROR', payload: 'فشل الاتصال بالسيرفر' });
-        });
+          s.on('disconnect', () => {
+            dispatch({ type: 'SET_CONNECTION_STATUS', payload: false });
+          });
+
+          s.on('connect_error', (error) => {
+            console.error('❌ خطأ في الاتصال:', error);
+            dispatch({ type: 'SET_CONNECTION_ERROR', payload: 'فشل الاتصال بالسيرفر' });
+          });
+
+          sAny.__uiCoreHandlersAttached = true;
+        }
       } catch (error) {
         console.error('خطأ في الاتصال:', error);
         dispatch({ type: 'SET_CONNECTION_ERROR', payload: 'خطأ في الاتصال بالخادم' });
