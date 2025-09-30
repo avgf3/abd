@@ -1179,6 +1179,19 @@ export function setupRealtime(httpServer: HttpServer): IOServer<ClientToServerEv
             roomId: previousRoom,
             source: 'switch_room',
           });
+        // 🔥 بث تحديث عدد المستخدمين للغرفة السابقة أيضاً لضمان تزامن واجهة قائمة الغرف
+        try {
+          const prevRoom = await roomService.getRoom(previousRoom);
+          if (prevRoom) {
+            const prevCount = prevUsers.length;
+            io.emit('roomUpdate', {
+              type: 'userCountUpdate',
+              roomId: previousRoom,
+              userCount: prevCount,
+              room: { ...prevRoom, userCount: prevCount },
+            });
+          }
+        } catch {}
         }
       } catch (e: any) {
         // الرسالة تم إرسالها بالفعل من joinRoom، لكن نتأكد من إرسالها مرة أخرى إذا لم تُرسل
