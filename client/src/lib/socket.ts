@@ -66,11 +66,32 @@ function attachCoreListeners(socket: Socket) {
   if (anySocket.__coreListenersAttached) return;
   anySocket.__coreListenersAttached = true;
 
+  // 🔥 Flag لمنع إرسال auth متعدد في نفس الوقت
+  let isAuthInProgress = false;
+  let lastAuthTime = 0;
+  const AUTH_THROTTLE_MS = 2000; // منع auth المتكرر خلال ثانيتين
+
   const reauth = (isReconnect: boolean) => {
     const session = getSession();
     // لا ترسل auth إذا لم تتوفر جلسة محفوظة صالحة
     if (!session || (!session.userId && !session.username)) return;
+    
+    // 🔥 منع إرسال auth إذا كانت قيد التنفيذ أو تم إرسالها مؤخراً
+    const now = Date.now();
+    if (isAuthInProgress || (now - lastAuthTime) < AUTH_THROTTLE_MS) {
+      console.log('⏭️ تخطي auth - تم إرسالها مؤخراً');
+      return;
+    }
+
+    // 🔥 منع auth إذا كانت الصفحة في الخلفية (hidden)
+    if (typeof document !== 'undefined' && document.hidden) {
+      console.log('⏭️ تخطي auth - الصفحة في الخلفية');
+      return;
+    }
+
     try {
+      isAuthInProgress = true;
+      lastAuthTime = now;
       socket.emit('auth', {
         userId: session.userId,
         username: session.username,
@@ -78,7 +99,11 @@ function attachCoreListeners(socket: Socket) {
         token: session.token,
         reconnect: isReconnect,
       });
-    } catch {}
+      // إعادة تعيين flag بعد ثانية
+      setTimeout(() => { isAuthInProgress = false; }, 1000);
+    } catch {
+      isAuthInProgress = false;
+    }
   };
 
   socket.on('connect', () => {

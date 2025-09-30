@@ -628,10 +628,14 @@ export const useChat = () => {
         // ping عادي في المقدمة (كل 20 ثانية)
         pingIntervalRef.current = startPing(20000);
 
-        // حاول إعادة الاتصال فور العودة إذا كان الاتصال مقطوعاً
+        // 🔥 تحسين: فقط أعد الاتصال إذا كان مقطوعاً فعلاً
+        // لا تفعل شيء إذا كان متصلاً - لمنع إرسال auth/joinRoom مرة أخرى
         try {
-          if (!socketInstance.connected) {
+          if (socketInstance && !socketInstance.connected) {
+            console.log('🔄 محاولة إعادة الاتصال بعد العودة للمقدمة');
             socketInstance.connect();
+          } else if (socketInstance && socketInstance.connected) {
+            console.log('✅ السوكت متصل بالفعل - لا حاجة لإعادة الاتصال');
           }
         } catch {}
       }
@@ -699,34 +703,8 @@ export const useChat = () => {
       return originalDisconnect.call(this);
     };
 
-    // بعد المصادقة الناجحة من الخادم، انضم للغرفة المطلوبة إن وُجدت
-    socketInstance.on('authenticated', () => {
-      try {
-        const desired = (
-          pendingJoinRoomRef.current ||
-          (() => {
-            try { return getSession()?.roomId as string | undefined; } catch { return undefined; }
-          })() ||
-          // fallback إلى الغرفة الحالية في الحالة إن وُجدت
-          currentRoomIdRef.current
-        );
-        if (desired && desired !== 'public' && desired !== 'friends' && currentUserRef.current) {
-          // أرسل joinRoom مرة واحدة فقط إذا لم يكن قد تم طلبه بالفعل
-          if (pendingJoinRoomRef.current !== null && pendingJoinRoomRef.current !== desired) {
-            // في حال تم وضع غرفة أخرى بانتظار، نفضّل آخر غرفة محفوظة
-            pendingJoinRoomRef.current = desired;
-          }
-          if (pendingJoinRoomRef.current === null) {
-            pendingJoinRoomRef.current = desired;
-          }
-          socketInstance.emit('joinRoom', {
-            roomId: desired,
-            userId: currentUserRef.current.id,
-            username: currentUserRef.current.username,
-          });
-        }
-      } catch {}
-    });
+    // ✅ تم إزالة معالج authenticated المكرر - المعالجة تتم فقط داخل on('message')
+    // لمنع إرسال joinRoom مرتين عند كل reconnect
 
     // لم نعد نستخدم polling لقائمة المتصلين؛ السيرفر يبث التحديثات مباشرة
 
@@ -767,7 +745,14 @@ export const useChat = () => {
               // fallback إلى الغرفة الحالية في الحالة إن وُجدت
               currentRoomIdRef.current
             );
+            // 🔥 فقط أرسل joinRoom إذا لم تكن في نفس الغرفة بالفعل
             if (desired && desired !== 'public' && desired !== 'friends' && currentUserRef.current) {
+              // تحقق: هل نحن في نفس الغرفة فعلاً؟
+              if (currentRoomIdRef.current === desired && pendingJoinRoomRef.current === null) {
+                console.log('✅ موجود في الغرفة بالفعل - لا حاجة لإرسال joinRoom');
+                return; // لا ترسل joinRoom مرة أخرى
+              }
+              
               if (pendingJoinRoomRef.current === null) {
                 pendingJoinRoomRef.current = desired;
               }
@@ -1606,20 +1591,14 @@ export const useChat = () => {
           });
         }
 
-        // إرسال المصادقة عند الاتصال/إعادة الاتصال يتم من خلال الوحدة المشتركة
+        // إرسال المصادقة عند الاتصال/إعادة الاتصال يتم من خلال الوحدة المشتركة (socket.ts)
         s.on('connect', () => {
           dispatch({ type: 'SET_CONNECTION_STATUS', payload: true });
           dispatch({ type: 'SET_CONNECTION_ERROR', payload: null });
           dispatch({ type: 'SET_LOADING', payload: false });
 
-          // إعادة إرسال المصادقة فقط، والانضمام للغرفة بعد Event roomJoined
-          try {
-            s.emit('auth', {
-              userId: user.id,
-              username: user.username,
-              userType: user.userType,
-            });
-          } catch {}
+          // 🔥 تم إزالة إرسال auth من هنا لمنع التكرار
+          // auth يتم إرساله تلقائياً من socket.ts في attachCoreListeners
 
           // Prefetch expected data shortly after connection success
           try {
