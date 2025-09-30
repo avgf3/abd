@@ -119,41 +119,59 @@ export default function ProfileBanner({ currentUser, onBannerUpdate }: ProfileBa
 
   return (
     <div className="relative">
-      {/* صورة البروفايل البانر */}
-      <div className="relative h-40 rounded-2xl overflow-hidden bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 shadow-2xl border border-white/20 backdrop-blur-sm">
-        {preview ? (
-          <img src={preview} alt="معاينة صورة البانر" className="w-full h-full object-cover" />
-        ) : currentUser?.profileBanner && currentUser.profileBanner !== '' ? (
-          <img
-            src={getBannerImageSrc(currentUser.profileBanner)}
-            alt="صورة البانر"
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center text-white relative">
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-600/80 via-purple-600/80 to-pink-500/80 animate-gradient-x"></div>
-            <div className="absolute inset-0 bg-gradient-to-tr from-purple-400/20 via-pink-400/20 to-blue-400/20"></div>
-            <div className="text-center relative z-10">
-              <div className="text-5xl mb-3 filter drop-shadow-lg animate-pulse">📸</div>
-              <p className="text-lg font-medium opacity-90 drop-shadow-md">إضافة صورة بانر</p>
-              <p className="text-sm opacity-70 mt-1">اضغط على الكاميرا أو الرفع</p>
-            </div>
-            <div className="absolute inset-0 bg-black/5"></div>
+      {/* صورة البروفايل البانر - محسّنة لجميع الأحجام */}
+      <div className="relative w-full rounded-2xl overflow-hidden bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 shadow-2xl border border-white/20 backdrop-blur-sm">
+        {/* Container بنسبة عرض إلى ارتفاع احترافية 3:1 */}
+        <div className="relative w-full" style={{ paddingBottom: '33.33%' }}>
+          <div className="absolute inset-0">
+            {preview ? (
+              <img 
+                src={preview} 
+                alt="معاينة صورة البانر" 
+                className="w-full h-full object-cover"
+                style={{
+                  objectFit: 'cover',
+                  objectPosition: 'center',
+                }}
+              />
+            ) : currentUser?.profileBanner && currentUser.profileBanner !== '' ? (
+              <img
+                src={getBannerImageSrc(currentUser.profileBanner)}
+                alt="صورة البانر"
+                className="w-full h-full object-cover"
+                style={{
+                  objectFit: 'cover',
+                  objectPosition: 'center',
+                }}
+                loading="lazy"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-white relative">
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-600/80 via-purple-600/80 to-pink-500/80 animate-gradient-x"></div>
+                <div className="absolute inset-0 bg-gradient-to-tr from-purple-400/20 via-pink-400/20 to-blue-400/20"></div>
+                <div className="text-center relative z-10">
+                  <div className="text-3xl sm:text-4xl md:text-5xl mb-2 sm:mb-3 filter drop-shadow-lg animate-pulse">📸</div>
+                  <p className="text-sm sm:text-base md:text-lg font-medium opacity-90 drop-shadow-md">إضافة صورة بانر</p>
+                  <p className="text-xs sm:text-sm opacity-70 mt-1">اضغط على الكاميرا أو الرفع</p>
+                </div>
+                <div className="absolute inset-0 bg-black/5"></div>
+              </div>
+            )}
           </div>
-        )}
+        </div>
 
         {/* زر إزالة المعاينة */}
         {preview && (
           <button
             onClick={removePreview}
-            className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+            className="absolute top-2 right-2 z-10 bg-red-500 text-white rounded-full p-1.5 sm:p-2 hover:bg-red-600 transition-colors shadow-lg"
           >
-            <X size={16} />
+            <X size={16} className="w-3 h-3 sm:w-4 sm:h-4" />
           </button>
         )}
 
         {/* أزرار التحكم */}
-        <div className="absolute bottom-3 right-3 flex gap-3">
+        <div className="absolute bottom-2 sm:bottom-3 right-2 sm:right-3 flex gap-2 sm:gap-3 z-10">
           {/* زر الكاميرا */}
           {(() => {
             const isModerator = !!currentUser && ['owner', 'admin', 'moderator'].includes(currentUser.userType);
@@ -164,9 +182,9 @@ export default function ProfileBanner({ currentUser, onBannerUpdate }: ProfileBa
                 onClick={() => cameraInputRef.current?.click()}
                 disabled={uploading}
                 size="sm"
-                className="bg-white/20 backdrop-blur-md hover:bg-white/30 text-white border border-white/30 rounded-full w-10 h-10 p-0 shadow-lg transition-all duration-200 hover:scale-110"
+                className="bg-white/20 backdrop-blur-md hover:bg-white/30 text-white border border-white/30 rounded-full w-8 h-8 sm:w-10 sm:h-10 p-0 shadow-lg transition-all duration-200 hover:scale-110"
               >
-                <Camera size={16} />
+                <Camera size={14} className="sm:w-4 sm:h-4" />
               </Button>
             ) : null;
           })()}
@@ -181,9 +199,9 @@ export default function ProfileBanner({ currentUser, onBannerUpdate }: ProfileBa
                 onClick={() => fileInputRef.current?.click()}
                 disabled={uploading}
                 size="sm"
-                className="bg-white/20 backdrop-blur-md hover:bg-white/30 text-white border border-white/30 rounded-full w-10 h-10 p-0 shadow-lg transition-all duration-200 hover:scale-110"
+                className="bg-white/20 backdrop-blur-md hover:bg-white/30 text-white border border-white/30 rounded-full w-8 h-8 sm:w-10 sm:h-10 p-0 shadow-lg transition-all duration-200 hover:scale-110"
               >
-                <Upload size={16} />
+                <Upload size={14} className="sm:w-4 sm:h-4" />
               </Button>
             ) : null;
           })()}

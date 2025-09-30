@@ -1992,10 +1992,36 @@ export default function ProfileModal({
 
         .profile-cover {
           position: relative;
-          height: 248px; /* 220px + 28px للامتداد الكامل */
+          width: 100%;
+          height: 0;
+          padding-bottom: 33.33%; /* نسبة 3:1 احترافية */
+          min-height: 200px;
+          max-height: 320px;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
           background-size: cover;
-          background-position: center;
+          background-position: center center;
           background-repeat: no-repeat;
+        }
+        
+        @media (min-width: 640px) {
+          .profile-cover {
+            padding-bottom: 30%;
+            min-height: 220px;
+          }
+        }
+        
+        @media (min-width: 768px) {
+          .profile-cover {
+            padding-bottom: 28%;
+            min-height: 240px;
+          }
+        }
+        
+        @media (min-width: 1024px) {
+          .profile-cover {
+            padding-bottom: 26%;
+            min-height: 260px;
+          }
         }
 
         .change-cover-btn {
@@ -2684,7 +2710,9 @@ export default function ProfileModal({
 
           /* على الجوال، نمد الغلاف بدون حشوة */
           .profile-cover {
-            height: 278px; /* 220px + 58px للامتداد الكامل على الجوال */
+            padding-bottom: 50%; /* نسبة 2:1 على الجوال للحفاظ على المظهر */
+            min-height: 180px;
+            max-height: 250px;
           }
           
           .profile-body {
@@ -2720,16 +2748,19 @@ export default function ProfileModal({
             <X size={20} />
           </button>
 
-          {/* Cover Section - completely stable */}
+          {/* Cover Section - completely stable and responsive */}
           <div
             className="profile-cover"
             style={{
               backgroundImage: (() => {
                 const src = getProfileBannerSrcLocal();
-                return src ? `url(${src})` : 'none';
+                if (!src || src === '') {
+                  return 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+                }
+                return `url(${src})`;
               })(),
               backgroundSize: 'cover',
-              backgroundPosition: 'center',
+              backgroundPosition: 'center center',
               backgroundRepeat: 'no-repeat',
             }}
           >
