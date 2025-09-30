@@ -2182,6 +2182,13 @@ li > * > div.effect-crystal {
   color: white;
 }
 
+  /* Rooms chat send input: keep only blue ring on focus (remove inner black border) */
+  .rooms-message-input:focus,
+  .rooms-message-input:focus-visible {
+    border-color: transparent !important;
+    outline: none !important;
+  }
+
 /* Modern Focus States */
 :focus-visible {
   outline: 2px solid var(--primary-solid);

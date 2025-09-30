@@ -904,8 +904,8 @@ export default function MessageArea({
         )}
 
         <div
-          className={`flex ${isMobile ? 'gap-2 p-3' : 'gap-3 p-4'} items-end max-w-full mx-auto bg-white/80 backdrop-blur-sm transition-all duration-300`}
-          style={{ paddingBottom: isMobile ? 'calc(env(safe-area-inset-bottom) + 0.75rem)' : '1rem' }}
+          className={`flex ${isMobile ? 'gap-2 p-2' : 'gap-2 p-2'} items-end max-w-full mx-auto bg-white/80 backdrop-blur-sm transition-all duration-300`}
+          style={{ paddingBottom: isMobile ? 'calc(env(safe-area-inset-bottom) + 0.5rem)' : '0.75rem' }}
         >
           {/* Input row: Emoji buttons, input field, and send button */}
           <div className={`flex flex-1 items-end gap-2`}>
@@ -998,7 +998,7 @@ export default function MessageArea({
               onKeyDown={handleKeyPress}
               onPaste={handlePaste}
               placeholder={!currentUser || isChatRestricted ? (getRestrictionMessage || 'هذه الخاصية غير متوفرة الآن') : "اكتب رسالتك هنا..."}
-              className={`flex-1 bg-white border text-foreground placeholder:text-muted-foreground rounded-lg border-gray-300`}
+              className={`rooms-message-input flex-1 bg-white text-foreground placeholder:text-muted-foreground rounded-lg border border-gray-300 h-9`}
               disabled={!currentUser || isChatRestricted}
               style={{ color: composerTextColor, fontWeight: composerBold ? 600 : undefined }}
               maxLength={MAX_CHARS}
@@ -1025,8 +1025,8 @@ export default function MessageArea({
           />
         </div>
 
-        {/* Character Counter hidden: keep space for stability */}
-        <div className="mt-1 text-[11px] text-gray-500 text-left invisible select-none">
+        {/* Character Counter removed from flow to reduce height */}
+        <div className="hidden">
           {messageText.length}/{MAX_CHARS} حرف
         </div>
       </div>
