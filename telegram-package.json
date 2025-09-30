@@ -1,0 +1,30 @@
+{
+  "name": "telegram-message-bot",
+  "version": "1.0.0",
+  "description": "بوت تليجرام ذكي لتوجيه الرسائل بين المستخدمين والمالك",
+  "main": "telegram-bot.js",
+  "scripts": {
+    "start": "node telegram-bot.js",
+    "dev": "nodemon telegram-bot.js",
+    "install-deps": "npm install node-telegram-bot-api dotenv fs path"
+  },
+  "keywords": [
+    "telegram",
+    "bot",
+    "message",
+    "forwarding",
+    "arabic"
+  ],
+  "author": "Smart Developer",
+  "license": "MIT",
+  "dependencies": {
+    "node-telegram-bot-api": "^0.64.0",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}

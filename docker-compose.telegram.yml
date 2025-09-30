@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  telegram-bot:
+    build:
+      context: .
+      dockerfile: Dockerfile.telegram
+    container_name: telegram-smart-bot
+    restart: unless-stopped
+    
+    # متغيرات البيئة
+    environment:
+      - NODE_ENV=production
+      - TZ=Asia/Riyadh
+    
+    # ربط ملف الإعدادات
+    env_file:
+      - .env.telegram
+    
+    # ربط المجلدات للبيانات المستمرة
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./.env.telegram:/app/.env.telegram:ro
+    
+    # إعدادات الشبكة (اختياري)
+    networks:
+      - bot-network
+    
+    # حدود الموارد
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.5'
+        reservations:
+          memory: 128M
+          cpus: '0.25'
+    
+    # فحص الصحة
+    healthcheck:
+      test: ["CMD", "node", "-e", "console.log('Bot is healthy')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    
+    # سجلات محدودة
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  bot-network:
+    driver: bridge
+
+# مجلدات مستمرة
+volumes:
+  bot-data:
+    driver: local
+  bot-logs:
+    driver: local
