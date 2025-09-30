@@ -12,6 +12,22 @@ interface AnimatedEmoji {
   code: string;
 }
 
+// السمايلات العادية (من EmojiPicker)
+const REGULAR_EMOJIS = [
+  '😀', '😃', '😄', '😁', '😆', '😅', '😂', '🤣', '😊', '😇',
+  '🙂', '🙃', '😉', '😌', '😍', '🥰', '😘', '😗', '😙', '😚',
+  '😋', '😛', '😝', '😜', '🤪', '🤨', '🧐', '🤓', '😎', '🤩',
+  '🥳', '😏', '😒', '😞', '😔', '😟', '😕', '🙁', '☹️', '😣',
+  '😖', '😫', '😩', '🥺', '😢', '😭', '😤', '😠', '😡', '🤬',
+  '🤯', '😳', '🥵', '🥶', '😱', '😨', '😰', '😥', '😓', '🤗',
+  '🤔', '🤭', '🤫', '🤥', '😶', '😐', '😑', '😬', '🙄', '😯',
+  '😦', '😧', '😮', '😲', '🥱', '😴', '🤤', '😪', '😵', '🤐',
+  '🥴', '🤢', '🤮', '🤧', '😷', '🤒', '🤕', '🤑', '🤠', '😈',
+  '👿', '👹', '👺', '🤡', '💩', '👻', '💀', '☠️', '👽', '👾',
+  '🤖', '🎃', '😺', '😸', '😹', '😻', '😼', '😽', '🙀', '😿',
+  '😾', '❤️', '🧡', '💛', '💚', '💙', '💜', '🤎', '🖤', '🤍',
+];
+
 // تعريف السمايلات مع الأنيميشن
 const animatedEmojis: Record<string, AnimatedEmoji[]> = {
   classic: [
@@ -59,6 +75,7 @@ const animatedEmojis: Record<string, AnimatedEmoji[]> = {
 };
 
 const categoryIcons = {
+  regular: '😀',
   classic: '😊',
   hearts: '❤️',
   celebration: '🎉',
@@ -72,7 +89,7 @@ interface AnimatedEmojiEnhancedProps {
 }
 
 export default function AnimatedEmojiEnhanced({ onEmojiSelect, onClose }: AnimatedEmojiEnhancedProps) {
-  const [selectedCategory, setSelectedCategory] = useState('classic');
+  const [selectedCategory, setSelectedCategory] = useState('regular');
   const [hoveredEmoji, setHoveredEmoji] = useState<string | null>(null);
 
   // تعريف الأنيميشن variants
@@ -187,7 +204,7 @@ export default function AnimatedEmojiEnhanced({ onEmojiSelect, onClose }: Animat
         </div>
 
         <Tabs value={selectedCategory} onValueChange={setSelectedCategory} className="w-full">
-          <TabsList className="grid w-full grid-cols-5 mb-3 bg-gray-100">
+          <TabsList className="grid w-full grid-cols-6 mb-3 bg-gray-100">
             {Object.entries(categoryIcons).map(([key, icon]) => (
               <TabsTrigger 
                 key={key} 
@@ -200,41 +217,64 @@ export default function AnimatedEmojiEnhanced({ onEmojiSelect, onClose }: Animat
           </TabsList>
 
           <div className="max-h-[300px] overflow-y-auto">
-            <TabsContent value={selectedCategory} className="mt-0">
-              <div className="grid grid-cols-4 gap-3">
-                {animatedEmojis[selectedCategory].map((emoji) => (
-                  <motion.div
-                    key={emoji.id}
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.95 }}
+            {/* تبويب السمايلات العادية */}
+            <TabsContent value="regular" className="mt-0">
+              <div className="grid grid-cols-10 gap-1">
+                {REGULAR_EMOJIS.map((emoji, index) => (
+                  <Button
+                    key={index}
+                    onClick={() => onEmojiSelect({ id: `regular-${index}`, emoji, name: emoji, code: emoji, animation: 'none' })}
+                    variant="ghost"
+                    className="text-xl hover:bg-gray-100 p-2 h-auto aspect-square"
+                    title={emoji}
                   >
-                    <Button
-                      onClick={() => onEmojiSelect(emoji)}
-                      variant="ghost"
-                      className="relative p-3 h-[70px] w-full aspect-square hover:bg-gradient-to-br hover:from-purple-50 hover:to-pink-50 rounded-xl transition-all group"
-                      onMouseEnter={() => setHoveredEmoji(emoji.id)}
-                      onMouseLeave={() => setHoveredEmoji(null)}
-                    >
-                      <motion.div
-                        className="text-3xl"
-                        animate={hoveredEmoji === emoji.id ? animationVariants[emoji.animation as keyof typeof animationVariants] : {}}
-                      >
-                        {emoji.emoji}
-                      </motion.div>
-                      <span className="absolute bottom-1 left-0 right-0 text-[10px] text-gray-600 opacity-0 group-hover:opacity-100 transition-opacity">
-                        {emoji.name}
-                      </span>
-                    </Button>
-                  </motion.div>
+                    {emoji}
+                  </Button>
                 ))}
               </div>
             </TabsContent>
+
+            {/* تبويبات السمايلات المتحركة */}
+            {Object.keys(animatedEmojis).map((category) => (
+              <TabsContent key={category} value={category} className="mt-0">
+                <div className="grid grid-cols-4 gap-3">
+                  {animatedEmojis[category].map((emoji) => (
+                    <motion.div
+                      key={emoji.id}
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      <Button
+                        onClick={() => onEmojiSelect(emoji)}
+                        variant="ghost"
+                        className="relative p-3 h-[70px] w-full aspect-square hover:bg-gradient-to-br hover:from-purple-50 hover:to-pink-50 rounded-xl transition-all group"
+                        onMouseEnter={() => setHoveredEmoji(emoji.id)}
+                        onMouseLeave={() => setHoveredEmoji(null)}
+                      >
+                        <motion.div
+                          className="text-3xl"
+                          animate={hoveredEmoji === emoji.id ? animationVariants[emoji.animation as keyof typeof animationVariants] : {}}
+                        >
+                          {emoji.emoji}
+                        </motion.div>
+                        <span className="absolute bottom-1 left-0 right-0 text-[10px] text-gray-600 opacity-0 group-hover:opacity-100 transition-opacity">
+                          {emoji.name}
+                        </span>
+                      </Button>
+                    </motion.div>
+                  ))}
+                </div>
+              </TabsContent>
+            ))}
           </div>
         </Tabs>
 
         <div className="mt-3 p-2 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg">
           <p className="text-xs text-gray-600 text-center">
-            💡 نصيحة: يمكنك كتابة الكود مباشرة مثل {animatedEmojis[selectedCategory][0]?.code}
+            {selectedCategory === 'regular' 
+              ? '💡 نصيحة: اختر السمايل المناسب للتعبير عن مشاعرك' 
+              : `💡 نصيحة: يمكنك كتابة الكود مباشرة مثل ${animatedEmojis[selectedCategory]?.[0]?.code || ''}`
+            }
           </p>
         </div>
       </motion.div>

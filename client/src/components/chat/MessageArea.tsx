@@ -909,30 +909,6 @@ export default function MessageArea({
         >
           {/* Input row: Emoji buttons, input field, and send button */}
           <div className={`flex flex-1 items-end gap-2`}>
-            {/* Emoji Picker */}
-            <div className="relative">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                disabled={isChatRestricted}
-                className={`aspect-square mobile-touch-button ${isMobile ? 'min-w-[44px] min-h-[44px]' : ''} ${isChatRestricted ? 'opacity-60 cursor-not-allowed' : ''} bg-primary/10 text-primary border-primary/20 hover:bg-primary/15`}
-              >
-                <Smile className="w-4 h-4" />
-              </Button>
-              {showEmojiPicker && (
-                <div className="absolute bottom-full mb-2 z-30">
-                  <React.Suspense fallback={null}>
-                    <EmojiPicker
-                      onEmojiSelect={handleEmojiSelect}
-                      onClose={() => setShowEmojiPicker(false)}
-                    />
-                  </React.Suspense>
-                </div>
-              )}
-            </div>
-
             {/* Animated Emoji Options */}
             <div className="relative">
               <Button
