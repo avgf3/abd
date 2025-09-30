@@ -462,6 +462,8 @@ export default function PrivateMessageBox({
                             </span>
                             <span className="text-gray-400 mx-1">:</span>
                           </div>
+
+                          {/* Content section - full width under the name (mobile), inline on first line */}
                           <div className="runin-text text-gray-800 break-words message-content-fix">
                           {hasStoryContext && (
                             <div className="mb-2">
