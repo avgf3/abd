@@ -599,9 +599,6 @@ export default function MessageArea({
                       <div className={`flex items-start gap-2 ${isMobile ? 'system-message-mobile' : ''}`}>
                         {/* Name and badge section - fixed width */}
                         <div className="flex items-center gap-1 shrink-0">
-                          {message.sender && (message.sender.userType as any) !== 'bot' && (
-                            <UserRoleBadge user={message.sender} showOnlyIcon={true} hideGuestAndGender={true} size={16} />
-                          )}
                           <button
                             onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
                             className="font-semibold hover:underline transition-colors duration-200 text-sm"
@@ -644,9 +641,6 @@ export default function MessageArea({
                     <div className={`flex-1 min-w-0`}>
                       <div className="runin-container">
                         <div className="runin-name">
-                          {message.sender && (message.sender.userType as any) !== 'bot' && (
-                            <UserRoleBadge user={message.sender} showOnlyIcon={true} hideGuestAndGender={true} size={16} />
-                          )}
                           <button
                             onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
                             className="font-semibold hover:underline transition-colors duration-200 text-sm"
