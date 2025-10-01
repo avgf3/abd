@@ -783,7 +783,7 @@ export const useChat = () => {
     };
 
     // بعد المصادقة الناجحة من الخادم، انضم للغرفة المطلوبة إن وُجدت
-    socketInstance.on('authenticated', () => {
+    socketInstance.on('authenticated', (payload: any) => {
       try {
         const desired = (
           pendingJoinRoomRef.current ||
@@ -794,7 +794,25 @@ export const useChat = () => {
           currentRoomIdRef.current
         );
         if (!desired || desired === 'public' || desired === 'friends') return;
-        if (!currentUserRef.current) return;
+
+        // حاول استخدام المستخدم الحالي، أو القادم من السيرفر، أو من الجلسة
+        let user = currentUserRef.current as any;
+        if (!user || !user.id) {
+          const fromPayload = (payload && payload.user && payload.user.id) ? payload.user : null;
+          if (fromPayload) {
+            dispatch({ type: 'SET_CURRENT_USER', payload: fromPayload });
+            user = fromPayload;
+          } else {
+            try {
+              const s = getSession();
+              if (s?.userId) {
+                user = { id: s.userId, username: s.username || `User#${s.userId}` } as any;
+              }
+            } catch {}
+          }
+        }
+        if (!user || !user.id) return;
+
         // إذا كنا بالفعل في نفس الغرفة، لا ترسل
         if (currentRoomIdRef.current && currentRoomIdRef.current === desired) return;
         // Throttle: امنع التكرار خلال نافذة قصيرة
@@ -803,10 +821,11 @@ export const useChat = () => {
         lastJoinEmitTsRef.current = now;
         // استخدم pending (إن وُجد) كغرفة مستهدفة وثبّته قبل الإرسال
         pendingJoinRoomRef.current = desired;
+        // إرسال الانضمام
         socketInstance.emit('joinRoom', {
           roomId: desired,
-          userId: currentUserRef.current.id,
-          username: currentUserRef.current.username,
+          userId: user.id,
+          username: user.username,
         });
       } catch {}
     });
@@ -1786,9 +1805,16 @@ export const useChat = () => {
         console.warn('Invalid room ID provided to joinRoom:', roomId);
         return;
       }
-      // حارس لمنع التكرار: إذا كانت نفس الغرفة محلياً أو كانت في قائمة انتظار الانضمام، لا تعيد الإرسال
-      if (state.currentRoomId === roomId || pendingJoinRoomRef.current === roomId) {
+      // حارس لمنع التكرار: إذا كانت نفس الغرفة محلياً، لا تعيد الإرسال
+      if (state.currentRoomId === roomId) {
         return;
+      }
+      // إذا كانت هناك محاولة معلّقة لنفس الغرفة ولم يصل تأكيد بعد، اسمح بإعادة الإرسال بعد مهلة قصيرة
+      if (pendingJoinRoomRef.current === roomId) {
+        const now = Date.now();
+        if (now - lastJoinEmitTsRef.current < 3000) {
+          return; // لا نعيد قبل 3 ثوانٍ لتجنب السّپام
+        }
       }
 
       // Do NOT change local room yet; wait for server ack (roomJoined)
