@@ -387,7 +387,7 @@ export const useChat = () => {
   const loadRoomMessages = useCallback(
     async (roomId: string, forceReload: boolean = false) => {
       // نعتمد الآن على Socket لإرسال آخر الرسائل عند الانضمام،
-      // لكن نُبقي هذا كنسخة احتياطية سريعة تطلب 10 رسائل فقط.
+      // لكن نُبقي هذا كنسخة احتياطية سريعة تطلب 12 رسالة فقط.
 
       if (!forceReload && state.roomMessages[roomId]?.length > 0) {
         return;
@@ -400,7 +400,7 @@ export const useChat = () => {
       loadingRooms.current.add(roomId);
 
       try {
-        const data = await apiRequest(`/api/messages/room/${roomId}/latest?limit=10`);
+        const data = await apiRequest(`/api/messages/room/${roomId}/latest?limit=12`);
 
         if (data?.messages && Array.isArray(data.messages)) {
           const formattedMessages = mapDbMessagesToChatMessages(data.messages, roomId);
