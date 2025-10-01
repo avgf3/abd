@@ -428,28 +428,61 @@ export const useChat = () => {
     // 🔥 تهيئة Service Worker للحفاظ على الاتصال في الخلفية
     const initServiceWorker = async () => {
       try {
-        if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-          serviceWorkerRef.current = navigator.serviceWorker.controller;
-          
-          // إعداد معالج رسائل Service Worker
+        if (!('serviceWorker' in navigator)) return;
+
+        // انتظر حتى يصبح SW جاهزًا في حال عدم وجود controller بعد
+        try {
+          if (!navigator.serviceWorker.controller) {
+            const reg = await navigator.serviceWorker.ready;
+            if (reg?.active) {
+              serviceWorkerRef.current = reg.active as ServiceWorker;
+            }
+          } else {
+            serviceWorkerRef.current = navigator.serviceWorker.controller;
+          }
+        } catch {}
+
+        // استمع لتغيّر المتحكّم (controllerchange) لتحديث المرجع عند التحديثات
+        try {
+          const onControllerChange = () => {
+            try { serviceWorkerRef.current = navigator.serviceWorker.controller; } catch {}
+          };
+          navigator.serviceWorker.addEventListener('controllerchange', onControllerChange);
+        } catch {}
+
+        if (!serviceWorkerRef.current) return;
+
+        // إعداد معالج رسائل Service Worker
+        try {
           navigator.serviceWorker.addEventListener('message', (event) => {
-            const { type, data } = event.data;
-            
+            const { type } = event.data || {};
             switch (type) {
               case 'background-ping-success':
                 console.log('✅ Service Worker: ping نجح في الخلفية');
                 break;
+              default:
+                break;
             }
           });
-          
-          // تهيئة Service Worker
+        } catch {}
+
+        // تهيئة Background Sync وتمرير رابط الخادم
+        try {
           serviceWorkerRef.current.postMessage({
             type: 'init-background-sync',
             data: { serverUrl: window.location.origin }
           });
-          
-          console.log('🚀 تم تهيئة Service Worker للـ Socket.IO');
-        }
+        } catch {}
+
+        // إرسال حالة السوكت المبدئية للـ SW ليبدأ التسجيل عند الاتصال
+        try {
+          serviceWorkerRef.current.postMessage({
+            type: 'socket-status',
+            data: { connected: !!socketInstance.connected }
+          });
+        } catch {}
+
+        console.log('🚀 تم تهيئة Service Worker للـ Socket.IO');
       } catch (error) {
         console.warn('⚠️ لا يمكن تهيئة Service Worker:', error);
       }
@@ -512,6 +545,14 @@ export const useChat = () => {
             });
           }
         } catch {}
+        try {
+          if (serviceWorkerRef.current) {
+            serviceWorkerRef.current.postMessage({
+              type: 'socket-status',
+              data: { connected: true },
+            });
+          }
+        } catch {}
       });
       socketInstance.on('disconnect', () => {
         try {
@@ -522,11 +563,27 @@ export const useChat = () => {
             });
           }
         } catch {}
+        try {
+          if (serviceWorkerRef.current) {
+            serviceWorkerRef.current.postMessage({
+              type: 'socket-status',
+              data: { connected: false },
+            });
+          }
+        } catch {}
       });
       socketInstance.on('connect_error', () => {
         try {
           if (socketWorkerRef.current) {
             socketWorkerRef.current.postMessage({
+              type: 'socket-status',
+              data: { connected: false },
+            });
+          }
+        } catch {}
+        try {
+          if (serviceWorkerRef.current) {
+            serviceWorkerRef.current.postMessage({
               type: 'socket-status',
               data: { connected: false },
             });
@@ -740,12 +797,15 @@ export const useChat = () => {
         try {
           const userId = currentUserRef.current?.id;
           if (userId) {
-            const { queryClient } = require('@/lib/queryClient');
-            const qc = queryClient as import('@tanstack/react-query').QueryClient;
-            const key = ['/api/notifications/unread-count', userId];
-            const old = qc.getQueryData(key) as any;
-            const current = typeof old?.count === 'number' ? old.count : 0;
-            qc.setQueryData(key, { count: current + 1 });
+            import('@/lib/queryClient')
+              .then(({ queryClient }) => {
+                const qc = queryClient as import('@tanstack/react-query').QueryClient;
+                const key = ['/api/notifications/unread-count', userId];
+                const old = qc.getQueryData(key) as any;
+                const current = typeof old?.count === 'number' ? old.count : 0;
+                qc.setQueryData(key, { count: current + 1 });
+              })
+              .catch(() => {});
           }
         } catch {}
       } catch {}

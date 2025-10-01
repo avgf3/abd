@@ -58,22 +58,26 @@ try {
 
 createRoot(document.getElementById('root')!).render(<App />);
 
-// Register/cleanup Service Worker (production only, opt-in via VITE_ENABLE_SW)
+// Register/cleanup Service Worker (production only, enabled by default; disable via VITE_ENABLE_SW=false)
 try {
-	if ('serviceWorker' in navigator && !((import.meta as any).env?.DEV)) {
-		const enableSw = !!((import.meta as any).env?.VITE_ENABLE_SW);
-		window.addEventListener('load', async () => {
-			try {
-				if (enableSw) {
-					await navigator.serviceWorker.register('/sw.js');
-				} else {
-					const swAny = (navigator as any).serviceWorker;
-					const regs = (await swAny?.getRegistrations?.()) || [];
-					for (const reg of regs) {
-						try { await reg.unregister(); } catch {}
-					}
-				}
-			} catch {}
-		});
-	}
+    if ('serviceWorker' in navigator && !((import.meta as any).env?.DEV)) {
+        const raw = (import.meta as any).env?.VITE_ENABLE_SW;
+        const str = typeof raw === 'string' ? raw.toLowerCase() : undefined;
+        const disabled = str === 'false' || str === '0' || str === 'off' || str === 'no' || str === 'disable' || str === 'disabled';
+        const enableSw = !disabled;
+        window.addEventListener('load', async () => {
+            try {
+                const swAny = (navigator as any).serviceWorker;
+                if (enableSw) {
+                    await navigator.serviceWorker.register('/sw.js');
+                    try { await navigator.serviceWorker.ready; } catch {}
+                } else {
+                    const regs = (await swAny?.getRegistrations?.()) || [];
+                    for (const reg of regs) {
+                        try { await reg.unregister(); } catch {}
+                    }
+                }
+            } catch {}
+        });
+    }
 } catch {}
