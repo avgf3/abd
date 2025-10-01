@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { X, Sparkles, Heart, PartyPopper, Flame, Star } from 'lucide-react';
@@ -181,16 +181,10 @@ export default function AnimatedEmojiEnhanced({ onEmojiSelect, onClose }: Animat
   };
 
   return (
-    <AnimatePresence>
-      <motion.div
-        initial={{ opacity: 0, scale: 0.9, y: 10 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.9, y: 10 }}
-        className="absolute bottom-full right-0 mb-2 bg-white border border-gray-200 rounded-xl shadow-2xl p-4 w-[400px] max-h-[450px] overflow-hidden z-50"
-      >
+    <div className="absolute bottom-full right-0 mb-2 bg-white border border-gray-200 rounded-xl shadow-2xl p-4 w-[400px] max-h-[450px] overflow-hidden z-50">
         <div className="flex justify-between items-center mb-3">
           <div className="flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-yellow-500 animate-pulse" />
+            <Sparkles className="w-5 h-5 text-yellow-500" />
             <h3 className="text-sm font-medium text-gray-700">سمايلات متحركة مميزة</h3>
           </div>
           <Button
@@ -268,7 +262,6 @@ export default function AnimatedEmojiEnhanced({ onEmojiSelect, onClose }: Animat
             ))}
           </div>
         </Tabs>
-      </motion.div>
-    </AnimatePresence>
+    </div>
   );
 }

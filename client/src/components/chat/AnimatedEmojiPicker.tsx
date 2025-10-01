@@ -12,7 +12,7 @@ export default function AnimatedEmojiPicker({ onEmojiSelect, onClose }: Animated
   const [selectedCategory, setSelectedCategory] = useState('classic');
 
   return (
-    <div className="absolute bottom-full right-0 mb-2 bg-white border border-gray-200 rounded-lg shadow-lg p-4 w-96 max-h-80 overflow-hidden z-50 animated-emoji-picker">
+    <div className="absolute bottom-full right-0 mb-2 bg-white border border-gray-200 rounded-lg shadow-lg p-4 w-96 max-h-80 overflow-hidden z-50">
       <div className="flex justify-between items-center mb-3">
         <h3 className="text-sm font-medium text-gray-700">اختر سمايل متحرك</h3>
         <Button
