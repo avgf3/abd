@@ -1025,6 +1025,9 @@ export const storage: LegacyStorage = {
   async getLastRoomMessage(roomId: string) {
     return await databaseService.getLastRoomMessage(roomId);
   },
+  async getRoomMessagesSince(roomId: string, sinceId?: number, sinceTimestamp?: Date, limit?: number) {
+    return await databaseService.getRoomMessagesSince(roomId, sinceId, sinceTimestamp, limit ?? 500);
+  },
   async searchRoomMessages(roomId: string, searchQuery: string, limit?: number, offset?: number) {
     return await databaseService.searchRoomMessages(roomId, searchQuery, limit, offset ?? 0); // إزالة الحد الأقصى تماماً
   },
