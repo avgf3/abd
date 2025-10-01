@@ -20,6 +20,7 @@ import {
   setPmLastOpened,
 } from '@/utils/messageUtils';
 import { getFinalUsernameColor } from '@/utils/themeUtils';
+import { getSocket } from '@/lib/socket';
 import { formatTime } from '@/utils/timeUtils';
 // إزالة استخدام fallback الذي يُظهر "مستخدم #id" لتفادي ظهور اسم افتراضي خاطئ في الخاص
 
@@ -61,6 +62,56 @@ export default function PrivateMessageBox({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { textColor: composerTextColor, bold: composerBold } = useComposerStyle();
   const isDmClosed = (user as any)?.dmPrivacy === 'none';
+  const [isOtherTyping, setIsOtherTyping] = useState(false);
+  const otherTypingTimerRef = useRef<number | null>(null);
+  const lastTypingEmitRef = useRef<number>(0);
+
+  // Emit private typing (throttled ~3s)
+  const emitPrivateTyping = useCallback(() => {
+    try {
+      const now = Date.now();
+      if (now - lastTypingEmitRef.current < 3000) return;
+      lastTypingEmitRef.current = now;
+      const s = getSocket();
+      if (!s?.connected || !currentUser?.id || !user?.id) return;
+      s.emit('privateTyping', { targetUserId: user.id, isTyping: true });
+    } catch {}
+  }, [currentUser?.id, user?.id]);
+
+  // Listen for privateTyping from the other user
+  useEffect(() => {
+    const s = getSocket();
+    const onMessage = (payload: any) => {
+      try {
+        const envelope = (payload && payload.envelope) ? payload.envelope : payload;
+        if (envelope?.type !== 'privateTyping') return;
+        const fromId = envelope?.fromUserId;
+        const isTyping = !!envelope?.isTyping;
+        if (!fromId || fromId !== user?.id) return;
+        if (isTyping) {
+          setIsOtherTyping(true);
+          if (otherTypingTimerRef.current) {
+            clearTimeout(otherTypingTimerRef.current);
+          }
+          otherTypingTimerRef.current = window.setTimeout(() => {
+            setIsOtherTyping(false);
+            if (otherTypingTimerRef.current) {
+              clearTimeout(otherTypingTimerRef.current);
+              otherTypingTimerRef.current = null;
+            }
+          }, 3000);
+        }
+      } catch {}
+    };
+    try { s.on('message', onMessage); } catch {}
+    return () => {
+      try { s.off('message', onMessage); } catch {}
+      if (otherTypingTimerRef.current) {
+        clearTimeout(otherTypingTimerRef.current);
+        otherTypingTimerRef.current = null;
+      }
+    };
+  }, [user?.id]);
 
   const handleViewProfileClick = useCallback(() => {
     try {
@@ -270,6 +321,15 @@ export default function PrivateMessageBox({
       }
     },
     [handleSend]
+  );
+
+  // When user types, emit typing (throttled)
+  const handleChangeWithTyping = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setMessageText(clampToMaxChars(e.target.value));
+      emitPrivateTyping();
+    },
+    [clampToMaxChars, emitPrivateTyping]
   );
 
   // دعم لصق الصور مباشرة في صندوق الإدخال
@@ -578,6 +638,11 @@ export default function PrivateMessageBox({
           </div>
 
           <div className="p-4 border-t border-border modern-nav">
+            {isOtherTyping && (
+              <div className="px-1 pb-2 text-[11px] text-gray-500 animate-pulse select-none">
+                {user?.username} يكتب...
+              </div>
+            )}
             {isDmClosed ? (
               <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg text-center text-sm text-gray-600">
                 عفواً هذا العضو قامَ بإغلاق الرسائل الخاصة
@@ -607,7 +672,7 @@ export default function PrivateMessageBox({
                   <Input
                     ref={inputRef}
                     value={messageText}
-                    onChange={(e) => setMessageText(clampToMaxChars(e.target.value))}
+                    onChange={handleChangeWithTyping}
                     onKeyDown={handleKeyDown}
                     onPaste={handlePaste}
                     placeholder="اكتب رسالتك هنا..."
