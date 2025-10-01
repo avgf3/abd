@@ -1593,8 +1593,9 @@ li > * > div.effect-crystal {
 
 /* أسلوب run-in للجوال: الاسم يظهر في السطر الأول فقط، وبقية الأسطر تمتد بكامل العرض */
 .runin-container {
-  display: inline;
+  display: block;
   width: 100%;
+  line-height: 1.4;
 }
 
 .runin-name {
