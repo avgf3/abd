@@ -894,7 +894,7 @@ export default function MessageArea({
 
       {/* Message Input - تحسين التثبيت لمنع التداخل */}
       <div
-        className={`p-2 bg-white w-full z-20 shadow-lg chat-input soft-entrance`}
+        className={`p-2 bg-white w-full z-20 shadow-lg chat-input`}
       >
         {/* Typing Indicator */}
         {typingUsers.size > 0 && (
