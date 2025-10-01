@@ -1011,39 +1011,26 @@ export const useChat = () => {
           case 'typing': {
             const uid = (envelope as any).userId;
             const isTyping = !!(envelope as any).isTyping;
-            const username = (envelope as any).username || (uid ? `User#${uid}` : '');
+            const isPrivate = (envelope as any).isPrivate === true;
+            const receiverId = (envelope as any).receiverId;
+            // تجاهل الرسائل منّي
             if (!uid || uid === currentUserRef.current?.id) break;
-            const next = new Set(state.typingUsers);
-            if (isTyping) {
-              next.add(username);
-              // clear previous timer
-              const t = typingTimersRef.current.get(uid);
-              if (t) {
-                clearTimeout(t);
-                typingTimersRef.current.delete(uid);
-              }
-              const timeoutId = window.setTimeout(() => {
-                const after = new Set(
-                  currentRoomIdRef.current ? Array.from(next) : Array.from(state.typingUsers)
-                );
-                after.delete(username);
-                dispatch({ type: 'SET_TYPING_USERS', payload: after });
-                const tmp = typingTimersRef.current.get(uid);
-                if (tmp) {
-                  clearTimeout(tmp);
-                  typingTimersRef.current.delete(uid);
+
+            // مؤشر الكتابة الخاص: أبلغ الواجهة فقط دون أي setState ثقيل
+            if (isPrivate) {
+              try {
+                // يصل فقط للطرف المستهدف من الخادم، لكن نتحقق احتياطياً
+                if (!receiverId || receiverId === currentUserRef.current?.id) {
+                  window.dispatchEvent(
+                    new CustomEvent('privateTyping', { detail: { fromUserId: uid, isTyping } })
+                  );
                 }
-              }, 3000);
-              typingTimersRef.current.set(uid, timeoutId);
-            } else {
-              next.delete(username);
-              const t = typingTimersRef.current.get(uid);
-              if (t) {
-                clearTimeout(t);
-                typingTimersRef.current.delete(uid);
-              }
+              } catch {}
+              break;
             }
-            dispatch({ type: 'SET_TYPING_USERS', payload: next });
+
+            // تم تعطيل بث/عرض مؤشر الكتابة العام لتقليل استهلاك الموارد
+            // لا نقوم بأي عمل للحالات العامة
             break;
           }
           case 'newMessage': {
@@ -1879,9 +1866,15 @@ export const useChat = () => {
   );
 
   const sendTyping = useCallback(() => {
-    if (socket.current?.connected) {
-      socket.current.emit('typing', { isTyping: true });
-    }
+    // تم تعطيل مؤشر الكتابة العام لتقليل استهلاك الموارد
+    return;
+  }, []);
+
+  // مؤشر كتابة خاص: يُرسل للطرف الآخر فقط
+  const sendPrivateTyping = useCallback((otherUserId: number) => {
+    if (!socket.current?.connected) return;
+    if (!otherUserId || Number.isNaN(otherUserId)) return;
+    socket.current.emit('privateTyping', { receiverId: otherUserId, isTyping: true });
   }, []);
 
   // Compatibility helpers for UI components
@@ -1987,6 +1980,7 @@ export const useChat = () => {
     ignoreUser,
     unignoreUser,
     sendTyping,
+    sendPrivateTyping,
     setShowKickCountdown: (show: boolean) =>
       dispatch({ type: 'SET_SHOW_KICK_COUNTDOWN', payload: show }),
     setNewMessageSender: (sender: ChatUser | null) =>

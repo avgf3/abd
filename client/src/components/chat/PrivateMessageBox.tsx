@@ -29,6 +29,7 @@ interface PrivateMessageBoxProps {
   currentUser: ChatUser | null;
   messages: ChatMessage[];
   onSendMessage: (content: string) => void;
+  onTyping?: (otherUserId: number) => void;
   onClose: () => void;
   onLoadMore?: () => Promise<{ addedCount: number; hasMore: boolean }>; // تحميل رسائل أقدم
   onViewProfile?: (user: ChatUser) => void;
@@ -41,6 +42,7 @@ export default function PrivateMessageBox({
   currentUser,
   messages,
   onSendMessage,
+  onTyping,
   onClose,
   onLoadMore,
   onViewProfile,
@@ -56,6 +58,7 @@ export default function PrivateMessageBox({
   const [isLoadingOlder, setIsLoadingOlder] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [otherUserTyping, setOtherUserTyping] = useState(false);
   const virtuosoRef = useRef<VirtuosoHandle>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -267,10 +270,32 @@ export default function PrivateMessageBox({
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
         handleSend();
+      } else {
+        try { onTyping && onTyping(user.id); } catch {}
       }
     },
-    [handleSend]
+    [handleSend, onTyping, user?.id]
   );
+
+  // الاستماع لمؤشر الكتابة الخاص الوارد فقط لهذه المحادثة
+  useEffect(() => {
+    const handler = (evt: any) => {
+      try {
+        const fromId = Number(evt?.detail?.fromUserId);
+        const isTyping = !!evt?.detail?.isTyping;
+        if (fromId && fromId === user.id) {
+          setOtherUserTyping(isTyping);
+          if (isTyping) {
+            // إخفائه تلقائياً بعد 3 ثوان
+            const t = setTimeout(() => setOtherUserTyping(false), 3000);
+            return () => clearTimeout(t);
+          }
+        }
+      } catch {}
+    };
+    window.addEventListener('privateTyping', handler as any);
+    return () => window.removeEventListener('privateTyping', handler as any);
+  }, [user?.id]);
 
   // دعم لصق الصور مباشرة في صندوق الإدخال
   const handlePaste = useCallback((e: React.ClipboardEvent<HTMLInputElement>) => {
@@ -390,6 +415,11 @@ export default function PrivateMessageBox({
           </DialogHeader>
 
           <div className="relative h-[55vh] w-full p-4 pb-4 bg-white">
+            {otherUserTyping && (
+              <div className="absolute top-2 left-4 text-xs text-gray-500 animate-pulse">
+                {user.username} يكتب...
+              </div>
+            )}
             {sortedMessages.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
                 <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="text-6xl mb-4">

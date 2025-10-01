@@ -1317,6 +1317,28 @@ export function setupRealtime(httpServer: HttpServer): IOServer<ClientToServerEv
       });
     });
 
+    // مؤشر الكتابة للرسائل الخاصة فقط (لا بث للغرف)
+    socket.on('privateTyping', (data) => {
+      try {
+        const isTyping = !!data?.isTyping;
+        const receiverIdRaw = (data as any)?.receiverId;
+        const receiverId = typeof receiverIdRaw === 'string' || typeof receiverIdRaw === 'number'
+          ? Number(receiverIdRaw)
+          : NaN;
+        if (!socket.userId || !receiverId || Number.isNaN(receiverId) || receiverId === socket.userId) return;
+
+        // أرسل فقط للطرف المستهدف عبر قناة المستخدم الشخصية
+        io.to(receiverId.toString()).emit('message', {
+          type: 'typing',
+          userId: socket.userId,
+          username: socket.username,
+          isTyping,
+          isPrivate: true,
+          receiverId,
+        });
+      } catch {}
+    });
+
     // Basic WebRTC relays scoped to same room
     socket.on('webrtc-offer', (payload) => {
       try {
