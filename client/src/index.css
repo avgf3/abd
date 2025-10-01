@@ -1888,6 +1888,31 @@ li > * > div.effect-crystal {
   animation: gradient-x 10s ease infinite;
 }
 
+/* ثبات عناصر الأثرياء على الجوال: إيقاف أي اهتزازات/تحويلات */
+@media (max-width: 768px) {
+  .richest-modal .mobile-stable {
+    /* تعطيل أي تحريك أو اهتزاز يأتي من تأثيرات الخلفية أو الكلاسات المتحركة */
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+    will-change: auto !important;
+    backface-visibility: hidden;
+    perspective: 0;
+  }
+
+  /* في حال كانت هناك تأثيرات vip-frame أو تأثيرات animate على العناصر الداخلية داخل صف المستخدم */
+  .richest-modal .mobile-stable *,
+  .richest-modal .mobile-stable::before,
+  .richest-modal .mobile-stable::after {
+    animation: none !important;
+  }
+
+  /* منع تأثيرات التحويم من إحداث حركة في الجوال داخل نافذة الأثرياء */
+  .richest-modal .mobile-stable:hover {
+    transform: none !important;
+  }
+}
+
 .richest-close-btn {
   width: 28px;
   height: 28px;
