@@ -127,7 +127,7 @@ export default function WallPostList({
           <CardContent className="pt-0">
             {post.content && (
               <div className="mb-4">
-                <p className="text-sm leading-relaxed text-foreground/90 whitespace-pre-wrap">
+                <p className="text-sm leading-relaxed text-foreground/90 whitespace-pre-wrap wall-text">
                   {post.content}
                 </p>
               </div>

@@ -1543,6 +1543,16 @@ li > * > div.effect-crystal {
   margin-bottom: 1px;
 }
 
+/* نص منشورات الحائط: محاذاة يمين دائماً مع عزل bidi لضمان بقاء الرموز بجانب النص */
+.wall-text {
+  direction: rtl;
+  unicode-bidi: isolate;
+  text-align: start; /* يمين في RTL */
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
 /* أنماط السمايلات المتحركة */
 .animated-emoji {
   display: inline-block;

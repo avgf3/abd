@@ -834,7 +834,7 @@ export default function UnifiedSidebar({
                             return (
                               <>
                                 {cleaned && (
-                                  <p className="text-sm mb-3 whitespace-pre-wrap">{cleaned}</p>
+                                  <p className="text-sm mb-3 whitespace-pre-wrap wall-text">{cleaned}</p>
                                 )}
                                 {ids.length > 0 && (
                                   <div className="relative w-full mb-3" style={{ paddingTop: '56.25%' }}>
@@ -967,7 +967,7 @@ export default function UnifiedSidebar({
                             return (
                               <>
                                 {cleaned && (
-                                  <p className="text-sm mb-3 whitespace-pre-wrap">{cleaned}</p>
+                                  <p className="text-sm mb-3 whitespace-pre-wrap wall-text">{cleaned}</p>
                                 )}
                                 {ids.length > 0 && (
                                   <div className="relative w-full mb-3" style={{ paddingTop: '56.25%' }}>
