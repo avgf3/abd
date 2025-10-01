@@ -216,7 +216,10 @@ export default function RichestModal({ isOpen, onClose, currentUser, onUserClick
     <div className="fixed inset-0 z-50 flex items-center justify-center richest-modal">
       <div className="absolute inset-0 modal-overlay" onClick={onClose} />
 
-      <div className="relative w-[90vw] max-w-[24rem] sm:max-w-[26rem] bg-card rounded-xl overflow-hidden shadow-2xl animate-fade-in">
+      <div 
+        className="relative w-[90vw] max-w-[24rem] sm:max-w-[26rem] bg-card rounded-xl overflow-hidden shadow-2xl animate-fade-in"
+        style={{ touchAction: 'pan-y pinch-zoom' }}
+      >
         <div className="relative richest-header px-4 py-3 modern-nav flex items-center">
           <button
             onClick={onClose}
@@ -228,7 +231,10 @@ export default function RichestModal({ isOpen, onClose, currentUser, onUserClick
           </button>
         </div>
 
-        <div className="max-h-[70vh] overflow-y-auto bg-background">
+        <div 
+          className="max-h-[70vh] overflow-y-auto overflow-x-hidden bg-background"
+          style={{ touchAction: 'pan-y' }}
+        >
           {loading && vipUsers.length === 0 && <ListLoader items={8} itemHeight="h-12" className="p-3" />}
           {error && (
             <div className="text-center text-destructive py-2 text-sm">
@@ -317,7 +323,7 @@ export default function RichestModal({ isOpen, onClose, currentUser, onUserClick
           {canManage && candidates.length > 0 && (
             <div className="border-t border-border p-3">
               <div className="text-sm text-muted-foreground mb-2">مرشحون للإضافة:</div>
-              <div className="space-y-2 max-h-32 overflow-y-auto">
+              <div className="space-y-2 max-h-32 overflow-y-auto overflow-x-hidden">
                 {candidates.map((c) => (
                   <div key={c.id} className="flex items-center gap-2">
                     <img
