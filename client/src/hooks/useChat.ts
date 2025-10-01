@@ -701,18 +701,21 @@ export const useChat = () => {
       return originalDisconnect.call(this);
     };
 
-    // بعد المصادقة الناجحة من الخادم، انضم للغرفة المطلوبة إن وُجدت
+    // بعد المصادقة الناجحة من الخادم، انضم تلقائياً للغرفة المطلوبة أو العامة
     socketInstance.on('authenticated', () => {
       try {
-        const desired = (
+        let desired = (
           pendingJoinRoomRef.current ||
           (() => {
             try { return getSession()?.roomId as string | undefined; } catch { return undefined; }
           })() ||
-          // fallback إلى الغرفة الحالية في الحالة إن وُجدت
-          currentRoomIdRef.current
+          currentRoomIdRef.current ||
+          'general'
         );
-        if (!desired || desired === 'public' || desired === 'friends') return;
+        // تجاهل معرفات غير صالحة وتحويلها للغرفة العامة
+        if (desired === 'public' || desired === 'friends' || !desired?.trim()) {
+          desired = 'general';
+        }
         if (!currentUserRef.current) return;
         // إذا كان هناك طلب انضمام جارٍ أو نحن بالفعل في نفس الغرفة، لا ترسل
         if (pendingJoinRoomRef.current !== null) return;
@@ -727,7 +730,6 @@ export const useChat = () => {
           userId: currentUserRef.current.id,
           username: currentUserRef.current.username,
         });
-        
       } catch {}
     });
 
@@ -1702,9 +1704,16 @@ export const useChat = () => {
 
   // 🔥 SIMPLIFIED Send message function
   const sendMessage = useCallback(
-    (content: string, messageType: string = 'text', receiverId?: number, roomId?: string, textColor?: string, bold?: boolean) => {
-      if (!state.currentUser || !socket.current?.connected) {
-        console.error('❌ لا يمكن إرسال الرسالة - المستخدم غير متصل');
+    (
+      content: string,
+      messageType: string = 'text',
+      receiverId?: number,
+      roomId?: string,
+      textColor?: string,
+      bold?: boolean
+    ): Promise<boolean> | void => {
+      if (!state.currentUser) {
+        console.error('❌ لا يمكن إرسال الرسالة - لا يوجد مستخدم حالي');
         return;
       }
 
@@ -1718,36 +1727,58 @@ export const useChat = () => {
       const detectedType =
         messageType === 'text' && trimmed.startsWith('data:image') ? 'image' : messageType;
 
-      const messageData = {
+      if (receiverId) {
+        // إرسال خاص عبر REST مع إرجاع Promise وإضافة تفاؤلية للمحادثة
+        const endpoint = `/api/private-messages/send`;
+        return apiRequest(endpoint, {
+          method: 'POST',
+          body: {
+            senderId: state.currentUser.id,
+            receiverId,
+            content: trimmed,
+            messageType: detectedType || 'text',
+            textColor,
+            bold,
+          },
+        })
+          .then((res: any) => {
+            const sender = state.currentUser as ChatUser;
+            const apiMsg = (res && (res as any).message) || null;
+            const chatMessage: ChatMessage = {
+              id: apiMsg?.id ?? Date.now(),
+              content: trimmed,
+              senderId: sender.id,
+              timestamp: (apiMsg?.timestamp as string) || new Date().toISOString(),
+              messageType: detectedType || 'text',
+              sender: apiMsg?.sender || sender,
+              receiverId,
+              isPrivate: true,
+              attachments: apiMsg?.attachments || [],
+            } as any;
+            // إضافة تفاؤلية للمحادثة حتى يصل بث الخادم
+            dispatch({ type: 'SET_PRIVATE_MESSAGE', payload: { userId: receiverId, message: chatMessage } });
+            return true;
+          });
+      }
+
+      // إرسال عام عبر Socket.IO — يتطلب اتصالاً وانضماماً للغرفة
+      if (!socket.current?.connected) {
+        console.error('❌ لا يمكن إرسال الرسالة العامة - غير متصل');
+        return;
+      }
+      const targetRoomId = roomId || state.currentRoomId || 'general';
+      socket.current.emit('publicMessage', {
         senderId: state.currentUser.id,
         content: trimmed,
         messageType: detectedType,
-        isPrivate: !!receiverId,
-        receiverId,
-        roomId: roomId || state.currentRoomId,
+        isPrivate: false,
+        receiverId: undefined,
+        roomId: targetRoomId,
         textColor,
         bold,
-      };
-
-      if (receiverId) {
-        // إرسال خاص عبر مسار منفصل كلياً
-        const endpoint = `/api/private-messages/send`;
-        apiRequest(endpoint, {
-          method: 'POST',
-          body: {
-            senderId: messageData.senderId,
-            receiverId,
-            content: messageData.content,
-            messageType: messageData.messageType || 'text',
-            textColor: messageData.textColor,
-            bold: messageData.bold,
-          },
-        }).catch(() => {});
-      } else {
-        socket.current.emit('publicMessage', messageData);
-      }
+      });
     },
-    [state.currentUser, state.currentRoomId]
+    [state.currentUser, state.currentRoomId, dispatch]
   );
 
   // 🔥 SIMPLIFIED Send room message function
