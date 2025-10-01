@@ -18,6 +18,7 @@ import {
   runMigrationsIfAvailable,
 } from './database-adapter';
 import { ensureStoriesTables } from './database-adapter';
+import { ensureConversationReadsTable } from './database-adapter';
 import { ensureUserProfileMusicColumns } from './database-adapter';
 import { ensureRoomsColumns } from './database-adapter';
 import { ensureBotsTable } from './database-adapter';
@@ -260,6 +261,13 @@ export async function initializeSystem(): Promise<boolean> {
       await ensureStoriesTables();
     } catch (e) {
       console.warn('⚠️ تعذر ضمان جداول القصص:', (e as any)?.message || e);
+    }
+
+    // ضمان جدول مؤشرات قراءة الخاص
+    try {
+      await ensureConversationReadsTable();
+    } catch (e) {
+      console.warn('⚠️ تعذر ضمان جدول conversation_reads:', (e as any)?.message || e);
     }
 
     // ضمان وجود أعمدة chat_lock في جدول الغرف

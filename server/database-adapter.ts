@@ -320,6 +320,48 @@ export async function ensureStoriesTables(): Promise<void> {
   }
 }
 
+// Ensure conversation_reads table and indexes exist
+export async function ensureConversationReadsTable(): Promise<void> {
+  try {
+    if (!dbAdapter.client) return;
+
+    const exists = await dbAdapter.client`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables
+        WHERE table_schema = 'public' AND table_name = 'conversation_reads'
+      ) as exists
+    ` as any;
+
+    if (!exists?.[0]?.exists) {
+      await dbAdapter.client.unsafe(`
+        CREATE TABLE IF NOT EXISTS conversation_reads (
+          id SERIAL PRIMARY KEY,
+          user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          other_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          last_read_at TIMESTAMP DEFAULT NOW(),
+          last_read_message_id INTEGER,
+          created_at TIMESTAMP DEFAULT NOW(),
+          updated_at TIMESTAMP DEFAULT NOW()
+        );
+      `);
+    }
+
+    // Unique index on (user_id, other_user_id)
+    await dbAdapter.client.unsafe(`
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_conversation_reads_user_other
+      ON conversation_reads (user_id, other_user_id);
+    `);
+
+    // Index for last_read_at lookups
+    await dbAdapter.client.unsafe(`
+      CREATE INDEX IF NOT EXISTS idx_conversation_reads_last_read
+      ON conversation_reads (user_id, other_user_id, last_read_at DESC);
+    `);
+  } catch (e) {
+    console.warn('⚠️ تعذر ضمان جدول conversation_reads:', (e as any)?.message || e);
+  }
+}
+
 // Ensure profile music columns exist on users table (safety net if migrations didn't run)
 export async function ensureUserProfileMusicColumns(): Promise<void> {
   try {

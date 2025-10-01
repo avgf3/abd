@@ -10,6 +10,7 @@ import { moderationSystem } from '../moderation';
 import { z } from 'zod';
 import { parseEntityId } from '../types/entities';
 import { friendService } from '../services/friendService';
+import { databaseService } from '../services/databaseService';
 
 // Helper type for conversation item (server-side internal)
 type ConversationItem = {
@@ -161,6 +162,16 @@ router.post('/send', protect.auth, limiters.pmSend, async (req, res) => {
     }
 
     const messageWithSender = { ...newMessage, sender };
+
+    // تحديث مؤشر القراءة للطرف المُرسل فور الإرسال
+    try {
+      await databaseService.upsertConversationRead(
+        parseInt(String(senderId)),
+        parseInt(String(receiverId)),
+        new Date(messageWithSender.timestamp as any),
+        (messageWithSender as any).id
+      );
+    } catch {}
 
     // تنظيف cache للمحادثة عند إضافة رسالة جديدة
     const conversationKey = `${Math.min(parseInt(String(senderId)), parseInt(receiverId))}-${Math.max(parseInt(String(senderId)), parseInt(receiverId))}`;
@@ -348,6 +359,67 @@ router.get('/:userId/:otherUserId', protect.auth, async (req, res, next) => {
 });
 
 /**
+ * PUT /api/private-messages/reads
+ * تحديث مؤشر قراءة محادثة خاصة (userId يحدده التوكن)
+ * body: { otherUserId: number, lastReadAt?: string, lastReadMessageId?: number }
+ */
+router.put('/reads', protect.auth, async (req, res) => {
+  try {
+    const userId = (req as any).user?.id as number;
+    const otherUserIdRaw = (req.body?.otherUserId ?? req.query?.otherUserId) as any;
+    const otherUserId = parseEntityId(otherUserIdRaw as any).id as number;
+    const lastReadAtStr = (req.body?.lastReadAt as string) || undefined;
+    const lastReadMessageId = req.body?.lastReadMessageId as number | undefined;
+
+    if (!userId || !otherUserId || userId === otherUserId) {
+      return res.status(400).json({ error: 'بيانات غير صالحة' });
+    }
+
+    const lastReadAt = lastReadAtStr ? new Date(lastReadAtStr) : new Date();
+    const ok = await databaseService.upsertConversationRead(userId, otherUserId, lastReadAt, lastReadMessageId);
+    if (!ok) return res.status(500).json({ error: 'تعذر حفظ مؤشر القراءة' });
+
+    // بث حدث لتزامن الشارات بين التبويبات/الأجهزة
+    try {
+      const io = (req.app as any).get('io');
+      if (io) {
+        io.to(String(userId)).emit('message', {
+          type: 'conversationRead',
+          otherUserId,
+          lastReadAt: lastReadAt.toISOString(),
+          lastReadMessageId: lastReadMessageId || null,
+        });
+      }
+    } catch {}
+
+    return res.json({ success: true });
+  } catch (error: any) {
+    console.error('خطأ في تحديث مؤشر قراءة الخاص:', error);
+    return res.status(500).json({ error: error?.message || 'خطأ في الخادم' });
+  }
+});
+
+/**
+ * GET /api/private-messages/unread-count/:userId
+ * إرجاع عدد المحادثات الخاصة غير المقروءة بناءً على مؤشّر القراءة
+ */
+router.get('/unread-count/:userId', protect.auth, async (req, res) => {
+  try {
+    const userId = parseEntityId(req.params.userId as any).id as number;
+    const requester = (req as any).user;
+    const isPrivileged = requester && ['admin', 'owner'].includes(requester.userType);
+    if (!requester || (requester.id !== userId && !isPrivileged)) {
+      return res.status(403).json({ error: 'غير مسموح' });
+    }
+    const c = await databaseService.getUnreadDmCount(userId);
+    return res.json({ count: c || 0 });
+  } catch (error: any) {
+    console.error('خطأ في unread-count الخاص:', error);
+    return res.status(500).json({ error: error?.message || 'خطأ في الخادم' });
+  }
+});
+
+/**
  * GET /api/private-messages/conversations/:userId?limit=50
  * إرجاع قائمة المحادثات الخاصة الأخيرة (طرف واحد + آخر رسالة) لعرضها في تبويب الرسائل
  */
@@ -368,7 +440,7 @@ router.get('/conversations/:userId', protect.auth, async (req, res) => {
       return res.status(403).json({ error: 'غير مسموح' });
     }
 
-    // PostgreSQL: استخدم DISTINCT ON مع فهرس pair للحصول على آخر رسالة لكل ثنائية
+    // PostgreSQL: استخدم DISTINCT ON مع فهرس pair للحصول على آخر رسالة لكل ثنائية + unreadCount
     if (dbType === 'postgresql') {
       try {
         const sql = `
@@ -387,8 +459,29 @@ router.get('/conversations/:userId', protect.auth, async (req, res) => {
             FROM pairs
             ORDER BY a, b, "timestamp" DESC
           )
-          SELECT id, sender_id, receiver_id, content, message_type, is_private, "timestamp"
-          FROM latest
+          SELECT l.id, l.sender_id, l.receiver_id, l.content, l.message_type, l.is_private, l."timestamp",
+                 CASE 
+                   WHEN l.receiver_id = ${userId} THEN l.sender_id 
+                   ELSE l.receiver_id 
+                 END AS other_user_id,
+                 COALESCE(
+                   (
+                     SELECT COUNT(*)::int FROM messages m
+                     LEFT JOIN conversation_reads cr
+                       ON cr.user_id = ${userId} AND cr.other_user_id = (
+                         CASE WHEN l.receiver_id = ${userId} THEN l.sender_id ELSE l.receiver_id END
+                       )
+                     WHERE m.is_private = TRUE
+                       AND ((m.sender_id = ${userId} AND m.receiver_id = (
+                              CASE WHEN l.receiver_id = ${userId} THEN l.sender_id ELSE l.receiver_id END
+                            ))
+                            OR (m.receiver_id = ${userId} AND m.sender_id = (
+                              CASE WHEN l.receiver_id = ${userId} THEN l.sender_id ELSE l.receiver_id END
+                            )))
+                       AND m.receiver_id = ${userId}
+                       AND (cr.last_read_at IS NULL OR m."timestamp" > cr.last_read_at)
+                   ), 0) AS unread_count
+          FROM latest l
           ORDER BY "timestamp" DESC
           LIMIT ${limit};
         `;
@@ -404,8 +497,8 @@ router.get('/conversations/:userId', protect.auth, async (req, res) => {
         const users = await storage.getUsersByIds(otherUserIds as number[]);
         const userMap = new Map<number, any>((users || []).map((u: any) => [u.id, u]));
 
-        const conversations = rows.map((r) => {
-          const otherUserId = r.sender_id === userId ? r.receiver_id : r.sender_id;
+        const conversations = (rows as any[]).map((r) => {
+          const otherUserId = (r as any).other_user_id || (r.sender_id === userId ? r.receiver_id : r.sender_id);
           return {
             otherUserId,
             otherUser: userMap.get(otherUserId) || null,
@@ -415,6 +508,7 @@ router.get('/conversations/:userId', protect.auth, async (req, res) => {
               messageType: r.message_type,
               timestamp: r.timestamp,
             },
+            unreadCount: Number((r as any).unread_count || 0),
           };
         });
 

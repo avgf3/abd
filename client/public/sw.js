@@ -145,6 +145,22 @@ self.addEventListener('fetch', (event) => {
 	const url = new URL(req.url);
 	const path = url.pathname || '/';
 
+	// Network-first for dynamic counters to avoid stale badge flicker
+	if (path.includes('/api/notifications') && path.endsWith('/unread-count')) {
+		event.respondWith(
+			fetch(req).catch(async () => {
+				try {
+					const cache = await caches.open(STATIC_CACHE);
+					const cached = await cache.match(req);
+					return cached || Response.error();
+				} catch {
+					return Response.error();
+				}
+			})
+		);
+		return;
+	}
+
 	// Cache-first for hashed assets and svgs
 	if (path.startsWith('/assets/') || path.startsWith('/svgs/') || /\.(?:js|css|woff2?|ttf|eot|svg|png|jpg|jpeg|gif|webp)$/i.test(path)) {
 		event.respondWith(
@@ -165,8 +181,7 @@ self.addEventListener('fetch', (event) => {
 
 	// Stale-while-revalidate for small, non-sensitive JSON
 	if (
-		path === '/api/rooms' ||
-		path.startsWith('/api/notifications/unread-count')
+		path === '/api/rooms'
 	) {
 		event.respondWith(
 			caches.open(STATIC_CACHE).then(async (cache) => {

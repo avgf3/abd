@@ -1077,6 +1077,115 @@ export class DatabaseService {
     }
   }
 
+  // ====== Conversation Reads (DM read pointers) ======
+  async upsertConversationRead(
+    userId: number,
+    otherUserId: number,
+    lastReadAt: Date,
+    lastReadMessageId?: number
+  ): Promise<boolean> {
+    if (!this.isConnected()) return false;
+    try {
+      if (this.type === 'postgresql') {
+        // Use ON CONFLICT on (user_id, other_user_id) unique index (ensure via migrations)
+        await (this.db as any)
+          .insert((schema as any).conversationReads)
+          .values({
+            userId,
+            otherUserId,
+            lastReadAt,
+            lastReadMessageId,
+            updatedAt: lastReadAt,
+          })
+          .onConflictDoUpdate({
+            target: [(schema as any).conversationReads.userId, (schema as any).conversationReads.otherUserId],
+            set: {
+              lastReadAt,
+              lastReadMessageId,
+              updatedAt: lastReadAt,
+            },
+          });
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Error upserting conversation read:', error);
+      return false;
+    }
+  }
+
+  async getConversationRead(
+    userId: number,
+    otherUserId: number
+  ): Promise<{ lastReadAt: Date | null; lastReadMessageId: number | null } | null> {
+    if (!this.isConnected()) return null;
+    try {
+      if (this.type === 'postgresql') {
+        const rows = await (this.db as any)
+          .select()
+          .from((schema as any).conversationReads)
+          .where(
+            and(
+              eq((schema as any).conversationReads.userId, userId as any),
+              eq((schema as any).conversationReads.otherUserId, otherUserId as any)
+            )
+          )
+          .limit(1);
+        if (rows && rows[0]) {
+          return {
+            lastReadAt: rows[0].lastReadAt || null,
+            lastReadMessageId: rows[0].lastReadMessageId || null,
+          } as any;
+        }
+      }
+      return null;
+    } catch (error) {
+      console.error('Error getConversationRead:', error);
+      return null;
+    }
+  }
+
+  async getUnreadDmCount(userId: number): Promise<number> {
+    if (!this.isConnected()) return 0;
+    try {
+      if (this.type === 'postgresql') {
+        // Count distinct conversations with messages newer than lastReadAt
+        const result = await (this.db as any).execute(`
+          WITH pm AS (
+            SELECT id, sender_id, receiver_id, "timestamp"
+            FROM messages
+            WHERE is_private = TRUE AND (sender_id = ${userId} OR receiver_id = ${userId})
+          ), pairs AS (
+            SELECT id, sender_id, receiver_id, "timestamp",
+                   LEAST(sender_id, receiver_id) AS a,
+                   GREATEST(sender_id, receiver_id) AS b,
+                   CASE WHEN receiver_id = ${userId} THEN sender_id ELSE receiver_id END AS other_user_id
+            FROM pm
+          ), latest AS (
+            SELECT DISTINCT ON (a, b)
+              id, sender_id, receiver_id, "timestamp", a, b, other_user_id
+            FROM pairs
+            ORDER BY a, b, "timestamp" DESC
+          )
+          SELECT COUNT(*)::int AS c
+          FROM latest l
+          LEFT JOIN conversation_reads cr
+            ON cr.user_id = ${userId} AND cr.other_user_id = l.other_user_id
+          WHERE (
+            (l.receiver_id = ${userId} AND (cr.last_read_at IS NULL OR l."timestamp" > cr.last_read_at))
+          );
+        `);
+        const rows: any = (result?.rows ?? result ?? []);
+        const c = rows?.[0]?.c ?? 0;
+        return Number(c) || 0;
+      }
+      return 0;
+    } catch (error) {
+      console.error('Error getUnreadDmCount:', error);
+      return 0;
+    }
+  }
+
   // ===================== Room message helpers (counts/search/stats) =====================
   async getRoomMessageCount(roomId: string): Promise<number> {
     if (!this.isConnected()) return 0;

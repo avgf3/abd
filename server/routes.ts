@@ -3409,6 +3409,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const notificationId = parseInt(req.params.id);
       const success = await storage.markNotificationAsRead(notificationId);
+      // بث تحديث القراءة لتصفير الشارة في جميع التبويبات/الأجهزة
+      if (success) {
+        try {
+          if (db && dbType !== 'disabled') {
+            const schema = await import('../shared/schema');
+            const orm = await import('drizzle-orm');
+            const rows = await (db as any)
+              .select()
+              .from((schema as any).notifications)
+              .where(orm.eq((schema as any).notifications.id, notificationId as any))
+              .limit(1);
+            const userId = rows?.[0]?.userId;
+            if (userId) {
+              getIO().to(String(userId)).emit('message', {
+                type: 'notificationRead',
+                notificationId,
+              });
+            }
+          }
+        } catch {}
+      }
       res.json({ success });
     } catch (error) {
       res.status(500).json({ error: 'خطأ في تحديث الإشعار' });
@@ -3419,6 +3440,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = parseInt(req.params.userId);
       const success = await storage.markAllNotificationsAsRead(userId);
+      // بث مسح الشارات لكل التبويبات/الأجهزة
+      try {
+        if (success) {
+          getIO().to(String(userId)).emit('message', { type: 'notificationsCleared' });
+        }
+      } catch {}
       res.json({ success });
     } catch (error) {
       res.status(500).json({ error: 'خطأ في تحديث الإشعارات' });

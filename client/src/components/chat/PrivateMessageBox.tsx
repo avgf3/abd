@@ -225,6 +225,25 @@ export default function PrivateMessageBox({
     }
   }, [isOpen, currentUser?.id, user?.id]);
 
+  // تحديث مؤشّر القراءة في الخادم عند فتح المحادثة أو وصول رسائل
+  useEffect(() => {
+    if (!isOpen || !currentUser?.id || !user?.id) return;
+    try {
+      const last = sortedMessages[sortedMessages.length - 1];
+      const payload: any = {
+        otherUserId: user.id,
+        lastReadAt: last ? String(last.timestamp) : new Date().toISOString(),
+        lastReadMessageId: last ? (last as any).id : undefined,
+      };
+      fetch('/api/private-messages/reads', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(payload),
+      }).catch(() => {});
+    } catch {}
+  }, [isOpen, user?.id, currentUser?.id, sortedMessages.length]);
+
   // التمرير عند وصول رسائل جديدة (محسن)
   useEffect(() => {
     if (sortedMessages.length > 0 && isAtBottomPrivate) {
