@@ -1,3 +1,64 @@
+/* Lightweight Web Worker to send periodic pings while page is in background */
+let pingIntervalId = null;
+let configuredInterval = 60000; // default 60s
+
+self.onmessage = (event) => {
+  try {
+    const { type, data } = event.data || {};
+    switch (type) {
+      case 'init': {
+        if (data && typeof data.pingInterval === 'number') {
+          configuredInterval = Math.max(15000, data.pingInterval | 0);
+        }
+        self.postMessage({ type: 'worker-ready' });
+        break;
+      }
+      case 'start-ping': {
+        const interval = (data && data.interval) ? data.interval : configuredInterval;
+        startPing(Math.max(15000, interval | 0));
+        break;
+      }
+      case 'stop-ping': {
+        stopPing();
+        break;
+      }
+      case 'socket-status': {
+        // no-op: reserved for potential future logic
+        break;
+      }
+      case 'cleanup': {
+        stopPing();
+        close();
+        break;
+      }
+    }
+  } catch (e) {
+    self.postMessage({ type: 'worker-error', error: (e && e.message) || String(e) });
+  }
+};
+
+function startPing(interval) {
+  try {
+    stopPing();
+    pingIntervalId = setInterval(() => {
+      try {
+        self.postMessage({ type: 'send-ping' });
+      } catch {}
+    }, interval);
+  } catch (e) {
+    self.postMessage({ type: 'worker-error', error: (e && e.message) || String(e) });
+  }
+}
+
+function stopPing() {
+  try {
+    if (pingIntervalId) {
+      clearInterval(pingIntervalId);
+      pingIntervalId = null;
+    }
+  } catch {}
+}
+
 /**
  * Web Worker للحفاظ على اتصال Socket.IO في الخلفية
  * يعمل حتى لو توقف JavaScript الرئيسي في التبويب
