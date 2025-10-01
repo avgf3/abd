@@ -213,7 +213,7 @@ export default function RichestModal({ isOpen, onClose, currentUser, onUserClick
   const topTen = vipUsers.slice(0, 10);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center richest-modal">
       <div className="absolute inset-0 modal-overlay" onClick={onClose} />
 
       <div className="relative w-[90vw] max-w-[24rem] sm:max-w-[26rem] bg-card rounded-xl overflow-hidden shadow-2xl animate-fade-in">
@@ -260,7 +260,7 @@ export default function RichestModal({ isOpen, onClose, currentUser, onUserClick
               <li key={u.id} className="relative -mx-4 list-none">
                 <SimpleUserMenu targetUser={u} currentUser={currentUser || null} showModerationActions={isModerator}>
                   <div
-                    className={`flex items-center gap-2 p-3 px-4 min-h-[56px] rounded-none border-b border-border transition-colors duration-200 cursor-pointer w-full ${getUserListItemClasses(u) || 'bg-card hover:bg-accent/10'}`}
+                    className={`mobile-stable flex items-center gap-2 p-3 px-4 min-h-[56px] rounded-none border-b border-border transition-colors duration-200 cursor-pointer w-full ${getUserListItemClasses(u) || 'bg-card hover:bg-accent/10'}`}
                     style={getUserListItemStyles(u)}
                     onClick={(e) => onUserClick && onUserClick(e as any, u)}
                   >
