@@ -1,4 +1,5 @@
 import { User, Home, Moon, Shield, LogOut, Settings, Palette, Brush, Camera } from 'lucide-react';
+import { saveSession } from '@/lib/socket';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -33,9 +34,27 @@ export default function SettingsMenu({
     }
   };
 
+  const handleOpenRooms = () => {
+    try {
+      // إزالة تذكّر الغرفة الحالية لضمان إظهار واجهة اختيار الغرف
+      saveSession({ roomId: undefined as any });
+    } catch {}
+    // توجيه كامل إلى الواجهة الرئيسية (واجهة الغرف الرئيسية)
+    window.location.href = '/';
+  };
+
   return (
-    <Card className="fixed top-20 right-4 z-50 shadow-2xl animate-fade-in w-56 settings-menu-panel border-accent">
+    <Card className="fixed top-20 right-4 z-50 shadow-2xl animate-fade-in w-56 settings-menu-panel border-accent relative">
       <CardContent className="p-0">
+        {/* زر الإغلاق (X) بنفس تصميم تبويب الأثرياء وفي اليسار) */}
+        <button
+          onClick={onClose}
+          className="px-2 py-1 hover:bg-red-100 text-red-600 text-sm font-medium absolute left-3 top-2"
+          aria-label="إغلاق"
+          title="إغلاق"
+        >
+          ✖️
+        </button>
         {currentUser && (
           <div className="p-3 border-b border-border" style={getUserListItemStyles(currentUser)}>
             <div className="flex items-center gap-2">
@@ -62,6 +81,7 @@ export default function SettingsMenu({
         {/* القسم الثاني - الإعدادات العامة */}
         <div className="p-3 border-b border-border space-y-1">
           <Button
+            onClick={handleOpenRooms}
             variant="ghost"
             size="sm"
             className="w-full justify-start gap-3 h-9 hover:bg-accent/50 text-foreground"
