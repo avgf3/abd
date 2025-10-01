@@ -92,6 +92,8 @@ export default function MessageArea({
   const inputRef = useRef<HTMLInputElement>(null);
   const virtuosoRef = useRef<VirtuosoHandle>(null);
   const prevMessagesLenRef = useRef<number>(0);
+  // مقدار إزاحة الكيبورد أسفل الشاشة (iOS) لترك مساحة أسفل قائمة الرسائل
+  const [keyboardInset, setKeyboardInset] = useState<number>(0);
 
   // State for improved scroll behavior
   const [isAtBottom, setIsAtBottom] = useState(true);
@@ -256,6 +258,44 @@ export default function MessageArea({
   const handleScrollDownClick = useCallback(() => {
     scrollToBottom('smooth');
     setUnreadCount(0);
+  }, [scrollToBottom]);
+
+  // عند ظهور الكيبورد على iOS: احسب الإزاحة السفلية وزِد مسافة أسفل قائمة الرسائل واذهب للقاع
+  useEffect(() => {
+    if (!isMobile) return;
+    const vv = (window as any).visualViewport as VisualViewport | undefined;
+    const recompute = () => {
+      try {
+        const height = vv?.height ?? window.innerHeight;
+        const offsetTop = vv?.offsetTop ?? 0;
+        const inset = Math.max(0, window.innerHeight - height - offsetTop);
+        setKeyboardInset(inset);
+        if (inset > 0) {
+          // امنح المتصفح فرصة لإعادة التخطيط ثم مرّر للأسفل
+          setTimeout(() => scrollToBottom('auto'), 50);
+          setTimeout(() => scrollToBottom('auto'), 250);
+        }
+      } catch {}
+    };
+    recompute();
+    vv?.addEventListener('resize', recompute);
+    window.addEventListener('orientationchange', recompute);
+    return () => {
+      try { vv?.removeEventListener('resize', recompute); } catch {}
+      try { window.removeEventListener('orientationchange', recompute); } catch {}
+    };
+  }, [isMobile, scrollToBottom]);
+
+  // عند تركيز حقل الإدخال أثناء الكتابة، مرّر آخر رسالة إلى الواجهة
+  useEffect(() => {
+    const el = inputRef.current;
+    if (!el) return;
+    const onFocus = () => {
+      setTimeout(() => scrollToBottom('auto'), 50);
+      setTimeout(() => scrollToBottom('auto'), 250);
+    };
+    el.addEventListener('focus', onFocus);
+    return () => { try { el.removeEventListener('focus', onFocus); } catch {} };
   }, [scrollToBottom]);
 
   // Auto scroll to bottom only when appropriate
@@ -569,7 +609,7 @@ export default function MessageArea({
             ref={virtuosoRef}
             data={validMessages}
             className="!h-full"
-            style={{ paddingBottom: '24px' }}
+            style={{ paddingBottom: `${24 + (isMobile ? keyboardInset : 0)}px` }}
             followOutput={'smooth'}
             atBottomThreshold={64}
             atBottomStateChange={handleAtBottomChange}
