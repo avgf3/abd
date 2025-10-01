@@ -1528,7 +1528,7 @@ li > * > div.effect-crystal {
 
 /* إصلاح موضع آخر كلمة في الرسائل */
 .message-content-fix {
-  line-height: 1.6;
+  line-height: 1.4; /* نفس line-height مثل باقي العناصر */
   padding-bottom: 2px;
   padding-inline-end: 2px; /* منع قصّ آخر حرف في نهايات RTL/LTR على الهاتف */
   /* اجعل اتجاه الأساس RTL دائمًا مع عزل خلط اللغات داخل الرسالة */

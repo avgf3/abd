@@ -670,7 +670,7 @@ export default function MessageArea({
                               if (ids.length > 0) {
                                 const firstId = ids[0];
                                 return (
-                                  <span className="text-sm leading-relaxed inline-flex items-center gap-2">
+                                  <span className="text-sm inline-flex items-center gap-2">
                                     {cleaned && (
                                       <span
                                         style={{
@@ -698,7 +698,7 @@ export default function MessageArea({
                               }
                               return (
                                 <span
-                                  className="text-sm leading-relaxed"
+                                  className="text-sm"
                                   style={{
                                     color: message.textColor || '#000000',
                                     fontWeight: message.bold ? 700 : undefined
