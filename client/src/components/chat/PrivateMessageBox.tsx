@@ -23,6 +23,7 @@ import { getFinalUsernameColor } from '@/utils/themeUtils';
 import { getSocket } from '@/lib/socket';
 import { formatTime } from '@/utils/timeUtils';
 // إزالة استخدام fallback الذي يُظهر "مستخدم #id" لتفادي ظهور اسم افتراضي خاطئ في الخاص
+import { api } from '@/lib/queryClient';
 
 interface PrivateMessageBoxProps {
   isOpen: boolean;
@@ -293,20 +294,16 @@ export default function PrivateMessageBox({
 
     try {
       if (hasImage) {
-        const reader = new FileReader();
-        const file = imageFile!;
-        const asDataUrl: string = await new Promise((resolve, reject) => {
-          reader.onload = () => resolve(String(reader.result));
-          reader.onerror = () => reject(new Error('فشل قراءة الملف'));
-          reader.readAsDataURL(file);
-        });
-
-        const success = await sendMessageWithRetry(asDataUrl, 2);
-        if (success) {
-          setImageFile(null);
-          if (fileInputRef.current) fileInputRef.current.value = '';
-          toast.success('تم إرسال الصورة');
-        }
+        // إرسال الصورة عبر مسار الرفع الموحّد وتمرير receiverId للخاص
+        if (!currentUser?.id || !user?.id) throw new Error('بيانات المرسل أو المستلم غير متوفرة');
+        const form = new FormData();
+        form.append('image', imageFile!);
+        form.append('senderId', String(currentUser.id));
+        form.append('receiverId', String(user.id));
+        await api.upload('/api/upload/message-image', form, { timeout: 60000 });
+        setImageFile(null);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+        toast.success('تم إرسال الصورة');
       }
       if (hasText) {
         const success = await sendMessageWithRetry(text);
