@@ -1525,11 +1525,13 @@ li > * > div.effect-crystal {
 }
 
 .room-message-pulse {
-  animation: gentle-room-pulse 3.5s ease-in-out infinite;
+  /* إيقاف النبض في رسائل الغرف */
+  animation: none !important;
 }
 
 .soft-entrance {
-  animation: soft-entrance 0.6s ease-out;
+  /* إيقاف تأثير الدخول الناعم للرسائل */
+  animation: none !important;
 }
 
 .text-breathe {
@@ -1588,7 +1590,8 @@ li > * > div.effect-crystal {
 
 /* أنماط قائمة السمايلات المتحركة */
 .animated-emoji-picker {
-  animation: fadeIn 0.2s ease-out;
+  /* تعطيل أي أنيميشن لظهور منتقي السمايلات لضمان الثبات */
+  animation: none !important;
 }
 
 @keyframes fadeIn {

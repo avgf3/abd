@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+// تعطيل أنيميشنات framer-motion لضمان ثبات المنتقي
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { X, Sparkles, Heart, PartyPopper, Flame, Star } from 'lucide-react';
@@ -92,105 +92,14 @@ export default function AnimatedEmojiEnhanced({ onEmojiSelect, onClose }: Animat
   const [selectedCategory, setSelectedCategory] = useState('regular');
   const [hoveredEmoji, setHoveredEmoji] = useState<string | null>(null);
 
-  // تعريف الأنيميشن variants
-  const animationVariants = {
-    bounce: {
-      y: [0, -20, 0],
-      transition: { duration: 0.6, repeat: Infinity, repeatDelay: 1 }
-    },
-    shake: {
-      x: [-10, 10, -10, 10, 0],
-      transition: { duration: 0.5, repeat: Infinity, repeatDelay: 1 }
-    },
-    pulse: {
-      scale: [1, 1.2, 1],
-      transition: { duration: 0.6, repeat: Infinity }
-    },
-    heartBeat: {
-      scale: [1, 1.3, 0.8, 1.3, 1],
-      transition: { duration: 1, repeat: Infinity, repeatDelay: 0.5 }
-    },
-    flip: {
-      rotateY: [0, 180, 360],
-      transition: { duration: 1, repeat: Infinity, repeatDelay: 2 }
-    },
-    spin: {
-      rotate: 360,
-      transition: { duration: 2, repeat: Infinity, ease: "linear" }
-    },
-    tada: {
-      scale: [1, 0.9, 0.9, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1],
-      rotate: [0, -3, -3, 3, -3, 3, -3, 3, -3, 0],
-      transition: { duration: 1, repeat: Infinity, repeatDelay: 1 }
-    },
-    float: {
-      y: [0, -10, 0],
-      transition: { duration: 2, repeat: Infinity, ease: "easeInOut" }
-    },
-    wobble: {
-      rotate: [0, -5, 5, -5, 5, 0],
-      transition: { duration: 1, repeat: Infinity, repeatDelay: 1 }
-    },
-    sparkle: {
-      scale: [1, 1.2, 1],
-      opacity: [1, 0.8, 1],
-      transition: { duration: 0.8, repeat: Infinity }
-    },
-    grow: {
-      scale: [1, 1.5, 1],
-      transition: { duration: 1.5, repeat: Infinity }
-    },
-    confetti: {
-      y: [0, -30, 0],
-      rotate: [0, 360],
-      transition: { duration: 1.5, repeat: Infinity }
-    },
-    wave: {
-      rotate: [0, 14, -8, 14, -4, 10, 0],
-      transition: { duration: 1.5, repeat: Infinity, repeatDelay: 0.5 }
-    },
-    thumbsUp: {
-      y: [0, -10, 0],
-      rotate: [0, -10, 10, 0],
-      transition: { duration: 0.8, repeat: Infinity, repeatDelay: 1 }
-    },
-    clap: {
-      scale: [1, 1.1, 0.9, 1.1, 1],
-      transition: { duration: 0.6, repeat: Infinity, repeatDelay: 0.5 }
-    },
-    fire: {
-      scale: [1, 1.1, 0.9, 1.1, 1],
-      y: [0, -5, 0],
-      transition: { duration: 0.8, repeat: Infinity }
-    },
-    twinkle: {
-      scale: [1, 1.3, 1],
-      rotate: [0, 180, 360],
-      transition: { duration: 2, repeat: Infinity }
-    },
-    rocket: {
-      y: [0, -20, 0],
-      x: [0, 5, 0],
-      transition: { duration: 1.5, repeat: Infinity }
-    },
-    magical: {
-      scale: [1, 1.2, 1],
-      rotate: [0, 10, -10, 0],
-      transition: { duration: 2, repeat: Infinity }
-    }
-  };
+  // تعطيل جميع الأنيميشن الداخلية
+  const animationVariants = {} as const;
 
   return (
-    <AnimatePresence>
-      <motion.div
-        initial={{ opacity: 0, scale: 0.9, y: 10 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.9, y: 10 }}
-        className="absolute bottom-full right-0 mb-2 bg-white border border-gray-200 rounded-xl shadow-2xl p-4 w-[400px] max-h-[450px] overflow-hidden z-50"
-      >
+    <div className="absolute bottom-full right-0 mb-2 bg-white border border-gray-200 rounded-xl shadow-2xl p-4 w-[400px] max-h-[450px] overflow-hidden z-50">
         <div className="flex justify-between items-center mb-3">
           <div className="flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-yellow-500 animate-pulse" />
+            <Sparkles className="w-5 h-5 text-yellow-500" />
             <h3 className="text-sm font-medium text-gray-700">سمايلات متحركة مميزة</h3>
           </div>
           <Button
@@ -239,36 +148,28 @@ export default function AnimatedEmojiEnhanced({ onEmojiSelect, onClose }: Animat
               <TabsContent key={category} value={category} className="mt-0">
                 <div className="grid grid-cols-4 gap-3">
                   {animatedEmojis[category].map((emoji) => (
-                    <motion.div
-                      key={emoji.id}
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.95 }}
-                    >
+                    <div key={emoji.id}>
                       <Button
                         onClick={() => onEmojiSelect(emoji)}
                         variant="ghost"
-                        className="relative p-3 h-[70px] w-full aspect-square hover:bg-gradient-to-br hover:from-purple-50 hover:to-pink-50 rounded-xl transition-all group"
+                        className="relative p-3 h-[70px] w-full aspect-square rounded-xl group"
                         onMouseEnter={() => setHoveredEmoji(emoji.id)}
                         onMouseLeave={() => setHoveredEmoji(null)}
                       >
-                        <motion.div
-                          className="text-3xl"
-                          animate={hoveredEmoji === emoji.id ? animationVariants[emoji.animation as keyof typeof animationVariants] : {}}
-                        >
+                        <div className="text-3xl">
                           {emoji.emoji}
-                        </motion.div>
-                        <span className="absolute bottom-1 left-0 right-0 text-[10px] text-gray-600 opacity-0 group-hover:opacity-100 transition-opacity">
+                        </div>
+                        <span className="absolute bottom-1 left-0 right-0 text-[10px] text-gray-600">
                           {emoji.name}
                         </span>
                       </Button>
-                    </motion.div>
+                    </div>
                   ))}
                 </div>
               </TabsContent>
             ))}
           </div>
         </Tabs>
-      </motion.div>
-    </AnimatePresence>
+    </div>
   );
 }
