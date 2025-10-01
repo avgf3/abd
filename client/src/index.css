@@ -1593,8 +1593,11 @@ li > * > div.effect-crystal {
 
 /* أسلوب run-in للجوال: الاسم يظهر في السطر الأول فقط، وبقية الأسطر تمتد بكامل العرض */
 .runin-container {
-  display: block;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
   width: 100%;
+  gap: 0.5rem;
 }
 
 .runin-name {
@@ -1620,10 +1623,15 @@ li > * > div.effect-crystal {
 /* تطبيق تأثير run-in محسّن للجوال */
 @media (max-width: 768px) {
   .runin-container {
-    position: relative;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.5rem;
   }
   .runin-name {
-    display: inline;
+    display: flex;
+    align-items: baseline;
+    flex-shrink: 0;
     line-height: 1.4;
   }
   .runin-name > * {
@@ -1631,7 +1639,8 @@ li > * > div.effect-crystal {
     vertical-align: baseline;
   }
   .runin-text {
-    display: inline;
+    flex: 1;
+    min-width: 0;
     text-align: start;
     line-height: 1.4;
   }
