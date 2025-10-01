@@ -629,6 +629,12 @@ async function joinRoom(
   // إذا كان هذا استئنافاً سريعاً داخل نافذة السماح، لا ترسل رسالة "انضمام جديد"
   // إضافة كتم مبني على نافذة الجهاز و/أو إعادة مصادقة reconnect
   let suppressJoinMessage = isResume;
+  // منع تكرار رسائل الانضمام عند الانضمام لنفس الغرفة خلال نافذة قصيرة
+  try {
+    if (!suppressJoinMessage && previousRoom === roomId) {
+      suppressJoinMessage = true;
+    }
+  } catch {}
   try {
     if (!suppressJoinMessage) {
       const devKey = socket.deviceId || '';

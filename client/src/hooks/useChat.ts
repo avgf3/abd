@@ -344,6 +344,8 @@ export const useChat = () => {
   const ignoredUsersRef = useRef<Set<number>>(new Set());
   const roomMessagesRef = useRef<Record<string, ChatMessage[]>>({});
   const typingTimersRef = useRef<Map<number, number>>(new Map());
+  // Throttle لمنع إرسال joinRoom أكثر من مرة خلال نافذة زمنية قصيرة
+  const lastJoinEmitTsRef = useRef<number>(0);
   // Prevent duplicate handling for kick/ban events and centralize navigation
   const kickHandledRef = useRef<boolean>(false);
   // Track pending room join request if requested before socket connects
@@ -710,21 +712,22 @@ export const useChat = () => {
           // fallback إلى الغرفة الحالية في الحالة إن وُجدت
           currentRoomIdRef.current
         );
-        if (desired && desired !== 'public' && desired !== 'friends' && currentUserRef.current) {
-          // أرسل joinRoom مرة واحدة فقط إذا لم يكن قد تم طلبه بالفعل
-          if (pendingJoinRoomRef.current !== null && pendingJoinRoomRef.current !== desired) {
-            // في حال تم وضع غرفة أخرى بانتظار، نفضّل آخر غرفة محفوظة
-            pendingJoinRoomRef.current = desired;
-          }
-          if (pendingJoinRoomRef.current === null) {
-            pendingJoinRoomRef.current = desired;
-          }
-          socketInstance.emit('joinRoom', {
-            roomId: desired,
-            userId: currentUserRef.current.id,
-            username: currentUserRef.current.username,
-          });
-        }
+        if (!desired || desired === 'public' || desired === 'friends') return;
+        if (!currentUserRef.current) return;
+        // إذا كان هناك طلب انضمام جارٍ أو نحن بالفعل في نفس الغرفة، لا ترسل
+        if (pendingJoinRoomRef.current !== null) return;
+        if (currentRoomIdRef.current && currentRoomIdRef.current === desired) return;
+        // Throttle: امنع التكرار خلال نافذة قصيرة
+        const now = Date.now();
+        if (now - lastJoinEmitTsRef.current < 1500) return;
+        pendingJoinRoomRef.current = desired;
+        lastJoinEmitTsRef.current = now;
+        socketInstance.emit('joinRoom', {
+          roomId: desired,
+          userId: currentUserRef.current.id,
+          username: currentUserRef.current.username,
+        });
+        
       } catch {}
     });
 
@@ -756,29 +759,7 @@ export const useChat = () => {
       try {
         const envelope = data.envelope || data;
 
-        // تأكيد المصادقة من الخادم: بعده فقط نرسل joinRoom المؤجل أو المحفوظ
-        if (envelope.type === 'authenticated') {
-          try {
-            const desired = (
-              pendingJoinRoomRef.current ||
-              (() => {
-                try { return getSession()?.roomId as string | undefined; } catch { return undefined; }
-              })() ||
-              // fallback إلى الغرفة الحالية في الحالة إن وُجدت
-              currentRoomIdRef.current
-            );
-            if (desired && desired !== 'public' && desired !== 'friends' && currentUserRef.current) {
-              if (pendingJoinRoomRef.current === null) {
-                pendingJoinRoomRef.current = desired;
-              }
-              socket.current?.emit('joinRoom', {
-                roomId: desired,
-                userId: currentUserRef.current.id,
-                username: currentUserRef.current.username,
-              });
-            }
-          } catch {}
-        }
+        // تم إزالة مسار authenticated داخل قناة message لتجنّب انضمام مكرر
 
         // تحديث تأثير البروفايل فقط عند وصول بث profileEffectChanged
         if (envelope.type === 'profileEffectChanged') {
@@ -1693,6 +1674,11 @@ export const useChat = () => {
 
       // Do NOT change local room yet; wait for server ack (roomJoined)
       if (socket.current?.connected && state.currentUser?.id) {
+        const now = Date.now();
+        if (now - lastJoinEmitTsRef.current < 1000) {
+          return;
+        }
+        lastJoinEmitTsRef.current = now;
         socket.current.emit('joinRoom', {
           roomId,
           userId: state.currentUser.id,
