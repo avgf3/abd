@@ -1614,8 +1614,9 @@ li > * > div.effect-crystal {
   text-align: start;
   word-break: break-word;
   overflow-wrap: anywhere;
-  white-space: pre-wrap;
+  white-space: normal; /* تغيير من pre-wrap إلى normal */
   line-height: 1.4;
+  vertical-align: baseline;
 }
 
 /* تطبيق تأثير run-in محسّن للجوال */
@@ -1635,6 +1636,8 @@ li > * > div.effect-crystal {
     display: inline;
     text-align: start;
     line-height: 1.4;
+    white-space: normal;
+    vertical-align: baseline;
   }
 }
 
