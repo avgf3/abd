@@ -1911,6 +1911,37 @@ li > * > div.effect-crystal {
   .richest-modal .mobile-stable:hover {
     transform: none !important;
   }
+
+  /* إصلاح مشكلة الحركة الأفقية في تبويب الأثرياء - السماح فقط بالحركة العمودية */
+  .richest-modal {
+    touch-action: pan-y pinch-zoom !important;
+    overflow-x: hidden !important;
+  }
+  
+  .richest-modal .max-h-\[70vh\] {
+    touch-action: pan-y !important;
+    overflow-x: hidden !important;
+    overscroll-behavior-x: none !important;
+    overscroll-behavior-y: contain !important;
+  }
+
+  /* منع الحركة الأفقية في قائمة المستخدمين */
+  .richest-modal ul {
+    touch-action: pan-y !important;
+    overflow-x: hidden !important;
+  }
+
+  /* منع الحركة الأفقية في عناصر المستخدمين الفردية */
+  .richest-modal li {
+    touch-action: pan-y !important;
+    overflow-x: hidden !important;
+  }
+
+  /* منع الحركة الأفقية في قسم المرشحين */
+  .richest-modal .space-y-2.max-h-32 {
+    touch-action: pan-y !important;
+    overflow-x: hidden !important;
+  }
 }
 
 .richest-close-btn {
