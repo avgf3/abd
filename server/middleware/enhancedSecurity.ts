@@ -64,8 +64,13 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
       throw createError.unauthorized('معرف المستخدم مطلوب للوصول لهذه الخدمة');
     }
 
-    // التحقق من وجود المستخدم
-    const user = await storage.getUser(userId);
+    // التحقق من وجود المستخدم مع معالجة تعطل قاعدة البيانات بإرجاع 503 بدلاً من 401
+    let user: any;
+    try {
+      user = await storage.getUser(userId);
+    } catch (dbErr) {
+      throw createError.serviceUnavailable('الخدمة غير متاحة مؤقتاً، حاول لاحقاً');
+    }
     if (!user) {
       log.security('محاولة وصول بمعرف مستخدم غير موجود', {
         userId,

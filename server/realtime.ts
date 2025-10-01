@@ -1073,6 +1073,15 @@ export function setupRealtime(httpServer: HttpServer): IOServer<ClientToServerEv
           // Load user strictly by verified token's userId
           const user = await storage.getUser(verified.userId);
           if (!user) {
+            try {
+              const { databaseService } = await import('./services/databaseService');
+              const status = databaseService.getStatus();
+              if (!status.connected) {
+                socket.emit('error', { message: 'الخدمة غير متاحة مؤقتاً، حاول لاحقاً', action: 'service_unavailable' });
+                // لا نغلق الاتصال، نسمح للعميل بإعادة المحاولة عندما تعود القاعدة
+                return;
+              }
+            } catch {}
             socket.emit('error', { message: 'المستخدم غير موجود' });
             socket.disconnect(true);
             return;

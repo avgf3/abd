@@ -67,12 +67,42 @@ function formatZodError(error: ZodError): string {
 }
 
 // دالة لتحديد رمز الحالة بناءً على نوع الخطأ
+function isDatabaseUnavailableError(error: any): boolean {
+  const code = (error && (error.code || error.errno || error.sqlState)) || '';
+  const name = (error && error.name) || '';
+  const message = (error && error.message) || '';
+  // رموز شائعة لانقطاع قاعدة البيانات أو الشبكة
+  const dbCodes = new Set([
+    'ECONNREFUSED',
+    'ECONNRESET',
+    'ETIMEDOUT',
+    'EHOSTUNREACH',
+    'ENETUNREACH',
+    'EPIPE',
+    // SQLSTATE (PostgreSQL)
+    '57P01', // admin_shutdown
+    '57P02', // crash_shutdown
+    '57P03', // cannot_connect_now
+    '08006', // connection_failure
+    '08001', // sqlclient_unable_to_establish_sqlconnection
+  ]);
+  if (dbCodes.has(String(code))) return true;
+  if (name === 'PostgresError' && /^08|^57P0/.test(String(error?.code || ''))) return true;
+  const msg = message.toLowerCase();
+  if (
+    msg.includes('connection') && (msg.includes('timeout') || msg.includes('refused') || msg.includes('terminated') || msg.includes('reset'))
+  ) return true;
+  if (msg.includes('database') && (msg.includes('unavailable') || msg.includes('down') || msg.includes('cannot'))) return true;
+  return false;
+}
+
 function getStatusCode(error: any): number {
-  if (error.statusCode) return error.statusCode;
+  if (error?.statusCode) return error.statusCode;
   if (error instanceof ZodError) return 400;
-  if (error.code === 'ENOTFOUND') return 404;
-  if (error.code === '23505') return 409; // Unique constraint violation
-  if (error.code === '23503') return 400; // Foreign key constraint violation
+  if (isDatabaseUnavailableError(error)) return 503;
+  if (error?.code === 'ENOTFOUND') return 404;
+  if (error?.code === '23505') return 409; // Unique constraint violation
+  if (error?.code === '23503') return 400; // Foreign key constraint violation
   return 500;
 }
 
@@ -174,4 +204,6 @@ export const createError = {
 
   internal: (message: string = ERROR_MESSAGES.INTERNAL_ERROR) =>
     new OperationalError(message, 500, 'INTERNAL_ERROR'),
+  serviceUnavailable: (message: string = ERROR_MESSAGES.SERVICE_UNAVAILABLE) =>
+    new OperationalError(message, 503, 'SERVICE_UNAVAILABLE'),
 };

@@ -45,8 +45,20 @@ export function getDatabaseStatus(): DatabaseStatus {
 export async function checkDatabaseHealth(): Promise<boolean> {
   try {
     if (!dbAdapter.client) return false;
-    await dbAdapter.client`select 1 as ok`;
-    return true;
+    const timeoutMs = Number(process.env.DB_HEALTH_TIMEOUT_MS || 2000);
+    return await new Promise<boolean>((resolve) => {
+      const timer = setTimeout(() => resolve(false), timeoutMs);
+      (async () => {
+        try {
+          await dbAdapter.client`select 1 as ok`;
+          clearTimeout(timer);
+          resolve(true);
+        } catch {
+          clearTimeout(timer);
+          resolve(false);
+        }
+      })();
+    });
   } catch {
     return false;
   }
@@ -68,45 +80,57 @@ export async function initializeDatabase(): Promise<boolean> {
       return false;
     }
 
-    // إعدادات محسنة للاتصال بقاعدة البيانات على Render
+    // إعدادات محسنة للاتصال بقاعدة البيانات مع دعم PgBouncer وعدد عملاء كبير
     const sslRequired =
       /\bsslmode=require\b/.test(databaseUrl) || process.env.NODE_ENV === 'production';
-    
+
     // إضافة معاملات SSL إذا لم تكن موجودة في production
     let connectionString = databaseUrl;
     if (process.env.NODE_ENV === 'production' && !connectionString.includes('sslmode=')) {
       connectionString += connectionString.includes('?') ? '&sslmode=require' : '?sslmode=require';
     }
-    
+
+    // اكتشاف استخدام PgBouncer عبر سلسلة الاتصال أو متغير بيئة
+    const isPgBouncer =
+      /pgbouncer=1|pgbouncer=true/i.test(connectionString) ||
+      String(process.env.USE_PGBOUNCER || '').toLowerCase() === 'true';
+
+    // إعدادات المجمع والقيم الافتراضية القوية (الافتراضي 8000 كما طُلب)
+    const poolMax = Number(process.env.DB_POOL_MAX || process.env.POOL_MAX || 8000);
+    const poolMin = Number(process.env.DB_POOL_MIN || 20);
+    const idleTimeout = Number(process.env.DB_IDLE_TIMEOUT || 60); // ثوانٍ
+    const maxLifetime = Number(process.env.DB_MAX_LIFETIME || 60 * 30); // ثوانٍ
+    const connectTimeout = Number(process.env.DB_CONNECT_TIMEOUT || 30); // ثوانٍ
+    const retryDelayMs = Number(process.env.DB_RETRY_DELAY_MS || 1000);
+    const maxAttempts = Number(process.env.DB_MAX_ATTEMPTS || 3);
+
     const client = postgres(connectionString, {
       ssl: sslRequired ? 'require' : undefined,
-      // إزالة جميع القيود على قاعدة البيانات
-      prepare: true, // تفعيل prepared statements لتحسين الأداء
-      onnotice: () => {}, // تجاهل الإشعارات
-      // إضافة إعدادات إضافية للأداء
-      fetch_types: false, // تحسين الأداء
-      types: false, // تحسين الأداء
+      prepare: true,
+      onnotice: () => {},
+      fetch_types: false,
+      types: false,
       connection: {
-        application_name: 'chat-app',
+        application_name: `chat-app:${process.pid}`,
       },
-      // إضافة إعدادات timeout لمنع انقطاع الاتصال
-      idle_timeout: 20, // 20 ثانية timeout للاتصالات الخاملة
-      max_lifetime: 60 * 30, // 30 دقيقة كحد أقصى لعمر الاتصال
-      connect_timeout: 30, // 30 ثانية timeout للاتصال الأولي
-      // إعدادات إضافية لتحسين الاستقرار
-      max: 20, // حد أقصى 20 اتصال متزامن
-      min: 2, // حد أدنى 2 اتصال دائماً
+      // مهلات واستقرار
+      idle_timeout: idleTimeout,
+      max_lifetime: maxLifetime,
+      connect_timeout: connectTimeout,
+      // حدود المجمع - مرفوعة لدعم 8000 عميل عبر PgBouncer
+      max: poolMax,
+      min: poolMin,
       // إعدادات إعادة المحاولة
-      retry_delay: 1000, // تأخير ثانية واحدة بين المحاولات
-      max_attempts: 3, // محاولة 3 مرات
+      retry_delay: retryDelayMs,
+      max_attempts: maxAttempts,
     });
 
     const drizzleDb = drizzle(client, { schema, logger: false });
 
-    // محاولة الاتصال مع إعادة المحاولة
+    // محاولة الاتصال مع إعادة المحاولة (باستخدام القيم القابلة للتهيئة)
     let connected = false;
     let attempts = 0;
-    const maxAttempts = 3;
+    const maxAttemptsLocal = maxAttempts;
     
     while (!connected && attempts < maxAttempts) {
       try {
@@ -114,8 +138,9 @@ export async function initializeDatabase(): Promise<boolean> {
         connected = true;
       } catch (error) {
         attempts++;
-        if (attempts < maxAttempts) {
-          await new Promise(resolve => setTimeout(resolve, 2000 * attempts));
+        if (attempts < maxAttemptsLocal) {
+          const backoff = Math.min(5000, retryDelayMs * (attempts + 1));
+          await new Promise(resolve => setTimeout(resolve, backoff));
         } else {
           throw error;
         }
