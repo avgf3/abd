@@ -1153,7 +1153,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                         const finalBold = bold || false;
                         chat.sendMessage(content, messageType || 'text', undefined, chat.currentRoomId, finalTextColor, finalBold);
                       }}
-                      onTyping={(_isTyping) => chat.sendTyping()}
+                      onTyping={(_isTyping) => { /* مؤشر الكتابة العام مُعطّل */ }}
                       typingUsers={Array.from(chat.typingUsers)}
                       onReportMessage={handleReportUser}
                       onUserClick={handleUserClick}
@@ -1218,7 +1218,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                         const finalBold = bold || false;
                         chat.sendMessage(content, messageType || 'text', undefined, chat.currentRoomId, finalTextColor, finalBold);
                       }}
-                      onTyping={() => chat.sendTyping()}
+                      onTyping={() => { /* مؤشر الكتابة العام مُعطّل */ }}
                       typingUsers={chat.typingUsers}
                       onReportMessage={handleReportUser}
                       onUserClick={handleUserClick}
@@ -1502,6 +1502,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             currentUser={chat.currentUser}
             messages={chat.privateConversations[selectedPrivateUser.id] || []}
             onSendMessage={(content) => chat.sendMessage(content, 'text', selectedPrivateUser.id)}
+            onTyping={(otherId) => (chat as any).sendPrivateTyping?.(otherId)}
             onLoadMore={() => (chat as any).loadOlderPrivateConversation?.(selectedPrivateUser.id, 20)}
             onViewProfile={(u) => handleViewProfile(u)}
             onViewStoryByUser={(uid) => setShowStoryViewer({ show: true, userId: uid })}
