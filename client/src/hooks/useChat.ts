@@ -350,6 +350,10 @@ export const useChat = () => {
   const kickHandledRef = useRef<boolean>(false);
   // Track pending room join request if requested before socket connects
   const pendingJoinRoomRef = useRef<string | null>(null);
+  // تتبع آخر رسالة معروفة لكل غرفة (id و/أو وقت)
+  const lastRoomMessageMetaRef = useRef<Map<string, { lastId?: number; lastTs?: string }>>(new Map());
+  // صف رسائل أثناء الخلفية ليتم تفريغه عند العودة
+  const messageBufferRef = useRef<Map<string, ChatMessage[]>>(new Map());
 
   useEffect(() => {
     currentUserRef.current = state.currentUser;
@@ -362,6 +366,22 @@ export const useChat = () => {
   }, [state.ignoredUsers]);
   useEffect(() => {
     roomMessagesRef.current = state.roomMessages;
+  }, [state.roomMessages]);
+
+  // تحديث الميتاداتا الخاصة بآخر رسالة لكل غرفة عند تغيّر الرسائل
+  useEffect(() => {
+    try {
+      const next = new Map<string, { lastId?: number; lastTs?: string }>();
+      const rooms = state.roomMessages || {};
+      Object.keys(rooms).forEach((rid) => {
+        const list = rooms[rid] || [];
+        if (list.length > 0) {
+          const last = list[list.length - 1];
+          next.set(rid, { lastId: last.id, lastTs: last.timestamp });
+        }
+      });
+      lastRoomMessageMetaRef.current = next;
+    } catch {}
   }, [state.roomMessages]);
 
   // ✅ Memoized current room messages - حل مشكلة الـ performance
@@ -427,6 +447,31 @@ export const useChat = () => {
 
   // 🔥 SIMPLIFIED Socket event handling - حذف التضارب
   const setupSocketListeners = useCallback((socketInstance: Socket) => {
+    // دالة لمزامنة الرسائل التي فاتت أثناء الخلفية/الانقطاع
+    const fetchMissedMessagesForRoom = async (roomId: string) => {
+      try {
+        const meta = lastRoomMessageMetaRef.current.get(roomId);
+        const params = new URLSearchParams();
+        if (meta?.lastId) params.set('sinceId', String(meta.lastId));
+        else if (meta?.lastTs) params.set('sinceTs', meta.lastTs);
+        params.set('limit', '500');
+        const url = `/api/messages/room/${roomId}/since?${params.toString()}`;
+        const data = await apiRequest(url);
+        const items: any[] = Array.isArray((data as any)?.messages) ? (data as any).messages : (Array.isArray(data) ? data : []);
+        if (items.length > 0) {
+          const formatted = mapDbMessagesToChatMessages(items, roomId);
+          const existing = roomMessagesRef.current[roomId] || [];
+          const existingIds = new Set(existing.map((m) => m.id));
+          const toAppend = formatted.filter((m) => !existingIds.has(m.id));
+          if (toAppend.length > 0) {
+            const next = [...existing, ...toAppend];
+            dispatch({ type: 'SET_ROOM_MESSAGES', payload: { roomId, messages: next } });
+          }
+        }
+      } catch (e) {
+        // تجاهل الأخطاء الصامتة
+      }
+    };
     // 🔥 تهيئة Service Worker للحفاظ على الاتصال في الخلفية
     const initServiceWorker = async () => {
       try {
@@ -636,6 +681,28 @@ export const useChat = () => {
             socketInstance.connect();
           }
         } catch {}
+
+        // تفريغ الرسائل المؤجلة وإحضار المفقود منذ آخر رسالة معروفة
+        try {
+          const currentRoom = currentRoomIdRef.current;
+          if (currentRoom) {
+            const buffered = messageBufferRef.current.get(currentRoom) || [];
+            if (buffered.length > 0) {
+              for (const msg of buffered) {
+                dispatch({ type: 'ADD_ROOM_MESSAGE', payload: { roomId: currentRoom, message: msg } });
+              }
+              messageBufferRef.current.set(currentRoom, []);
+            }
+          }
+        } catch {}
+
+        // جلب الرسائل التي فاتت أثناء الخلفية
+        try {
+          const roomId = currentRoomIdRef.current;
+          if (roomId) {
+            fetchMissedMessagesForRoom(roomId).catch(() => {});
+          }
+        } catch {}
       }
     };
 
@@ -647,6 +714,20 @@ export const useChat = () => {
       try {
         if (socket.current && !socket.current.connected) {
           socket.current.connect();
+        }
+      } catch {}
+      // عند العودة للصفحة، تفريغ الرسائل المؤجلة وجلب المفقود
+      try {
+        const roomId = currentRoomIdRef.current;
+        if (roomId) {
+          const buffered = messageBufferRef.current.get(roomId) || [];
+          if (buffered.length > 0) {
+            for (const msg of buffered) {
+              dispatch({ type: 'ADD_ROOM_MESSAGE', payload: { roomId, message: msg } });
+            }
+            messageBufferRef.current.set(roomId, []);
+          }
+          fetchMissedMessagesForRoom(roomId).catch(() => {});
         }
       } catch {}
     };
@@ -991,10 +1072,17 @@ export const useChat = () => {
 
               // إضافة الرسالة للغرفة المناسبة (عام فقط)
               if (!chatMessage.isPrivate) {
-                dispatch({
-                  type: 'ADD_ROOM_MESSAGE',
-                  payload: { roomId, message: chatMessage },
-                });
+                if (document.hidden) {
+                  // أثناء الخلفية خزّن الرسالة مؤقتاً لتفريغها عند العودة
+                  const buf = messageBufferRef.current.get(roomId) || [];
+                  buf.push(chatMessage);
+                  messageBufferRef.current.set(roomId, buf);
+                } else {
+                  dispatch({
+                    type: 'ADD_ROOM_MESSAGE',
+                    payload: { roomId, message: chatMessage },
+                  });
+                }
               }
 
               // تشغيل صوت خفيف فقط عند الرسائل العامة في الغرفة الحالية
@@ -1627,6 +1715,37 @@ export const useChat = () => {
                   queryFn: async () => apiRequest(`/api/friends/${user.id}`),
                   staleTime: 60_000,
                 });
+                // بعد نجاح الاتصال، حاول استرجاع ما فات للغرفة الحالية إن وُجدت
+                try {
+                  const rid = currentRoomIdRef.current;
+                  if (rid) {
+                    // جلب المفقود بهدوء
+                    (async () => {
+                      const meta = lastRoomMessageMetaRef.current.get(rid);
+                      if (meta?.lastId || meta?.lastTs) {
+                        const params = new URLSearchParams();
+                        if (meta.lastId) params.set('sinceId', String(meta.lastId));
+                        else if (meta.lastTs) params.set('sinceTs', meta.lastTs);
+                        params.set('limit', '500');
+                        const url = `/api/messages/room/${rid}/since?${params.toString()}`;
+                        const data = await apiRequest(url);
+                        const items: any[] = Array.isArray((data as any)?.messages)
+                          ? (data as any).messages
+                          : (Array.isArray(data) ? data : []);
+                        if (items.length > 0) {
+                          const formatted = mapDbMessagesToChatMessages(items, rid);
+                          const existing = roomMessagesRef.current[rid] || [];
+                          const existingIds = new Set(existing.map((m) => m.id));
+                          const toAppend = formatted.filter((m) => !existingIds.has(m.id));
+                          if (toAppend.length > 0) {
+                            const next = [...existing, ...toAppend];
+                            dispatch({ type: 'SET_ROOM_MESSAGES', payload: { roomId: rid, messages: next } });
+                          }
+                        }
+                      }
+                    })();
+                  }
+                } catch {}
               } catch {}
             }, 300);
           } catch {}
@@ -1644,6 +1763,7 @@ export const useChat = () => {
         // تحديث حالة الاتصال عند الانفصال
         s.on('disconnect', () => {
           dispatch({ type: 'SET_CONNECTION_STATUS', payload: false });
+          // لا نفقد أي شيء هنا، الاستئناف سيجلب ما فات لاحقاً
         });
 
         // معالجة أخطاء الاتصال

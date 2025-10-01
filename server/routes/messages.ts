@@ -196,6 +196,68 @@ router.get('/room/:roomId/latest', limiters.roomMessagesRead, async (req, res) =
 });
 
 /**
+ * GET /api/messages/room/:roomId/since
+ * جلب رسائل الغرفة منذ معرف/وقت معين للاسترجاع السلس
+ * Query:
+ *  - sinceId?: number
+ *  - sinceTs?: string (ISO)
+ *  - limit?: number (<= 1000)
+ */
+router.get('/room/:roomId/since', limiters.roomMessagesRead, async (req, res) => {
+  try {
+    const { roomId } = req.params;
+    const { sinceId, sinceTs, limit = 500 } = req.query as any;
+
+    if (!roomId?.trim()) {
+      return res.status(400).json({ error: 'معرف الغرفة مطلوب' });
+    }
+
+    // التحقق من وجود الغرفة وحالة القفل
+    const room = await roomService.getRoom(roomId);
+    if (!room) {
+      return res.status(404).json({ error: 'الغرفة غير موجودة' });
+    }
+
+    const isLocked = (room as any).isLocked ?? (room as any).is_locked ?? false;
+    if (isLocked) {
+      const token = getAuthTokenFromRequest(req as any);
+      const verified = token ? verifyAuthToken(token) : null;
+      const requesterId = verified?.userId;
+      if (!requesterId) {
+        return res.status(403).json({ error: 'الغرفة مقفلة ولا يمكن عرض رسائلها' });
+      }
+      const requester = await storage.getUser(requesterId);
+      const isPrivileged = requester && ['admin', 'owner', 'moderator'].includes((requester as any).userType);
+      if (!isPrivileged) {
+        const member = await isUserInRoom(requesterId, roomId);
+        if (!member) {
+          return res.status(403).json({ error: 'الغرفة مقفلة ولا يمكن عرض رسائلها' });
+        }
+      }
+    }
+
+    const parsedSinceId = typeof sinceId === 'string' ? parseInt(sinceId, 10) : Number(sinceId);
+    const parsedTs = typeof sinceTs === 'string' && sinceTs.trim() ? new Date(sinceTs) : undefined;
+    const safeLimit = Math.max(1, Math.min(1000, Number(limit) || 500));
+
+    const messages = await roomMessageService.getRoomMessages(roomId, safeLimit, 0, true)
+      .then(async (pagination) => {
+        // إذا كان sinceId/ts محدد، استخدم طبقة التخزين المباشرة للاستعلام منذ
+        if (Number.isFinite(parsedSinceId) || parsedTs instanceof Date) {
+          const sinceMessages = await storage.getRoomMessagesSince(roomId, Number.isFinite(parsedSinceId) ? parsedSinceId : undefined, parsedTs, safeLimit);
+          return sinceMessages;
+        }
+        return pagination.messages;
+      });
+
+    return res.json({ success: true, roomId, messages, count: Array.isArray(messages) ? messages.length : 0 });
+  } catch (error: any) {
+    console.error('خطأ في جلب رسائل الغرفة منذ:', error);
+    return res.status(500).json({ error: 'خطأ في الخادم', details: error?.message });
+  }
+});
+
+/**
  * POST /api/messages/room/:roomId
  * إرسال رسالة لغرفة
  */

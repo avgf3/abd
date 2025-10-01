@@ -1,4 +1,4 @@
-import { sql, eq, desc, asc, and, or, like, count, isNull, gte, lt, inArray } from 'drizzle-orm';
+import { sql, eq, desc, asc, and, or, like, count, isNull, gte, lt, inArray, gt } from 'drizzle-orm';
 
 import * as schema from '../../shared/schema';
 import { dbAdapter, dbType } from '../database-adapter';
@@ -1179,6 +1179,45 @@ export class DatabaseService {
     } catch (error) {
       console.error('Error getLastRoomMessage:', error);
       return null;
+    }
+  }
+
+  async getRoomMessagesSince(
+    roomId: string,
+    sinceId?: number,
+    sinceTimestamp?: Date,
+    limit: number = 500
+  ): Promise<Message[]> {
+    if (!this.isConnected()) return [];
+    try {
+      if (this.type === 'postgresql') {
+        const baseWhere = and(
+          eq((schema as any).messages.roomId, roomId),
+          isNull((schema as any).messages.deletedAt),
+          eq((schema as any).messages.isPrivate, false)
+        );
+
+        const where = (() => {
+          if (typeof sinceId === 'number' && Number.isFinite(sinceId)) {
+            return and(baseWhere, gt((schema as any).messages.id, sinceId as any));
+          }
+          if (sinceTimestamp instanceof Date) {
+            return and(baseWhere, gt((schema as any).messages.timestamp, sinceTimestamp as any));
+          }
+          return baseWhere;
+        })();
+
+        return await (this.db as any)
+          .select()
+          .from((schema as any).messages)
+          .where(where)
+          .orderBy(asc((schema as any).messages.timestamp))
+          .limit(Math.max(1, Math.min(1000, Number(limit) || 500)));
+      }
+      return [];
+    } catch (error) {
+      console.error('Error getRoomMessagesSince:', error);
+      return [];
     }
   }
 
