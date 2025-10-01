@@ -479,6 +479,22 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
     return () => window.removeEventListener('privateMessageReceived', handler);
   }, [chat.currentUser?.id, queryClient]);
 
+  // مزامنة قراءات الخاص بين التبويبات: عند وصول حدث conversationRead صفّر الشارة محلياً
+  useEffect(() => {
+    const onConversationRead = (data: any) => {
+      try {
+        if (!chat.currentUser?.id) return;
+        // تحديث قائمة المحادثات لتحديث unreadCount
+        queryClient.invalidateQueries({
+          queryKey: ['/api/private-messages/conversations', chat.currentUser.id],
+        });
+      } catch {}
+    };
+    // يتم بث الحدث عبر socket ضمن قناة message، لذا نلتقطه من useChat reducer عبر نافذة events
+    window.addEventListener('conversationRead' as any, onConversationRead as any);
+    return () => window.removeEventListener('conversationRead' as any, onConversationRead as any);
+  }, [chat.currentUser?.id, queryClient]);
+
   // Auto-switch to friends tab when friend request is accepted
   useEffect(() => {
     const handleFriendRequestAccepted = (event: CustomEvent) => {

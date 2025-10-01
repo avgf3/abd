@@ -184,7 +184,10 @@ export default function MessagesPanel({
       if (!user) continue;
       const lastMessageTs = String(c.lastMessage.timestamp);
       const lastOpened = currentUser?.id ? getPmLastOpened(currentUser.id, user.id) : 0;
-      const unreadCount = new Date(lastMessageTs).getTime() > lastOpened ? 1 : 0;
+      const serverUnread = typeof (c as any).unreadCount === 'number' ? (c as any).unreadCount : undefined;
+      const unreadCount = typeof serverUnread === 'number'
+        ? Math.max(0, serverUnread)
+        : (new Date(lastMessageTs).getTime() > lastOpened ? 1 : 0);
 
       map.set(user.id, {
         user,
@@ -357,6 +360,17 @@ export default function MessagesPanel({
                             if (currentUser?.id) {
                               setPmLastOpened(currentUser.id, user.id);
                             }
+                            // تحديث مؤشّر القراءة في الخادم لتصفير الشارة على كل الأجهزة
+                            try {
+                              const lastTs = lastMessage.timestamp;
+                              const lastId = undefined;
+                              fetch('/api/private-messages/reads', {
+                                method: 'PUT',
+                                headers: { 'Content-Type': 'application/json' },
+                                credentials: 'include',
+                                body: JSON.stringify({ otherUserId: user.id, lastReadAt: lastTs, lastReadMessageId: lastId }),
+                              }).catch(() => {});
+                            } catch {}
                             setTimeout(() => onStartPrivateChat(user), 0);
                           } catch (error) {
                             console.error('خطأ في فتح المحادثة:', error);

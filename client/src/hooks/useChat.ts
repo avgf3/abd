@@ -866,6 +866,13 @@ export const useChat = () => {
     socketInstance.on('message', (data: any) => {
       try {
         const envelope = data.envelope || data;
+        // تزامن قراءة الخاص عبر socket -> حوله لحدث نافذة لتحديث القوائم
+        if (envelope.type === 'conversationRead') {
+          try {
+            const ev = new CustomEvent('conversationRead', { detail: envelope });
+            window.dispatchEvent(ev);
+          } catch {}
+        }
 
         // تم إزالة مسار authenticated داخل قناة message لتجنّب انضمام مكرر
 
@@ -1488,6 +1495,26 @@ export const useChat = () => {
                 storyChannel: isStoryChannel,
               } as any;
               window.dispatchEvent(new CustomEvent('privateMessageReceived', { detail }));
+            } catch {}
+
+            // إذا كانت الرسالة واردة والمحادثة المفتوحة مع نفس المستخدم، حدّث مؤشّر القراءة على الخادم
+            try {
+              const meId = currentUserRef.current?.id;
+              const isIncoming = meId && message.receiverId === meId && message.senderId === conversationId;
+              const isOpenSame = (selectedPrivateUserRef as any)?.current?.id === conversationId;
+              if (isIncoming && isOpenSame) {
+                const body: any = {
+                  otherUserId: conversationId,
+                  lastReadMessageId: (message as any).id,
+                  lastReadAt: (message as any).timestamp,
+                };
+                fetch('/api/private-messages/reads', {
+                  method: 'PUT',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(body),
+                  credentials: 'include',
+                }).catch(() => {});
+              }
             } catch {}
           }
         }

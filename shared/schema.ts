@@ -138,6 +138,21 @@ export const notifications = pgTable('notifications', {
   createdAt: timestamp('created_at').defaultNow(),
 });
 
+// مؤشّر قراءة محادثات الخاص لكل زوج (userId, otherUserId)
+export const conversationReads = pgTable('conversation_reads', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id')
+    .notNull()
+    .references(() => users.id),
+  otherUserId: integer('other_user_id')
+    .notNull()
+    .references(() => users.id),
+  lastReadAt: timestamp('last_read_at').defaultNow(),
+  lastReadMessageId: integer('last_read_message_id'),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+});
+
 // إضافة جدول blocked_devices المفقود
 export const blockedDevices = pgTable('blocked_devices', {
   id: serial('id').primaryKey(),
