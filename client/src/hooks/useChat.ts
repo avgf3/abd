@@ -1805,9 +1805,15 @@ export const useChat = () => {
   );
 
   const sendTyping = useCallback(() => {
-    if (socket.current?.connected) {
-      socket.current.emit('typing', { isTyping: true });
-    }
+    // تم تعطيل مؤشر الكتابة في الغرف العامة
+  }, []);
+
+  // إرسال مؤشر كتابة للخاص (DM)
+  const sendPrivateTyping = useCallback((targetUserId: number) => {
+    try {
+      if (!targetUserId || !socket.current?.connected) return;
+      socket.current.emit('privateTyping', { targetUserId, isTyping: true });
+    } catch {}
   }, []);
 
   // Compatibility helpers for UI components
@@ -1923,6 +1929,7 @@ export const useChat = () => {
 
     // Newly added helpers for compatibility
     handleTyping,
+    sendPrivateTyping,
     getCurrentRoomMessages,
     updateCurrentUser,
     loadPrivateConversation,

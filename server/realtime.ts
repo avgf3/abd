@@ -1317,19 +1317,26 @@ export function setupRealtime(httpServer: HttpServer): IOServer<ClientToServerEv
       }
     });
 
-    socket.on('typing', (data) => {
-      const isTyping = !!data?.isTyping;
-      const roomId = socket.currentRoom;
-      
-      // المستخدم يجب أن يكون في غرفة لإرسال إشارة الكتابة
-      if (!roomId) return;
-      io.to(`room_${roomId}`).emit('message', {
-        type: 'typing',
-        userId: socket.userId,
-        username: socket.username,
-        isTyping,
-        roomId,
-      });
+    // 🚫 تعطيل مؤشر الكتابة داخل الغرف العامة
+    socket.on('typing', (_data) => {
+      // لم يعد مدعوماً للغرف
+    });
+
+    // ✅ مؤشر الكتابة للرسائل الخاصة فقط
+    socket.on('privateTyping', (data) => {
+      try {
+        if (!socket.userId) return;
+        const targetUserId = Number(data?.targetUserId);
+        const isTyping = !!data?.isTyping;
+        if (!targetUserId || targetUserId === socket.userId) return;
+        // إرسال للمستخدم الهدف فقط
+        io.to(targetUserId.toString()).emit('message', {
+          type: 'privateTyping',
+          fromUserId: socket.userId,
+          fromUsername: socket.username,
+          isTyping,
+        });
+      } catch {}
     });
 
     // Basic WebRTC relays scoped to same room

@@ -45,6 +45,7 @@ export interface ClientToServerEvents {
   leaveRoom: (data: any) => void;
   publicMessage: (data: any) => void;
   typing: (data: any) => void;
+  privateTyping: (data: any) => void;
   client_ping: () => void;
   'webrtc-offer': (data: any) => void;
   'webrtc-answer': (data: any) => void;
