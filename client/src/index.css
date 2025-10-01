@@ -237,6 +237,8 @@
     scroll-behavior: smooth;
     /* Stabilize layout and tune base sizing */
     font-size: 90%;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
     scrollbar-gutter: stable both-edges;
   }
   
@@ -260,6 +262,12 @@
   ::-webkit-scrollbar-thumb:hover {
     background: linear-gradient(135deg, var(--accent-solid), var(--primary-solid));
   }
+}
+
+/* Ensure media elements never overflow viewport width */
+img, video, canvas, iframe {
+  max-width: 100%;
+  height: auto;
 }
 
 /* Modern Animations System */
@@ -1246,18 +1254,24 @@ body.ltr {
 
 /* Chat layout improvements - تحسينات خاصة بتخطيط الدردشة */
 .chat-main-container {
-  height: calc(100vh - 160px);
+  height: calc(100dvh - 160px);
   overflow: hidden;
 }
 
 .chat-message-area {
-  height: calc(100vh - 240px);
+  height: calc(100dvh - 240px);
   overflow-y: auto;
 }
 
 .chat-sidebar {
-  height: calc(100vh - 160px);
+  height: calc(100dvh - 160px);
   overflow: hidden;
+}
+
+@supports not (height: 100dvh) {
+  .chat-main-container { height: calc(100vh - 160px); }
+  .chat-message-area { height: calc(100vh - 240px); }
+  .chat-sidebar { height: calc(100vh - 160px); }
 }
 
 .chat-input-fixed {
@@ -2544,6 +2558,15 @@ li::before {
     line-height: 1.4;
     min-height: 40px;
     max-height: 120px;
+  }
+
+  /* منع تكبير iOS عند التركيز على حقول الإدخال */
+  .mobile-message-area input[type="text"],
+  .mobile-message-area input[type="search"],
+  .mobile-message-area input[type="email"],
+  .mobile-message-area input[type="password"],
+  .rooms-message-input {
+    font-size: 16px !important;
   }
   
   .mobile-touch-button {
