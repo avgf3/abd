@@ -874,6 +874,19 @@ export const useChat = () => {
           } catch {}
         }
 
+        // تزامن قراءة الإشعارات عبر socket -> إبطال كاش العداد والقائمة
+        if (envelope.type === 'notificationRead' || envelope.type === 'notificationsCleared') {
+          try {
+            const userId = currentUserRef.current?.id;
+            if (userId) {
+              const { queryClient } = require('@/lib/queryClient');
+              const qc = queryClient as import('@tanstack/react-query').QueryClient;
+              qc.invalidateQueries({ queryKey: ['/api/notifications', userId] });
+              qc.invalidateQueries({ queryKey: ['/api/notifications/unread-count', userId] });
+            }
+          } catch {}
+        }
+
         // تم إزالة مسار authenticated داخل قناة message لتجنّب انضمام مكرر
 
         // تحديث تأثير البروفايل فقط عند وصول بث profileEffectChanged
