@@ -621,7 +621,7 @@ async function joinRoom(
 
   // رسائل حديثة (تجنب التكرار عند الانضمام السريع): لا داعي إذا لم تتغير الغرفة فعلياً
   try {
-    const recentMessages = await roomMessageService.getLatestRoomMessages(roomId, 10);
+    const recentMessages = await roomMessageService.getLatestRoomMessages(roomId, 12);
     socket.emit('message', { type: 'roomMessages', roomId, messages: recentMessages });
   } catch {}
 
