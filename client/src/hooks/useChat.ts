@@ -444,6 +444,21 @@ export const useChat = () => {
   const isBackgroundRef = useRef<boolean>(false);
   const socketWorkerRef = useRef<Worker | null>(null);
   const serviceWorkerRef = useRef<ServiceWorker | null>(null);
+  const disconnectUiTimerRef = useRef<number | null>(null);
+  const isIOSRef = useRef<boolean>(false);
+  const pendingDisconnectRef = useRef<boolean>(false);
+
+  // كشف iOS (يشمل iPadOS الحديث)
+  useEffect(() => {
+    try {
+      const ua = navigator.userAgent || '';
+      const iOSDevice = /iPad|iPhone|iPod/i.test(ua);
+      const iPadOS = (navigator.platform === 'MacIntel' && (navigator as any).maxTouchPoints > 1);
+      isIOSRef.current = !!(iOSDevice || iPadOS);
+    } catch {
+      isIOSRef.current = false;
+    }
+  }, []);
 
   // 🔥 SIMPLIFIED Socket event handling - حذف التضارب
   const setupSocketListeners = useCallback((socketInstance: Socket) => {
@@ -629,24 +644,25 @@ export const useChat = () => {
           clearInterval(pingIntervalRef.current);
         }
         
-        // تفعيل Web Worker و Service Worker للping في الخلفية
-        if (socketWorkerRef.current) {
-          socketWorkerRef.current.postMessage({
-            type: 'start-ping',
-            data: { interval: 60000 } // ping كل 60 ثانية في الخلفية
-          });
-        }
-        
-        if (serviceWorkerRef.current) {
-          serviceWorkerRef.current.postMessage({
-            type: 'start-background-ping',
-            data: { interval: 60000 } // ping كل 60 ثانية في الخلفية
-          });
-        }
-        
-        if (!socketWorkerRef.current && !serviceWorkerRef.current) {
-          // fallback إلى ping أبطأ إذا لم يتوفر Web Worker أو Service Worker
-          backgroundPingIntervalRef.current = startPing(60000);
+        // على iOS: لا تحاول إبقاء الاتصال حيّاً بالخلفية (سيتم إيقافه على أي حال)
+        if (!isIOSRef.current) {
+          // تفعيل Web Worker و Service Worker للping في الخلفية
+          if (socketWorkerRef.current) {
+            socketWorkerRef.current.postMessage({
+              type: 'start-ping',
+              data: { interval: 60000 }
+            });
+          }
+          if (serviceWorkerRef.current) {
+            serviceWorkerRef.current.postMessage({
+              type: 'start-background-ping',
+              data: { interval: 60000 }
+            });
+          }
+          if (!socketWorkerRef.current && !serviceWorkerRef.current) {
+            // fallback إلى ping أبطأ إذا لم يتوفر Web Worker أو Service Worker
+            backgroundPingIntervalRef.current = startPing(60000);
+          }
         }
         
       } else if (!document.hidden && isBackgroundRef.current) {
@@ -733,13 +749,25 @@ export const useChat = () => {
     };
     const handlePageHide = () => {
       try {
-        // تأكيد تفعيل الping في الخلفية عند الانتقال للخلفية
-        if (socketWorkerRef.current) {
-          socketWorkerRef.current.postMessage({ type: 'start-ping', data: { interval: 60000 } });
+        // على iOS لا نحاول تشغيل pings بالخلفية
+        if (!isIOSRef.current) {
+          // تأكيد تفعيل الping في الخلفية عند الانتقال للخلفية
+          if (socketWorkerRef.current) {
+            socketWorkerRef.current.postMessage({ type: 'start-ping', data: { interval: 60000 } });
+          }
+          if (serviceWorkerRef.current) {
+            serviceWorkerRef.current.postMessage({ type: 'start-background-ping', data: { interval: 60000 } });
+          }
         }
-        if (serviceWorkerRef.current) {
-          serviceWorkerRef.current.postMessage({ type: 'start-background-ping', data: { interval: 60000 } });
-        }
+        // إرسال keepalive سريع لإعلام الخادم قبل نوم الصفحة
+        try {
+          if (typeof navigator.sendBeacon === 'function') {
+            const blob = new Blob(['bg=1'], { type: 'text/plain' });
+            navigator.sendBeacon('/api/ping', blob);
+          } else {
+            fetch('/api/ping', { method: 'GET', cache: 'no-store', keepalive: true, credentials: 'include' }).catch(() => {});
+          }
+        } catch {}
       } catch {}
     };
     window.addEventListener('pageshow', handlePageShow);
@@ -1681,6 +1709,12 @@ export const useChat = () => {
           dispatch({ type: 'SET_CONNECTION_STATUS', payload: true });
           dispatch({ type: 'SET_CONNECTION_ERROR', payload: null });
           dispatch({ type: 'SET_LOADING', payload: false });
+          // إلغاء أي مؤقتات/أعلام انفصال مؤقتة
+          pendingDisconnectRef.current = false;
+          if (disconnectUiTimerRef.current) {
+            clearTimeout(disconnectUiTimerRef.current);
+            disconnectUiTimerRef.current = null;
+          }
 
           // إعادة إرسال المصادقة فقط، والانضمام للغرفة بعد Event roomJoined
           try {
@@ -1753,22 +1787,37 @@ export const useChat = () => {
         // معالج فشل إعادة الاتصال النهائي
         s.on('reconnect_failed', () => {
           console.warn('⚠️ فشل في إعادة الاتصال بعد عدة محاولات');
-          dispatch({
-            type: 'SET_CONNECTION_ERROR',
-            payload: 'فقدان الاتصال. يرجى إعادة تحميل الصفحة.',
-          });
+          // لا نظهر الخطأ إذا كانت الصفحة بالخلفية؛ نؤجل للواجهة
+          if (!document.hidden) {
+            dispatch({
+              type: 'SET_CONNECTION_ERROR',
+              payload: 'فقدان الاتصال. يرجى إعادة تحميل الصفحة.',
+            });
+          } else {
+            pendingDisconnectRef.current = true;
+          }
         });
 
         // تحديث حالة الاتصال عند الانفصال
         s.on('disconnect', () => {
-          dispatch({ type: 'SET_CONNECTION_STATUS', payload: false });
+          // لا تُظهر انفصال إذا كانت الصفحة بالخلفية؛ سنحاول الاستئناف عند الرجوع
+          if (document.hidden) {
+            pendingDisconnectRef.current = true;
+            // مؤقت احتياطي إن بقيت بالخلفية طويلاً: لا نفعل شيء في الواجهة الآن
+          } else {
+            dispatch({ type: 'SET_CONNECTION_STATUS', payload: false });
+          }
           // لا نفقد أي شيء هنا، الاستئناف سيجلب ما فات لاحقاً
         });
 
         // معالجة أخطاء الاتصال
         s.on('connect_error', (error) => {
           console.error('❌ خطأ في الاتصال:', error);
-          dispatch({ type: 'SET_CONNECTION_ERROR', payload: 'فشل الاتصال بالسيرفر' });
+          if (!document.hidden) {
+            dispatch({ type: 'SET_CONNECTION_ERROR', payload: 'فشل الاتصال بالسيرفر' });
+          } else {
+            pendingDisconnectRef.current = true;
+          }
         });
       } catch (error) {
         console.error('خطأ في الاتصال:', error);
