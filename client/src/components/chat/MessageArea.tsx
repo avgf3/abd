@@ -577,7 +577,7 @@ export default function MessageArea({
             itemContent={(index, message) => (
               <div
                 key={message.id}
-                className={`flex ${isMobile ? 'items-start' : 'items-center'} gap-2 py-1.5 px-2 rounded-lg border-r-4 bg-white shadow-sm hover:shadow-md transition-all duration-300 room-message-pulse soft-entrance`}
+                className={`flex ${isMobile ? 'items-start' : 'items-center'} py-1.5 px-2 rounded-lg border-r-4 bg-white shadow-sm hover:shadow-md transition-all duration-300 room-message-pulse soft-entrance`}
                 style={{ borderRightColor: getDynamicBorderColor(message.sender) }}
                 data-message-type={message.messageType || 'normal'}
               >
@@ -585,7 +585,7 @@ export default function MessageArea({
                 {message.messageType === 'system' ? (
                   <>
                     {message.sender && (
-                      <div className="flex-shrink-0">
+                      <div className="flex-shrink-0 ml-2">
                         <ProfileImage
                           user={message.sender}
                           size="small"
@@ -596,7 +596,7 @@ export default function MessageArea({
                     )}
                     <div className={`flex-1 min-w-0`}>
                       {/* Unified layout for both mobile and desktop */}
-                      <div className={`flex items-start gap-2 ${isMobile ? 'system-message-mobile' : ''}`}>
+                      <div className={`flex items-start ${isMobile ? 'system-message-mobile' : ''}`}>
                         {/* Name and badge section - fixed width */}
                         <div className="flex items-center gap-1 shrink-0">
                           <button
@@ -619,7 +619,7 @@ export default function MessageArea({
                     </div>
 
                     {/* Right side: time */}
-                    <span className="text-xs text-red-500 whitespace-nowrap ml-2 self-start">
+                    <span className="text-xs text-red-500 whitespace-nowrap mr-2 self-start">
                       {formatTime(message.timestamp)}
                     </span>
                   </>
@@ -627,7 +627,7 @@ export default function MessageArea({
                   <>
                     {/* Profile Image */}
                     {message.sender && (
-                      <div className="flex-shrink-0">
+                      <div className="flex-shrink-0 ml-2">
                         <ProfileImage
                           user={message.sender}
                           size="small"
@@ -670,7 +670,7 @@ export default function MessageArea({
                               if (ids.length > 0) {
                                 const firstId = ids[0];
                                 return (
-                                  <span className="text-sm leading-relaxed inline-flex items-center gap-2">
+                                  <span className="text-sm inline-flex items-center gap-2">
                                     {cleaned && (
                                       <span
                                         style={{
@@ -698,7 +698,7 @@ export default function MessageArea({
                               }
                               return (
                                 <span
-                                  className="text-sm leading-relaxed"
+                                  className="text-sm"
                                   style={{
                                     color: message.textColor || '#000000',
                                     fontWeight: message.bold ? 700 : undefined
@@ -726,7 +726,7 @@ export default function MessageArea({
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <button
-                              className="h-6 w-6 p-0 text-gray-600 hover:text-gray-900 self-start ml-1"
+                              className="h-6 w-6 p-0 text-gray-600 hover:text-gray-900 self-start mr-2"
                               title="المزيد"
                               aria-label="المزيد"
                             >

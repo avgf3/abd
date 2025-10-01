@@ -1528,7 +1528,7 @@ li > * > div.effect-crystal {
 
 /* إصلاح موضع آخر كلمة في الرسائل */
 .message-content-fix {
-  line-height: 1.6;
+  line-height: 1.4; /* نفس line-height مثل باقي العناصر */
   padding-bottom: 2px;
   padding-inline-end: 2px; /* منع قصّ آخر حرف في نهايات RTL/LTR على الهاتف */
   /* اجعل اتجاه الأساس RTL دائمًا مع عزل خلط اللغات داخل الرسالة */
@@ -1595,6 +1595,7 @@ li > * > div.effect-crystal {
 .runin-container {
   display: block;
   width: 100%;
+  line-height: 1.4;
 }
 
 .runin-name {
@@ -1613,14 +1614,15 @@ li > * > div.effect-crystal {
   text-align: start;
   word-break: break-word;
   overflow-wrap: anywhere;
-  white-space: pre-wrap;
+  white-space: normal; /* تغيير من pre-wrap إلى normal */
   line-height: 1.4;
+  vertical-align: baseline;
 }
 
 /* تطبيق تأثير run-in محسّن للجوال */
 @media (max-width: 768px) {
   .runin-container {
-    position: relative;
+    display: inline;
   }
   .runin-name {
     display: inline;
@@ -1634,6 +1636,8 @@ li > * > div.effect-crystal {
     display: inline;
     text-align: start;
     line-height: 1.4;
+    white-space: normal;
+    vertical-align: baseline;
   }
 }
 
