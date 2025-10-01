@@ -43,6 +43,7 @@ import { databaseCleanup } from './utils/database-cleanup';
 import { getClientIpFromHeaders, getDeviceIdFromHeaders } from './utils/device';
 import { limiters, SecurityConfig } from './security';
 import { updateConnectedUserCache } from './realtime';
+import { setupSocketRedisAdapter } from './utils/socketRedisAdapter';
 
 import {
   sanitizeInput,
@@ -1745,6 +1746,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // إعداد Socket.IO من خلال وحدة realtime الموحدة
   const { setupRealtime } = await import('./realtime');
   const io = setupRealtime(httpServer);
+
+  // تفعيل Socket.IO Redis Adapter عند توفر REDIS_URL لضمان تزامن الحضور عبر جميع النسخ
+  try {
+    if (process.env.REDIS_URL) {
+      await setupSocketRedisAdapter(io as any);
+    }
+  } catch {
+    // لا نعطل الخادم إذا فشل الـ adapter، نكتفي بالتسجيل في السجلات من داخل الوحدة
+  }
 
   // تطبيق فحص الأمان على جميع الطلبات
   app.use(checkIPSecurity);
