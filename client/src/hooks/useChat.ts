@@ -795,20 +795,19 @@ export const useChat = () => {
         );
         if (!desired || desired === 'public' || desired === 'friends') return;
         if (!currentUserRef.current) return;
-        // إذا كان هناك طلب انضمام جارٍ أو نحن بالفعل في نفس الغرفة، لا ترسل
-        if (pendingJoinRoomRef.current !== null) return;
+        // إذا كنا بالفعل في نفس الغرفة، لا ترسل
         if (currentRoomIdRef.current && currentRoomIdRef.current === desired) return;
         // Throttle: امنع التكرار خلال نافذة قصيرة
         const now = Date.now();
         if (now - lastJoinEmitTsRef.current < 1500) return;
-        pendingJoinRoomRef.current = desired;
         lastJoinEmitTsRef.current = now;
+        // استخدم pending (إن وُجد) كغرفة مستهدفة وثبّته قبل الإرسال
+        pendingJoinRoomRef.current = desired;
         socketInstance.emit('joinRoom', {
           roomId: desired,
           userId: currentUserRef.current.id,
           username: currentUserRef.current.username,
         });
-        
       } catch {}
     });
 
