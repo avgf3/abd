@@ -3397,6 +3397,7 @@ export default function ProfileModal({
                         padding: '4px 8px',
                         fontSize: '12px'
                       }}
+                      value={(localUser as any)?.dmPrivacy || 'all'}
                       onChange={(e) => updateDmPrivacy(e.target.value as 'all' | 'friends' | 'none')}
                     >
                       <option value="all">السماح للجميع</option>

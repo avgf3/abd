@@ -1396,11 +1396,15 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                   if (!updatedUser || !updatedUser.id) return;
                   // لا تحدث حالة المستخدم الحالي إلا إذا كان هو المعني بالتحديث
                   if (chat.currentUser?.id === updatedUser.id) {
-                    chat.updateCurrentUser({
+                    const updates: any = {
                       profileEffect: updatedUser.profileEffect,
                       usernameColor: updatedUser.usernameColor,
                       profileBackgroundColor: updatedUser.profileBackgroundColor,
-                    });
+                    };
+                    if (typeof (updatedUser as any)?.dmPrivacy === 'string') {
+                      updates.dmPrivacy = (updatedUser as any).dmPrivacy;
+                    }
+                    chat.updateCurrentUser(updates);
                   }
                   // تحديث/تنظيف الكاش دائماً للمستخدم الذي تم تحديثه
                   setCachedUser(updatedUser);
@@ -1426,11 +1430,15 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                 onUpdate={(updatedUser) => {
                   // تحديث بيانات المستخدم الحالي في قائمة المتصلون
                   if (updatedUser && updatedUser.id) {
-                    chat.updateCurrentUser({
+                    const updates: any = {
                       profileEffect: updatedUser.profileEffect,
                       usernameColor: updatedUser.usernameColor,
                       profileBackgroundColor: updatedUser.profileBackgroundColor,
-                    });
+                    };
+                    if (typeof (updatedUser as any)?.dmPrivacy === 'string') {
+                      updates.dmPrivacy = (updatedUser as any).dmPrivacy;
+                    }
+                    chat.updateCurrentUser(updates);
                     // تحديث/تنظيف الكاش بعد التحديث الناجح
                     setCachedUser(updatedUser);
                     // إيقاف الصوت الخارجي إذا تمت إزالة موسيقى البروفايل
