@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { lazy, Suspense, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useLocation } from 'wouter';
+import { saveSession } from '@/lib/socket';
 
 import BlockNotification from '../moderation/BlockNotification';
 import MessageAlert from './MessageAlert';
@@ -1603,6 +1604,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             }}
             onLogout={onLogout}
             onClose={() => setShowSettings(false)}
+            onOpenRooms={() => { try { setShowSettings(false); } catch {}; try { setActiveView('hidden'); } catch {}; try { saveSession({ roomId: 'public' as any }); } catch {}; setLocation('/rooms'); }}
             onOpenReports={() => {
               setShowAdminReports(true);
               setShowSettings(false);
