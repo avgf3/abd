@@ -8,6 +8,9 @@ import roomRoutes from './routes/rooms';
 import messageRoutes from './routes/messages';
 import storiesRoutes from './routes/stories';
 import voiceRoutes from './routes/voice';
+import profileRoutes from './routes/profile';
+import notificationsRoutes from './routes/notifications';
+import commentsRoutes from './routes/comments';
 import { pointsService } from './services/pointsService';
 import { roomService } from './services/roomService';
 import { roomMessageService } from './services/roomMessageService';
@@ -291,6 +294,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/voice', voiceRoutes);
   // مسارات الرسائل الخاصة مفصولة بالكامل
   app.use('/api/private-messages', (await import('./routes/privateMessages')).default);
+  
+  // 🎨 الميزات الجديدة المستوحاة من arabic.chat
+  app.use('/api/profile', profileRoutes);
+  app.use('/api/notifications', notificationsRoutes);
+  app.use('/api/comments', commentsRoutes);
 
   // Unified download routes under /api + legacy redirect
   setupDownloadRoute(app);
