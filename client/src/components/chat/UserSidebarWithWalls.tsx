@@ -599,6 +599,7 @@ export default function UnifiedSidebar({
   return (
     <aside
       className={`w-full bg-sidebar text-sidebar-foreground text-sm overflow-hidden border-l border-sidebar-border shadow-lg flex flex-col h-full max-h-screen ${isMobile ? 'sidebar mobile-scroll' : ''}`}
+      style={{ overscrollBehaviorX: 'none' }}
     >
       {/* Top toggle buttons removed; bottom bar is the sole navigation */}
 
@@ -1054,7 +1055,7 @@ export default function UnifiedSidebar({
       {activeView === 'rooms' && (
         <div
           className="flex-1 min-h-0 flex flex-col overflow-hidden"
-          style={{ height: '100%' }}
+          style={{ height: '100%', overflowX: 'hidden' }}
         >
           <RoomComponent
             currentUser={currentUser}

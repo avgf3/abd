@@ -536,7 +536,7 @@ export default function RoomComponent({
 
   // العرض العادي (قائمة أو شبكة)
   return (
-    <div className="h-full flex flex-col bg-background/95 backdrop-blur-sm">
+    <div className="h-full flex flex-col bg-background/95 backdrop-blur-sm" style={{ overflowX: 'hidden' }}>
       {/* شريط البحث - مشابه لقائمة المتصلين */}
       <div className="p-2 bg-card border-b border-border flex-shrink-0">
         <div className="relative">
@@ -553,6 +553,7 @@ export default function RoomComponent({
       {/* المحتوى */}
       <div
         className="relative flex-1 min-h-0 overflow-hidden cursor-grab bg-background flex flex-col"
+        style={{ overflowX: 'hidden' }}
       >
         {/* العنوان - مشابه لقائمة المتصلين */}
         <div className="bg-primary text-primary-foreground mb-1 mx-0 mt-0 rounded-none">
@@ -586,6 +587,7 @@ export default function RoomComponent({
             {viewMode === 'grid'
               ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-4'
               : 'flex-1 min-h-0 flex flex-col'}
+          style={{ overflowX: 'hidden' }}
         >
           {viewMode === 'grid' ? (
             filteredRooms.map((room) => (
