@@ -46,11 +46,11 @@ export default function MediaUploadButton({ onMediaSelect, disabled, currentUser
 
     const file = event.target.files?.[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        // 5MB limit
+      if (file.size > 8 * 1024 * 1024) {
+        // 8MB limit
         toast({
           title: 'حجم الملف كبير',
-          description: 'حجم الصورة يجب أن يكون أقل من 5 ميجابايت',
+          description: 'حجم الصورة يجب أن يكون أقل من 8 ميجابايت',
           variant: 'destructive',
         });
         return;

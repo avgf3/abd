@@ -514,8 +514,8 @@ export default function MessageArea({
         return;
       }
 
-      if (file.size > 5 * 1024 * 1024) {
-        alert('حجم الصورة كبير جداً. الحد الأقصى 5MB');
+      if (file.size > 8 * 1024 * 1024) {
+        alert('حجم الصورة كبير جداً. الحد الأقصى 8MB');
         if (fileInputRef.current) {
           fileInputRef.current.value = '';
         }
