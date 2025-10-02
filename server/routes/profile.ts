@@ -1,6 +1,6 @@
 import express from 'express';
 import { db } from '../database-adapter';
-import { protect } from '../middleware/auth';
+import { protect } from '../middleware/enhancedSecurity';
 import { z } from 'zod';
 
 const router = express.Router();

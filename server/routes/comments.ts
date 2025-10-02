@@ -1,6 +1,6 @@
 import express from 'express';
 import { db } from '../database-adapter';
-import { protect } from '../middleware/auth';
+import { protect } from '../middleware/enhancedSecurity';
 import { getIO } from '../realtime';
 import { createNotification } from './notifications';
 
