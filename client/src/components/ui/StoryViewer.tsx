@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { X, Heart, ThumbsUp, ThumbsDown, Send } from 'lucide-react';
+import { Heart, ThumbsUp, ThumbsDown, Send } from 'lucide-react';
 import { useStories, StoryItem } from '@/hooks/useStories';
 import { apiRequest } from '@/lib/queryClient';
 
@@ -87,13 +87,14 @@ export default function StoryViewer({ initialUserId, onClose }: StoryViewerProps
 
   return (
     <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-[13000]" onClick={onClose}>
-      <div className="absolute top-4 right-4">
+      <div className="absolute top-4 left-4">
         <button
           onClick={(e) => { e.stopPropagation(); onClose(); }}
-          className="text-white/90 hover:text-white"
+          className="px-2 py-1 hover:bg-red-100 text-red-600 text-sm font-medium rounded"
           aria-label="إغلاق"
+          title="إغلاق"
         >
-          <X size={28} />
+          ✖️
         </button>
       </div>
 
