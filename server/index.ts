@@ -7,7 +7,7 @@ import compression from 'compression';
 import { initializeSystem } from './database-setup';
 import { registerRoutes } from './routes';
 import { setupSecurity } from './security';
-import { errorHandler, notFoundHandler } from './middleware/errorHandler';
+import { errorHandler, notFoundHandler, requestContextMiddleware, databaseHealthMiddleware } from './middleware/errorHandler';
 import { setupVite, serveStatic, log } from './vite';
 
 import path from 'path';
@@ -91,6 +91,12 @@ app.use((req, _res, next) => {
 
 // Setup security first
 setupSecurity(app);
+
+// Add request context middleware for tracking and performance monitoring
+app.use(requestContextMiddleware);
+
+// Add database health check middleware for critical API routes
+app.use('/api', databaseHealthMiddleware);
 
 // Compression optimization for high load
 // - Higher threshold (16KB) to reduce CPU overhead

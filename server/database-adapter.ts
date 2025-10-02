@@ -95,14 +95,16 @@ export async function initializeDatabase(): Promise<boolean> {
       /pgbouncer=1|pgbouncer=true/i.test(connectionString) ||
       String(process.env.USE_PGBOUNCER || '').toLowerCase() === 'true';
 
-    // إعدادات المجمع والقيم الافتراضية القوية (الافتراضي 8000 كما طُلب)
-    const poolMax = Number(process.env.DB_POOL_MAX || process.env.POOL_MAX || 8000);
-    const poolMin = Number(process.env.DB_POOL_MIN || 20);
-    const idleTimeout = Number(process.env.DB_IDLE_TIMEOUT || 60); // ثوانٍ
-    const maxLifetime = Number(process.env.DB_MAX_LIFETIME || 60 * 30); // ثوانٍ
-    const connectTimeout = Number(process.env.DB_CONNECT_TIMEOUT || 30); // ثوانٍ
-    const retryDelayMs = Number(process.env.DB_RETRY_DELAY_MS || 1000);
-    const maxAttempts = Number(process.env.DB_MAX_ATTEMPTS || 3);
+    // إعدادات المجمع والقيم الافتراضية المحسنة لتجنب Max client connections
+    const poolMax = Number(process.env.DB_POOL_MAX || process.env.POOL_MAX || 50); // تقليل من 8000 إلى 50
+    const poolMin = Number(process.env.DB_POOL_MIN || 5); // تقليل من 20 إلى 5
+    const idleTimeout = Number(process.env.DB_IDLE_TIMEOUT || 30); // تقليل من 60 إلى 30 ثانية
+    const maxLifetime = Number(process.env.DB_MAX_LIFETIME || 60 * 10); // تقليل من 30 دقيقة إلى 10 دقائق
+    const connectTimeout = Number(process.env.DB_CONNECT_TIMEOUT || 10); // تقليل من 30 إلى 10 ثوانٍ
+    const retryDelayMs = Number(process.env.DB_RETRY_DELAY_MS || 2000);
+    const maxAttempts = Number(process.env.DB_MAX_ATTEMPTS || 5);
+
+    console.log(`🔗 إعداد مجمع قاعدة البيانات: max=${poolMax}, min=${poolMin}, idle=${idleTimeout}s, lifetime=${maxLifetime}s`);
 
     const client = postgres(connectionString, {
       ssl: sslRequired ? 'require' : undefined,
@@ -113,33 +115,61 @@ export async function initializeDatabase(): Promise<boolean> {
       connection: {
         application_name: `chat-app:${process.pid}`,
       },
-      // مهلات واستقرار
+      // مهلات واستقرار محسنة
       idle_timeout: idleTimeout,
       max_lifetime: maxLifetime,
       connect_timeout: connectTimeout,
-      // حدود المجمع - مرفوعة لدعم 8000 عميل عبر PgBouncer
+      // حدود المجمع محسنة لتجنب استنزاف الاتصالات
       max: poolMax,
       min: poolMin,
-      // إعدادات إعادة المحاولة
+      // إعدادات إعادة المحاولة محسنة
       retry_delay: retryDelayMs,
       max_attempts: maxAttempts,
+      // معالج أخطاء الاتصال
+      onconnect: (connection: any) => {
+        console.log(`✅ اتصال جديد بقاعدة البيانات: ${connection.processID}`);
+      },
+      onclose: (connection: any) => {
+        console.log(`🔌 إغلاق اتصال قاعدة البيانات: ${connection.processID}`);
+      },
+      onerror: (error: any) => {
+        console.error('❌ خطأ في اتصال قاعدة البيانات:', error.message);
+        // إعادة تعيين الاتصال في حالة الأخطاء الحرجة
+        if (error.message?.includes('Max client connections reached') || 
+            error.message?.includes('connection terminated') ||
+            error.message?.includes('server closed the connection')) {
+          console.warn('🔄 محاولة إعادة تهيئة مجمع الاتصالات...');
+          setTimeout(() => {
+            // إعادة تهيئة الاتصال بعد تأخير
+            initializeDatabase().catch(console.error);
+          }, 5000);
+        }
+      }
     });
 
     const drizzleDb = drizzle(client, { schema, logger: false });
 
-    // محاولة الاتصال مع إعادة المحاولة (باستخدام القيم القابلة للتهيئة)
+    // محاولة الاتصال مع إعادة المحاولة مع Exponential Backoff
     let connected = false;
     let attempts = 0;
-    const maxAttemptsLocal = maxAttempts;
     
     while (!connected && attempts < maxAttempts) {
       try {
+        console.log(`🔄 محاولة الاتصال بقاعدة البيانات (${attempts + 1}/${maxAttempts})...`);
         await client`select 1 as ok`;
         connected = true;
-      } catch (error) {
+        console.log('✅ تم الاتصال بقاعدة البيانات بنجاح');
+      } catch (error: any) {
         attempts++;
-        if (attempts < maxAttemptsLocal) {
-          const backoff = Math.min(5000, retryDelayMs * (attempts + 1));
+        console.error(`❌ فشل الاتصال (محاولة ${attempts}/${maxAttempts}):`, error.message);
+        
+        if (attempts < maxAttempts) {
+          // Exponential backoff with jitter
+          const baseDelay = retryDelayMs * Math.pow(2, attempts - 1);
+          const jitter = Math.random() * 1000;
+          const backoff = Math.min(30000, baseDelay + jitter); // حد أقصى 30 ثانية
+          
+          console.log(`⏳ إعادة المحاولة خلال ${Math.round(backoff)}ms...`);
           await new Promise(resolve => setTimeout(resolve, backoff));
         } else {
           throw error;
@@ -152,9 +182,22 @@ export async function initializeDatabase(): Promise<boolean> {
     dbAdapter.db = drizzleDb as any;
     db = drizzleDb as any;
 
+    // بدء مراقبة صحة الاتصال
+    startConnectionHealthMonitoring();
+
     return true;
   } catch (error: any) {
     console.error('❌ فشل الاتصال بقاعدة البيانات:', error?.message || error);
+    
+    // تسجيل تفاصيل إضافية للأخطاء الشائعة
+    if (error?.message?.includes('Max client connections reached')) {
+      console.error('💡 نصيحة: قم بتقليل DB_POOL_MAX أو استخدم PgBouncer');
+    } else if (error?.message?.includes('connection refused')) {
+      console.error('💡 نصيحة: تحقق من أن خادم قاعدة البيانات يعمل وأن DATABASE_URL صحيح');
+    } else if (error?.message?.includes('authentication failed')) {
+      console.error('💡 نصيحة: تحقق من بيانات الاعتماد في DATABASE_URL');
+    }
+    
     dbType = 'disabled';
     dbAdapter.db = null;
     dbAdapter.client = null;
@@ -162,6 +205,60 @@ export async function initializeDatabase(): Promise<boolean> {
     return false;
   }
 }
+
+// مراقبة صحة الاتصال
+let healthMonitorInterval: NodeJS.Timeout | null = null;
+
+function startConnectionHealthMonitoring() {
+  // إيقاف المراقبة السابقة إن وجدت
+  if (healthMonitorInterval) {
+    clearInterval(healthMonitorInterval);
+  }
+
+  // مراقبة كل 30 ثانية
+  healthMonitorInterval = setInterval(async () => {
+    try {
+      const isHealthy = await checkDatabaseHealth();
+      if (!isHealthy) {
+        console.warn('⚠️ فقدان الاتصال بقاعدة البيانات - محاولة إعادة الاتصال...');
+        await initializeDatabase();
+      }
+    } catch (error) {
+      console.error('❌ خطأ في مراقبة صحة قاعدة البيانات:', error);
+    }
+  }, 30000);
+}
+
+// تنظيف الموارد عند إغلاق التطبيق
+process.on('SIGINT', () => {
+  console.log('🔄 إغلاق اتصالات قاعدة البيانات...');
+  if (healthMonitorInterval) {
+    clearInterval(healthMonitorInterval);
+  }
+  if (dbAdapter.client) {
+    try {
+      dbAdapter.client.end();
+    } catch (error) {
+      console.error('خطأ في إغلاق اتصال قاعدة البيانات:', error);
+    }
+  }
+  process.exit(0);
+});
+
+process.on('SIGTERM', () => {
+  console.log('🔄 إغلاق اتصالات قاعدة البيانات...');
+  if (healthMonitorInterval) {
+    clearInterval(healthMonitorInterval);
+  }
+  if (dbAdapter.client) {
+    try {
+      dbAdapter.client.end();
+    } catch (error) {
+      console.error('خطأ في إغلاق اتصال قاعدة البيانات:', error);
+    }
+  }
+  process.exit(0);
+});
 
 export async function runMigrationsIfAvailable(): Promise<void> {
   try {

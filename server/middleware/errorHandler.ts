@@ -1,5 +1,7 @@
 import type { Request, Response, NextFunction } from 'express';
 import { ZodError } from 'zod';
+import { errorMonitor } from '../utils/error-monitoring';
+import { getCircuitBreakerStatus } from '../utils/database-timeout';
 
 // أنواع الأخطاء المختلفة
 export interface AppError extends Error {
@@ -93,6 +95,8 @@ function isDatabaseUnavailableError(error: any): boolean {
     msg.includes('connection') && (msg.includes('timeout') || msg.includes('refused') || msg.includes('terminated') || msg.includes('reset'))
   ) return true;
   if (msg.includes('database') && (msg.includes('unavailable') || msg.includes('down') || msg.includes('cannot'))) return true;
+  if (msg.includes('max client connections reached')) return true;
+  if (msg.includes('circuit breaker is open')) return true;
   return false;
 }
 
@@ -108,6 +112,9 @@ function getStatusCode(error: any): number {
 
 // معالج الأخطاء الرئيسي
 export const errorHandler = (error: any, req: Request, res: Response, next: NextFunction) => {
+  // تسجيل الخطأ في نظام المراقبة المحسن
+  errorMonitor.logApiError(error, req);
+
   console.error('🚨 خطأ في الخادم:', {
     message: error.message,
     stack: error.stack,
@@ -135,6 +142,15 @@ export const errorHandler = (error: any, req: Request, res: Response, next: Next
   } else if (error.code === 'ECONNREFUSED') {
     message = ERROR_MESSAGES.SERVICE_UNAVAILABLE;
     statusCode = 503;
+  } else if (error.message?.includes('Max client connections reached')) {
+    message = 'الخدمة غير متاحة مؤقتاً - حمولة عالية';
+    statusCode = 503;
+  } else if (error.message?.includes('Circuit breaker is OPEN')) {
+    message = 'الخدمة غير متاحة مؤقتاً - مشاكل في قاعدة البيانات';
+    statusCode = 503;
+  } else if (error.message?.includes('timeout')) {
+    message = 'انتهت مهلة الطلب - يرجى المحاولة مرة أخرى';
+    statusCode = 504;
   }
 
   // تحديد ما إذا كان يجب إظهار تفاصيل الخطأ
@@ -148,10 +164,25 @@ export const errorHandler = (error: any, req: Request, res: Response, next: Next
     timestamp: new Date().toISOString(),
   };
 
+  // إضافة معلومات حالة النظام للأخطاء المتعلقة بقاعدة البيانات
+  if (isDatabaseUnavailableError(error)) {
+    const circuitBreaker = getCircuitBreakerStatus();
+    errorResponse.systemStatus = {
+      databaseHealthy: circuitBreaker.isHealthy,
+      circuitBreakerState: circuitBreaker.state,
+      retryAfter: 30 // ثوانٍ
+    };
+    
+    if (statusCode === 503) {
+      errorResponse.suggestion = 'يرجى المحاولة مرة أخرى خلال دقائق قليلة';
+    }
+  }
+
   // إضافة التفاصيل في بيئة التطوير فقط
   if (!isProduction) {
     errorResponse.details = details;
     errorResponse.stack = error.stack;
+    errorResponse.requestId = (req as any).requestId;
   }
 
   // Avoid sending headers twice which may cause secondary errors
@@ -207,3 +238,65 @@ export const createError = {
   serviceUnavailable: (message: string = ERROR_MESSAGES.SERVICE_UNAVAILABLE) =>
     new OperationalError(message, 503, 'SERVICE_UNAVAILABLE'),
 };
+
+/**
+ * Middleware للتحقق من حالة قاعدة البيانات قبل معالجة الطلبات
+ */
+export function databaseHealthMiddleware(req: Request, res: Response, next: NextFunction) {
+  const circuitBreaker = getCircuitBreakerStatus();
+  
+  // إذا كان Circuit breaker مفتوحاً، إرجاع خطأ فوري
+  if (!circuitBreaker.isHealthy) {
+    return res.status(503).json({
+      error: true,
+      message: 'الخدمة غير متاحة مؤقتاً',
+      code: 'DATABASE_UNAVAILABLE',
+      systemStatus: {
+        databaseHealthy: false,
+        circuitBreakerState: circuitBreaker.state,
+        retryAfter: 30
+      },
+      suggestion: 'يرجى المحاولة مرة أخرى خلال دقائق قليلة',
+      timestamp: new Date().toISOString()
+    });
+  }
+  
+  next();
+}
+
+/**
+ * Middleware لإضافة معرف الطلب وتتبع الأداء
+ */
+export function requestContextMiddleware(req: Request, res: Response, next: NextFunction) {
+  // إضافة معرف فريد للطلب
+  const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  (req as any).requestId = requestId;
+  
+  // إضافة وقت بداية الطلب لمراقبة الأداء
+  (req as any).startTime = Date.now();
+  
+  // تسجيل بداية الطلب
+  if (process.env.NODE_ENV === 'development' || req.path.startsWith('/api/')) {
+    console.log(`🔄 [${requestId}] ${req.method} ${req.path} - بدء الطلب`);
+  }
+  
+  // تسجيل انتهاء الطلب
+  res.on('finish', () => {
+    const duration = Date.now() - (req as any).startTime;
+    const statusColor = res.statusCode >= 400 ? '❌' : '✅';
+    
+    if (process.env.NODE_ENV === 'development' || req.path.startsWith('/api/')) {
+      console.log(`${statusColor} [${requestId}] ${req.method} ${req.path} - ${res.statusCode} (${duration}ms)`);
+    }
+    
+    // تسجيل الطلبات البطيئة
+    if (duration > 5000) { // 5 ثوانٍ
+      errorMonitor.logApiError(
+        new Error(`طلب بطيء: ${duration}ms`), 
+        { ...req, duration }
+      );
+    }
+  });
+  
+  next();
+}
