@@ -409,6 +409,9 @@ router.post('/:messageId/reactions', protect.auth, limiters.reaction, async (req
     const io = req.app.get('io');
     const roomId = (message as any).roomId || 'general';
     if (io && !message.isPrivate) {
+      // جلب معلومات المستخدم الذي أضاف الـ reaction
+      const reactor = (req as any).user;
+      
       io.to(`room_${roomId}`).emit('message', {
         type: 'reactionUpdated',
         roomId,
@@ -416,6 +419,8 @@ router.post('/:messageId/reactions', protect.auth, limiters.reaction, async (req
         counts: { like: result.like, dislike: result.dislike, heart: result.heart },
         myReaction: result.myReaction,
         reactorId: userId,
+        reactorName: reactor?.username || 'مستخدم',
+        reactionType: type,
       });
     }
 
@@ -451,13 +456,15 @@ router.delete('/:messageId/reactions', protect.auth, limiters.reaction, async (r
     const message = await storage.getMessage(messageId);
     if (!message) return res.status(404).json({ error: 'الرسالة غير موجودة' });
 
-    const result = await storage.reactToMessage(messageId, userId, type as any);
-    if (!result) return res.status(500).json({ error: 'تعذر حفظ التفاعل' });
+    const result = await storage.removeReaction(messageId, userId);
+    if (!result) return res.status(500).json({ error: 'تعذر حذف التفاعل' });
 
     // بث التحديث عبر Socket.IO إلى الغرفة المناسبة فقط
     const io = req.app.get('io');
     const roomId = (message as any).roomId || 'general';
     if (io && !message.isPrivate) {
+      const reactor = (req as any).user;
+      
       io.to(`room_${roomId}`).emit('message', {
         type: 'reactionUpdated',
         roomId,
@@ -465,6 +472,8 @@ router.delete('/:messageId/reactions', protect.auth, limiters.reaction, async (r
         counts: { like: result.like, dislike: result.dislike, heart: result.heart },
         myReaction: result.myReaction,
         reactorId: userId,
+        reactorName: reactor?.username || 'مستخدم',
+        reactionType: null, // إزالة التفاعل
       });
     }
 

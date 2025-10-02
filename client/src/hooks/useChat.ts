@@ -1145,7 +1145,7 @@ export const useChat = () => {
             break;
           }
           case 'reactionUpdated': {
-            const { roomId, messageId, counts, myReaction, reactorId } = envelope as any;
+            const { roomId, messageId, counts, myReaction, reactorId, reactorName, reactionType } = envelope as any;
             const targetRoom = roomId || currentRoomIdRef.current;
             if (!targetRoom || !messageId) break;
             const existing = roomMessagesRef.current[targetRoom] || [];
@@ -1162,6 +1162,12 @@ export const useChat = () => {
                       reactorId && reactorId === currentUserRef.current?.id
                         ? (myReaction ?? null)
                         : (m.myReaction ?? null),
+                    // إضافة معلومات التأثير للرسوم المتحركة
+                    lastReaction: reactorId !== currentUserRef.current?.id ? {
+                      type: reactionType,
+                      reactorName,
+                      timestamp: Date.now(),
+                    } : undefined,
                   }
                 : m
             );
@@ -1169,6 +1175,23 @@ export const useChat = () => {
               type: 'SET_ROOM_MESSAGES',
               payload: { roomId: targetRoom, messages: next },
             });
+            
+            // إشعار المستخدم إذا كان هو صاحب الرسالة
+            if (reactorId !== currentUserRef.current?.id) {
+              const message = existing.find(m => m.id === messageId);
+              if (message?.senderId === currentUserRef.current?.id && reactorName && reactionType) {
+                const emojiMap = {
+                  heart: '❤️',
+                  like: '👍',
+                  dislike: '👎'
+                };
+                const emoji = emojiMap[reactionType as keyof typeof emojiMap] || '❤️';
+                // إطلاق حدث مخصص للإشعار
+                window.dispatchEvent(new CustomEvent('reactionReceived', {
+                  detail: { messageId, reactorName, reactionType, emoji }
+                }));
+              }
+            }
             break;
           }
           case 'messageDeleted': {
