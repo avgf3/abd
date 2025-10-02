@@ -13,6 +13,7 @@ interface SettingsMenuProps {
   onOpenUsernameColorPicker?: () => void;
   onOpenIgnoredUsers?: () => void;
   onOpenStories?: () => void;
+  onOpenRooms?: () => void;
   currentUser?: any;
 }
 
@@ -25,6 +26,7 @@ export default function SettingsMenu({
   onOpenUsernameColorPicker,
   onOpenIgnoredUsers,
   onOpenStories,
+  onOpenRooms,
   currentUser,
 }: SettingsMenuProps) {
   const handleLogout = () => {
@@ -36,6 +38,17 @@ export default function SettingsMenu({
   return (
     <Card className="fixed top-20 right-4 z-50 shadow-2xl animate-fade-in w-56 settings-menu-panel border-accent">
       <CardContent className="p-0">
+        {/* شريط علوي مع زر إغلاق بنفس تصميم نافذة الأثرياء */}
+        <div className="relative richest-header px-3 py-2 modern-nav border-b border-border">
+          <button
+            onClick={onClose}
+            className="px-2 py-1 hover:bg-red-100 text-red-600 text-sm font-medium absolute left-2 top-1/2 -translate-y-1/2"
+            aria-label="إغلاق"
+            title="إغلاق"
+          >
+            ✖️
+          </button>
+        </div>
         {currentUser && (
           <div className="p-3 border-b border-border" style={getUserListItemStyles(currentUser)}>
             <div className="flex items-center gap-2">
@@ -62,6 +75,7 @@ export default function SettingsMenu({
         {/* القسم الثاني - الإعدادات العامة */}
         <div className="p-3 border-b border-border space-y-1">
           <Button
+            onClick={onOpenRooms}
             variant="ghost"
             size="sm"
             className="w-full justify-start gap-3 h-9 hover:bg-accent/50 text-foreground"
