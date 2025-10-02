@@ -40,7 +40,7 @@ export default function ComposerPlusMenu({ onOpenImagePicker, disabled, isMobile
           variant="outline"
           size={isMobile ? 'icon' : 'icon'}
           disabled={disabled}
-          className={`mobile-touch-button ${isMobile ? 'h-11 w-11' : 'h-10 w-10'} rounded-lg px-0 border border-input bg-background text-foreground hover:bg-accent hover:text-accent-foreground`}
+          className={`chat-plus-button mobile-touch-button ${isMobile ? 'h-11 w-11' : 'h-10 w-10'} rounded-lg px-0 border border-input bg-background text-foreground hover:bg-accent hover:text-accent-foreground`}
           title="خيارات"
           aria-label="زر الخيارات"
         >
