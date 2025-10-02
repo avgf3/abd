@@ -42,7 +42,7 @@ export default function SettingsMenu({
         <div className="relative richest-header px-3 py-2 modern-nav border-b border-border">
           <button
             onClick={onClose}
-            className="px-2 py-1 hover:bg-red-100 text-red-600 text-sm font-medium absolute left-2 top-1/2 -translate-y-1/2"
+            className="px-2 py-1 hover:bg-red-100 text-red-600 text-sm font-medium absolute left-2 top-1/2 -translate-y-1/2 rounded"
             aria-label="إغلاق"
             title="إغلاق"
           >

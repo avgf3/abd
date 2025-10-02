@@ -450,16 +450,15 @@ export default function PrivateMessageBox({
                     </span>
                     <UserRoleBadge user={user} size={20} />
                   </div>
-                  {/* زر الإغلاق في أقصى اليسار */}
-                  <Button
+                  {/* زر الإغلاق يسار بنفس نمط الأثرياء/الإعدادات */}
+                  <button
                     onClick={onClose}
-                    variant="ghost"
-                    size="sm"
-                    className="absolute left-2 top-2 px-2 py-1 hover:bg-red-100 text-red-600"
+                    className="absolute left-2 top-2 px-2 py-1 hover:bg-red-100 text-red-600 text-sm font-medium rounded"
                     aria-label="إغلاق"
+                    title="إغلاق"
                   >
                     ✖️
-                  </Button>
+                  </button>
                 </div>
               </div>
             </div>
@@ -743,7 +742,7 @@ export default function PrivateMessageBox({
             <DialogDescription>نافذة فيديو من YouTube</DialogDescription>
           </DialogHeader>
           <div 
-            className="drag-handle bg-popover p-1 flex justify-end cursor-move border-b border-border select-none"
+            className="drag-handle bg-popover p-1 flex justify-start cursor-move border-b border-border select-none"
             style={{ touchAction: 'none', userSelect: 'none' }}
             onPointerDown={(e) => {
               e.preventDefault();
@@ -795,8 +794,9 @@ export default function PrivateMessageBox({
           >
             <button
               onClick={() => setYoutubeModal({ open: false, videoId: null })}
-              className="text-white/90 hover:text-white text-lg leading-none p-1"
+              className="px-2 py-1 hover:bg-red-100 text-red-600 text-sm font-medium rounded"
               aria-label="إغلاق"
+              title="إغلاق"
             >
               ✖️
             </button>

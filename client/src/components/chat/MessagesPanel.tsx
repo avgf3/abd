@@ -423,14 +423,15 @@ export default function MessagesPanel({
           </div>
         </ScrollArea>
 
-        <div className="flex justify-center pt-4 border-t border-accent bg-gradient-to-r from-secondary to-accent">
-          <Button
+        <div className="flex justify-start pt-4 border-t border-accent bg-gradient-to-r from-secondary to-accent px-4">
+          <button
             onClick={onClose}
-            variant="outline"
-            className="w-full bg-background border-border text-foreground hover:bg-accent/30 font-medium"
+            className="px-2 py-1 hover:bg-red-100 text-red-600 text-sm font-medium rounded"
+            aria-label="إغلاق"
+            title="إغلاق"
           >
-            ✖️ إغلاق
-          </Button>
+            ✖️
+          </button>
         </div>
       </DialogContent>
     </Dialog>

@@ -1738,10 +1738,11 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           <div className="relative max-w-md w-full">
             <button
               onClick={() => setShowUsernameColorPicker(false)}
-              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-8 h-8 flex items-center justify-center shadow-lg hover:bg-red-600"
+              className="absolute left-2 top-2 px-2 py-1 hover:bg-red-100 text-red-600 text-sm font-medium rounded"
               aria-label="إغلاق"
+              title="إغلاق"
             >
-              ×
+              ✖️
             </button>
             <Suspense fallback={<div className="p-4 text-center">...جاري التحميل</div>}>
               <UsernameColorPicker

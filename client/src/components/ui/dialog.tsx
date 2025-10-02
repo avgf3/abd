@@ -1,7 +1,7 @@
 'use client';
 
 import * as DialogPrimitive from '@radix-ui/react-dialog';
-import { X } from 'lucide-react';
+// removed lucide X to use unified Athribaa/Settings close style
 import * as React from 'react';
 
 import { cn } from '@/lib/utils';
@@ -44,9 +44,12 @@ const DialogContent = React.forwardRef<
       {...props}
     >
       {children}
-      <DialogPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
-        <X className="h-4 w-4" />
-        <span className="sr-only">Close</span>
+      <DialogPrimitive.Close
+        aria-label="إغلاق"
+        title="إغلاق"
+        className="absolute left-3 top-3 px-2 py-1 hover:bg-red-100 text-red-600 text-sm font-medium rounded"
+      >
+        ✖️
       </DialogPrimitive.Close>
     </DialogPrimitive.Content>
   </DialogPortal>
@@ -69,9 +72,12 @@ const FloatingDialogContent = React.forwardRef<
       {...props}
     >
       {children}
-      <DialogPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
-        <X className="h-4 w-4" />
-        <span className="sr-only">Close</span>
+      <DialogPrimitive.Close
+        aria-label="إغلاق"
+        title="إغلاق"
+        className="absolute left-3 top-3 px-2 py-1 hover:bg-red-100 text-red-600 text-sm font-medium rounded"
+      >
+        ✖️
       </DialogPrimitive.Close>
     </DialogPrimitive.Content>
   </DialogPortal>

@@ -223,7 +223,7 @@ export default function RichestModal({ isOpen, onClose, currentUser, onUserClick
         <div className="relative richest-header px-4 py-3 modern-nav flex items-center">
           <button
             onClick={onClose}
-            className="px-2 py-1 hover:bg-red-100 text-red-600 text-sm font-medium absolute left-3 top-1/2 -translate-y-1/2"
+            className="px-2 py-1 hover:bg-red-100 text-red-600 text-sm font-medium absolute left-3 top-1/2 -translate-y-1/2 rounded"
             aria-label="إغلاق"
             title="إغلاق"
           >
