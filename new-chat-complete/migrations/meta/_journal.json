@@ -1,0 +1,48 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1753019066616,
+      "tag": "0000_young_mercury",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1753076958977,
+      "tag": "0001_tranquil_clea",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1753388354142,
+      "tag": "0002_eminent_rocket_raccoon",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1753076958977,
+      "tag": "0003_fix_profile_effect",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1753076958977,
+      "tag": "0004_add_rooms_tables",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1753825590635,
+      "tag": "0005_panoramic_omega_sentinel",
+      "breakpoints": true
+    }
+  ]
+}

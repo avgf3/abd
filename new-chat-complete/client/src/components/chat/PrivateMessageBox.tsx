@@ -1,0 +1,831 @@
+import { motion } from 'framer-motion';
+import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
+import { Send, Image as ImageIcon } from 'lucide-react';
+import { Virtuoso, type VirtuosoHandle } from 'react-virtuoso';
+import { toast } from 'sonner';
+
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, FloatingDialogContent } from '@/components/ui/dialog';
+import ImageLightbox from '@/components/ui/ImageLightbox';
+import ImageAttachmentBadge from '@/components/ui/ImageAttachmentBadge';
+import UserRoleBadge from '@/components/chat/UserRoleBadge';
+import { Input } from '@/components/ui/input';
+// Removed ComposerPlusMenu (ready/quick options)
+import { useComposerStyle } from '@/contexts/ComposerStyleContext';
+import type { ChatMessage, ChatUser } from '@/types/chat';
+import ProfileImage from '@/components/chat/ProfileImage';
+import {
+  sortMessagesAscending,
+  getDynamicBorderColor,
+  formatMessagePreview,
+  setPmLastOpened,
+} from '@/utils/messageUtils';
+import { getFinalUsernameColor } from '@/utils/themeUtils';
+import { getSocket } from '@/lib/socket';
+import { formatTime } from '@/utils/timeUtils';
+// إزالة استخدام fallback الذي يُظهر "مستخدم #id" لتفادي ظهور اسم افتراضي خاطئ في الخاص
+import { api } from '@/lib/queryClient';
+
+interface PrivateMessageBoxProps {
+  isOpen: boolean;
+  user: ChatUser;
+  currentUser: ChatUser | null;
+  messages: ChatMessage[];
+  onSendMessage: (content: string) => void;
+  onClose: () => void;
+  onLoadMore?: () => Promise<{ addedCount: number; hasMore: boolean }>; // تحميل رسائل أقدم
+  onViewProfile?: (user: ChatUser) => void;
+  onViewStoryByUser?: (userId: number) => void;
+}
+
+export default function PrivateMessageBox({
+  isOpen,
+  user,
+  currentUser,
+  messages,
+  onSendMessage,
+  onClose,
+  onLoadMore,
+  onViewProfile,
+  onViewStoryByUser,
+}: PrivateMessageBoxProps) {
+  const [messageText, setMessageText] = useState('');
+  const MAX_CHARS = 192;
+  const clampToMaxChars = useCallback((text: string) => (text.length > MAX_CHARS ? text.slice(0, MAX_CHARS) : text), [MAX_CHARS]);
+  const [isAtBottomPrivate, setIsAtBottomPrivate] = useState(true);
+  const [isSending, setIsSending] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
+  const retryTimeoutRef = useRef<NodeJS.Timeout>();
+  const [isLoadingOlder, setIsLoadingOlder] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const virtuosoRef = useRef<VirtuosoHandle>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { textColor: composerTextColor, bold: composerBold } = useComposerStyle();
+  const isDmClosed = (user as any)?.dmPrivacy === 'none';
+  const [isOtherTyping, setIsOtherTyping] = useState(false);
+  const otherTypingTimerRef = useRef<number | null>(null);
+  const lastTypingEmitRef = useRef<number>(0);
+
+  // Emit private typing (throttled ~3s)
+  const emitPrivateTyping = useCallback(() => {
+    try {
+      const now = Date.now();
+      if (now - lastTypingEmitRef.current < 3000) return;
+      lastTypingEmitRef.current = now;
+      const s = getSocket();
+      if (!s?.connected || !currentUser?.id || !user?.id) return;
+      s.emit('privateTyping', { targetUserId: user.id, isTyping: true });
+    } catch {}
+  }, [currentUser?.id, user?.id]);
+
+  // Listen for privateTyping from the other user
+  useEffect(() => {
+    const s = getSocket();
+    const onMessage = (payload: any) => {
+      try {
+        const envelope = (payload && payload.envelope) ? payload.envelope : payload;
+        if (envelope?.type !== 'privateTyping') return;
+        const fromId = envelope?.fromUserId;
+        const isTyping = !!envelope?.isTyping;
+        if (!fromId || fromId !== user?.id) return;
+        if (isTyping) {
+          setIsOtherTyping(true);
+          if (otherTypingTimerRef.current) {
+            clearTimeout(otherTypingTimerRef.current);
+          }
+          otherTypingTimerRef.current = window.setTimeout(() => {
+            setIsOtherTyping(false);
+            if (otherTypingTimerRef.current) {
+              clearTimeout(otherTypingTimerRef.current);
+              otherTypingTimerRef.current = null;
+            }
+          }, 3000);
+        }
+      } catch {}
+    };
+    try { s.on('message', onMessage); } catch {}
+    return () => {
+      try { s.off('message', onMessage); } catch {}
+      if (otherTypingTimerRef.current) {
+        clearTimeout(otherTypingTimerRef.current);
+        otherTypingTimerRef.current = null;
+      }
+    };
+  }, [user?.id]);
+
+  const handleViewProfileClick = useCallback(() => {
+    try {
+      onViewProfile && onViewProfile(user);
+    } catch {}
+  }, [onViewProfile, user]);
+
+  // YouTube modal state
+  const [youtubeModal, setYoutubeModal] = useState<{ open: boolean; videoId: string | null }>(
+    { open: false, videoId: null }
+  );
+
+  // Image lightbox state
+  const [imageLightbox, setImageLightbox] = useState<{ open: boolean; src: string | null }>({
+    open: false,
+    src: null,
+  });
+
+  const isAllowedYouTubeHost = useCallback((host: string) => {
+    const h = host.toLowerCase();
+    return (
+      h === 'youtube.com' ||
+      h === 'www.youtube.com' ||
+      h === 'm.youtube.com' ||
+      h === 'youtu.be' ||
+      h === 'www.youtu.be' ||
+      h === 'youtube-nocookie.com' ||
+      h === 'www.youtube-nocookie.com'
+    );
+  }, []);
+
+  const extractYouTubeId = useCallback((rawUrl: string): string | null => {
+    try {
+      let u = rawUrl.trim();
+      if (!/^https?:\/\//i.test(u)) u = 'https://' + u;
+      const url = new URL(u);
+      if (!isAllowedYouTubeHost(url.hostname)) return null;
+      const v = url.searchParams.get('v');
+      if (v && /^[a-zA-Z0-9_-]{6,15}$/.test(v)) return v;
+      if (/^\/(shorts|embed)\//.test(url.pathname)) {
+        const id = url.pathname.split('/')[2] || '';
+        return /^[a-zA-Z0-9_-]{6,15}$/.test(id) ? id : null;
+      }
+      if (url.hostname.toLowerCase().includes('youtu.be')) {
+        const id = url.pathname.replace(/^\//, '');
+        return /^[a-zA-Z0-9_-]{6,15}$/.test(id) ? id : null;
+      }
+      const parts = url.pathname.split('/').filter(Boolean);
+      if (parts.length > 0) {
+        const last = parts[parts.length - 1];
+        if (/^[a-zA-Z0-9_-]{6,15}$/.test(last)) return last;
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  }, [isAllowedYouTubeHost]);
+
+  const parseYouTubeFromText = useCallback((text: string): { cleaned: string; ids: string[] } => {
+    if (!text) return { cleaned: '', ids: [] };
+    const urlRegex = /(https?:\/\/[^\s]+|www\.[^\s]+)/gi;
+    const matches = text.match(urlRegex) || [];
+    const ids: string[] = [];
+    for (const m of matches) {
+      const id = extractYouTubeId(m);
+      if (id) ids.push(id);
+    }
+    let cleaned = text;
+    for (const m of matches) {
+      if (extractYouTubeId(m)) {
+        cleaned = cleaned.split(m).join('').replace(/\s{2,}/g, ' ').trim();
+      }
+    }
+    return { cleaned, ids };
+  }, [extractYouTubeId]);
+
+  // محسن: ترتيب الرسائل مع تحسين الأداء
+  const sortedMessages = useMemo(() => sortMessagesAscending(messages || []), [messages]);
+
+  // محسن: دالة التمرير مع تحسين الأداء
+  type ScrollBehaviorStrict = 'auto' | 'smooth';
+  const scrollToBottom = useCallback(
+    (behavior: ScrollBehaviorStrict = 'auto') => {
+      if (!virtuosoRef.current || sortedMessages.length === 0) return;
+      virtuosoRef.current.scrollToIndex({
+        index: sortedMessages.length - 1,
+        align: 'end',
+        behavior,
+      });
+    },
+    [sortedMessages.length]
+  );
+
+  // التمرير للأسفل عند فتح النافذة
+  useEffect(() => {
+    if (isOpen && inputRef.current) {
+      const timer = setTimeout(() => {
+        scrollToBottom('auto');
+        inputRef.current?.focus();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, scrollToBottom]);
+
+  // تحديث آخر وقت فتح للمحادثة لاحتساب غير المقروء
+  useEffect(() => {
+    if (isOpen && currentUser?.id && user?.id) {
+      try {
+        setPmLastOpened(currentUser.id, user.id);
+      } catch {}
+    }
+  }, [isOpen, currentUser?.id, user?.id]);
+
+  // تحديث مؤشّر القراءة في الخادم عند فتح المحادثة أو وصول رسائل
+  useEffect(() => {
+    if (!isOpen || !currentUser?.id || !user?.id) return;
+    try {
+      const last = sortedMessages[sortedMessages.length - 1];
+      const payload: any = {
+        otherUserId: user.id,
+        lastReadAt: last ? String(last.timestamp) : new Date().toISOString(),
+        lastReadMessageId: last ? (last as any).id : undefined,
+      };
+      fetch('/api/private-messages/reads', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(payload),
+      }).catch(() => {});
+    } catch {}
+  }, [isOpen, user?.id, currentUser?.id, sortedMessages.length]);
+
+  // التمرير عند وصول رسائل جديدة (محسن)
+  useEffect(() => {
+    if (sortedMessages.length > 0 && isAtBottomPrivate) {
+      const timer = setTimeout(() => {
+        scrollToBottom(sortedMessages.length <= 20 ? 'smooth' : 'auto');
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [sortedMessages.length, isAtBottomPrivate, scrollToBottom]);
+
+  // مُحسن: دالة مراقبة التمرير
+  const handleAtBottomChange = useCallback((atBottom: boolean) => {
+    setIsAtBottomPrivate(atBottom);
+  }, []);
+
+  // محسن: دالة إرسال مع إعادة المحاولة ومعالجة أخطاء محسنة
+  const sendMessageWithRetry = useCallback(
+    async (content: string, retries = 3): Promise<boolean> => {
+      for (let i = 0; i < retries; i++) {
+        try {
+          await onSendMessage(content);
+          return true;
+        } catch (error) {
+          if (i === retries - 1) {
+            throw error;
+          }
+          // انتظر قبل إعادة المحاولة (زيادة تدريجية)
+          await new Promise((resolve) => setTimeout(resolve, 1000 * (i + 1)));
+        }
+      }
+      return false;
+    },
+    [onSendMessage]
+  );
+
+  const handleSend = useCallback(async () => {
+    if (isSending) return;
+    const text = clampToMaxChars(messageText).trim();
+    const hasText = !!text;
+    const hasImage = !!imageFile;
+    if (!hasText && !hasImage) return;
+
+    // لا نحجب الواجهة أثناء الإرسال لتحسين الشعور بالاستجابة
+    setIsSending(true);
+    setSendError(null);
+    clearTimeout(retryTimeoutRef.current);
+
+    try {
+      if (hasImage) {
+        // إرسال الصورة عبر مسار الرفع الموحّد وتمرير receiverId للخاص
+        if (!currentUser?.id || !user?.id) throw new Error('بيانات المرسل أو المستلم غير متوفرة');
+        const form = new FormData();
+        form.append('image', imageFile!);
+        form.append('senderId', String(currentUser.id));
+        form.append('receiverId', String(user.id));
+        await api.upload('/api/upload/message-image', form, { timeout: 60000 });
+        setImageFile(null);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+        toast.success('تم إرسال الصورة');
+      }
+      if (hasText) {
+        const success = await sendMessageWithRetry(text);
+        if (success) {
+          setMessageText('');
+          // لا نعرض toast للرسائل العادية لتجنب الإزعاج
+        }
+      }
+      setTimeout(() => scrollToBottom('smooth'), 100);
+    } catch (error) {
+      console.error('خطأ في إرسال الرسالة:', error);
+      const errorMessage = error instanceof Error ? error.message : 'فشل إرسال الرسالة';
+      // إخفاء رسائل الأخطاء من الواجهة الخاصة بناءً على رغبتك
+      setSendError(null);
+      console.error(errorMessage);
+
+      // إعادة تعيين حالة الخطأ بعد 5 ثوان
+      retryTimeoutRef.current = setTimeout(() => setSendError(null), 5000);
+    } finally {
+      setIsSending(false);
+      inputRef.current?.focus();
+    }
+  }, [messageText, imageFile, isSending, sendMessageWithRetry, scrollToBottom]);
+
+  // محسن: معالج الضغط على Enter
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        handleSend();
+      }
+    },
+    [handleSend]
+  );
+
+  // When user types, emit typing (throttled)
+  const handleChangeWithTyping = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setMessageText(clampToMaxChars(e.target.value));
+      emitPrivateTyping();
+    },
+    [clampToMaxChars, emitPrivateTyping]
+  );
+
+  // دعم لصق الصور مباشرة في صندوق الإدخال
+  const handlePaste = useCallback((e: React.ClipboardEvent<HTMLInputElement>) => {
+    try {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      for (let i = 0; i < items.length; i++) {
+        const it = items[i];
+        if (it.type.startsWith('image/')) {
+          const file = it.getAsFile();
+          if (file) {
+            setImageFile(file);
+            e.preventDefault();
+            break;
+          }
+        }
+      }
+    } catch {}
+  }, []);
+
+  // تحميل المزيد عند الوصول للأعلى
+  const handleLoadMore = useCallback(async () => {
+    if (isLoadingOlder || !hasMore || !onLoadMore) return;
+    setIsLoadingOlder(true);
+    try {
+      const res = await onLoadMore();
+      setHasMore(res.hasMore);
+      if (res.addedCount > 0) {
+        setTimeout(() => {
+          try {
+            virtuosoRef.current?.scrollToIndex({
+              index: res.addedCount,
+              align: 'start',
+              behavior: 'auto' as any,
+            });
+          } catch {}
+        }, 0);
+      }
+    } finally {
+      setIsLoadingOlder(false);
+    }
+  }, [isLoadingOlder, hasMore, onLoadMore]);
+
+  // لون الحد والقص باستخدام دوال موحدة
+
+  if (!isOpen) return null;
+
+  return (
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <DialogContent className="p-0 bg-transparent border-none shadow-none">
+        <motion.div
+          drag
+          dragMomentum={false}
+          initial={{ scale: 0.95, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          exit={{ scale: 0.95, opacity: 0 }}
+          transition={{ duration: 0.4, ease: "easeOut" }}
+          className="relative z-[12000] w-[95vw] max-w-lg max-h-[85vh] bg-background text-foreground border border-border shadow-2xl rounded-xl overflow-hidden cursor-grab active:cursor-grabbing"
+        >
+          <DialogHeader className="relative border-b border-border px-3 py-2 modern-nav">
+            <DialogTitle className="sr-only">محادثة خاصة مع {user?.username || 'مستخدم'}</DialogTitle>
+            <DialogDescription className="sr-only">نافذة الرسائل الخاصة</DialogDescription>
+            <div className="flex items-center gap-3">
+              <ProfileImage
+                user={user}
+                size="small"
+                className="w-10 h-10 cursor-pointer hover:opacity-90 transition"
+                onClick={() => handleViewProfileClick()}
+              />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span
+                      className="text-base font-medium transition-all duration-300 truncate cursor-pointer hover:underline"
+                      onClick={handleViewProfileClick}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          handleViewProfileClick();
+                        }
+                      }}
+                      style={{
+                        color: getFinalUsernameColor(user),
+                        textShadow: getFinalUsernameColor(user)
+                          ? `0 0 10px ${getFinalUsernameColor(user)}40`
+                          : 'none',
+                        filter: getFinalUsernameColor(user)
+                          ? 'drop-shadow(0 0 3px rgba(255,255,255,0.3))'
+                          : 'none',
+                      }}
+                      title={user.username}
+                    >
+                      {user.username || 'جاري التحميل...'}
+                    </span>
+                    <UserRoleBadge user={user} size={20} />
+                  </div>
+                  {/* زر الإغلاق يسار بنفس نمط الأثرياء/الإعدادات */}
+                  <button
+                    onClick={onClose}
+                    className="absolute left-2 top-2 px-2 py-1 hover:bg-red-100 text-red-600 text-sm font-medium rounded"
+                    aria-label="إغلاق"
+                    title="إغلاق"
+                  >
+                    ✖️
+                  </button>
+                </div>
+              </div>
+            </div>
+          </DialogHeader>
+
+          <div className="relative h-[55vh] w-full p-4 pb-4 bg-white">
+            {sortedMessages.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground">
+                <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="text-6xl mb-4">
+                  💬
+                </motion.div>
+                <p className="text-lg font-medium">ابدأ محادثتك الآن</p>
+                <p className="text-sm opacity-70 mt-2">لا توجد رسائل سابقة</p>
+              </div>
+            ) : (
+              <Virtuoso
+                ref={virtuosoRef}
+                data={sortedMessages}
+                className="!h-full"
+                followOutput={'smooth'}
+                atBottomStateChange={handleAtBottomChange}
+                increaseViewportBy={{ top: 300, bottom: 300 }}
+                startReached={handleLoadMore}
+                components={{
+                  Header: () =>
+                    isLoadingOlder ? (
+                      <div className="flex justify-center py-2">
+                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-300 border-t-transparent"></div>
+                      </div>
+                    ) : hasMore ? (
+                      <div className="text-center py-1 text-xs text-gray-400">
+                        اسحب للأعلى لتحميل المزيد
+                      </div>
+                    ) : null,
+                }}
+                itemContent={(index, m) => {
+                  const isMe = currentUser && m.senderId === currentUser.id;
+                  const key = m.id ?? `${m.senderId}-${m.timestamp}-${index}`;
+                  const isImage =
+                    m.messageType === 'image' ||
+                    (typeof m.content === 'string' && m.content.startsWith('data:image'));
+                  const storyAttachment = Array.isArray((m as any).attachments)
+                    ? (m as any).attachments.find((a: any) => a?.channel === 'story')
+                    : null;
+                  const hasStoryContext = !!storyAttachment;
+                  return (
+                    <motion.div
+                      key={key}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                      transition={{ duration: 0.3, ease: "easeOut" }}
+                      className={`flex items-start gap-3 p-3 rounded-lg transition-all duration-300 ${
+                        isMe ? 'bg-blue-50/80 border-r-4 ml-4' : 'bg-green-50/80 border-r-4 mr-4'
+                      }`}
+                      style={{
+                        borderRightColor: getDynamicBorderColor(
+                          m.sender || (isMe ? currentUser : user)
+                        ),
+                      }}
+                    >
+                      <ProfileImage
+                        user={(m.sender as ChatUser) || (isMe && currentUser ? (currentUser as ChatUser) : user)}
+                        size="small"
+                        className="w-8 h-8"
+                      />
+                      <div className="flex-1 min-w-0">
+                        {/* run-in on mobile; horizontal on desktop */}
+                        <div className="runin-container">
+                          <div className="runin-name">
+                            <span
+                              className="font-semibold text-sm"
+                              style={{ color: getFinalUsernameColor(m.sender || user) }}
+                            >
+                              {m.sender?.username || (isMe ? (currentUser?.username || '') : (user.username || '')) || 'جاري التحميل...'}
+                            </span>
+                            <span className="text-gray-400 mx-1">:</span>
+                          </div>
+
+                          {/* Content section - full width under the name (mobile), inline on first line */}
+                          <div className="runin-text text-gray-800 break-words message-content-fix">
+                          {hasStoryContext && (
+                            <div className="mb-2">
+                              <div className="flex items-center gap-3 p-2 rounded-lg border bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200">
+                                <motion.div
+                                  layoutId={`story-${storyAttachment?.storyId}`}
+                                  className="w-14 h-20 rounded-md overflow-hidden bg-black/5 border border-purple-200 relative"
+                                >
+                                  <img
+                                    src={
+                                      storyAttachment?.storyMediaType === 'video'
+                                        ? (storyAttachment?.storyThumbnailUrl || storyAttachment?.storyMediaUrl)
+                                        : storyAttachment?.storyMediaUrl
+                                    }
+                                    alt="Story preview"
+                                    className="w-full h-full object-cover"
+                                    loading="lazy"
+                                  />
+                                  {storyAttachment?.storyMediaType === 'video' && (
+                                    <div className="absolute inset-0 grid place-items-center">
+                                      <span className="text-white text-xs bg-black/40 rounded-full w-5 h-5 grid place-items-center">▶</span>
+                                    </div>
+                                  )}
+                                </motion.div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="text-xs text-purple-800 font-medium">
+                                    {storyAttachment?.subtype === 'reaction' ? 'تفاعل على حالتك' : 'رد على حالتك'}
+                                  </div>
+                                  <div className="text-[11px] text-purple-700/80">
+                                    اضغط لعرض الحالة
+                                  </div>
+                                </div>
+                                <button
+                                  onClick={() => {
+                                    try {
+                                      const uid = storyAttachment?.storyUserId || user.id;
+                                      onViewStoryByUser && onViewStoryByUser(uid);
+                                    } catch {}
+                                  }}
+                                  className="text-xs px-2 py-1 rounded-md bg-purple-600 text-white hover:bg-purple-700 transition"
+                                >
+                                  عرض الحالة
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                          {isImage ? (
+                            <button
+                              type="button"
+                              onClick={() => setImageLightbox({ open: true, src: m.content })}
+                              className="inline-flex items-center justify-center p-0 bg-transparent"
+                              title="عرض الصورة"
+                              aria-label="عرض الصورة"
+                            >
+                              <ImageAttachmentBadge />
+                            </button>
+                          ) : (() => {
+                            const { cleaned, ids } = parseYouTubeFromText(m.content);
+                            if (ids.length > 0) {
+                              const firstId = ids[0];
+                              return (
+                                <span className="text-sm leading-relaxed inline-flex items-center gap-2">
+                                  {cleaned && (
+                                    <span
+                                      style={
+                                        currentUser && m.senderId === currentUser.id
+                                          ? { color: composerTextColor, fontWeight: composerBold ? 700 : undefined }
+                                          : undefined
+                                      }
+                                    >
+                                      {cleaned}
+                                    </span>
+                                  )}
+                                  <button
+                                    onClick={() => setYoutubeModal({ open: true, videoId: firstId })}
+                                    className="flex items-center justify-center w-8 h-6 rounded bg-red-600 hover:bg-red-700 transition-colors"
+                                    title="فتح فيديو YouTube"
+                                  >
+                                    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                                      <path fill="#fff" d="M10 15l5.19-3L10 9v6z"></path>
+                                    </svg>
+                                  </button>
+                                </span>
+                              );
+                            }
+                            return (
+                              <span
+                                className="text-sm leading-relaxed"
+                                style={
+                                  currentUser && m.senderId === currentUser.id
+                                    ? { color: composerTextColor, fontWeight: composerBold ? 700 : undefined }
+                                    : undefined
+                                }
+                              >
+                                {m.content}
+                              </span>
+                            );
+                          })()}
+                          </div>
+
+                          {/* Time section - fixed width */}
+                          <span className="text-xs text-gray-500 whitespace-nowrap shrink-0 self-start">
+                            {formatTime(m.timestamp)}
+                          </span>
+                        </div>
+                      </div>
+                    </motion.div>
+                  );
+                }}
+              />
+            )}
+
+            {/* تم إخفاء زر "الانتقال لأسفل" */}
+          </div>
+
+          <div className="p-4 border-t border-border modern-nav">
+            {isOtherTyping && (
+              <div className="px-1 pb-2 text-[11px] text-gray-500 animate-pulse select-none">
+                {user?.username} يكتب...
+              </div>
+            )}
+            {isDmClosed ? (
+              <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg text-center text-sm text-gray-600">
+                عفواً هذا العضو قامَ بإغلاق الرسائل الخاصة
+              </div>
+            ) : (
+              <>
+                <div className="flex gap-3 items-end">
+                  {/* زر اختيار الصورة */}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => setImageFile(e.target.files?.[0] || null)}
+                    className="hidden"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="pm-gallery-button aspect-square mobile-touch-button min-w-[40px] min-h-[40px] bg-primary/10 text-primary border-primary/20 hover:bg-primary/15"
+                    disabled={false}
+                    title="إرسال صورة"
+                  >
+                    <ImageIcon className="w-4 h-4" />
+                  </Button>
+                  <Input
+                    ref={inputRef}
+                    value={messageText}
+                    onChange={handleChangeWithTyping}
+                    onKeyDown={handleKeyDown}
+                    onPaste={handlePaste}
+                    placeholder="اكتب رسالتك هنا..."
+                    className={`flex-1 bg-gray-50 border text-foreground placeholder:text-muted-foreground rounded-lg border-gray-300`}
+                    disabled={false}
+                    style={{ color: composerTextColor, fontWeight: composerBold ? 700 : undefined }}
+                    maxLength={MAX_CHARS}
+                  />
+                  {/* زر الإرسال بشكل أيقونة مثل غرف الدردشة */}
+                  <Button
+                    onClick={handleSend}
+                    disabled={!messageText.trim() && !imageFile}
+                    className="aspect-square bg-primary hover:bg-primary/90 mobile-touch-button min-w-[40px] min-h-[40px]"
+                    title="إرسال"
+                  >
+                    <Send className="w-4 h-4" />
+                  </Button>
+                </div>
+                {imageFile && (
+                  <div className="mt-2 text-xs text-gray-600 flex items-center gap-2">
+                    <span>سيتم إرسال صورة:</span>
+                    <span className="font-medium truncate max-w-[200px]">{imageFile.name}</span>
+                    <button
+                      className="text-red-600 hover:underline"
+                      onClick={() => setImageFile(null)}
+                      type="button"
+                    >
+                      إزالة
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </motion.div>
+      </DialogContent>
+      {/* YouTube Modal */}
+      <Dialog
+        open={youtubeModal.open}
+        onOpenChange={(open) => {
+          if (!open) setYoutubeModal({ open: false, videoId: null });
+        }}
+        modal={false}
+      >
+        <FloatingDialogContent
+          className="max-w-md w-[25vw] min-w-[400px] p-0 bg-popover border-border"
+          onInteractOutside={(e) => e.preventDefault()}
+          onPointerDownOutside={(e) => e.preventDefault()}
+        >
+          <DialogHeader className="sr-only">
+            <DialogTitle>مشغل يوتيوب</DialogTitle>
+            <DialogDescription>نافذة فيديو من YouTube</DialogDescription>
+          </DialogHeader>
+          <div 
+            className="drag-handle bg-popover p-1 flex justify-start cursor-move border-b border-border select-none"
+            style={{ touchAction: 'none', userSelect: 'none' }}
+            onPointerDown={(e) => {
+              e.preventDefault();
+              const dialog = e.currentTarget.closest('.fixed') as HTMLElement | null;
+              if (!dialog) return;
+              let startX = e.clientX;
+              let startY = e.clientY;
+              const rect = dialog.getBoundingClientRect();
+              let initialLeft = rect.left;
+              let initialTop = rect.top;
+              let nextLeft = initialLeft;
+              let nextTop = initialTop;
+              let rafId: number | null = null;
+              let isDragging = false;
+              const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
+              const apply = () => {
+                rafId = null;
+                dialog.style.position = 'fixed';
+                dialog.style.zIndex = '9999';
+                dialog.style.left = `${nextLeft}px`;
+                dialog.style.top = `${nextTop}px`;
+                dialog.style.transform = 'none';
+              };
+              const schedule = () => {
+                if (rafId == null) rafId = requestAnimationFrame(apply);
+              };
+              const onMove = (ev: PointerEvent) => {
+                if (!isDragging) {
+                  isDragging = true;
+                  try { (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId); } catch {}
+                }
+                const dx = ev.clientX - startX;
+                const dy = ev.clientY - startY;
+                const maxLeft = window.innerWidth - rect.width;
+                const maxTop = window.innerHeight - rect.height;
+                nextLeft = clamp(initialLeft + dx, 0, Math.max(0, maxLeft));
+                nextTop = clamp(initialTop + dy, 0, Math.max(0, maxTop));
+                schedule();
+              };
+              const onUp = () => {
+                try { (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId); } catch {}
+                window.removeEventListener('pointermove', onMove);
+                window.removeEventListener('pointerup', onUp);
+                if (rafId != null) cancelAnimationFrame(rafId);
+              };
+              window.addEventListener('pointermove', onMove);
+              window.addEventListener('pointerup', onUp, { once: true } as any);
+            }}
+          >
+            <button
+              onClick={() => setYoutubeModal({ open: false, videoId: null })}
+              className="px-2 py-1 hover:bg-red-100 text-red-600 text-sm font-medium rounded"
+              aria-label="إغلاق"
+              title="إغلاق"
+            >
+              ✖️
+            </button>
+          </div>
+          <div className="relative w-full" style={{ paddingTop: '56.25%' }}>
+            {youtubeModal.videoId && (
+              <iframe
+                src={`https://www.youtube.com/embed/${youtubeModal.videoId}`}
+                className="absolute inset-0 w-full h-full"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowFullScreen
+                title="يوتيوب"
+              />
+            )}
+          </div>
+        </FloatingDialogContent>
+      </Dialog>
+
+      {/* Image Lightbox */}
+      <ImageLightbox
+        open={imageLightbox.open}
+        src={imageLightbox.src}
+        onOpenChange={(open) => {
+          if (!open) setImageLightbox({ open: false, src: null });
+        }}
+      />
+    </Dialog>
+  );
+}

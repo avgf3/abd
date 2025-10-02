@@ -1,0 +1,2706 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ====================================
+   🎨 Import Arabic Chat Theme
+   ==================================== */
+@import './styles/themes/arabic-chat-theme.css';
+
+/* Golden Glow Animation (used by effect-glow) */
+@keyframes golden-glow {
+  0%,
+  100% {
+    box-shadow:
+      0 0 15px rgba(255, 215, 0, 0.5),
+      inset 0 0 10px rgba(255, 215, 0, 0.2);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow:
+      0 0 25px rgba(255, 215, 0, 0.8),
+      inset 0 0 15px rgba(255, 215, 0, 0.4);
+    transform: scale(1.02);
+  }
+}
+
+/* تحسينات للرسائل الخاصة */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* للجوال: قيد 4 أسطر للنصوص الطويلة */
+.line-clamp-4 {
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ========== NEW HORIZONTAL MESSAGE LAYOUT ========== */
+
+/* تخطيط أفقي محسن للرسائل - الاسم بجانب النص */
+.horizontal-message-layout {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+/* قسم الاسم - عرض ثابت */
+.message-name-section {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex-shrink: 0;
+  min-width: fit-content;
+  max-width: 120px; /* حد أقصى لعرض الاسم لمنع التداخل */
+}
+
+/* قسم المحتوى - عرض مرن */
+.message-content-section {
+  flex: 1;
+  min-width: 0;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+/* تحسينات للجوال */
+@media (max-width: 768px) {
+  .message-name-section {
+    max-width: 100px; /* تقليل عرض الاسم على الجوال */
+  }
+  
+  .horizontal-message-layout {
+    gap: 0.375rem; /* تقليل المسافة على الجوال */
+  }
+}
+
+/* تحسينات لضمان عدم تداخل النص مع منطقة الإدخال */
+.message-display-area {
+  padding-bottom: 1rem; /* مسافة إضافية من الأسفل */
+}
+
+/* تأكيد عدم تأثر منطقة الإدخال */
+.chat-input-area {
+  position: relative;
+  z-index: 20;
+  background: white;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+:root {
+  /* Modern Gradient Backgrounds */
+  --background: linear-gradient(135deg, hsl(220, 25%, 10%) 0%, hsl(225, 30%, 15%) 100%);
+  --background-solid: hsl(220, 25%, 10%);
+  --foreground: hsl(0, 0%, 98%);
+  
+  /* Modern Muted Colors with Depth */
+  --muted: hsl(220, 20%, 18%);
+  --muted-foreground: hsl(218, 15%, 75%);
+  
+  /* Glass Morphism Colors */
+  --popover: rgba(30, 35, 50, 0.95);
+  --popover-foreground: hsl(0, 0%, 98%);
+  --card: rgba(35, 40, 60, 0.85);
+  --card-foreground: hsl(0, 0%, 98%);
+  
+  /* Modern Borders and Inputs */
+  --border: rgba(255, 255, 255, 0.12);
+  --input: rgba(255, 255, 255, 0.08);
+  
+  /* Vibrant Modern Primary Colors */
+  --primary: linear-gradient(135deg, hsl(200, 100%, 50%) 0%, hsl(190, 100%, 45%) 100%);
+  --primary-solid: hsl(195, 100%, 48%);
+  --primary-foreground: hsl(0, 0%, 100%);
+  
+  /* Secondary with Gradient */
+  --secondary: linear-gradient(135deg, hsl(220, 25%, 20%) 0%, hsl(225, 30%, 25%) 100%);
+  --secondary-solid: hsl(220, 25%, 22%);
+  --secondary-foreground: hsl(0, 0%, 98%);
+  
+  /* Modern Accent Colors */
+  --accent: linear-gradient(135deg, hsl(280, 70%, 55%) 0%, hsl(300, 70%, 50%) 100%);
+  --accent-solid: hsl(290, 70%, 52%);
+  --accent-foreground: hsl(0, 0%, 100%);
+  
+  /* Destructive with Gradient */
+  --destructive: linear-gradient(135deg, hsl(0, 85%, 55%) 0%, hsl(10, 85%, 50%) 100%);
+  --destructive-solid: hsl(5, 85%, 52%);
+  --destructive-foreground: hsl(0, 0%, 100%);
+  
+  /* Enhanced Ring and Radius */
+  --ring: hsl(195, 100%, 50%);
+  --radius: 1rem;
+  
+  /* Modern Chat Colors with Gradients */
+  --chat-primary: linear-gradient(135deg, hsl(220, 25%, 10%) 0%, hsl(225, 30%, 15%) 100%);
+  --chat-secondary: linear-gradient(135deg, hsl(220, 20%, 18%) 0%, hsl(225, 25%, 22%) 100%);
+  --chat-accent: linear-gradient(135deg, hsl(280, 70%, 55%) 0%, hsl(300, 70%, 50%) 100%);
+  --chat-highlight: linear-gradient(135deg, hsl(200, 100%, 50%) 0%, hsl(190, 100%, 45%) 100%);
+  --chat-success: linear-gradient(135deg, hsl(145, 80%, 42%) 0%, hsl(155, 80%, 38%) 100%);
+  --chat-warning: linear-gradient(135deg, hsl(35, 95%, 50%) 0%, hsl(45, 95%, 45%) 100%);
+  --chat-danger: linear-gradient(135deg, hsl(0, 85%, 55%) 0%, hsl(10, 85%, 50%) 100%);
+  
+  /* Modern Shadow System */
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.15);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.2);
+  --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.25);
+  --shadow-2xl: 0 24px 64px rgba(0, 0, 0, 0.3);
+  --shadow-glow: 0 0 40px rgba(100, 200, 255, 0.2);
+}
+
+.dark {
+  /* Inherits all the modern gradient variables from :root */
+  /* Dark mode specific overrides if needed */
+  --background: linear-gradient(135deg, hsl(220, 25%, 8%) 0%, hsl(225, 30%, 12%) 100%);
+  --background-solid: hsl(220, 25%, 8%);
+  --muted: hsl(220, 20%, 16%);
+  --popover: rgba(25, 30, 45, 0.95);
+  --card: rgba(30, 35, 55, 0.85);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased text-foreground;
+    font-family: 'Cairo', sans-serif;
+    direction: rtl;
+    background: var(--background);
+    min-height: 100dvh;
+    position: relative;
+    overflow-x: hidden;
+    font-size: 1rem;
+    line-height: 1.7;
+    letter-spacing: 0.02em;
+  }
+  
+  /* Modern Typography System */
+  h1, h2, h3, h4, h5, h6 {
+    font-weight: 700;
+    line-height: 1.3;
+    letter-spacing: -0.02em;
+    margin-bottom: 1rem;
+  }
+  
+  h1 {
+    font-size: clamp(2rem, 5vw, 3.5rem);
+  }
+  
+  h2 {
+    font-size: clamp(1.75rem, 4vw, 2.75rem);
+  }
+  
+  h3 {
+    font-size: clamp(1.5rem, 3.5vw, 2.25rem);
+  }
+  
+  h4 {
+    font-size: clamp(1.25rem, 3vw, 1.75rem);
+  }
+  
+  p {
+    margin-bottom: 1rem;
+    line-height: 1.8;
+  }
+  
+  /* Modern Spacing System */
+  .space-y-modern > * + * {
+    margin-top: 2rem;
+  }
+  
+  .space-x-modern > * + * {
+    margin-right: 2rem;
+  }
+
+  /* Modern Background Pattern */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: 
+      radial-gradient(circle at 20% 50%, rgba(100, 200, 255, 0.1) 0%, transparent 50%),
+      radial-gradient(circle at 80% 80%, rgba(255, 100, 200, 0.05) 0%, transparent 50%),
+      radial-gradient(circle at 40% 20%, rgba(200, 100, 255, 0.08) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  html {
+    direction: rtl;
+    scroll-behavior: smooth;
+    /* Stabilize layout and tune base sizing */
+    font-size: 90%;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    scrollbar-gutter: stable both-edges;
+  }
+  
+  /* Modern Scrollbar */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 5px;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, var(--primary-solid), var(--accent-solid));
+    border-radius: 5px;
+    transition: all 0.3s ease;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(135deg, var(--accent-solid), var(--primary-solid));
+  }
+}
+
+/* Ensure media elements never overflow viewport width */
+img, video, canvas, iframe {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Modern Animations System */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+    filter: blur(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes gradient-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Modern Entrance Animations */
+@keyframes modern-slide-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(50px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes modern-zoom-in {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Bounce Animation */
+@keyframes modern-bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
+}
+
+/* Glow Pulse Animation */
+@keyframes modern-glow-pulse {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(100, 200, 255, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(100, 200, 255, 0.6);
+  }
+}
+
+/* تمت إزالة جميع تحسينات الجوال لإبقاء الموقع على الوضع الافتراضي لسطح المكتب */
+
+/* تحسينات الأداء */
+.performance-optimized {
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* تحسينات التحميل */
+.loading-skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+@keyframes pulse-slow {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+/* Custom classes */
+.animate-fade-in {
+  animation: fade-in 0.4s ease-out;
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out;
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.welcome-gradient {
+  background: linear-gradient(
+    135deg,
+    var(--chat-primary),
+    var(--chat-secondary),
+    var(--chat-accent)
+  );
+  background-size: 400% 400%;
+  animation: gradient-shift 8s ease infinite;
+}
+
+.glass-effect {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.1),
+    inset 0 2px 0 rgba(255, 255, 255, 0.1),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.1);
+}
+
+.modal-overlay {
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 10, 0.7) 100%);
+  backdrop-filter: blur(12px) saturate(150%);
+  -webkit-backdrop-filter: blur(12px) saturate(150%);
+}
+
+.user-rank {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 11px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 8px;
+  box-shadow: 
+    0 4px 12px rgba(0, 0, 0, 0.2),
+    0 2px 4px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease;
+}
+
+.user-rank:hover {
+  transform: translateY(-1px);
+  box-shadow: 
+    0 6px 20px rgba(0, 0, 0, 0.3),
+    0 3px 6px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.crown {
+  background: linear-gradient(135deg, hsl(51, 100%, 50%) 0%, hsl(45, 100%, 60%) 50%, hsl(48, 100%, 67%) 100%);
+  color: hsl(0, 0%, 0%);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  box-shadow: 
+    0 4px 20px rgba(255, 215, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.star {
+  background: linear-gradient(135deg, hsl(0, 0%, 85%) 0%, hsl(0, 0%, 95%) 50%, hsl(0, 0%, 90%) 100%);
+  color: hsl(0, 0%, 20%);
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5);
+  box-shadow: 
+    0 4px 20px rgba(255, 255, 255, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.shield {
+  background: linear-gradient(135deg, hsl(225, 100%, 60%) 0%, hsl(230, 100%, 70%) 50%, hsl(225, 100%, 75%) 100%);
+  color: hsl(0, 0%, 100%);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  box-shadow: 
+    0 4px 20px rgba(100, 150, 255, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.user-img {
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-left: 10px;
+  border: 3px solid transparent;
+  background: linear-gradient(white, white) padding-box,
+              linear-gradient(135deg, var(--primary-solid), var(--accent-solid)) border-box;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 
+    0 4px 15px rgba(0, 0, 0, 0.2),
+    0 0 30px rgba(100, 200, 255, 0.1);
+  position: relative;
+}
+
+.user-img::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary-solid), var(--accent-solid));
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: -1;
+  filter: blur(10px);
+}
+
+.user-img:hover {
+  transform: scale(1.1) rotate(5deg);
+  box-shadow: 
+    0 8px 25px rgba(0, 0, 0, 0.3),
+    0 0 50px rgba(100, 200, 255, 0.2);
+}
+
+.user-img:hover::after {
+  opacity: 0.5;
+}
+
+.clickable-username {
+  color: var(--chat-highlight);
+  cursor: pointer;
+  font-weight: 600;
+  transition: color 0.2s ease;
+}
+
+.clickable-username:hover {
+  color: hsl(197, 100%, 75%);
+}
+
+.chat-message {
+  padding: 16px 20px;
+  margin: 12px 0;
+  border-radius: 20px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.02) 100%);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.chat-message::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.2) 50%, transparent 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.chat-message:hover {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.03) 100%);
+  transform: translateY(-2px);
+  box-shadow: 
+    0 8px 30px rgba(0, 0, 0, 0.1),
+    0 0 40px rgba(100, 200, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.chat-message:hover::before {
+  opacity: 1;
+}
+
+.btn-primary {
+  position: relative;
+  background: var(--chat-highlight);
+  border: none;
+  overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 
+    0 4px 15px rgba(0, 0, 0, 0.2),
+    0 2px 4px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.btn-primary::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  transition: left 0.6s ease;
+}
+
+.btn-primary:hover::before {
+  left: 100%;
+}
+
+.btn-primary:hover {
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 
+    0 12px 30px rgba(100, 200, 255, 0.3),
+    0 6px 12px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    0 0 50px rgba(100, 200, 255, 0.2);
+}
+
+.btn-primary:active {
+  transform: translateY(-1px);
+  box-shadow: 
+    0 4px 15px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.btn-success {
+  position: relative;
+  background: var(--chat-success);
+  border: none;
+  overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 
+    0 4px 15px rgba(0, 0, 0, 0.2),
+    0 2px 4px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.btn-success::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  transition: left 0.6s ease;
+}
+
+.btn-success:hover::before {
+  left: 100%;
+}
+
+.btn-success:hover {
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 
+    0 12px 30px rgba(145, 200, 100, 0.3),
+    0 6px 12px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    0 0 50px rgba(145, 200, 100, 0.2);
+}
+
+.btn-danger {
+  position: relative;
+  background: var(--chat-danger);
+  border: none;
+  overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 
+    0 4px 15px rgba(0, 0, 0, 0.2),
+    0 2px 4px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.btn-danger::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  transition: left 0.6s ease;
+}
+
+.btn-danger:hover::before {
+  left: 100%;
+}
+
+.btn-danger:hover {
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 
+    0 12px 30px rgba(255, 100, 100, 0.3),
+    0 6px 12px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    0 0 50px rgba(255, 100, 100, 0.2);
+}
+
+.profile-tab {
+  position: relative;
+  background: transparent;
+  border: none;
+  color: var(--muted-foreground);
+  padding: 14px 24px;
+  border-radius: 12px;
+  font-weight: 500;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+.profile-tab::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: var(--chat-highlight);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.profile-tab.active {
+  background: linear-gradient(135deg, rgba(100, 200, 255, 0.1) 0%, rgba(100, 200, 255, 0.05) 100%);
+  color: var(--primary-solid);
+  box-shadow: 
+    0 4px 20px rgba(100, 200, 255, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.profile-tab.active::before {
+  transform: scaleX(1);
+}
+
+.profile-tab:hover:not(.active) {
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--foreground);
+  transform: translateY(-1px);
+}
+
+.user-popup {
+  position: absolute;
+  background: linear-gradient(135deg, rgba(30, 35, 50, 0.95) 0%, rgba(40, 45, 65, 0.95) 100%);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 12px;
+  font-size: 14px;
+  z-index: 9999;
+  display: none;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 180px;
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  box-shadow: 
+    0 20px 40px rgba(0, 0, 0, 0.3),
+    0 0 60px rgba(100, 200, 255, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  animation: modern-zoom-in 0.2s ease-out;
+}
+
+.user-popup button {
+  text-align: right;
+  padding: 8px 12px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  border: none;
+  background: transparent;
+  color: white;
+}
+
+.user-popup button:hover {
+  background: hsla(197, 100%, 55%, 0.2);
+  transform: translateX(-2px);
+}
+
+.private-message-box {
+  position: fixed;
+  bottom: 80px;
+  right: 20px;
+  width: 320px;
+  background: linear-gradient(135deg, var(--chat-secondary), var(--chat-accent));
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  color: white;
+  padding: 16px;
+  z-index: 10000;
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(15px);
+}
+
+/* Language Transition Animations */
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes fadeOutScale {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+}
+
+.language-transition-content {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.language-fade-in {
+  animation: fadeInScale 0.3s ease-out;
+}
+
+.language-fade-out {
+  animation: fadeOutScale 0.3s ease-in;
+}
+
+/* RTL/LTR Direction Transitions */
+body {
+  transition: all 0.3s ease;
+}
+
+body.rtl {
+  direction: rtl;
+}
+
+body.ltr {
+  direction: ltr;
+}
+
+/* Text alignment based on direction */
+.rtl .text-align-start {
+  text-align: right;
+}
+
+.ltr .text-align-start {
+  text-align: left;
+}
+
+.rtl .text-align-end {
+  text-align: left;
+}
+
+.ltr .text-align-end {
+  text-align: right;
+}
+
+/* تمت إزالة تموضع محول اللغة للجوال */
+
+/* ===== Profile Effects & Animations ===== */
+
+/* تأثير كهربائي إضافي */
+.effect-electric {
+  animation: electricPulse 2s ease-in-out infinite;
+  box-shadow: 0 0 18px rgba(0, 191, 255, 0.4);
+}
+@keyframes electricPulse {
+  0%,
+  100% {
+    box-shadow: 0 0 18px rgba(0, 191, 255, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 28px rgba(0, 191, 255, 0.7);
+  }
+}
+
+/* تأثير مغناطيسي إضافي لطيف */
+.effect-magnetic {
+  animation: magneticFloat 4s ease-in-out infinite;
+}
+@keyframes magneticFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-2px);
+  }
+}
+
+/* تأثير النبض الناعم */
+.effect-pulse {
+  animation: gentlePulse 3s ease-in-out infinite;
+}
+
+@keyframes gentlePulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.02);
+  }
+}
+
+/* تأثير التوهج الذهبي */
+.effect-glow {
+  animation: goldenGlow 4s ease-in-out infinite;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.8),
+    0 0 20px rgba(255, 215, 0, 0.3);
+}
+
+@keyframes goldenGlow {
+  0%,
+  100% {
+    box-shadow:
+      0 8px 32px rgba(0, 0, 0, 0.8),
+      0 0 20px rgba(255, 215, 0, 0.3);
+  }
+  50% {
+    box-shadow:
+      0 8px 32px rgba(0, 0, 0, 0.8),
+      0 0 30px rgba(255, 215, 0, 0.6);
+  }
+}
+
+/* تأثير التموج المائي */
+.effect-water {
+  animation: waterWave 6s ease-in-out infinite;
+  background-size: 400% 400% !important;
+}
+
+@keyframes waterWave {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  25% {
+    background-position: 100% 50%;
+  }
+  50% {
+    background-position: 100% 100%;
+  }
+  75% {
+    background-position: 0% 100%;
+  }
+}
+
+/* تأثير الشفق القطبي */
+.effect-aurora {
+  animation: auroraShift 8s ease-in-out infinite;
+  background-size: 300% 300% !important;
+}
+
+@keyframes auroraShift {
+  0%,
+  100% {
+    background-position: 0% 50%;
+    filter: hue-rotate(0deg);
+  }
+  25% {
+    background-position: 100% 50%;
+    filter: hue-rotate(90deg);
+  }
+  50% {
+    background-position: 100% 100%;
+    filter: hue-rotate(180deg);
+  }
+  75% {
+    background-position: 0% 100%;
+    filter: hue-rotate(270deg);
+  }
+}
+
+/* تأثير النيون المتوهج */
+.effect-neon {
+  animation: neonFlicker 2s ease-in-out infinite;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.8),
+    0 0 20px rgba(255, 20, 147, 0.5);
+}
+
+@keyframes neonFlicker {
+  0%,
+  100% {
+    box-shadow:
+      0 8px 32px rgba(0, 0, 0, 0.8),
+      0 0 20px rgba(255, 20, 147, 0.5);
+  }
+  50% {
+    box-shadow:
+      0 8px 32px rgba(0, 0, 0, 0.8),
+      0 0 30px rgba(255, 20, 147, 0.8);
+  }
+}
+
+/* تأثير البلور المتلألئ */
+.effect-crystal {
+  animation: crystalShimmer 5s ease-in-out infinite;
+  position: relative;
+  overflow: hidden;
+}
+
+.effect-crystal::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  animation: crystalSweep 3s ease-in-out infinite;
+  z-index: 1;
+}
+
+@keyframes crystalShimmer {
+  0%,
+  100% {
+    filter: brightness(1) contrast(1);
+  }
+  50% {
+    filter: brightness(1.1) contrast(1.1);
+  }
+}
+
+@keyframes crystalSweep {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+/* تأثير النار المتوهجة */
+.effect-fire {
+  animation: fireFlicker 1.5s ease-in-out infinite;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.8),
+    0 0 20px rgba(255, 69, 0, 0.5);
+}
+
+@keyframes fireFlicker {
+  0%,
+  100% {
+    box-shadow:
+      0 8px 32px rgba(0, 0, 0, 0.8),
+      0 0 20px rgba(255, 69, 0, 0.5);
+    filter: brightness(1);
+  }
+  50% {
+    box-shadow:
+      0 8px 32px rgba(0, 0, 0, 0.8),
+      0 0 30px rgba(255, 69, 0, 0.8);
+    filter: brightness(1.1);
+  }
+}
+
+/* تأثير الجليد البارد */
+.effect-ice {
+  animation: iceShimmer 4s ease-in-out infinite;
+  box-shadow: 0 8px 24px rgba(135, 206, 235, 0.25);
+}
+
+@keyframes iceShimmer {
+  0%,
+  100% {
+    filter: brightness(1);
+  }
+  50% {
+    filter: brightness(1.08);
+  }
+}
+
+/* تأثير قوس قزح */
+.effect-rainbow {
+  animation: rainbowShift 6s ease-in-out infinite;
+  background-size: 300% 300% !important;
+}
+
+@keyframes rainbowShift {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+/* تأثير الظل الغامض */
+.effect-shadow {
+  animation: shadowPulse 3.5s ease-in-out infinite;
+}
+
+@keyframes shadowPulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 rgba(0, 0, 0, 0);
+  }
+  50% {
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.25);
+  }
+}
+
+/* أنيميشن إشعار إرسال النقاط */
+@keyframes countdown {
+  from {
+    width: 100%;
+  }
+  to {
+    width: 0%;
+  }
+}
+
+.animate-countdown {
+  animation: countdown 4s linear forwards;
+}
+
+/* أنيميشن للسمايلات المتحركة */
+@keyframes emojiPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+@keyframes emojiShake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-10px); }
+  75% { transform: translateX(10px); }
+}
+
+@keyframes emojiBounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-20px); }
+}
+
+@keyframes emojiSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes emojiHeartbeat {
+  0% { transform: scale(1); }
+  25% { transform: scale(1.3); }
+  50% { transform: scale(0.8); }
+  75% { transform: scale(1.3); }
+  100% { transform: scale(1); }
+}
+
+/* كلاسات للسمايلات المتحركة */
+.animated-emoji {
+  display: inline-block;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.animated-emoji:hover {
+  transform: scale(1.2);
+}
+
+.animated-emoji-gif {
+  max-width: 32px;
+  max-height: 32px;
+  vertical-align: middle;
+}
+
+.emoji-picker-enhanced {
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* تأثيرات Lottie */
+.lottie-emoji-container {
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.lottie-emoji-container:hover {
+  transform: scale(1.1);
+  transition: transform 0.2s ease;
+}
+
+/* تمت إزالة تخصيصات أشرطة التمرير عبر المتصفحات */
+
+/* تأثيرات الثيمات المتحركة في قائمة المتصلين */
+.theme-animated {
+  position: relative;
+  overflow: hidden;
+  animation: themeGlow 3s ease-in-out infinite;
+}
+
+.theme-animated::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: inherit;
+  filter: blur(10px);
+  opacity: 0.5;
+  z-index: -1;
+  animation: themePulse 3s ease-in-out infinite;
+}
+
+@keyframes themeGlow {
+  0%,
+  100% {
+    transform: translateX(0);
+    filter: brightness(1);
+  }
+  50% {
+    transform: translateX(2px);
+    filter: brightness(1.1);
+  }
+}
+
+@keyframes themePulse {
+  0%,
+  100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(1.02);
+  }
+}
+
+/* تحسين التوافق مع التأثيرات الموجودة */
+.theme-animated.effect-glow,
+.theme-animated.effect-pulse,
+.theme-animated.effect-water,
+.theme-animated.effect-aurora,
+.theme-animated.effect-neon,
+.theme-animated.effect-fire,
+.theme-animated.effect-ice,
+.theme-animated.effect-rainbow,
+.theme-animated.effect-shadow,
+.theme-animated.effect-electric,
+.theme-animated.effect-crystal {
+  animation: none;
+}
+
+/* تأثير التحويم على عناصر القائمة */
+.theme-animated:hover {
+  filter: brightness(1.15);
+  transform: translateX(5px);
+}
+
+/* Force hide context menu and text selection for audio-only controls */
+.scroll-area,
+.overflow-y-auto {
+  overscroll-behavior: contain;
+  /* Ensure wheel events work properly */
+  touch-action: auto;
+}
+
+/* Chat layout improvements - تحسينات خاصة بتخطيط الدردشة */
+.chat-main-container {
+  height: calc(100dvh - 160px);
+  overflow: hidden;
+}
+
+.chat-message-area {
+  height: calc(100dvh - 240px);
+  overflow-y: auto;
+}
+
+.chat-sidebar {
+  height: calc(100dvh - 160px);
+  overflow: hidden;
+}
+
+@supports not (height: 100dvh) {
+  .chat-main-container { height: calc(100vh - 160px); }
+  .chat-message-area { height: calc(100vh - 240px); }
+  .chat-sidebar { height: calc(100vh - 160px); }
+}
+
+.chat-input-fixed {
+  position: static;
+  bottom: auto;
+  left: auto;
+  right: auto;
+  z-index: auto;
+  background: transparent;
+  border-top: none;
+  box-shadow: none;
+}
+
+.chat-footer-tabs {
+  position: static;
+  bottom: auto;
+  left: auto;
+  right: auto;
+  z-index: auto;
+  background: transparent;
+  border-top: none;
+  box-shadow: none;
+}
+
+/* تمت إزالة تحسينات الدردشة للجوال */
+
+/* تأثيرات صندوق المستخدم المحسّنة */
+.has-custom-bg {
+  position: relative;
+  overflow: hidden;
+}
+
+.has-custom-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: inherit;
+  opacity: 1; /* يجب أن تبقى 1 لضمان تطابق اللون تماماً */
+  z-index: -1;
+}
+
+/* تطبيق التأثيرات على صناديق المستخدمين */
+li > * > div.effect-glow,
+li > * > div.effect-pulse,
+li > * > div.effect-water,
+li > * > div.effect-aurora,
+li > * > div.effect-neon,
+li > * > div.effect-fire,
+li > * > div.effect-ice,
+li > * > div.effect-rainbow,
+li > * > div.effect-shadow,
+li > * > div.effect-electric,
+li > * > div.effect-crystal {
+  transition: all 0.3s ease;
+}
+
+/* تحسين عرض التأثيرات في قائمة المستخدمين */
+.effect-glow.has-custom-bg,
+.effect-pulse.has-custom-bg,
+.effect-water.has-custom-bg,
+.effect-aurora.has-custom-bg,
+.effect-neon.has-custom-bg,
+.effect-fire.has-custom-bg,
+.effect-ice.has-custom-bg,
+.effect-rainbow.has-custom-bg,
+.effect-shadow.has-custom-bg,
+.effect-electric.has-custom-bg,
+.effect-crystal.has-custom-bg {
+  background-blend-mode: normal;
+}
+
+/* تأثير hover محسّن للصناديق بألوان مخصصة */
+.has-custom-bg:hover {
+  filter: none;
+}
+
+/* التأكد من أن لون النص يظهر بوضوح على الخلفيات الملونة */
+.has-custom-bg span {
+  position: relative;
+  z-index: 1;
+}
+
+/* ===== VIP Animated Frames (10 styles) ===== */
+.vip-frame.base {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.vip-frame-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.vip-frame-img {
+  border-radius: 9999px;
+  object-fit: cover;
+  background: #0b1220;
+  position: relative;
+  z-index: 2;
+}
+
+/* Shared rotating border */
+.vip-frame.base::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 9999px;
+  z-index: 1;
+  padding: 2px; /* frame thickness */
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: vip-rotate var(--vip-spin-duration, 6s) linear infinite;
+}
+
+@keyframes vip-rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* 10 distinct gradient frames matching modern VIP look */
+.vip-frame-1::before {
+  background: conic-gradient(from 0deg, #ffcc33, #ff6633, #ffcc33);
+  box-shadow: 0 0 12px rgba(255, 204, 51, 0.5);
+}
+.vip-frame-2::before {
+  background: conic-gradient(from 0deg, #66e0ff, #4488ff, #66e0ff);
+  box-shadow: 0 0 12px rgba(68, 136, 255, 0.45);
+}
+.vip-frame-3::before {
+  background: conic-gradient(from 0deg, #444, #999, #444);
+  box-shadow: 0 0 12px rgba(200, 200, 200, 0.35);
+}
+.vip-frame-4::before {
+  background: conic-gradient(from 0deg, #b45309, #065f46, #b45309);
+  box-shadow: 0 0 12px rgba(6, 95, 70, 0.4);
+}
+.vip-frame-5::before {
+  background: conic-gradient(from 0deg, #ec4899, #8b5cf6, #ec4899);
+  box-shadow: 0 0 14px rgba(236, 72, 153, 0.5);
+}
+.vip-frame-6::before {
+  background: conic-gradient(from 0deg, #7c2d12, #f59e0b, #7c2d12);
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.4);
+}
+.vip-frame-7::before {
+  background: conic-gradient(from 0deg, #b45309, #d97706, #b45309);
+  box-shadow: 0 0 12px rgba(217, 119, 6, 0.45);
+}
+.vip-frame-8::before {
+  background: conic-gradient(from 0deg, #000, #0f172a, #000);
+  box-shadow: 0 0 12px rgba(0, 0, 0, 0.5);
+}
+.vip-frame-9::before {
+  background: conic-gradient(from 0deg, #1f2937, #0b1220, #1f2937);
+  box-shadow: 0 0 12px rgba(31, 41, 55, 0.45);
+}
+.vip-frame-10::before {
+  background: conic-gradient(from 0deg, #0b1220, #000, #0b1220);
+  box-shadow: 0 0 12px rgba(0, 0, 0, 0.6);
+}
+
+/* Optional subtle pulsation */
+.vip-frame.base {
+  animation: vip-pulse 3.6s ease-in-out infinite;
+}
+@keyframes vip-pulse {
+  0%,
+  100% {
+    filter: brightness(1);
+  }
+  50% {
+    filter: brightness(1.1);
+  }
+}
+
+/* ===== تحسينات الاهتزاز الخفيف للرسائل ===== */
+
+/* اهتزاز خفيف للرسائل الخاصة */
+@keyframes subtle-message-float {
+  0%, 100% {
+    transform: translateY(0px) scale(1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+  50% {
+    transform: translateY(-1px) scale(1.005);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+}
+
+/* حركة ناعمة للرسائل في الغرف */
+@keyframes gentle-room-pulse {
+  0%, 100% {
+    transform: translateY(0px);
+    border-color: rgba(59, 130, 246, 0.2);
+  }
+  50% {
+    transform: translateY(-0.5px);
+    border-color: rgba(59, 130, 246, 0.3);
+  }
+}
+
+/* تأثير خفيف عند الدخول */
+@keyframes soft-entrance {
+  0% {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0px) scale(1);
+  }
+}
+
+/* تحريك نصوص الرسائل برفق */
+@keyframes text-breathe {
+  0%, 100% {
+    transform: translateY(0px);
+    line-height: 1.5;
+  }
+  50% {
+    transform: translateY(-0.2px);
+    line-height: 1.52;
+  }
+}
+
+/* حركة ناعمة للحاويات */
+@keyframes container-gentle-sway {
+  0%, 100% {
+    transform: translateX(0px);
+  }
+  50% {
+    transform: translateX(0.5px);
+  }
+}
+
+/* كلاسات التطبيق */
+.private-message-float {
+  animation: subtle-message-float 4s ease-in-out infinite;
+}
+
+.room-message-pulse {
+  /* إيقاف النبض في رسائل الغرف */
+  animation: none !important;
+}
+
+.soft-entrance {
+  /* إيقاف تأثير الدخول الناعم للرسائل */
+  animation: none !important;
+}
+
+.text-breathe {
+  animation: text-breathe 6s ease-in-out infinite;
+}
+
+.container-sway {
+  animation: container-gentle-sway 8s ease-in-out infinite;
+}
+
+/* إصلاح موضع آخر كلمة في الرسائل */
+.message-content-fix {
+  line-height: 1.6;
+  padding-bottom: 2px;
+  padding-inline-end: 2px; /* منع قصّ آخر حرف في نهايات RTL/LTR على الهاتف */
+  /* اجعل اتجاه الأساس RTL دائمًا مع عزل خلط اللغات داخل الرسالة */
+  direction: rtl;
+  unicode-bidi: isolate;
+  text-align: start; /* يمين في RTL */
+}
+
+.message-content-fix .truncate {
+  line-height: inherit;
+  vertical-align: baseline;
+  margin-bottom: 1px;
+}
+
+/* نص منشورات الحائط: محاذاة يمين دائماً مع عزل bidi لضمان بقاء الرموز بجانب النص */
+.wall-text {
+  direction: rtl;
+  unicode-bidi: isolate;
+  text-align: start; /* يمين في RTL */
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+/* أنماط السمايلات المتحركة */
+.animated-emoji {
+  display: inline-block;
+  vertical-align: middle;
+  margin: 0 0.25rem;
+  transition: transform 0.2s ease;
+}
+
+.animated-emoji:hover {
+  transform: scale(1.2);
+}
+
+/* تحسين عرض السمايلات في الرسائل */
+.message-content-fix .animated-emoji {
+  width: 32px;
+  height: 32px;
+  margin: 0 4px;
+}
+
+/* أنماط قائمة السمايلات المتحركة */
+.animated-emoji-picker {
+  /* تعطيل أي أنيميشن لظهور منتقي السمايلات لضمان الثبات */
+  animation: none !important;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* === محاذاة الرسائل الجديدة: الاسم في السطر الأول، النص تحته مباشرة === */
+/* ========== LEGACY RUNIN STYLES - UPDATED FOR MOBILE FLOAT RUN-IN ========== */
+
+/* أسلوب run-in للجوال: الاسم يظهر في السطر الأول فقط، وبقية الأسطر تمتد بكامل العرض */
+.runin-container {
+  display: block;
+  width: 100%;
+}
+
+.runin-name {
+  display: inline;
+  white-space: nowrap;
+  line-height: 1.4;
+}
+
+.runin-name > * {
+  display: inline;
+  vertical-align: baseline;
+}
+
+.runin-text {
+  display: inline; /* start inline with the name, wraps to next lines */
+  text-align: start;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  line-height: 1.4;
+}
+
+/* تطبيق تأثير run-in محسّن للجوال */
+@media (max-width: 768px) {
+  .runin-container {
+    position: relative;
+  }
+  .runin-name {
+    display: inline;
+    line-height: 1.4;
+  }
+  .runin-name > * {
+    display: inline;
+    vertical-align: baseline;
+  }
+  .runin-text {
+    display: inline;
+    text-align: start;
+    line-height: 1.4;
+  }
+}
+
+/* ========== MODERN ADVANCED DESIGN SYSTEM ========== */
+
+/* Modern Glass Cards */
+.modern-card {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.02) 100%);
+  backdrop-filter: blur(40px) saturate(200%);
+  -webkit-backdrop-filter: blur(40px) saturate(200%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.modern-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    rgba(255, 255, 255, 0.4) 50%, 
+    transparent 100%);
+  opacity: 0.6;
+}
+
+.modern-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 
+    0 20px 40px rgba(0, 0, 0, 0.15),
+    0 0 60px rgba(100, 200, 255, 0.1),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+/* Modern Buttons */
+.modern-button {
+  position: relative;
+  background: linear-gradient(135deg, var(--primary-solid) 0%, var(--accent-solid) 100%);
+  border: none;
+  border-radius: 14px;
+  padding: 12px 24px;
+  font-weight: 600;
+  color: white;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 
+    0 4px 20px rgba(0, 0, 0, 0.1),
+    0 2px 4px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.modern-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left 0.5s ease;
+}
+
+.modern-button:hover::before {
+  left: 100%;
+}
+
+.modern-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 
+    0 8px 25px rgba(0, 0, 0, 0.15),
+    0 4px 8px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    0 0 40px rgba(100, 200, 255, 0.2);
+}
+
+.modern-button:active {
+  transform: translateY(0);
+  box-shadow: 
+    0 2px 10px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+/* Modern Input Fields */
+.modern-input {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 14px 20px;
+  font-size: 16px;
+  color: var(--foreground);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  width: 100%;
+  backdrop-filter: blur(10px);
+}
+
+.modern-input:focus {
+  outline: none;
+  border-color: var(--primary-solid);
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: 
+    0 0 0 3px rgba(100, 200, 255, 0.1),
+    0 4px 20px rgba(100, 200, 255, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.modern-input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* Modern Hover Effects */
+.hover-glow {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.hover-glow:hover {
+  box-shadow: 
+    0 0 30px rgba(100, 200, 255, 0.3),
+    0 0 60px rgba(100, 200, 255, 0.1);
+}
+
+/* Modern Gradient Text */
+.gradient-text {
+  background: linear-gradient(135deg, var(--primary-solid) 0%, var(--accent-solid) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 700;
+}
+
+/* Modern Badge */
+.modern-badge {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.3s ease;
+}
+
+.modern-badge:hover {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.08) 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+/* Modern Divider */
+.modern-divider {
+  height: 1px;
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    rgba(255, 255, 255, 0.1) 20%, 
+    rgba(255, 255, 255, 0.1) 80%, 
+    transparent 100%);
+  margin: 24px 0;
+  position: relative;
+}
+
+.modern-divider::after {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 5px;
+  background: linear-gradient(135deg, var(--primary-solid), var(--accent-solid));
+  border-radius: 3px;
+  box-shadow: 0 0 20px rgba(100, 200, 255, 0.5);
+}
+
+/* Modern Loading Animation */
+@keyframes modern-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(100, 200, 255, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 20px rgba(100, 200, 255, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(100, 200, 255, 0);
+  }
+}
+
+.modern-pulse {
+  animation: modern-pulse 2s infinite;
+}
+
+/* Modern Tooltip */
+.modern-tooltip {
+  background: linear-gradient(135deg, rgba(20, 20, 30, 0.95) 0%, rgba(30, 30, 40, 0.95) 100%);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 10px 16px;
+  font-size: 14px;
+  box-shadow: 
+    0 10px 30px rgba(0, 0, 0, 0.3),
+    0 0 40px rgba(100, 200, 255, 0.1);
+}
+
+/* Modern Navigation */
+.modern-nav {
+  background-color: var(--background-solid, rgba(15, 23, 42, 0.98));
+  /* Elegant theme-aware tint that respects excluded themes via --nav-tint-*: */
+  background-image: linear-gradient(135deg,
+    var(--nav-tint-start, rgba(255, 255, 255, 0.06)) 0%,
+    var(--nav-tint-end, rgba(255, 255, 255, 0.03)) 100%
+  );
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  backdrop-filter: blur(16px) saturate(180%);
+  border-bottom: 1px solid var(--nav-border, rgba(255, 255, 255, 0.08));
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.15);
+  will-change: transform;
+  backface-visibility: hidden;
+}
+
+/* Settings menu panel background: theme-aware (solid black for berryCool only) */
+.settings-menu-panel {
+  background: var(--settings-menu-bg, var(--card));
+}
+
+/* ===== Richest modal top bar and badges (match image #2 style) ===== */
+.richest-header {
+  height: 56px; /* thicker top bar */
+  background: var(--richest-header-bg, linear-gradient(90deg, #1f1235, #6c2bd9, #0ea5e9));
+  background-size: 200% 200%;
+  animation: gradient-x 10s ease infinite;
+}
+
+/* ثبات عناصر الأثرياء على الجوال: إيقاف أي اهتزازات/تحويلات */
+@media (max-width: 768px) {
+  .richest-modal .mobile-stable {
+    /* تعطيل أي تحريك أو اهتزاز يأتي من تأثيرات الخلفية أو الكلاسات المتحركة */
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+    will-change: auto !important;
+    backface-visibility: hidden;
+    perspective: 0;
+  }
+
+  /* في حال كانت هناك تأثيرات vip-frame أو تأثيرات animate على العناصر الداخلية داخل صف المستخدم */
+  .richest-modal .mobile-stable *,
+  .richest-modal .mobile-stable::before,
+  .richest-modal .mobile-stable::after {
+    animation: none !important;
+  }
+
+  /* منع تأثيرات التحويم من إحداث حركة في الجوال داخل نافذة الأثرياء */
+  .richest-modal .mobile-stable:hover {
+    transform: none !important;
+  }
+
+  /* إصلاح مشكلة الحركة الأفقية في تبويب الأثرياء - السماح فقط بالحركة العمودية */
+  .richest-modal {
+    touch-action: pan-y pinch-zoom !important;
+    overflow-x: hidden !important;
+  }
+  
+  .richest-modal .max-h-\[70vh\] {
+    touch-action: pan-y !important;
+    overflow-x: hidden !important;
+    overscroll-behavior-x: none !important;
+    overscroll-behavior-y: contain !important;
+  }
+
+  /* منع الحركة الأفقية في قائمة المستخدمين */
+  .richest-modal ul {
+    touch-action: pan-y !important;
+    overflow-x: hidden !important;
+  }
+
+  /* منع الحركة الأفقية في عناصر المستخدمين الفردية */
+  .richest-modal li {
+    touch-action: pan-y !important;
+    overflow-x: hidden !important;
+  }
+
+  /* منع الحركة الأفقية في قسم المرشحين */
+  .richest-modal .space-y-2.max-h-32 {
+    touch-action: pan-y !important;
+    overflow-x: hidden !important;
+  }
+}
+
+.richest-close-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.2), 0 2px 12px rgba(0,0,0,0.25);
+  line-height: 1;
+  font-size: 18px;
+  font-weight: 700;
+  transition: all .2s ease;
+}
+.richest-close-btn:hover { background: rgba(255,255,255,0.2); transform: translateY(-1px); }
+.richest-close-btn:active { transform: translateY(0); }
+
+/* Medal only for top 3 without numbers */
+.rank-medal { font-size: 18px; display: inline-flex; margin-inline-end: 6px; }
+.rank-first { filter: drop-shadow(0 0 6px rgba(255,215,0,.6)); }
+.rank-second { filter: drop-shadow(0 0 6px rgba(180,180,180,.5)); }
+.rank-third { filter: drop-shadow(0 0 6px rgba(255,165,0,.5)); }
+
+/* Redesigned rank badge for others */
+.rank-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 26px;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(255,255,255,0.14), rgba(255,255,255,0.06));
+  border: 1px solid rgba(255,255,255,0.18);
+  color: #fff;
+  font-weight: 700;
+  font-size: 12px;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.25);
+}
+
+/* Themed bottom nav buttons (keeps icon/text colors intact) */
+.themed-nav {
+  background-image: linear-gradient(135deg,
+    var(--nav-tint-start, rgba(255, 255, 255, 0.06)) 0%,
+    var(--nav-tint-end, rgba(255, 255, 255, 0.03)) 100%
+  );
+  border: 1px solid var(--nav-border, rgba(255, 255, 255, 0.08));
+  color: inherit;
+}
+
+.themed-nav:hover {
+  background-image: linear-gradient(135deg,
+    color-mix(in srgb, var(--primary-solid, #6b7280) 24%, transparent) 0%,
+    color-mix(in srgb, var(--primary-solid, #6b7280) 10%, transparent) 100%
+  );
+}
+
+.themed-active {
+  background-image: linear-gradient(135deg,
+    color-mix(in srgb, var(--primary-solid, #6b7280) 28%, transparent) 0%,
+    color-mix(in srgb, var(--primary-solid, #6b7280) 12%, transparent) 100%
+  );
+  border-color: var(--nav-border, rgba(255, 255, 255, 0.10));
+}
+
+/* Themed tabs (uses nav tint vars; excluded themes have transparent values) */
+.themed-tabs-list {
+  background-color: var(--tabs-bg, initial);
+  background-image: linear-gradient(135deg,
+    var(--nav-tint-start, transparent) 0%,
+    var(--nav-tint-end, transparent) 100%
+  );
+  border: 1px solid var(--nav-border, rgba(255, 255, 255, 0.08));
+}
+
+.themed-tab {
+  color: inherit;
+}
+
+.themed-tab:hover {
+  background-image: linear-gradient(135deg,
+    color-mix(in srgb, var(--primary-solid, #6b7280) 18%, transparent) 0%,
+    color-mix(in srgb, var(--primary-solid, #6b7280) 8%, transparent) 100%
+  );
+}
+
+.themed-tab[data-state="active"] {
+  background-image: linear-gradient(135deg,
+    var(--tab-active-bg-start, transparent) 0%,
+    var(--tab-active-bg-end, transparent) 100%
+  );
+  color: var(--foreground);
+}
+
+/* Modern Tab */
+.modern-tab {
+  position: relative;
+  padding: 12px 24px;
+  background: transparent;
+  border: none;
+  color: var(--muted-foreground);
+  font-weight: 500;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+.modern-tab::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: linear-gradient(135deg, var(--primary-solid), var(--accent-solid));
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.modern-tab:hover {
+  color: var(--foreground);
+}
+
+.modern-tab.active {
+  color: var(--primary-solid);
+}
+
+.modern-tab.active::before {
+  transform: scaleX(1);
+}
+
+/* Modern Floating Effect */
+@keyframes modern-float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.modern-float {
+  animation: modern-float 3s ease-in-out infinite;
+}
+
+/* Modern Gradient Animation */
+@keyframes modern-gradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Gradient X Animation for Profile Banner */
+@keyframes gradient-x {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.animate-gradient-x {
+  animation: gradient-x 15s ease infinite;
+  background-size: 200% 200%;
+}
+
+/* Wall Post Card - Theme aware */
+.wall-post-card {
+  background: var(--wall-post-bg, rgba(var(--background-rgb, 255, 255, 255), 0.6));
+  border: 1px solid var(--wall-border, var(--border));
+}
+
+.modern-gradient-animate {
+  background-size: 200% 200%;
+  animation: modern-gradient 4s ease infinite;
+}
+
+/* Modern Notification */
+.modern-notification {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.04) 100%);
+  backdrop-filter: blur(30px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 16px 20px;
+  box-shadow: 
+    0 10px 40px rgba(0, 0, 0, 0.2),
+    0 0 60px rgba(100, 200, 255, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.modern-notification::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(100, 200, 255, 0.1) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.modern-notification:hover::before {
+  opacity: 1;
+}
+
+/* ========== FINAL MODERN ENHANCEMENTS ========== */
+
+/* Modern Message Input Area */
+.message-input-area {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 16px;
+  margin: 16px;
+  box-shadow: 
+    0 4px 20px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+/* Rooms chat input: keep only blue focus ring, remove black border on focus */
+.chat-input .rooms-message-input:focus,
+.chat-input .rooms-message-input:focus-visible {
+  border-color: transparent !important;
+  outline: none !important;
+}
+
+/* Modern Room Cards */
+.room-card {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.02) 100%);
+  backdrop-filter: blur(15px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 20px;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.room-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  transition: left 0.6s ease;
+}
+
+.room-card:hover::before {
+  left: 100%;
+}
+
+.room-card:hover {
+  transform: translateY(-4px);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.03) 100%);
+  box-shadow: 
+    0 12px 40px rgba(0, 0, 0, 0.15),
+    0 0 60px rgba(100, 200, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+/* Modern User List Item */
+.user-list-item {
+  padding: 12px 16px;
+  border-radius: 14px;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  position: relative;
+}
+
+.user-list-item:hover {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
+  transform: translateX(-4px);
+  padding-right: 20px;
+}
+
+/* Modern Status Indicators */
+.online-indicator {
+  width: 10px;
+  height: 10px;
+  background: linear-gradient(135deg, #4ade80, #22c55e);
+  border-radius: 50%;
+  box-shadow: 
+    0 0 15px rgba(34, 197, 94, 0.5),
+    0 0 30px rgba(34, 197, 94, 0.3);
+  animation: modern-pulse 2s infinite;
+}
+
+.typing-indicator {
+  display: inline-flex;
+  gap: 4px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 20px;
+}
+
+.typing-indicator span {
+  width: 8px;
+  height: 8px;
+  background: var(--primary-solid);
+  border-radius: 50%;
+  animation: modern-bounce 1.4s infinite ease-in-out;
+}
+
+.typing-indicator span:nth-child(1) { animation-delay: -0.32s; }
+.typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
+.typing-indicator span:nth-child(3) { animation-delay: 0; }
+
+/* Modern Selection Highlight */
+::selection {
+  background: rgba(100, 200, 255, 0.3);
+  color: white;
+}
+
+  /* Rooms chat send input: keep only blue ring on focus (remove inner black border) */
+  .rooms-message-input:focus,
+  .rooms-message-input:focus-visible {
+    border-color: transparent !important;
+    outline: none !important;
+  }
+
+/* Modern Focus States */
+:focus-visible {
+  outline: 2px solid var(--primary-solid);
+  outline-offset: 2px;
+}
+
+/* ===== Theme-specific overrides for Toti Bard (berryCool) ===== */
+[data-theme-id="berryCool"] .chat-emoji-button,
+[data-theme-id="berryCool"] .chat-plus-button {
+  /* Use send button (primary) color instead of dark/neutral */
+  background-color: var(--primary-solid) !important;
+  color: var(--primary-foreground) !important;
+  border-color: color-mix(in srgb, var(--primary-solid) 50%, #000) !important;
+}
+
+[data-theme-id="berryCool"] .chat-emoji-button:hover,
+[data-theme-id="berryCool"] .chat-plus-button:hover {
+  background-color: color-mix(in srgb, var(--primary-solid) 90%, #000) !important;
+}
+
+/* Private messages: make gallery icon white on berryCool */
+[data-theme-id="berryCool"] .pm-gallery-button {
+  background-color: transparent !important; /* keep subtle */
+  color: #ffffff !important; /* icon to white */
+  border-color: rgba(255, 255, 255, 0.18) !important; /* subtle white border */
+}
+
+[data-theme-id="berryCool"] .pm-gallery-button:hover {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Modern Loading States */
+.loading-shimmer {
+  background: linear-gradient(90deg, 
+    rgba(255, 255, 255, 0.05) 0%, 
+    rgba(255, 255, 255, 0.1) 50%, 
+    rgba(255, 255, 255, 0.05) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+/* Enhance All Links */
+a {
+  color: var(--primary-solid);
+  text-decoration: none;
+  position: relative;
+  transition: color 0.3s ease;
+}
+
+a::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: var(--primary-solid);
+  transition: width 0.3s ease;
+}
+
+a:hover::after {
+  width: 100%;
+}
+
+/* Modern List Styles - keep neutral globally (avoid forcing bullets/padding) */
+ul, ol {
+  list-style: none;
+  padding-right: 0;
+  margin: 0;
+}
+
+/* Remove default li decorations globally to prevent side strips in virtual lists */
+li {
+  position: static;
+  padding: 0;
+  margin: 0;
+}
+
+li::before {
+  content: none;
+}
+
+/* Users list container: ensure edge-to-edge rows and no pseudo-markers */
+.users-list-reset, .users-list-reset * {
+  list-style: none !important;
+}
+
+.users-list-reset [role="listitem"],
+.users-list-reset li {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.users-list-reset [role="listitem"]::before,
+.users-list-reset li::before,
+#root [role="listitem"]::before,
+#root li[class*="relative"]::before {
+  content: none !important;
+  display: none !important;
+}
+
+/* App bars with safe area handling */
+.app-header {
+  background-color: var(--background-solid, rgba(15, 23, 42, 0.98));
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  backdrop-filter: blur(16px) saturate(180%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.app-footer {
+  background-color: var(--background-solid, rgba(15, 23, 42, 0.98));
+  background-image: linear-gradient(135deg,
+    var(--nav-tint-start, rgba(255, 255, 255, 0.06)) 0%,
+    var(--nav-tint-end, rgba(255, 255, 255, 0.03)) 100%
+  );
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  backdrop-filter: blur(16px) saturate(180%);
+  border-top: 1px solid var(--nav-border, rgba(255, 255, 255, 0.08));
+}
+
+.safe-area-top {
+  padding-top: env(safe-area-inset-top);
+}
+
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Stable app viewport sizing and bars (mobile-safe) */
+:root {
+  --app-header-height: 3.5rem;  /* 56px, matches h-14 */
+  --app-footer-height: 3.5rem;  /* 56px, matches h-14 */
+  --app-body-height: calc(100dvh - var(--app-header-height) - var(--app-footer-height));
+}
+
+@supports not (height: 100dvh) {
+  :root {
+    --app-body-height: calc(100vh - var(--app-header-height) - var(--app-footer-height));
+  }
+}
+
+/* Mobile-specific improvements */
+@media (max-width: 768px) {
+  .mobile-layout {
+    overflow: hidden;
+  }
+  
+  .mobile-layout .app-header {
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+  }
+  
+  .mobile-layout .app-footer {
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    box-shadow: 0 -2px 20px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Match top bar spacing with bottom bar on mobile without altering design */
+  .mobile-header > div {
+    gap: 0.25rem !important; /* equals gap-1 */
+  }
+
+  .mobile-header .glass-effect {
+    padding-left: 0.5rem !important;  /* px-2 */
+    padding-right: 0.5rem !important; /* px-2 */
+    padding-top: 0.5rem !important;   /* py-2 */
+    padding-bottom: 0.5rem !important;/* py-2 */
+    gap: 0.375rem !important;         /* equals gap-1.5 like footer buttons */
+  }
+  
+  .mobile-footer {
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  /* تحسين منطقة الرسائل للجوال */
+  .mobile-layout .chat-message {
+    padding: 12px 16px;
+    margin: 8px 12px;
+    border-radius: 16px;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  
+  /* تحسين أزرار التبويبات للجوال */
+  .mobile-layout .glass-effect {
+    backdrop-filter: blur(10px) saturate(150%);
+    -webkit-backdrop-filter: blur(10px) saturate(150%);
+  }
+  
+  /* تحسين النصوص للجوال */
+  .mobile-layout {
+    font-size: 14px;
+    line-height: 1.6;
+  }
+  
+  /* تحسين الشريط الجانبي للجوال */
+  .mobile-layout .sidebar-mobile {
+    animation: slideInFromRight 0.3s ease-out;
+  }
+  
+  @keyframes slideInFromRight {
+    from {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+  
+  /* تحسين منطقة الدردشة للجوال */
+  .mobile-layout .message-input-area {
+    margin: 8px;
+    padding: 12px;
+    border-radius: 12px;
+  }
+  
+  /* إصلاح توسيط أزرار تسجيل الدخول للجوال فقط */
+  @media (max-width: 768px) {
+    .welcome-login-buttons {
+      display: flex !important;
+      flex-direction: column !important;
+      width: 100% !important;
+      max-width: 20rem !important; /* max-w-sm */
+      margin: 0 auto !important;
+      justify-content: center !important;
+      align-items: center !important;
+      padding: 0 1rem !important;
+    }
+  }
+  
+  /* تحسين قوائم المستخدمين للجوال */
+  .mobile-layout .user-list-item {
+    padding: 16px 12px;
+    border-radius: 12px;
+    margin: 4px 8px;
+  }
+  
+  .mobile-layout .user-img {
+    width: 40px;
+    height: 40px;
+  }
+  
+  /* تحسين الأيقونات للجوال */
+  .mobile-layout svg {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+  }
+  
+  /* تحسين النصوص في التبويبات للجوال */
+  .mobile-layout .text-xs {
+    font-size: 12px;
+    font-weight: 500;
+  }
+  
+  /* إخفاء النصوص الطويلة في التبويبات على الجوال */
+  .mobile-layout .tab-text-mobile {
+    display: none;
+  }
+  
+  /* عرض الأيقونات فقط في التبويبات الضيقة */
+  @media (max-width: 480px) {
+    .mobile-layout .tab-text-hide {
+      display: none;
+    }
+    
+    .mobile-layout .glass-effect {
+      padding: 8px !important;
+    }
+  }
+  
+  /* تحسين التمرير للجوال */
+  .mobile-layout {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+  }
+  
+  /* تحسين اللمس للجوال */
+  .mobile-layout button,
+  .mobile-layout .clickable {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* تحسين الفجوات للجوال */
+  .mobile-layout .gap-1 {
+    gap: 0.125rem;
+  }
+  
+  /* تحسين الحشو للجوال */
+  .mobile-layout .p-4 {
+    padding: 1rem;
+  }
+  
+  .mobile-layout .px-2 {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+  
+  .mobile-layout .py-2 {
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+  }
+  
+  /* تحسين ارتفاع الأشرطة للجوال */
+  @supports (height: 100dvh) {
+    .mobile-layout {
+      height: 100dvh;
+    }
+  }
+  
+  /* تحسين الخطوط للجوال */
+  .mobile-layout .text-xs {
+    font-size: 11px;
+    line-height: 1.4;
+  }
+  
+  /* تحسين الحدود للجوال */
+  .mobile-layout .rounded-lg {
+    border-radius: 8px;
+  }
+  
+  /* تحسين الظلال للجوال */
+  .mobile-layout .shadow-lg {
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* تحسين منطقة الرسائل للجوال */
+  .mobile-message-area {
+    font-size: 14px;
+  }
+  
+  .mobile-message-area .chat-message {
+    padding: 10px 12px;
+    margin: 6px 8px;
+    font-size: 14px;
+    line-height: 1.4;
+  }
+  
+  .mobile-message-area .user-img {
+    width: 36px;
+    height: 36px;
+  }
+  
+  .mobile-message-area .message-content {
+    word-break: break-word;
+    overflow-wrap: break-word;
+  }
+  
+  /* تحسين إدخال الرسائل للجوال */
+  .mobile-message-area textarea {
+    font-size: 16px !important; /* منع zoom على iOS */
+    line-height: 1.4;
+    min-height: 40px;
+    max-height: 120px;
+  }
+
+  /* منع تكبير iOS عند التركيز على حقول الإدخال */
+  .mobile-message-area input[type="text"],
+  .mobile-message-area input[type="search"],
+  .mobile-message-area input[type="email"],
+  .mobile-message-area input[type="password"],
+  .rooms-message-input {
+    font-size: 16px !important;
+  }
+  
+  .mobile-touch-button {
+    min-height: 44px;
+    min-width: 44px;
+    touch-action: manipulation;
+  }
+  
+  /* تحسين النصوص للجوال */
+  .mobile-text {
+    font-size: 16px !important;
+    line-height: 1.4 !important;
+  }
+
+  /* تحسين رسائل النظام للجوال */
+  .system-message-mobile {
+    align-items: center !important;
+    gap: 8px !important;
+  }
+
+  .system-message-content {
+    font-size: 14px;
+    line-height: 1.3;
+    margin: 0;
+    padding: 0;
+    word-break: break-word;
+    overflow-wrap: break-word;
+  }
+
+  /* تحسين عرض رسائل النظام على الجوال - إزالة الفراغات الزائدة */
+  .mobile-message-area [data-message-type="system"] {
+    padding: 8px 12px !important;
+    margin: 4px 8px !important;
+    min-height: auto;
+    align-items: center !important;
+  }
+
+  /* ضبط التخطيط ليكون مماثل لسطح المكتب */
+  .mobile-message-area [data-message-type="system"] .system-message-mobile {
+    align-items: center !important;
+    gap: 8px !important;
+  }
+
+  .mobile-message-area [data-message-type="system"] .system-message-content {
+    font-size: 14px !important;
+    line-height: 1.3 !important;
+  }
+}

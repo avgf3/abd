@@ -1,0 +1,31 @@
+ملاحظة: يجب إضافة ملفات GIF الفعلية للسمايلات في هذه المجلدات:
+
+/assets/emojis/classic/
+- smile.gif
+- laugh.gif
+- wink.gif
+- tongue.gif
+- cool.gif
+- cry.gif
+- angry.gif
+- heart.gif
+- kiss.gif
+- confused.gif
+- shocked.gif
+- devil.gif
+
+/assets/emojis/modern/
+- party.gif
+- fire.gif
+- thumbsup.gif
+- clap.gif
+- love.gif
+- rofl.gif
+- think.gif
+- wave.gif
+- dance.gif
+- rainbow.gif
+- star.gif
+- rocket.gif
+
+يجب أن تكون الصور بحجم مناسب (32x32 أو 64x64 بكسل) وبصيغة GIF متحركة.

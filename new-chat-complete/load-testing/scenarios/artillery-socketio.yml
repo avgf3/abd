@@ -1,0 +1,229 @@
+config:
+  target: "http://localhost:5000"
+  phases:
+    # Warm-up phase
+    - duration: 60
+      arrivalRate: 5
+      name: "Warm-up"
+    
+    # Ramp-up phase
+    - duration: 300
+      arrivalRate: 5
+      rampTo: 50
+      name: "Ramp-up"
+    
+    # Sustained load
+    - duration: 600
+      arrivalRate: 50
+      name: "Sustained Load"
+    
+    # Spike test
+    - duration: 60
+      arrivalRate: 200
+      name: "Spike"
+    
+    # Cool down
+    - duration: 120
+      arrivalRate: 10
+      name: "Cool-down"
+  
+  # Socket.IO specific configuration
+  socketio:
+    transports: ["websocket"]
+    path: "/socket.io"
+  
+  # Variables for test data
+  variables:
+    usernames:
+      - "testuser1"
+      - "testuser2"
+      - "testuser3"
+      - "testuser4"
+      - "testuser5"
+    
+    messages:
+      - "مرحبا، هذه رسالة اختبارية"
+      - "Hello, this is a test message"
+      - "Testing Socket.IO performance"
+      - "اختبار أداء Socket.IO"
+      - "Real-time messaging test"
+      - "🚀 Performance test in progress"
+      - "Testing Arabic: السلام عليكم"
+      - "Quick message test"
+      - "Lorem ipsum dolor sit amet"
+      - "Final test message"
+    
+    rooms:
+      - "general"
+      - "random"
+      - "tech"
+      - "support"
+      - "announcements"
+    
+    statuses:
+      - "online"
+      - "away"
+      - "busy"
+      - "offline"
+  
+  # Processor for custom logic
+  processor: "./artillery-processor.js"
+  
+  # Plugins
+  plugins:
+    expect: {}
+    metrics-by-endpoint: {}
+
+scenarios:
+  - name: "Complete Socket.IO User Flow"
+    engine: socketio
+    weight: 70
+    flow:
+      # Establish connection
+      - emit:
+          channel: "connection"
+          data:
+            type: "connect"
+            timestamp: "{{ $timestamp }}"
+      
+      # Authenticate
+      - emit:
+          channel: "auth"
+          data:
+            username: "{{ usernames }}"
+            token: "test_token_{{ $randomNumber }}"
+      
+      # Wait for auth response
+      - think: 1
+      
+      # Join room
+      - emit:
+          channel: "room:join"
+          data:
+            roomId: "{{ rooms }}"
+            userId: "user_{{ $randomNumber }}"
+      
+      # Send messages
+      - loop:
+        - emit:
+            channel: "message:send"
+            data:
+              content: "{{ messages }}"
+              roomId: "{{ rooms }}"
+              timestamp: "{{ $timestamp }}"
+              messageId: "msg_{{ $randomNumber }}"
+        
+        - think: 2
+        count: 10
+      
+      # Typing indicators
+      - emit:
+          channel: "message:typing"
+          data:
+            roomId: "{{ rooms }}"
+            isTyping: true
+      
+      - think: 2
+      
+      - emit:
+          channel: "message:typing"
+          data:
+            roomId: "{{ rooms }}"
+            isTyping: false
+      
+      # Update status
+      - emit:
+          channel: "user:status"
+          data:
+            status: "{{ statuses }}"
+            timestamp: "{{ $timestamp }}"
+      
+      # Listen for messages
+      - think: 5
+      
+      # Leave room
+      - emit:
+          channel: "room:leave"
+          data:
+            roomId: "{{ rooms }}"
+            userId: "user_{{ $randomNumber }}"
+      
+      # Disconnect
+      - emit:
+          channel: "disconnect"
+          data:
+            reason: "test_complete"
+
+  - name: "Message Burst Test"
+    engine: socketio
+    weight: 20
+    flow:
+      # Quick connection and auth
+      - emit:
+          channel: "connection"
+      
+      - emit:
+          channel: "auth"
+          data:
+            username: "burst_user_{{ $randomNumber }}"
+      
+      # Rapid message sending
+      - loop:
+        - emit:
+            channel: "message:send"
+            data:
+              content: "Burst message {{ $loopCount }}"
+              roomId: "general"
+              priority: "high"
+        
+        - think: 0.1
+        count: 50
+      
+      - emit:
+          channel: "disconnect"
+
+  - name: "Room Hopping Test"
+    engine: socketio
+    weight: 10
+    flow:
+      # Connect and auth
+      - emit:
+          channel: "connection"
+      
+      - emit:
+          channel: "auth"
+          data:
+            username: "hopper_{{ $randomNumber }}"
+      
+      # Join and leave multiple rooms
+      - loop:
+        - emit:
+            channel: "room:join"
+            data:
+              roomId: "{{ rooms }}"
+        
+        - think: 3
+        
+        - emit:
+            channel: "message:send"
+            data:
+              content: "Hello from room hopper"
+              roomId: "{{ rooms }}"
+        
+        - think: 2
+        
+        - emit:
+            channel: "room:leave"
+            data:
+              roomId: "{{ rooms }}"
+        
+        count: 5
+      
+      - emit:
+          channel: "disconnect"
+
+# Expectations for validation
+expect:
+  - statusCode: 200
+  - contentType: json
+  - hasProperty: success
