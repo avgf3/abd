@@ -11,23 +11,18 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  // جلب الثيم من localStorage أو استخدام الافتراضي
   const [theme, setThemeState] = useState<ThemeType>(() => {
     const saved = localStorage.getItem('chat-theme');
     return (saved as ThemeType) || 'default';
   });
 
-  // تطبيق الثيم على document
   useEffect(() => {
-    // إزالة جميع الثيمات
     document.documentElement.removeAttribute('data-theme');
     
-    // تطبيق الثيم المختار
     if (theme === 'arabic-chat') {
       document.documentElement.setAttribute('data-theme', 'arabic-chat');
     }
     
-    // حفظ في localStorage
     localStorage.setItem('chat-theme', theme);
   }, [theme]);
 

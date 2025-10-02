@@ -1,0 +1,83 @@
+/* ====================================
+   🎨 Arabic Chat Theme
+   ثيم مستوحى من arabic.chat
+   ==================================== */
+
+[data-theme="arabic-chat"] {
+  /* الألوان الأساسية */
+  --background: 240 15% 12%;           /* #1a1d24 */
+  --foreground: 0 0% 98%;              /* #fafafa */
+  
+  --primary: 200 95% 55%;              /* #1ba3e6 - أزرق فاتح */
+  --primary-foreground: 0 0% 100%;
+  
+  --secondary: 240 10% 18%;
+  --secondary-foreground: 0 0% 98%;
+  
+  --accent: 240 10% 25%;
+  --accent-foreground: 0 0% 98%;
+  
+  --muted: 240 10% 20%;
+  --muted-foreground: 0 0% 65%;
+  
+  --card: 240 12% 16%;
+  --card-foreground: 0 0% 98%;
+  
+  --border: 240 10% 25%;
+  --input: 240 10% 25%;
+  --ring: 200 95% 55%;
+}
+
+/* تنسيقات خاصة */
+[data-theme="arabic-chat"] {
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+}
+
+/* الرسائل */
+[data-theme="arabic-chat"] .message-bubble {
+  background: hsl(var(--card));
+  border-radius: 12px;
+}
+
+/* الأزرار */
+[data-theme="arabic-chat"] button:not(.ghost) {
+  background: hsl(var(--primary));
+  color: white;
+}
+
+[data-theme="arabic-chat"] button:hover:not(.ghost) {
+  opacity: 0.9;
+}
+
+/* الـ Input */
+[data-theme="arabic-chat"] input,
+[data-theme="arabic-chat"] textarea {
+  background: hsl(var(--input));
+  border-color: hsl(var(--border));
+  color: hsl(var(--foreground));
+}
+
+/* الـ Cards */
+[data-theme="arabic-chat"] .card {
+  background: hsl(var(--card));
+  border-color: hsl(var(--border));
+}
+
+/* Scrollbar */
+[data-theme="arabic-chat"] ::-webkit-scrollbar {
+  width: 8px;
+}
+
+[data-theme="arabic-chat"] ::-webkit-scrollbar-track {
+  background: hsl(var(--background));
+}
+
+[data-theme="arabic-chat"] ::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted));
+  border-radius: 10px;
+}
+
+[data-theme="arabic-chat"] ::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--accent));
+}

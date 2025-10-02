@@ -3,9 +3,9 @@
 @tailwind utilities;
 
 /* ====================================
-   🎨 Import Arabic Chat Theme
+   🎨 Arabic Chat Theme
    ==================================== */
-@import './styles/themes/arabic-chat-theme.css';
+@import './styles/themes/arabic-chat.css';
 
 /* Golden Glow Animation (used by effect-glow) */
 @keyframes golden-glow {
