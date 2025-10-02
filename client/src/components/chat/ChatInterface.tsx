@@ -886,12 +886,13 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
     <div
       className={`min-h-[100dvh] flex flex-col chat-container ${isMobile ? 'mobile-layout' : 'desktop-layout'}`}
       onClick={closeUserPopup}
+      style={{ overflowX: 'hidden' }}
     >
       {/* Modern Header */}
       <header
         className={`fixed top-0 left-0 right-0 z-50 modern-nav app-header safe-area-top h-14 px-2 sm:px-4 flex justify-start items-center ${isMobile ? 'mobile-header' : ''}`}
       >
-        <div className={`flex gap-1 sm:gap-2 overflow-x-auto max-w-full ${isMobile ? 'justify-evenly w-full' : ''}`}>
+        <div className={`flex gap-1 sm:gap-2 overflow-x-hidden max-w-full ${isMobile ? 'justify-evenly w-full' : ''}`}>
           <Button
             className={`glass-effect rounded-lg hover:bg-accent transition-all duration-200 flex items-center ${
               isMobile ? 'flex-1 px-2 py-2 text-xs gap-1.5' : 'px-3 py-2 gap-2'
@@ -1084,7 +1085,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
         style={{ 
           paddingTop: 'var(--app-header-height)', 
           paddingBottom: isMobile ? 'calc(var(--app-footer-height) + env(safe-area-inset-bottom))' : 'var(--app-footer-height)', 
-          height: isMobile ? 'var(--app-body-height)' : undefined 
+          height: 'var(--app-body-height)'
         }}
       >
         {/* الشريط الجانبي - على الجوال يعرض بملء الشاشة عند اختيار التبويب */}
@@ -1258,7 +1259,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
       <footer
         className={`fixed bottom-0 left-0 right-0 z-[60] modern-nav app-footer safe-area-bottom h-14 px-2 sm:px-4 flex justify-start items-center ${isMobile ? 'mobile-footer' : ''}`}
       >
-        <div className={`flex gap-1 sm:gap-2 overflow-x-auto max-w-full ${isMobile ? 'justify-evenly w-full' : ''}`}>
+        <div className={`flex gap-1 sm:gap-2 overflow-x-hidden max-w-full ${isMobile ? 'justify-evenly w-full' : ''}`}>
           {/* الحوائط */}
           <Button
             size="sm"
