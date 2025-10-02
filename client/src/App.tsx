@@ -318,6 +318,16 @@ function App() {
             <a
               href="#main-content"
               className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:right-2 focus:bg-black focus:text-white focus:px-3 focus:py-2 focus:rounded"
+              onClick={(e) => {
+                // Prevent any unexpected default scrolling quirks and handle smoothly
+                try { e.preventDefault(); } catch {}
+                const el = document.getElementById('main-content');
+                if (el) {
+                  el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  // Move focus for accessibility without jumping the page
+                  try { (el as HTMLElement).focus?.(); } catch {}
+                }
+              }}
             >
               تخطِ إلى المحتوى الرئيسي
             </a>

@@ -235,11 +235,18 @@
   html {
     direction: rtl;
     scroll-behavior: smooth;
+    /* Ensure anchor jumps account for fixed header height */
+    scroll-padding-top: var(--app-header-height);
     /* Stabilize layout and tune base sizing */
     font-size: 90%;
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
     scrollbar-gutter: stable both-edges;
+  }
+
+  /* Make in-page anchors land below the fixed header */
+  #main-content {
+    scroll-margin-top: var(--app-header-height);
   }
   
   /* Modern Scrollbar */

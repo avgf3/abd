@@ -889,9 +889,11 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
       {/* Modern Header */}
       <header
         className={`fixed top-0 left-0 right-0 z-50 modern-nav app-header safe-area-top h-14 px-2 sm:px-4 flex justify-start items-center ${isMobile ? 'mobile-header' : ''}`}
+        role="navigation"
       >
         <div className={`flex gap-1 sm:gap-2 overflow-x-auto max-w-full ${isMobile ? 'justify-evenly w-full' : ''}`}>
           <Button
+            type="button"
             className={`glass-effect rounded-lg hover:bg-accent transition-all duration-200 flex items-center ${
               isMobile ? 'flex-1 px-2 py-2 text-xs gap-1.5' : 'px-3 py-2 gap-2'
             }`}
