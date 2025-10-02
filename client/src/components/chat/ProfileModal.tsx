@@ -1060,6 +1060,127 @@ export default function ProfileModal({
       preview: 'linear-gradient(to right, #B08C6C 0%, #20150F 100%)',
       emoji: '🏔️',
     },
+    // 🎨 20 لون جديد بتصاميم عصرية حديثة
+    {
+      value: 'theme-cyber-neon',
+      name: 'نيون سايبر',
+      preview: 'linear-gradient(135deg, #0a0a0a 0%, #00ff41 25%, #00d4ff 50%, #ff00ea 75%, #0a0a0a 100%)',
+      emoji: '🤖',
+    },
+    {
+      value: 'theme-lava-explosion',
+      name: 'انفجار الحمم',
+      preview: 'linear-gradient(135deg, #000000 0%, #ff0000 20%, #ff6600 40%, #ff9900 60%, #ffcc00 80%, #000000 100%)',
+      emoji: '🌋',
+    },
+    {
+      value: 'theme-toxic-green',
+      name: 'الأخضر السام',
+      preview: 'linear-gradient(135deg, #0a0a0a 0%, #39ff14 30%, #7fff00 50%, #00ff00 70%, #0a0a0a 100%)',
+      emoji: '☢️',
+    },
+    {
+      value: 'theme-electric-storm',
+      name: 'العاصفة الكهربائية',
+      preview: 'linear-gradient(135deg, #1a1a2e 0%, #0f3460 25%, #16213e 50%, #00d4ff 75%, #1a1a2e 100%)',
+      emoji: '⚡',
+    },
+    {
+      value: 'theme-midnight-fire',
+      name: 'نار منتصف الليل',
+      preview: 'linear-gradient(135deg, #000000 0%, #1a0033 20%, #330066 40%, #ff6600 60%, #ff0000 80%, #000000 100%)',
+      emoji: '🔥',
+    },
+    {
+      value: 'theme-pink-lightning',
+      name: 'البرق الوردي',
+      preview: 'linear-gradient(135deg, #0a0a0a 0%, #ff1493 25%, #ff69b4 50%, #ff10f0 75%, #0a0a0a 100%)',
+      emoji: '💖',
+    },
+    {
+      value: 'theme-golden-empire',
+      name: 'الإمبراطورية الذهبية',
+      preview: 'linear-gradient(135deg, #1a1a0a 0%, #8b7500 20%, #daa520 40%, #ffd700 60%, #ffed4e 80%, #1a1a0a 100%)',
+      emoji: '👑',
+    },
+    {
+      value: 'theme-ice-dragon',
+      name: 'تنين الجليد',
+      preview: 'linear-gradient(135deg, #0a0a1a 0%, #00ffff 25%, #00d4ff 50%, #0099cc 75%, #0a0a1a 100%)',
+      emoji: '🐉',
+    },
+    {
+      value: 'theme-blood-moon',
+      name: 'قمر الدم',
+      preview: 'linear-gradient(135deg, #0a0a0a 0%, #330000 25%, #660000 50%, #cc0000 75%, #0a0a0a 100%)',
+      emoji: '🌕',
+    },
+    {
+      value: 'theme-emerald-fire',
+      name: 'النار الزمردية',
+      preview: 'linear-gradient(135deg, #000000 0%, #004d00 20%, #00ff00 40%, #7fff00 60%, #39ff14 80%, #000000 100%)',
+      emoji: '💚',
+    },
+    {
+      value: 'theme-purple-lightning',
+      name: 'البرق البنفسجي',
+      preview: 'linear-gradient(135deg, #0a0a0a 0%, #4a148c 20%, #6a1b9a 40%, #9d00ff 60%, #e91e63 80%, #0a0a0a 100%)',
+      emoji: '⚡',
+    },
+    {
+      value: 'theme-sunset-blaze',
+      name: 'توهج الغروب الناري',
+      preview: 'linear-gradient(135deg, #ff0000 0%, #ff4500 20%, #ff6600 40%, #ff8c00 60%, #ffa500 80%, #ffb347 100%)',
+      emoji: '🌅',
+    },
+    {
+      value: 'theme-ocean-abyss',
+      name: 'هاوية المحيط',
+      preview: 'linear-gradient(135deg, #000033 0%, #000066 25%, #003366 50%, #006699 75%, #0099cc 100%)',
+      emoji: '🌊',
+    },
+    {
+      value: 'theme-toxic-purple',
+      name: 'البنفسجي السام',
+      preview: 'linear-gradient(135deg, #0a0a0a 0%, #8a2be2 25%, #9d00ff 50%, #ff00ff 75%, #0a0a0a 100%)',
+      emoji: '☣️',
+    },
+    {
+      value: 'theme-crimson-gold',
+      name: 'القرمزي الذهبي',
+      preview: 'linear-gradient(135deg, #8b0000 0%, #dc143c 25%, #ff4500 50%, #ffd700 75%, #8b0000 100%)',
+      emoji: '💎',
+    },
+    {
+      value: 'theme-galaxy-burst',
+      name: 'انفجار المجرة',
+      preview: 'linear-gradient(135deg, #000000 0%, #1a0033 20%, #6a0dad 40%, #ba55d3 60%, #ff69b4 80%, #000000 100%)',
+      emoji: '🌌',
+    },
+    {
+      value: 'theme-venom-green',
+      name: 'الأخضر السام',
+      preview: 'linear-gradient(135deg, #0a0a0a 0%, #228b22 25%, #32cd32 50%, #7fff00 75%, #0a0a0a 100%)',
+      emoji: '🐍',
+    },
+    {
+      value: 'theme-royal-sapphire',
+      name: 'الياقوت الملكي',
+      preview: 'linear-gradient(135deg, #000033 0%, #000066 20%, #0000ff 40%, #4169e1 60%, #87ceeb 80%, #000033 100%)',
+      emoji: '💙',
+    },
+    {
+      value: 'theme-magma-core',
+      name: 'قلب الصهارة',
+      preview: 'linear-gradient(135deg, #1a0000 0%, #330000 20%, #8b0000 40%, #ff0000 60%, #ff4500 80%, #1a0000 100%)',
+      emoji: '🔥',
+    },
+    {
+      value: 'theme-arctic-aurora',
+      name: 'الشفق القطبي الجليدي',
+      preview: 'linear-gradient(135deg, #0a0a1a 0%, #00ffff 20%, #00d4ff 40%, #a8edea 60%, #fed6e3 80%, #0a0a1a 100%)',
+      emoji: '❄️',
+    },
   ];
 
   // Complete effects collection from original code
@@ -1970,6 +2091,107 @@ export default function ProfileModal({
         .theme-new-gradient {
           --card-bg: linear-gradient(to bottom, #ff7c00 0%, #e10026 30%, #800e8c 65%, #1a004d 100%);
           --accent-color: #fff3e0;
+        }
+
+        /* 🎨 CSS للألوان الجديدة العصرية */
+        .theme-cyber-neon {
+          --card-bg: linear-gradient(135deg, #0a0a0a 0%, #00ff41 25%, #00d4ff 50%, #ff00ea 75%, #0a0a0a 100%);
+          --accent-color: #00ff41;
+        }
+
+        .theme-lava-explosion {
+          --card-bg: linear-gradient(135deg, #000000 0%, #ff0000 20%, #ff6600 40%, #ff9900 60%, #ffcc00 80%, #000000 100%);
+          --accent-color: #ffcc00;
+        }
+
+        .theme-toxic-green {
+          --card-bg: linear-gradient(135deg, #0a0a0a 0%, #39ff14 30%, #7fff00 50%, #00ff00 70%, #0a0a0a 100%);
+          --accent-color: #39ff14;
+        }
+
+        .theme-electric-storm {
+          --card-bg: linear-gradient(135deg, #1a1a2e 0%, #0f3460 25%, #16213e 50%, #00d4ff 75%, #1a1a2e 100%);
+          --accent-color: #00d4ff;
+        }
+
+        .theme-midnight-fire {
+          --card-bg: linear-gradient(135deg, #000000 0%, #1a0033 20%, #330066 40%, #ff6600 60%, #ff0000 80%, #000000 100%);
+          --accent-color: #ff6600;
+        }
+
+        .theme-pink-lightning {
+          --card-bg: linear-gradient(135deg, #0a0a0a 0%, #ff1493 25%, #ff69b4 50%, #ff10f0 75%, #0a0a0a 100%);
+          --accent-color: #ff69b4;
+        }
+
+        .theme-golden-empire {
+          --card-bg: linear-gradient(135deg, #1a1a0a 0%, #8b7500 20%, #daa520 40%, #ffd700 60%, #ffed4e 80%, #1a1a0a 100%);
+          --accent-color: #ffd700;
+        }
+
+        .theme-ice-dragon {
+          --card-bg: linear-gradient(135deg, #0a0a1a 0%, #00ffff 25%, #00d4ff 50%, #0099cc 75%, #0a0a1a 100%);
+          --accent-color: #00ffff;
+        }
+
+        .theme-blood-moon {
+          --card-bg: linear-gradient(135deg, #0a0a0a 0%, #330000 25%, #660000 50%, #cc0000 75%, #0a0a0a 100%);
+          --accent-color: #cc0000;
+        }
+
+        .theme-emerald-fire {
+          --card-bg: linear-gradient(135deg, #000000 0%, #004d00 20%, #00ff00 40%, #7fff00 60%, #39ff14 80%, #000000 100%);
+          --accent-color: #00ff00;
+        }
+
+        .theme-purple-lightning {
+          --card-bg: linear-gradient(135deg, #0a0a0a 0%, #4a148c 20%, #6a1b9a 40%, #9d00ff 60%, #e91e63 80%, #0a0a0a 100%);
+          --accent-color: #9d00ff;
+        }
+
+        .theme-sunset-blaze {
+          --card-bg: linear-gradient(135deg, #ff0000 0%, #ff4500 20%, #ff6600 40%, #ff8c00 60%, #ffa500 80%, #ffb347 100%);
+          --accent-color: #ff8c00;
+        }
+
+        .theme-ocean-abyss {
+          --card-bg: linear-gradient(135deg, #000033 0%, #000066 25%, #003366 50%, #006699 75%, #0099cc 100%);
+          --accent-color: #0099cc;
+        }
+
+        .theme-toxic-purple {
+          --card-bg: linear-gradient(135deg, #0a0a0a 0%, #8a2be2 25%, #9d00ff 50%, #ff00ff 75%, #0a0a0a 100%);
+          --accent-color: #9d00ff;
+        }
+
+        .theme-crimson-gold {
+          --card-bg: linear-gradient(135deg, #8b0000 0%, #dc143c 25%, #ff4500 50%, #ffd700 75%, #8b0000 100%);
+          --accent-color: #ffd700;
+        }
+
+        .theme-galaxy-burst {
+          --card-bg: linear-gradient(135deg, #000000 0%, #1a0033 20%, #6a0dad 40%, #ba55d3 60%, #ff69b4 80%, #000000 100%);
+          --accent-color: #ba55d3;
+        }
+
+        .theme-venom-green {
+          --card-bg: linear-gradient(135deg, #0a0a0a 0%, #228b22 25%, #32cd32 50%, #7fff00 75%, #0a0a0a 100%);
+          --accent-color: #32cd32;
+        }
+
+        .theme-royal-sapphire {
+          --card-bg: linear-gradient(135deg, #000033 0%, #000066 20%, #0000ff 40%, #4169e1 60%, #87ceeb 80%, #000033 100%);
+          --accent-color: #4169e1;
+        }
+
+        .theme-magma-core {
+          --card-bg: linear-gradient(135deg, #1a0000 0%, #330000 20%, #8b0000 40%, #ff0000 60%, #ff4500 80%, #1a0000 100%);
+          --accent-color: #ff0000;
+        }
+
+        .theme-arctic-aurora {
+          --card-bg: linear-gradient(135deg, #0a0a1a 0%, #00ffff 20%, #00d4ff 40%, #a8edea 60%, #fed6e3 80%, #0a0a1a 100%);
+          --accent-color: #00d4ff;
         }
 
         .profile-card {
