@@ -44,7 +44,7 @@ export default function SettingsMenu({
   };
 
   return (
-    <Card className="fixed top-16 right-2 z-50 shadow-2xl animate-fade-in w-56 settings-menu-panel border-accent relative sm:top-20 sm:right-4" role="dialog" aria-modal="true">
+    <Card className="fixed top-14 left-4 z-50 shadow-2xl animate-fade-in w-56 settings-menu-panel border-accent relative" role="dialog" aria-modal="true">
       <CardContent className="p-0">
         {/* زر الإغلاق (X) بنفس تصميم تبويب الأثرياء وفي اليسار) */}
         <button
