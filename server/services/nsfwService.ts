@@ -59,8 +59,8 @@ class NsfwHeuristicService {
         }
         const ratio = skinLike / (total || 1);
 
-        // إذا تجاوزت نسبة البشرة 60% نعتبرها مخاطرة ونرفض
-        if (ratio >= 0.6) {
+        // إذا تجاوزت نسبة البشرة 80% نعتبرها مخاطرة ونرفض (تخفيف الحساسية لتقليل الإيجابيات الكاذبة)
+        if (ratio >= 0.8) {
           return { isSafe: false, reason: 'تم رفض الصورة لمحتوى محتمل غير لائق' };
         }
       } catch {

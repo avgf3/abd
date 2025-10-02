@@ -529,9 +529,18 @@ export default function MessageArea({
         form.append('roomId', currentRoomId || 'general');
         await api.upload('/api/upload/message-image', form, { timeout: 60000 });
         // سيتم بث الرسالة عبر الـ socket من الخادم فلا داعي لاستدعاء onSendMessage محلياً
-      } catch (err) {
+      } catch (err: any) {
         console.error('رفع الصورة فشل:', err);
-        alert('تعذر رفع الصورة، حاول مرة أخرى');
+        const msg = (err && (err.message || err.error)) || '';
+        if (err?.status === 400 && msg) {
+          alert(String(msg));
+        } else if (err?.status === 413) {
+          alert('حجم الملف كبير جداً - يرجى اختيار ملف أصغر');
+        } else if (err?.status === 403) {
+          alert('تعذر تنفيذ العملية (جلسة/صلاحيات). يرجى إعادة المحاولة لاحقاً');
+        } else {
+          alert('تعذر رفع الصورة، حاول مرة أخرى');
+        }
       } finally {
         if (fileInputRef.current) {
           fileInputRef.current.value = '';
