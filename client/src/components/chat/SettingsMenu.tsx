@@ -3,6 +3,7 @@ import { User, Home, Moon, Shield, LogOut, Settings, Palette, Brush, Camera } fr
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { getFinalUsernameColor, getUserListItemStyles } from '@/utils/themeUtils';
+import ThemeSwitcher from '@/components/themes/ThemeSwitcher';
 
 interface SettingsMenuProps {
   onOpenProfile: () => void;
@@ -84,6 +85,7 @@ export default function SettingsMenu({
             الغرف
           </Button>
 
+          {/* زر الثيمات القديم - للـ owner فقط */}
           {currentUser?.userType === 'owner' && (
             <Button
               onClick={onOpenThemeSelector}
@@ -92,9 +94,14 @@ export default function SettingsMenu({
               className="w-full justify-start gap-3 h-9 hover:bg-accent/50 text-foreground"
             >
               <Palette className="w-4 h-4 text-primary" />
-              اختيار الثيم
+              اختيار الثيم القديم
             </Button>
           )}
+          
+          {/* 🎨 نظام الثيمات الجديد - للجميع */}
+          <div className="w-full">
+            <ThemeSwitcher />
+          </div>
 
           {currentUser && currentUser.userType !== 'guest' && (
             <Button
