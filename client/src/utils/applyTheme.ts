@@ -149,6 +149,10 @@ export function applyThemeById(themeId: string, persist: boolean = false) {
 
   const theme = themes[themeId] || themes.default;
   const root = document.documentElement;
+  // Expose current theme id for CSS targeting of theme-specific overrides
+  try {
+    root.setAttribute('data-theme-id', themeId);
+  } catch {}
   const finalCssVars: Record<string, string> = { ...theme.cssVars };
   // Ensure solid variables exist for Tailwind mappings
   if (finalCssVars['--background'] && !finalCssVars['--background-solid']) {

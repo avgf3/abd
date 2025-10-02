@@ -1014,7 +1014,7 @@ export default function MessageArea({
                   setShowEnhancedEmoji(!showEnhancedEmoji);
                 }}
                 disabled={isChatRestricted}
-                className={`aspect-square mobile-touch-button ${isMobile ? 'min-w-[44px] min-h-[44px]' : ''} ${isChatRestricted ? 'opacity-60 cursor-not-allowed' : ''} rounded-lg border border-input bg-background text-foreground hover:bg-accent hover:text-accent-foreground`}
+                className={`chat-emoji-button aspect-square mobile-touch-button ${isMobile ? 'min-w-[44px] min-h-[44px]' : ''} ${isChatRestricted ? 'opacity-60 cursor-not-allowed' : ''} rounded-lg border border-input bg-background text-foreground hover:bg-accent hover:text-accent-foreground`}
                 title="سمايلات متحركة متقدمة"
               >
                 <Smile className={`${isMobile ? 'w-5 h-5' : 'w-4 h-4'}`} />
