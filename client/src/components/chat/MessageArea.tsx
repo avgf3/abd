@@ -10,6 +10,7 @@ const AnimatedEmojiEnhanced = React.lazy(() => import('./AnimatedEmojiEnhanced')
 const ComposerPlusMenu = React.lazy(() => import('./ComposerPlusMenu'));
 import ProfileImage from './ProfileImage';
 import UserRoleBadge from './UserRoleBadge';
+import { ReactionEffects, playReactionSound } from './ReactionEffects';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -125,6 +126,9 @@ export default function MessageArea({
       return next;
     });
   }, []);
+
+  // Track reaction effects - تتبع التأثيرات للرسائل
+  const [reactionEffects, setReactionEffects] = useState<Map<number, { type: 'heart' | 'like' | 'dislike'; trigger: number }>>(new Map());
 
   // Check if user is restricted from chatting
   const isChatRestricted = useMemo(() => {
@@ -574,6 +578,37 @@ export default function MessageArea({
     };
   }, []);
 
+  // استقبال التأثيرات عند وصول reaction من مستخدم آخر
+  useEffect(() => {
+    const handleReactionReceived = (event: CustomEvent) => {
+      const { messageId, reactorName, reactionType, emoji } = event.detail;
+      
+      // تشغيل التأثير المرئي
+      setReactionEffects((prev) => {
+        const next = new Map(prev);
+        next.set(messageId, { type: reactionType, trigger: Date.now() });
+        return next;
+      });
+      
+      // تشغيل الصوت
+      playReactionSound(reactionType);
+      
+      // عرض إشعار toast (اختياري)
+      if (typeof window !== 'undefined' && (window as any).toast) {
+        (window as any).toast({
+          title: `${emoji} ${reactorName}`,
+          description: 'أعجب برسالتك',
+          duration: 2000,
+        });
+      }
+    };
+
+    window.addEventListener('reactionReceived', handleReactionReceived as EventListener);
+    return () => {
+      window.removeEventListener('reactionReceived', handleReactionReceived as EventListener);
+    };
+  }, []);
+
   return (
     <section className={`flex-1 flex flex-col bg-white min-h-0 ${isMobile ? 'mobile-message-area' : ''}`}>
       {/* Chat Lock Status Indicator */}
@@ -617,10 +652,17 @@ export default function MessageArea({
             itemContent={(index, message) => (
               <div
                 key={message.id}
-                className={`flex ${isMobile ? 'items-start' : 'items-center'} gap-2 py-1.5 px-2 rounded-lg border-r-4 bg-white shadow-sm hover:shadow-md transition-all duration-300`}
+                className={`relative flex ${isMobile ? 'items-start' : 'items-center'} gap-2 py-1.5 px-2 rounded-lg border-r-4 bg-white shadow-sm hover:shadow-md transition-all duration-300`}
                 style={{ borderRightColor: getDynamicBorderColor(message.sender) }}
                 data-message-type={message.messageType || 'normal'}
               >
+                {/* Reaction Effects */}
+                {reactionEffects.has(message.id) && (
+                  <ReactionEffects
+                    type={reactionEffects.get(message.id)!.type}
+                    trigger={reactionEffects.get(message.id)!.trigger}
+                  />
+                )}
                 {/* System message: optimized layout for both mobile and desktop */}
                 {message.messageType === 'system' ? (
                   <>
@@ -784,6 +826,15 @@ export default function MessageArea({
                                   if (isMine) {
                                     await apiRequest(`/api/messages/${message.id}/reactions`, { method: 'DELETE' });
                                   } else {
+                                    // تشغيل التأثير المرئي
+                                    setReactionEffects((prev) => {
+                                      const next = new Map(prev);
+                                      next.set(message.id, { type: r, trigger: Date.now() });
+                                      return next;
+                                    });
+                                    // تشغيل الصوت
+                                    playReactionSound(r);
+                                    // إرسال الـ reaction للخادم
                                     await apiRequest(`/api/messages/${message.id}/reactions`, { method: 'POST', body: { type: r } });
                                   }
                                 } catch (e) {
