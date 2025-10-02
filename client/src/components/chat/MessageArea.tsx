@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, FloatingDialogContent } from '@/components/ui/dialog';
 import ImageLightbox from '@/components/ui/ImageLightbox';
+import ImageAttachmentBadge from '@/components/ui/ImageAttachmentBadge';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { apiRequest, api } from '@/lib/queryClient';
 import type { ChatMessage, ChatUser } from '@/types/chat';
@@ -734,18 +735,15 @@ export default function MessageArea({
                         </div>
                         <div className="runin-text text-gray-800 message-content-fix">
                           {message.messageType === 'image' ? (
-                            <img
-                              src={message.content}
-                              alt="صورة"
-                              className="max-h-40 rounded-lg cursor-pointer shadow-sm hover:shadow-md transition-shadow"
-                              loading="lazy"
-                              onLoad={() => {
-                                if (isAtBottom) {
-                                  scrollToBottom('auto');
-                                }
-                              }}
+                            <button
+                              type="button"
                               onClick={() => setImageLightbox({ open: true, src: message.content })}
-                            />
+                              className="inline-flex items-center justify-center p-0 bg-transparent"
+                              title="عرض الصورة"
+                              aria-label="عرض الصورة"
+                            >
+                              <ImageAttachmentBadge />
+                            </button>
                           ) : (
                             (() => {
                               const { cleaned, ids } = parseYouTubeFromText(message.content);

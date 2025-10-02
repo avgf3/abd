@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, FloatingDialogContent } from '@/components/ui/dialog';
 import ImageLightbox from '@/components/ui/ImageLightbox';
+import ImageAttachmentBadge from '@/components/ui/ImageAttachmentBadge';
 import UserRoleBadge from '@/components/chat/UserRoleBadge';
 import { Input } from '@/components/ui/input';
 // Removed ComposerPlusMenu (ready/quick options)
@@ -586,13 +587,15 @@ export default function PrivateMessageBox({
                             </div>
                           )}
                           {isImage ? (
-                            <img
-                              src={m.content}
-                              alt="صورة"
-                              className="max-h-40 rounded-lg cursor-pointer shadow-sm hover:shadow-md transition-shadow"
-                              loading="lazy"
+                            <button
+                              type="button"
                               onClick={() => setImageLightbox({ open: true, src: m.content })}
-                            />
+                              className="inline-flex items-center justify-center p-0 bg-transparent"
+                              title="عرض الصورة"
+                              aria-label="عرض الصورة"
+                            >
+                              <ImageAttachmentBadge />
+                            </button>
                           ) : (() => {
                             const { cleaned, ids } = parseYouTubeFromText(m.content);
                             if (ids.length > 0) {
