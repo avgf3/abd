@@ -1,0 +1,11 @@
+{
+  "pages": {
+    "page1": [
+      "amazing","angel","angry","anxious","bad","bigsmile","blink","cool","crisped","cry","cry2","dead","desperate","devil","doubt","feelgood","funny","good","happy","happy3","hee","heu","hilarous","hmm","hono","hoo","hooo","idontcare","indiferent","kiss","kiss2","kiss3","kiss4","med","medsmile","muted","nana","neutral","noooo","nosebleed","omg","omgomg","pokerface","reverse","sad","sad2","scared","sick2","sleep","smile","smileface","smileteeth","sweat","tongue","tongue2","tongue3","toro","totalangry","totallove","verysad","whaaa","whocare","wot"
+    ],
+    "page2": []
+  },
+  "basePathPage1": "/assets/emoticon/page1/",
+  "basePathPage2": "/assets/emoticon/page2/",
+  "ext": ".png"
+}
