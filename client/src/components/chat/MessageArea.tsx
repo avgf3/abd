@@ -7,6 +7,7 @@ const AnimatedEmojiPicker = React.lazy(() => import('./AnimatedEmojiPicker'));
 const EmojiMartPicker = React.lazy(() => import('./EmojiMartPicker'));
 const LottieEmojiPicker = React.lazy(() => import('./LottieEmojiPicker'));
 const AnimatedEmojiEnhanced = React.lazy(() => import('./AnimatedEmojiEnhanced'));
+const UnifiedEmojiPicker = React.lazy(() => import('./UnifiedEmojiPicker'));
 const ComposerPlusMenu = React.lazy(() => import('./ComposerPlusMenu'));
 import ProfileImage from './ProfileImage';
 import UserRoleBadge from './UserRoleBadge';
@@ -74,6 +75,7 @@ export default function MessageArea({
   const [showEmojiMart, setShowEmojiMart] = useState(false);
   const [showLottieEmoji, setShowLottieEmoji] = useState(false);
   const [showEnhancedEmoji, setShowEnhancedEmoji] = useState(false);
+  const [showUnifiedEmoji, setShowUnifiedEmoji] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const isMobile = useIsMobile();
   const { textColor: composerTextColor, bold: composerBold } = useComposerStyle();
@@ -1109,23 +1111,29 @@ export default function MessageArea({
                   setShowAnimatedEmojiPicker(false);
                   setShowEmojiMart(false);
                   setShowLottieEmoji(false);
-                  // فتح المنتقي المحسن
-                  setShowEnhancedEmoji(!showEnhancedEmoji);
+                  // فتح المنتقي الموحد (صفحتان + متحرك)
+                  setShowUnifiedEmoji((v) => !v);
                 }}
                 disabled={isChatRestricted}
                 className={`chat-emoji-button aspect-square mobile-touch-button ${isMobile ? 'min-w-[44px] min-h-[44px]' : ''} ${isChatRestricted ? 'opacity-60 cursor-not-allowed' : ''} rounded-lg border border-input bg-background text-foreground hover:bg-accent hover:text-accent-foreground`}
-                title="سمايلات متحركة متقدمة"
+                title="السمايلات"
               >
                 <Smile className={`${isMobile ? 'w-5 h-5' : 'w-4 h-4'}`} />
               </Button>
-              
-              {/* Enhanced Emoji Picker (Default) */}
-              {showEnhancedEmoji && (
+
+              {/* Unified Emoji Picker: صفحتان + متحرك */}
+              {showUnifiedEmoji && (
                 <div className="absolute bottom-full mb-2 z-30">
                   <React.Suspense fallback={null}>
-                    <AnimatedEmojiEnhanced
-                      onEmojiSelect={handleEnhancedEmojiSelect}
-                      onClose={() => setShowEnhancedEmoji(false)}
+                    <UnifiedEmojiPicker
+                      onEmojiSelect={(code) => {
+                        const newText = clampToMaxChars(messageText + ' ' + code + ' ');
+                        setMessageText(newText);
+                        setShowUnifiedEmoji(false);
+                        inputRef.current?.focus();
+                      }}
+                      onGifEmojiSelect={handleAnimatedEmojiSelect}
+                      onClose={() => setShowUnifiedEmoji(false)}
                     />
                   </React.Suspense>
                 </div>
@@ -1185,7 +1193,7 @@ export default function MessageArea({
               <button
                 type="button"
                 onClick={() => {
-                  setShowEnhancedEmoji((v) => !v);
+                  setShowUnifiedEmoji((v) => !v);
                   setShowEmojiPicker(false);
                   setShowAnimatedEmojiPicker(false);
                   setShowEmojiMart(false);
