@@ -657,8 +657,8 @@ export default function MessageArea({
             itemContent={(index, message) => (
               <div
                 key={message.id}
-                className={`ac-message-row ${index % 2 ? 'log2' : ''} ${isMobile ? 'items-start' : 'items-center'} gap-2 py-1 px-2 transition-all duration-300`}
-                style={{ borderRightColor: getDynamicBorderColor(message.sender) }}
+                className={`ac-message-row flex ${isMobile ? 'items-start' : 'items-center'} gap-2 py-1 px-2 transition-all duration-300 ${index % 2 ? 'log2' : ''}`}
+                style={{ borderRightColor: getDynamicBorderColor(message.sender), direction: 'rtl' }}
                 data-message-type={message.messageType || 'normal'}
               >
                 {/* Reaction Effects */}
