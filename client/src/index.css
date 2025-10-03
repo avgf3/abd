@@ -1634,6 +1634,34 @@ li > * > div.effect-crystal {
   line-height: 1.4;
 }
 
+/* arabic.chat-like alternating rows and message visuals */
+.ac-message-row {
+  background: #ffffff;
+  border-right: 4px solid transparent;
+}
+.ac-message-row.log2 {
+  background: #f9f9f9; /* subtle zebra */
+}
+.ac-message-row .runin-name button {
+  font-weight: 700;
+}
+.ac-message-row .runin-name + span { /* the colon ':' */
+  color: #9aa0a6;
+}
+.ac-message-row .runin-text {
+  color: #111827;
+}
+.ac-time { /* hide inline timestamp like arabic.chat */
+  display: none !important;
+}
+
+/* composer block closer to arabic.chat: bordered, rounded, white */
+.ac-composer {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: #ffffff;
+}
+
 /* تطبيق تأثير run-in محسّن للجوال */
 @media (max-width: 768px) {
   .runin-container {
