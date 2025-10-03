@@ -79,81 +79,72 @@
       ]
     },
     "modern": {
-      "name": "حديثة",
-      "icon": "🎉",
+      "name": "سمايلات الموقع",
+      "icon": "🙂",
       "emojis": [
-        {
-          "id": "party",
-          "name": "احتفال",
-          "url": "/assets/emojis/modern/party.gif",
-          "code": ":party:"
-        },
-        {
-          "id": "fire",
-          "name": "نار",
-          "url": "/assets/emojis/modern/fire.gif",
-          "code": ":fire:"
-        },
-        {
-          "id": "thumbsup",
-          "name": "إعجاب",
-          "url": "/assets/emojis/modern/thumbsup.gif",
-          "code": ":+1:"
-        },
-        {
-          "id": "clap",
-          "name": "تصفيق",
-          "url": "/assets/emojis/modern/clap.gif",
-          "code": ":clap:"
-        },
-        {
-          "id": "love",
-          "name": "حب",
-          "url": "/assets/emojis/modern/love.gif",
-          "code": ":love:"
-        },
-        {
-          "id": "rofl",
-          "name": "ضحك شديد",
-          "url": "/assets/emojis/modern/rofl.gif",
-          "code": ":rofl:"
-        },
-        {
-          "id": "think",
-          "name": "تفكير",
-          "url": "/assets/emojis/modern/think.gif",
-          "code": ":think:"
-        },
-        {
-          "id": "wave",
-          "name": "تحية",
-          "url": "/assets/emojis/modern/wave.gif",
-          "code": ":wave:"
-        },
-        {
-          "id": "dance",
-          "name": "رقص",
-          "url": "/assets/emojis/modern/dance.gif",
-          "code": ":dance:"
-        },
-        {
-          "id": "rainbow",
-          "name": "قوس قزح",
-          "url": "/assets/emojis/modern/rainbow.gif",
-          "code": ":rainbow:"
-        },
-        {
-          "id": "star",
-          "name": "نجمة",
-          "url": "/assets/emojis/modern/star.gif",
-          "code": ":star:"
-        },
-        {
-          "id": "rocket",
-          "name": "صاروخ",
-          "url": "/assets/emojis/modern/rocket.gif",
-          "code": ":rocket:"
-        }
+        { "id": "amazing", "name": "مذهول", "url": "/assets/emojis/arabic/base/amazing.png", "code": ":amazing:" },
+        { "id": "angel", "name": "ملاك", "url": "/assets/emojis/arabic/base/angel.png", "code": ":angel:" },
+        { "id": "angry", "name": "غضبان", "url": "/assets/emojis/arabic/base/angry.png", "code": ":angry:" },
+        { "id": "anxious", "name": "قلق", "url": "/assets/emojis/arabic/base/anxious.png", "code": ":anxious:" },
+        { "id": "bad", "name": "سيء", "url": "/assets/emojis/arabic/base/bad.png", "code": ":bad:" },
+        { "id": "bigsmile", "name": "ابتسامة كبيرة", "url": "/assets/emojis/arabic/base/bigsmile.png", "code": ":bigsmile:" },
+        { "id": "blink", "name": "غمزة سريعة", "url": "/assets/emojis/arabic/base/blink.png", "code": ":blink:" },
+        { "id": "cool", "name": "رائع", "url": "/assets/emojis/arabic/base/cool.png", "code": ":cool:" },
+        { "id": "crisped", "name": "متجهم", "url": "/assets/emojis/arabic/base/crisped.png", "code": ":crisped:" },
+        { "id": "cry", "name": "بكاء", "url": "/assets/emojis/arabic/base/cry.png", "code": ":cry:" },
+        { "id": "cry2", "name": "بكاء٢", "url": "/assets/emojis/arabic/base/cry2.png", "code": ":cry2:" },
+        { "id": "dead", "name": "ميت", "url": "/assets/emojis/arabic/base/dead.png", "code": ":dead:" },
+        { "id": "desperate", "name": "يائس", "url": "/assets/emojis/arabic/base/desperate.png", "code": ":desperate:" },
+        { "id": "devil", "name": "شيطان", "url": "/assets/emojis/arabic/base/devil.png", "code": ":devil:" },
+        { "id": "doubt", "name": "شك", "url": "/assets/emojis/arabic/base/doubt.png", "code": ":doubt:" },
+        { "id": "feelgood", "name": "شعور جيد", "url": "/assets/emojis/arabic/base/feelgood.png", "code": ":feelgood:" },
+        { "id": "funny", "name": "مضحك", "url": "/assets/emojis/arabic/base/funny.png", "code": ":funny:" },
+        { "id": "good", "name": "جيد", "url": "/assets/emojis/arabic/base/good.png", "code": ":good:" },
+        { "id": "happy", "name": "سعيد", "url": "/assets/emojis/arabic/base/happy.png", "code": ":happy:" },
+        { "id": "happy3", "name": "سعيد٣", "url": "/assets/emojis/arabic/base/happy3.png", "code": ":happy3:" },
+        { "id": "hee", "name": "هيه", "url": "/assets/emojis/arabic/base/hee.png", "code": ":hee:" },
+        { "id": "heu", "name": "هو", "url": "/assets/emojis/arabic/base/heu.png", "code": ":heu:" },
+        { "id": "hilarous", "name": "مُضحك جدًا", "url": "/assets/emojis/arabic/base/hilarous.png", "code": ":hilarous:" },
+        { "id": "hmm", "name": "همم", "url": "/assets/emojis/arabic/base/hmm.png", "code": ":hmm:" },
+        { "id": "hono", "name": "هون", "url": "/assets/emojis/arabic/base/hono.png", "code": ":hono:" },
+        { "id": "hoo", "name": "هو", "url": "/assets/emojis/arabic/base/hoo.png", "code": ":hoo:" },
+        { "id": "hooo", "name": "هوو", "url": "/assets/emojis/arabic/base/hooo.png", "code": ":hooo:" },
+        { "id": "idontcare", "name": "لا أبالي", "url": "/assets/emojis/arabic/base/idontcare.png", "code": ":idontcare:" },
+        { "id": "indiferent", "name": "غير مُكترث", "url": "/assets/emojis/arabic/base/indiferent.png", "code": ":indiferent:" },
+        { "id": "kiss", "name": "قبلة", "url": "/assets/emojis/arabic/base/kiss.png", "code": ":kiss:" },
+        { "id": "kiss2", "name": "قبلة٢", "url": "/assets/emojis/arabic/base/kiss2.png", "code": ":kiss2:" },
+        { "id": "kiss3", "name": "قبلة٣", "url": "/assets/emojis/arabic/base/kiss3.png", "code": ":kiss3:" },
+        { "id": "kiss4", "name": "قبلة٤", "url": "/assets/emojis/arabic/base/kiss4.png", "code": ":kiss4:" },
+        { "id": "med", "name": "طبي", "url": "/assets/emojis/arabic/base/med.png", "code": ":med:" },
+        { "id": "medsmile", "name": "ابتسامة طبية", "url": "/assets/emojis/arabic/base/medsmile.png", "code": ":medsmile:" },
+        { "id": "muted", "name": "مكتوم", "url": "/assets/emojis/arabic/base/muted.png", "code": ":muted:" },
+        { "id": "nana", "name": "ننه", "url": "/assets/emojis/arabic/base/nana.png", "code": ":nana:" },
+        { "id": "neutral", "name": "محايد", "url": "/assets/emojis/arabic/base/neutral.png", "code": ":neutral:" },
+        { "id": "noooo", "name": "لااا", "url": "/assets/emojis/arabic/base/noooo.png", "code": ":noooo:" },
+        { "id": "nosebleed", "name": "نزيف أنف", "url": "/assets/emojis/arabic/base/nosebleed.png", "code": ":nosebleed:" },
+        { "id": "omg", "name": "OMG", "url": "/assets/emojis/arabic/base/omg.png", "code": ":omg:" },
+        { "id": "omgomg", "name": "OMGOMG", "url": "/assets/emojis/arabic/base/omgomg.png", "code": ":omgomg:" },
+        { "id": "pokerface", "name": "وجه جامد", "url": "/assets/emojis/arabic/base/pokerface.png", "code": ":pokerface:" },
+        { "id": "reverse", "name": "عكسي", "url": "/assets/emojis/arabic/base/reverse.png", "code": ":reverse:" },
+        { "id": "sad", "name": "حزين", "url": "/assets/emojis/arabic/base/sad.png", "code": ":sad:" },
+        { "id": "sad2", "name": "حزين٢", "url": "/assets/emojis/arabic/base/sad2.png", "code": ":sad2:" },
+        { "id": "scared", "name": "خائف", "url": "/assets/emojis/arabic/base/scared.png", "code": ":scared:" },
+        { "id": "sick2", "name": "مريض٢", "url": "/assets/emojis/arabic/base/sick2.png", "code": ":sick2:" },
+        { "id": "sleep", "name": "نوم", "url": "/assets/emojis/arabic/base/sleep.png", "code": ":sleep:" },
+        { "id": "smile", "name": "ابتسامة", "url": "/assets/emojis/arabic/base/smile.png", "code": ":smile:" },
+        { "id": "smileface", "name": "وجه مبتسم", "url": "/assets/emojis/arabic/base/smileface.png", "code": ":smileface:" },
+        { "id": "smileteeth", "name": "ابتسامة أسنان", "url": "/assets/emojis/arabic/base/smileteeth.png", "code": ":smileteeth:" },
+        { "id": "sweat", "name": "عرق", "url": "/assets/emojis/arabic/base/sweat.png", "code": ":sweat:" },
+        { "id": "tongue", "name": "لسان", "url": "/assets/emojis/arabic/base/tongue.png", "code": ":tongue:" },
+        { "id": "tongue2", "name": "لسان٢", "url": "/assets/emojis/arabic/base/tongue2.png", "code": ":tongue2:" },
+        { "id": "tongue3", "name": "لسان٣", "url": "/assets/emojis/arabic/base/tongue3.png", "code": ":tongue3:" },
+        { "id": "toro", "name": "ثور", "url": "/assets/emojis/arabic/base/toro.png", "code": ":toro:" },
+        { "id": "totalangry", "name": "غضب شديد", "url": "/assets/emojis/arabic/base/totalangry.png", "code": ":totalangry:" },
+        { "id": "totallove", "name": "حب شديد", "url": "/assets/emojis/arabic/base/totallove.png", "code": ":totallove:" },
+        { "id": "verysad", "name": "حزين جداً", "url": "/assets/emojis/arabic/base/verysad.png", "code": ":verysad:" },
+        { "id": "whaaa", "name": "واا", "url": "/assets/emojis/arabic/base/whaaa.png", "code": ":whaaa:" },
+        { "id": "whocare", "name": "ومن يهتم", "url": "/assets/emojis/arabic/base/whocare.png", "code": ":whocare:" },
+        { "id": "wot", "name": "ماذا", "url": "/assets/emojis/arabic/base/wot.png", "code": ":wot:" }
       ]
     }
   }

@@ -51,6 +51,13 @@ export default function AnimatedEmojiPicker({ onEmojiSelect, onClose }: Animated
                     alt={emoji.name}
                     className="w-8 h-8 object-contain"
                     loading="lazy"
+                    onError={(ev) => {
+                      // لا fallback خارجي؛ أخفِ الزر إذا كانت الصورة مفقودة
+                      try {
+                        const btn = (ev.currentTarget as HTMLImageElement).closest('button') as HTMLButtonElement | null;
+                        if (btn) btn.style.display = 'none';
+                      } catch {}
+                    }}
                   />
                 </Button>
               ))}
