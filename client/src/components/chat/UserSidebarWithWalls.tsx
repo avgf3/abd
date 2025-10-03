@@ -69,7 +69,7 @@ export default function UnifiedSidebar({
   onRefreshRooms,
   onStartPrivateChat,
 }: UnifiedSidebarProps) {
-  const [activeView, setActiveView] = useState<'users' | 'walls' | 'rooms' | 'friends'>(
+  const [activeView, setActiveView] = useState<'users' | 'walls' | 'rooms' | 'friends' | 'smilies'>(
     propActiveView || 'users'
   );
   const [searchTerm, setSearchTerm] = useState('');
@@ -596,6 +596,8 @@ export default function UnifiedSidebar({
     [currentUser, isModerator, renderCountryFlag, renderUserBadge]
   );
 
+  const SmiliesGallery = React.useMemo(() => React.lazy(() => import('./SmiliesGallery')), []);
+
   return (
     <aside
       className={`w-full bg-sidebar text-sidebar-foreground text-sm overflow-hidden border-l border-sidebar-border shadow-lg flex flex-col h-full max-h-screen ${isMobile ? 'sidebar mobile-scroll' : ''}`}
@@ -1083,6 +1085,15 @@ export default function UnifiedSidebar({
             onlineUsers={users}
             onStartPrivateChat={onStartPrivateChat || (() => {})}
           />
+        </div>
+      )}
+
+      {/* Smilies View - تبويب السمايلات */}
+      {activeView === 'smilies' && (
+        <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+          <React.Suspense fallback={<div className="p-4 text-center">...جاري تحميل السمايلات</div>}>
+            <SmiliesGallery />
+          </React.Suspense>
         </div>
       )}
     </aside>
