@@ -54,6 +54,13 @@ export const users = pgTable('users', {
   profileMusicTitle: text('profile_music_title'),
   profileMusicEnabled: boolean('profile_music_enabled').default(true),
   profileMusicVolume: integer('profile_music_volume').default(70),
+  // 🎨 الميزات الجديدة المستوحاة من arabic.chat
+  frameType: text('frame_type').default('bronze'),
+  visitorCount: integer('visitor_count').default(0),
+  achievements: jsonb('achievements').default([]),
+  badges: jsonb('badges').default([]),
+  profileBio: text('profile_bio'),
+  profileUpdatedAt: timestamp('profile_updated_at'),
   // الغرفة الحالية
   currentRoom: text('current_room').default('general'),
   // إعداد خصوصية الرسائل الخاصة: all | friends | none

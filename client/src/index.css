@@ -2,6 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ====================================
+   🎨 Arabic Chat Theme
+   ==================================== */
+@import './styles/themes/arabic-chat.css';
+
 /* Golden Glow Animation (used by effect-glow) */
 @keyframes golden-glow {
   0%,

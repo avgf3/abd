@@ -1,0 +1,597 @@
+/* ====================================
+   🎨 Arabic Chat Theme
+   نسخة كاملة من تصاميم arabic.chat
+   ==================================== */
+
+[data-theme="arabic-chat"] {
+  /* ====================================
+     الألوان الأساسية
+     ==================================== */
+  
+  /* Background Colors */
+  --background: 240 15% 12%;           /* #1a1d24 - خلفية داكنة */
+  --background-secondary: 240 12% 15%; /* #1f2229 */
+  --background-tertiary: 240 10% 18%;  /* #262a33 */
+  
+  /* Foreground Colors */
+  --foreground: 0 0% 98%;              /* #fafafa - نص أبيض */
+  --foreground-secondary: 0 0% 70%;    /* #b3b3b3 */
+  --foreground-muted: 0 0% 50%;        /* #808080 */
+  
+  /* Primary Colors - أزرق فاتح مثل arabic.chat */
+  --primary: 200 95% 55%;              /* #1ba3e6 */
+  --primary-hover: 200 95% 50%;        /* #1596d9 */
+  --primary-foreground: 0 0% 100%;
+  
+  /* Accent Colors */
+  --accent: 280 60% 55%;               /* بنفسجي */
+  --accent-hover: 280 60% 50%;
+  --accent-foreground: 0 0% 100%;
+  
+  /* Destructive */
+  --destructive: 0 85% 60%;
+  --destructive-foreground: 0 0% 98%;
+  
+  /* Muted */
+  --muted: 240 10% 20%;
+  --muted-foreground: 0 0% 65%;
+  
+  /* Card */
+  --card: 240 12% 16%;
+  --card-foreground: 0 0% 98%;
+  
+  /* Popover */
+  --popover: 240 15% 14%;
+  --popover-foreground: 0 0% 98%;
+  
+  /* Border */
+  --border: 240 10% 25%;               /* حدود خفيفة */
+  --input: 240 10% 25%;
+  
+  /* Ring */
+  --ring: 200 95% 55%;
+  
+  /* Radius */
+  --radius: 0.5rem;
+  
+  /* ====================================
+     ألوان خاصة بالثيم
+     ==================================== */
+  
+  /* الشريط العلوي */
+  --header-bg: #1a1d24;
+  --header-border: #2d323e;
+  
+  /* الشريط الجانبي */
+  --sidebar-bg: #1f2229;
+  --sidebar-hover: #262a33;
+  --sidebar-active: #1ba3e6;
+  
+  /* منطقة الرسائل */
+  --chat-bg: #1a1d24;
+  --message-bg: #262a33;
+  --message-hover: #2d323e;
+  --message-my: #1ba3e6;
+  --message-other: #262a33;
+  
+  /* Input */
+  --input-bg: #262a33;
+  --input-border: #2d323e;
+  --input-focus: #1ba3e6;
+  
+  /* Buttons */
+  --button-primary-bg: #1ba3e6;
+  --button-primary-hover: #1596d9;
+  --button-secondary-bg: #262a33;
+  --button-secondary-hover: #2d323e;
+  
+  /* User List */
+  --user-online: #4ade80;
+  --user-offline: #6b7280;
+  --user-away: #fbbf24;
+  
+  /* Scrollbar */
+  --scrollbar-thumb: #2d323e;
+  --scrollbar-track: #1a1d24;
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.6);
+}
+
+/* ====================================
+   تنسيقات الشات - مثل arabic.chat تماماً
+   ==================================== */
+
+[data-theme="arabic-chat"] {
+  /* الخلفية الرئيسية */
+  background: var(--background);
+  color: var(--foreground);
+}
+
+/* الشريط العلوي */
+[data-theme="arabic-chat"] .header,
+[data-theme="arabic-chat"] .top-bar {
+  background: var(--header-bg);
+  border-bottom: 1px solid var(--header-border);
+  box-shadow: var(--shadow-sm);
+}
+
+/* الشريط الجانبي */
+[data-theme="arabic-chat"] .sidebar,
+[data-theme="arabic-chat"] .user-list {
+  background: var(--sidebar-bg);
+  border-right: 1px solid var(--border);
+}
+
+[data-theme="arabic-chat"] .sidebar-item:hover,
+[data-theme="arabic-chat"] .user-item:hover {
+  background: var(--sidebar-hover);
+}
+
+[data-theme="arabic-chat"] .sidebar-item.active,
+[data-theme="arabic-chat"] .user-item.active {
+  background: var(--sidebar-active);
+  color: white;
+}
+
+/* منطقة الرسائل */
+[data-theme="arabic-chat"] .chat-container,
+[data-theme="arabic-chat"] .messages-area {
+  background: var(--chat-bg);
+}
+
+/* الرسائل - تصميم arabic.chat */
+[data-theme="arabic-chat"] .message {
+  background: var(--message-bg);
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin-bottom: 8px;
+  transition: all 0.2s ease;
+}
+
+[data-theme="arabic-chat"] .message:hover {
+  background: var(--message-hover);
+  transform: translateX(-2px);
+}
+
+/* رسالة المستخدم الحالي */
+[data-theme="arabic-chat"] .message.my-message {
+  background: linear-gradient(135deg, #1ba3e6 0%, #1596d9 100%);
+  color: white;
+  margin-right: auto;
+  margin-left: 20%;
+  border-radius: 12px 12px 4px 12px;
+}
+
+/* رسالة الآخرين */
+[data-theme="arabic-chat"] .message.other-message {
+  background: var(--message-other);
+  margin-left: auto;
+  margin-right: 20%;
+  border-radius: 12px 12px 12px 4px;
+}
+
+/* اسم المستخدم في الرسالة */
+[data-theme="arabic-chat"] .message-username {
+  font-weight: bold;
+  color: var(--primary);
+  font-size: 13px;
+  margin-bottom: 2px;
+}
+
+/* وقت الرسالة */
+[data-theme="arabic-chat"] .message-time {
+  font-size: 10px;
+  color: var(--foreground-muted);
+  opacity: 0.7;
+}
+
+/* محتوى الرسالة */
+[data-theme="arabic-chat"] .message-content {
+  line-height: 1.4;
+  word-wrap: break-word;
+}
+
+/* Input الرسائل */
+[data-theme="arabic-chat"] .message-input,
+[data-theme="arabic-chat"] input,
+[data-theme="arabic-chat"] textarea {
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  color: var(--foreground);
+  border-radius: 8px;
+  padding: 10px 15px;
+  transition: all 0.2s ease;
+}
+
+[data-theme="arabic-chat"] .message-input:focus,
+[data-theme="arabic-chat"] input:focus,
+[data-theme="arabic-chat"] textarea:focus {
+  border-color: var(--input-focus);
+  box-shadow: 0 0 0 3px rgba(27, 163, 230, 0.1);
+  outline: none;
+}
+
+/* Buttons */
+[data-theme="arabic-chat"] .btn-primary,
+[data-theme="arabic-chat"] button.primary {
+  background: var(--button-primary-bg);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+[data-theme="arabic-chat"] .btn-primary:hover,
+[data-theme="arabic-chat"] button.primary:hover {
+  background: var(--button-primary-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+[data-theme="arabic-chat"] .btn-secondary,
+[data-theme="arabic-chat"] button.secondary {
+  background: var(--button-secondary-bg);
+  color: var(--foreground);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 20px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+[data-theme="arabic-chat"] .btn-secondary:hover,
+[data-theme="arabic-chat"] button.secondary:hover {
+  background: var(--button-secondary-hover);
+}
+
+/* قائمة المستخدمين */
+[data-theme="arabic-chat"] .user-list-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 15px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+[data-theme="arabic-chat"] .user-list-item:hover {
+  background: var(--sidebar-hover);
+}
+
+/* حالة المستخدم */
+[data-theme="arabic-chat"] .user-status-online::before {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--user-online);
+  margin-left: 5px;
+  box-shadow: 0 0 8px var(--user-online);
+}
+
+[data-theme="arabic-chat"] .user-status-offline::before {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--user-offline);
+  margin-left: 5px;
+}
+
+/* Cards */
+[data-theme="arabic-chat"] .card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: var(--shadow-md);
+}
+
+/* Modal */
+[data-theme="arabic-chat"] .modal,
+[data-theme="arabic-chat"] .dialog {
+  background: var(--popover);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: var(--shadow-xl);
+}
+
+/* Scrollbar مخصص */
+[data-theme="arabic-chat"] ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+[data-theme="arabic-chat"] ::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+  border-radius: 10px;
+}
+
+[data-theme="arabic-chat"] ::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 10px;
+  transition: background 0.2s ease;
+}
+
+[data-theme="arabic-chat"] ::-webkit-scrollbar-thumb:hover {
+  background: #3d424e;
+}
+
+/* Tabs */
+[data-theme="arabic-chat"] .tabs-list {
+  background: var(--background-secondary);
+  border-radius: 8px;
+  padding: 4px;
+  gap: 4px;
+}
+
+[data-theme="arabic-chat"] .tab-trigger {
+  background: transparent;
+  color: var(--foreground-secondary);
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+[data-theme="arabic-chat"] .tab-trigger:hover {
+  background: var(--background-tertiary);
+  color: var(--foreground);
+}
+
+[data-theme="arabic-chat"] .tab-trigger[data-state="active"] {
+  background: var(--primary);
+  color: white;
+  box-shadow: var(--shadow-sm);
+}
+
+/* Badges */
+[data-theme="arabic-chat"] .badge {
+  background: var(--primary);
+  color: white;
+  border-radius: 12px;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* الحائط (Wall) */
+[data-theme="arabic-chat"] .wall-post {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+  transition: all 0.2s ease;
+}
+
+[data-theme="arabic-chat"] .wall-post:hover {
+  border-color: var(--primary);
+  box-shadow: var(--shadow-md);
+}
+
+/* ردود الفعل (Reactions) */
+[data-theme="arabic-chat"] .reaction {
+  background: var(--background-tertiary);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 4px 10px;
+  font-size: 12px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+[data-theme="arabic-chat"] .reaction:hover {
+  background: var(--primary);
+  color: white;
+  transform: scale(1.05);
+}
+
+[data-theme="arabic-chat"] .reaction.active {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+/* Tooltips */
+[data-theme="arabic-chat"] .tooltip {
+  background: #2d323e;
+  color: white;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 12px;
+  box-shadow: var(--shadow-lg);
+}
+
+/* Loading Spinner */
+[data-theme="arabic-chat"] .spinner {
+  border: 3px solid var(--background-tertiary);
+  border-top-color: var(--primary);
+}
+
+/* Avatar */
+[data-theme="arabic-chat"] .avatar {
+  border: 2px solid var(--border);
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+[data-theme="arabic-chat"] .avatar:hover {
+  border-color: var(--primary);
+  box-shadow: 0 0 12px rgba(27, 163, 230, 0.3);
+}
+
+/* ====================================
+   تنسيقات خاصة بالشات المباشر
+   ==================================== */
+
+/* منطقة كتابة الرسالة */
+[data-theme="arabic-chat"] .chat-input-area {
+  background: var(--background-secondary);
+  border-top: 1px solid var(--border);
+  padding: 15px;
+  display: flex;
+  gap: 10px;
+}
+
+/* زر الإرسال */
+[data-theme="arabic-chat"] .send-button {
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 45px;
+  height: 45px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+[data-theme="arabic-chat"] .send-button:hover {
+  background: var(--primary-hover);
+  transform: scale(1.05);
+}
+
+[data-theme="arabic-chat"] .send-button:active {
+  transform: scale(0.95);
+}
+
+/* Emoji Picker */
+[data-theme="arabic-chat"] .emoji-picker {
+  background: var(--popover);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow-xl);
+}
+
+/* الإشعارات */
+[data-theme="arabic-chat"] .notification-badge {
+  background: #ef4444;
+  color: white;
+  border-radius: 10px;
+  padding: 2px 6px;
+  font-size: 10px;
+  font-weight: bold;
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* الرسائل الخاصة */
+[data-theme="arabic-chat"] .private-message {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  border-radius: 12px;
+  padding: 10px 15px;
+}
+
+/* رسائل النظام */
+[data-theme="arabic-chat"] .system-message {
+  background: var(--background-tertiary);
+  color: var(--foreground-muted);
+  text-align: center;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-style: italic;
+}
+
+/* ====================================
+   Animations - مثل arabic.chat
+   ==================================== */
+
+[data-theme="arabic-chat"] .fade-in {
+  animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+[data-theme="arabic-chat"] .slide-in {
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* ====================================
+   Responsive Design
+   ==================================== */
+
+@media (max-width: 768px) {
+  [data-theme="arabic-chat"] .message.my-message,
+  [data-theme="arabic-chat"] .message.other-message {
+    margin-left: 0;
+    margin-right: 0;
+    max-width: 85%;
+  }
+  
+  [data-theme="arabic-chat"] .sidebar {
+    position: fixed;
+    left: -100%;
+    transition: left 0.3s ease;
+    z-index: 100;
+  }
+  
+  [data-theme="arabic-chat"] .sidebar.open {
+    left: 0;
+  }
+}
+
+/* ====================================
+   تنسيقات إضافية للتوافق
+   ==================================== */
+
+/* Shadcn UI Components */
+[data-theme="arabic-chat"] .bg-background {
+  background: hsl(var(--background)) !important;
+}
+
+[data-theme="arabic-chat"] .bg-card {
+  background: hsl(var(--card)) !important;
+}
+
+[data-theme="arabic-chat"] .text-foreground {
+  color: hsl(var(--foreground)) !important;
+}
+
+[data-theme="arabic-chat"] .border {
+  border-color: hsl(var(--border)) !important;
+}
+
+[data-theme="arabic-chat"] .bg-primary {
+  background: hsl(var(--primary)) !important;
+}
+
+[data-theme="arabic-chat"] .text-primary {
+  color: hsl(var(--primary)) !important;
+}

@@ -1,0 +1,599 @@
+// بيانات الدول وروابط الشات الخاصة بكل دولة
+export interface CountryChat {
+  id: string;
+  nameAr: string;
+  nameEn: string;
+  path: string;
+  title: string;
+  metaDescription: string;
+  keywords: string[];
+  chatLinks: {
+    name: string;
+    description?: string;
+  }[];
+}
+
+export const countryChats: CountryChat[] = [
+  {
+    id: 'watan',
+    nameAr: 'دردشه الوطن',
+    nameEn: 'Watan Chat',
+    path: '/watan',
+    title: 'دردشه الوطن - دردشة عربية عامة',
+    metaDescription: 'دردشه الوطن: بوابة روابط الدردشة العربية العامة. تصفح روابط الدردشة الفرعية للوطن العربي.',
+    keywords: ['دردشه', 'الوطن', 'شات عربي', 'غرف دردشة'],
+    chatLinks: [
+      { name: 'دردشه امامير' },
+      { name: 'دردشه فلسطيني' },
+      { name: 'شات فلسطيني' },
+      { name: 'دردشه صبايا' },
+      { name: 'شات اردني' },
+      { name: 'دردشتي' },
+      { name: 'دردشه مزز' },
+      { name: 'دردشه اونلاين' },
+      { name: 'دردشة احلا لمة' },
+      { name: 'دردشه الحلوين' },
+      { name: 'شات بدون تسجيل' }
+    ]
+  },
+  {
+    id: 'emamir',
+    nameAr: 'دردشه امامير',
+    nameEn: 'Emamir Chat',
+    path: '/emamir',
+    title: 'دردشه امامير - دردشة عربية',
+    metaDescription: 'دردشه امامير: غرفة دردشة عربية للتعارف والمحادثة.',
+    keywords: ['دردشه امامير', 'شات', 'غرف دردشة'],
+    chatLinks: [
+      { name: 'شات امامير' },
+      { name: 'امامير جوال' }
+    ]
+  },
+  {
+    id: 'falastini',
+    nameAr: 'دردشه فلسطيني',
+    nameEn: 'Falastini Chat',
+    path: '/falastini',
+    title: 'دردشه فلسطيني - دردشة عربية',
+    metaDescription: 'دردشه فلسطيني: دردشة عربية للتعارف بين الشباب والبنات.',
+    keywords: ['دردشه فلسطيني', 'شات فلسطيني'],
+    chatLinks: [
+      { name: 'شات القدس' },
+      { name: 'شات غزة' }
+    ]
+  },
+  {
+    id: 'palestinian',
+    nameAr: 'شات فلسطيني',
+    nameEn: 'Palestinian Chat',
+    path: '/palestinian',
+    title: 'شات فلسطيني - دردشة عربية',
+    metaDescription: 'شات فلسطيني: دردشة عربية للتعارف ومشاركة اليوميات.',
+    keywords: ['شات فلسطيني', 'دردشة فلسطينية'],
+    chatLinks: [
+      { name: 'شات رام الله' },
+      { name: 'شات نابلس' }
+    ]
+  },
+  {
+    id: 'sabaya',
+    nameAr: 'دردشه صبايا',
+    nameEn: 'Sabaya Chat',
+    path: '/sabaya',
+    title: 'دردشه صبايا - دردشة عربية',
+    metaDescription: 'دردشه صبايا: مساحة دردشة عربية عامة.',
+    keywords: ['دردشه صبايا', 'شات'],
+    chatLinks: [
+      { name: 'شات الصبايا' },
+      { name: 'دردشة راقية' }
+    ]
+  },
+  {
+    id: 'jordan-chat',
+    nameAr: 'شات اردني',
+    nameEn: 'Jordan Chat (Alias)',
+    path: '/jordan-chat',
+    title: 'شات اردني - دردشة أردنية',
+    metaDescription: 'شات اردني: دردشة أردنية عامة للتعارف.',
+    keywords: ['شات اردني', 'دردشة أردنية'],
+    chatLinks: [
+      { name: 'شات عمان' },
+      { name: 'شات الزرقاء' }
+    ]
+  },
+  {
+    id: 'dardashti',
+    nameAr: 'دردشتي',
+    nameEn: 'Dardashti Chat',
+    path: '/dardashti',
+    title: 'دردشتي - دردشة عربية',
+    metaDescription: 'دردشتي: دردشة عربية عامة.',
+    keywords: ['دردشتي', 'شات'],
+    chatLinks: [
+      { name: 'دردشتي العام' },
+      { name: 'أصدقاء دردشتي' }
+    ]
+  },
+  {
+    id: 'mezz',
+    nameAr: 'دردشه مزز',
+    nameEn: 'Mezz Chat',
+    path: '/mezz',
+    title: 'دردشه مزز - دردشة عربية',
+    metaDescription: 'دردشه مزز: دردشة عربية عامة.',
+    keywords: ['مزز', 'شات'],
+    chatLinks: [
+      { name: 'مزز العام' },
+      { name: 'مزز جوال' }
+    ]
+  },
+  {
+    id: 'online-chat',
+    nameAr: 'دردشه اونلاين',
+    nameEn: 'Online Chat',
+    path: '/online-chat',
+    title: 'دردشه اونلاين - دردشة عربية',
+    metaDescription: 'دردشه اونلاين: دردشة عربية عبر الإنترنت.',
+    keywords: ['دردشه اونلاين', 'شات اونلاين'],
+    chatLinks: [
+      { name: 'شات مباشر' },
+      { name: 'شات فوري' }
+    ]
+  },
+  {
+    id: 'ahla-lamma',
+    nameAr: 'دردشة احلا لمة',
+    nameEn: 'Ahla Lamma Chat',
+    path: '/ahla-lamma',
+    title: 'دردشة احلا لمة - دردشة عربية',
+    metaDescription: 'دردشة احلا لمة: دردشة عربية عامة.',
+    keywords: ['احلا لمة', 'شات'],
+    chatLinks: [
+      { name: 'لمة الأصدقاء' },
+      { name: 'لمة عربية' }
+    ]
+  },
+  {
+    id: 'beautiful-chat',
+    nameAr: 'دردشه الحلوين',
+    nameEn: 'Beautiful Chat',
+    path: '/beautiful-chat',
+    title: 'دردشه الحلوين - دردشة عربية',
+    metaDescription: 'دردشه الحلوين: دردشة عربية عامة.',
+    keywords: ['الحلوين', 'شات'],
+    chatLinks: [
+      { name: 'شات الحلوين' },
+      { name: 'أحلى دردشة' }
+    ]
+  },
+  {
+    id: 'no-signup',
+    nameAr: 'شات بدون تسجيل',
+    nameEn: 'No Signup Chat',
+    path: '/no-signup',
+    title: 'شات بدون تسجيل - دردشة عربية',
+    metaDescription: 'شات بدون تسجيل: دردشة عربية فورية بدون إنشاء حساب.',
+    keywords: ['شات بدون تسجيل', 'دردشة فورية'],
+    chatLinks: [
+      { name: 'دردشة سريعة' },
+      { name: 'دخول فوري' }
+    ]
+  },
+  {
+    id: 'oman',
+    nameAr: 'شات عمان',
+    nameEn: 'Oman Chat',
+    path: '/oman',
+    title: 'شات عمان - دردشة عمانية | تعارف شباب وبنات عمان',
+    metaDescription: 'شات عمان للتعارف والدردشة مع شباب وبنات من سلطنة عمان. دردشة عمانية مجانية بدون تسجيل، تعرف على أصدقاء جدد من مسقط وصلالة ونزوى وجميع مدن عمان.',
+    keywords: ['شات عمان', 'دردشة عمانية', 'شات مسقط', 'شات صلالة', 'تعارف عمان', 'بنات عمان', 'شباب عمان'],
+    chatLinks: [
+      { name: 'شات مسقط', description: 'دردشة العاصمة مسقط' },
+      { name: 'شات صلالة', description: 'دردشة مدينة صلالة' },
+      { name: 'شات نزوى', description: 'دردشة مدينة نزوى' },
+      { name: 'شات صحار', description: 'دردشة مدينة صحار' },
+      { name: 'شات عماني جوال', description: 'دردشة الجوال العماني' },
+      { name: 'شات الباطنة', description: 'دردشة محافظة الباطنة' },
+      { name: 'شات ظفار', description: 'دردشة محافظة ظفار' },
+      { name: 'شات العرب عمان', description: 'دردشة عربية عمانية' }
+    ]
+  },
+  {
+    id: 'egypt',
+    nameAr: 'شات مصر',
+    nameEn: 'Egypt Chat',
+    path: '/egypt',
+    title: 'شات مصر - دردشة مصرية | تعارف شباب وبنات مصر',
+    metaDescription: 'شات مصر للتعارف والدردشة مع شباب وبنات من جمهورية مصر العربية. دردشة مصرية مجانية بدون تسجيل، تعرف على أصدقاء جدد من القاهرة والإسكندرية وجميع محافظات مصر.',
+    keywords: ['شات مصر', 'دردشة مصرية', 'شات القاهرة', 'شات الإسكندرية', 'تعارف مصر', 'بنات مصر', 'شباب مصر'],
+    chatLinks: [
+      { name: 'شات القاهرة', description: 'دردشة العاصمة القاهرة' },
+      { name: 'شات الإسكندرية', description: 'دردشة مدينة الإسكندرية' },
+      { name: 'شات الجيزة', description: 'دردشة محافظة الجيزة' },
+      { name: 'شات مصري جوال', description: 'دردشة الجوال المصري' },
+      { name: 'شات الأكابر', description: 'دردشة كبار الشخصيات' },
+      { name: 'شات الصعيد', description: 'دردشة صعيد مصر' },
+      { name: 'شات الدلتا', description: 'دردشة دلتا النيل' },
+      { name: 'شات أحلا لمة', description: 'دردشة التجمع المصري' }
+    ]
+  },
+  {
+    id: 'saudi',
+    nameAr: 'شات السعودية',
+    nameEn: 'Saudi Chat',
+    path: '/saudi',
+    title: 'شات السعودية - دردشة سعودية | تعارف شباب وبنات السعودية',
+    metaDescription: 'شات السعودية للتعارف والدردشة مع شباب وبنات من المملكة العربية السعودية. دردشة سعودية مجانية بدون تسجيل، تعرف على أصدقاء جدد من الرياض وجدة ومكة وجميع مدن المملكة.',
+    keywords: ['شات السعودية', 'دردشة سعودية', 'شات الرياض', 'شات جدة', 'تعارف السعودية', 'بنات السعودية', 'شباب السعودية'],
+    chatLinks: [
+      { name: 'شات الرياض', description: 'دردشة العاصمة الرياض' },
+      { name: 'شات جدة', description: 'دردشة مدينة جدة' },
+      { name: 'شات مكة', description: 'دردشة مكة المكرمة' },
+      { name: 'شات المدينة', description: 'دردشة المدينة المنورة' },
+      { name: 'شات الدمام', description: 'دردشة مدينة الدمام' },
+      { name: 'شات سعودي جوال', description: 'دردشة الجوال السعودي' },
+      { name: 'شات الرواد', description: 'دردشة رواد السعودية' },
+      { name: 'شات نجد', description: 'دردشة منطقة نجد' }
+    ]
+  },
+  {
+    id: 'algeria',
+    nameAr: 'شات الجزائر',
+    nameEn: 'Algeria Chat',
+    path: '/algeria',
+    title: 'شات الجزائر - دردشة جزائرية | تعارف شباب وبنات الجزائر',
+    metaDescription: 'شات الجزائر للتعارف والدردشة مع شباب وبنات من الجمهورية الجزائرية. دردشة جزائرية مجانية بدون تسجيل، تعرف على أصدقاء جدد من الجزائر العاصمة ووهران وقسنطينة.',
+    keywords: ['شات الجزائر', 'دردشة جزائرية', 'شات الجزائر العاصمة', 'شات وهران', 'تعارف الجزائر', 'بنات الجزائر'],
+    chatLinks: [
+      { name: 'شات الجزائر العاصمة', description: 'دردشة العاصمة' },
+      { name: 'شات وهران', description: 'دردشة مدينة وهران' },
+      { name: 'شات قسنطينة', description: 'دردشة مدينة قسنطينة' },
+      { name: 'شات عنابة', description: 'دردشة مدينة عنابة' },
+      { name: 'شات جزائري جوال', description: 'دردشة الجوال الجزائري' },
+      { name: 'شات القبائل', description: 'دردشة منطقة القبائل' },
+      { name: 'شات الصحراء', description: 'دردشة الصحراء الجزائرية' },
+      { name: 'شات بلاد المليون شهيد', description: 'دردشة الجزائر الحرة' }
+    ]
+  },
+  {
+    id: 'bahrain',
+    nameAr: 'شات البحرين',
+    nameEn: 'Bahrain Chat',
+    path: '/bahrain',
+    title: 'شات البحرين - دردشة بحرينية | تعارف شباب وبنات البحرين',
+    metaDescription: 'شات البحرين للتعارف والدردشة مع شباب وبنات من مملكة البحرين. دردشة بحرينية مجانية بدون تسجيل، تعرف على أصدقاء جدد من المنامة والمحرق وجميع مدن البحرين.',
+    keywords: ['شات البحرين', 'دردشة بحرينية', 'شات المنامة', 'شات المحرق', 'تعارف البحرين', 'بنات البحرين'],
+    chatLinks: [
+      { name: 'شات المنامة', description: 'دردشة العاصمة المنامة' },
+      { name: 'شات المحرق', description: 'دردشة مدينة المحرق' },
+      { name: 'شات الرفاع', description: 'دردشة مدينة الرفاع' },
+      { name: 'شات حمد', description: 'دردشة مدينة حمد' },
+      { name: 'شات بحريني جوال', description: 'دردشة الجوال البحريني' },
+      { name: 'شات سترة', description: 'دردشة جزيرة سترة' },
+      { name: 'شات عيسى', description: 'دردشة مدينة عيسى' },
+      { name: 'شات اللؤلؤة', description: 'دردشة جزيرة اللؤلؤة' }
+    ]
+  },
+  {
+    id: 'uae',
+    nameAr: 'شات الإمارات',
+    nameEn: 'UAE Chat',
+    path: '/uae',
+    title: 'شات الإمارات - دردشة إماراتية | تعارف شباب وبنات الإمارات',
+    metaDescription: 'شات الإمارات للتعارف والدردشة مع شباب وبنات من دولة الإمارات العربية المتحدة. دردشة إماراتية مجانية بدون تسجيل، تعرف على أصدقاء جدد من دبي وأبوظبي والشارقة.',
+    keywords: ['شات الإمارات', 'دردشة إماراتية', 'شات دبي', 'شات أبوظبي', 'تعارف الإمارات', 'بنات الإمارات'],
+    chatLinks: [
+      { name: 'شات دبي', description: 'دردشة إمارة دبي' },
+      { name: 'شات أبوظبي', description: 'دردشة العاصمة أبوظبي' },
+      { name: 'شات الشارقة', description: 'دردشة إمارة الشارقة' },
+      { name: 'شات عجمان', description: 'دردشة إمارة عجمان' },
+      { name: 'شات العين', description: 'دردشة مدينة العين' },
+      { name: 'شات رأس الخيمة', description: 'دردشة رأس الخيمة' },
+      { name: 'شات الفجيرة', description: 'دردشة إمارة الفجيرة' },
+      { name: 'شات إماراتي جوال', description: 'دردشة الجوال الإماراتي' }
+    ]
+  },
+  {
+    id: 'jordan',
+    nameAr: 'شات الأردن',
+    nameEn: 'Jordan Chat',
+    path: '/jordan',
+    title: 'شات الأردن - دردشة أردنية | تعارف شباب وبنات الأردن',
+    metaDescription: 'شات الأردن للتعارف والدردشة مع شباب وبنات من المملكة الأردنية الهاشمية. دردشة أردنية مجانية بدون تسجيل، تعرف على أصدقاء جدد من عمان والزرقاء وإربد.',
+    keywords: ['شات الأردن', 'دردشة أردنية', 'شات عمان الأردن', 'شات الزرقاء', 'تعارف الأردن', 'بنات الأردن'],
+    chatLinks: [
+      { name: 'شات عمان', description: 'دردشة العاصمة عمان' },
+      { name: 'شات الزرقاء', description: 'دردشة مدينة الزرقاء' },
+      { name: 'شات إربد', description: 'دردشة مدينة إربد' },
+      { name: 'شات العقبة', description: 'دردشة مدينة العقبة' },
+      { name: 'شات السلط', description: 'دردشة مدينة السلط' },
+      { name: 'شات أردني جوال', description: 'دردشة الجوال الأردني' },
+      { name: 'شات الكرك', description: 'دردشة محافظة الكرك' },
+      { name: 'شات البتراء', description: 'دردشة مدينة البتراء' }
+    ]
+  },
+  {
+    id: 'kuwait',
+    nameAr: 'شات الكويت',
+    nameEn: 'Kuwait Chat',
+    path: '/kuwait',
+    title: 'شات الكويت - دردشة كويتية | تعارف شباب وبنات الكويت',
+    metaDescription: 'شات الكويت للتعارف والدردشة مع شباب وبنات من دولة الكويت. دردشة كويتية مجانية بدون تسجيل، تعرف على أصدقاء جدد من مدينة الكويت والجهراء والأحمدي.',
+    keywords: ['شات الكويت', 'دردشة كويتية', 'شات مدينة الكويت', 'شات الجهراء', 'تعارف الكويت', 'بنات الكويت'],
+    chatLinks: [
+      { name: 'شات مدينة الكويت', description: 'دردشة العاصمة' },
+      { name: 'شات الجهراء', description: 'دردشة محافظة الجهراء' },
+      { name: 'شات الأحمدي', description: 'دردشة محافظة الأحمدي' },
+      { name: 'شات الفروانية', description: 'دردشة محافظة الفروانية' },
+      { name: 'شات حولي', description: 'دردشة محافظة حولي' },
+      { name: 'شات كويتي جوال', description: 'دردشة الجوال الكويتي' },
+      { name: 'شات مبارك الكبير', description: 'دردشة محافظة مبارك الكبير' },
+      { name: 'شات الديوانية', description: 'دردشة الديوانية الكويتية' }
+    ]
+  },
+  {
+    id: 'libya',
+    nameAr: 'شات ليبيا',
+    nameEn: 'Libya Chat',
+    path: '/libya',
+    title: 'شات ليبيا - دردشة ليبية | تعارف شباب وبنات ليبيا',
+    metaDescription: 'شات ليبيا للتعارف والدردشة مع شباب وبنات من دولة ليبيا. دردشة ليبية مجانية بدون تسجيل، تعرف على أصدقاء جدد من طرابلس وبنغازي ومصراتة.',
+    keywords: ['شات ليبيا', 'دردشة ليبية', 'شات طرابلس', 'شات بنغازي', 'تعارف ليبيا', 'بنات ليبيا'],
+    chatLinks: [
+      { name: 'شات طرابلس', description: 'دردشة العاصمة طرابلس' },
+      { name: 'شات بنغازي', description: 'دردشة مدينة بنغازي' },
+      { name: 'شات مصراتة', description: 'دردشة مدينة مصراتة' },
+      { name: 'شات البيضاء', description: 'دردشة مدينة البيضاء' },
+      { name: 'شات الزاوية', description: 'دردشة مدينة الزاوية' },
+      { name: 'شات ليبي جوال', description: 'دردشة الجوال الليبي' },
+      { name: 'شات سبها', description: 'دردشة مدينة سبها' },
+      { name: 'شات أجدابيا', description: 'دردشة مدينة أجدابيا' }
+    ]
+  },
+  {
+    id: 'tunisia',
+    nameAr: 'شات تونس',
+    nameEn: 'Tunisia Chat',
+    path: '/tunisia',
+    title: 'شات تونس - دردشة تونسية | تعارف شباب وبنات تونس',
+    metaDescription: 'شات تونس للتعارف والدردشة مع شباب وبنات من الجمهورية التونسية. دردشة تونسية مجانية بدون تسجيل، تعرف على أصدقاء جدد من تونس العاصمة وصفاقس وسوسة.',
+    keywords: ['شات تونس', 'دردشة تونسية', 'شات تونس العاصمة', 'شات صفاقس', 'تعارف تونس', 'بنات تونس'],
+    chatLinks: [
+      { name: 'شات تونس العاصمة', description: 'دردشة العاصمة' },
+      { name: 'شات صفاقس', description: 'دردشة مدينة صفاقس' },
+      { name: 'شات سوسة', description: 'دردشة مدينة سوسة' },
+      { name: 'شات المنستير', description: 'دردشة مدينة المنستير' },
+      { name: 'شات بنزرت', description: 'دردشة مدينة بنزرت' },
+      { name: 'شات تونسي جوال', description: 'دردشة الجوال التونسي' },
+      { name: 'شات قابس', description: 'دردشة مدينة قابس' },
+      { name: 'شات القيروان', description: 'دردشة مدينة القيروان' }
+    ]
+  },
+  {
+    id: 'morocco',
+    nameAr: 'شات المغرب',
+    nameEn: 'Morocco Chat',
+    path: '/morocco',
+    title: 'شات المغرب - دردشة مغربية | تعارف شباب وبنات المغرب',
+    metaDescription: 'شات المغرب للتعارف والدردشة مع شباب وبنات من المملكة المغربية. دردشة مغربية مجانية بدون تسجيل، تعرف على أصدقاء جدد من الرباط والدار البيضاء ومراكش.',
+    keywords: ['شات المغرب', 'دردشة مغربية', 'شات الرباط', 'شات الدار البيضاء', 'تعارف المغرب', 'بنات المغرب'],
+    chatLinks: [
+      { name: 'شات الرباط', description: 'دردشة العاصمة الرباط' },
+      { name: 'شات الدار البيضاء', description: 'دردشة الدار البيضاء' },
+      { name: 'شات مراكش', description: 'دردشة مدينة مراكش' },
+      { name: 'شات فاس', description: 'دردشة مدينة فاس' },
+      { name: 'شات طنجة', description: 'دردشة مدينة طنجة' },
+      { name: 'شات أغادير', description: 'دردشة مدينة أغادير' },
+      { name: 'شات مغربي جوال', description: 'دردشة الجوال المغربي' },
+      { name: 'شات مكناس', description: 'دردشة مدينة مكناس' }
+    ]
+  },
+  {
+    id: 'sudan',
+    nameAr: 'شات السودان',
+    nameEn: 'Sudan Chat',
+    path: '/sudan',
+    title: 'شات السودان - دردشة سودانية | تعارف شباب وبنات السودان',
+    metaDescription: 'شات السودان للتعارف والدردشة مع شباب وبنات من جمهورية السودان. دردشة سودانية مجانية بدون تسجيل، تعرف على أصدقاء جدد من الخرطوم وأم درمان وبورتسودان.',
+    keywords: ['شات السودان', 'دردشة سودانية', 'شات الخرطوم', 'شات أم درمان', 'تعارف السودان', 'بنات السودان'],
+    chatLinks: [
+      { name: 'شات الخرطوم', description: 'دردشة العاصمة الخرطوم' },
+      { name: 'شات أم درمان', description: 'دردشة مدينة أم درمان' },
+      { name: 'شات بورتسودان', description: 'دردشة بورتسودان' },
+      { name: 'شات كسلا', description: 'دردشة مدينة كسلا' },
+      { name: 'شات الجزيرة', description: 'دردشة ولاية الجزيرة' },
+      { name: 'شات سوداني جوال', description: 'دردشة الجوال السوداني' },
+      { name: 'شات دارفور', description: 'دردشة إقليم دارفور' },
+      { name: 'شات النيل الأزرق', description: 'دردشة ولاية النيل الأزرق' }
+    ]
+  },
+  {
+    id: 'palestine',
+    nameAr: 'شات فلسطين',
+    nameEn: 'Palestine Chat',
+    path: '/palestine',
+    title: 'شات فلسطين - دردشة فلسطينية | تعارف شباب وبنات فلسطين',
+    metaDescription: 'شات فلسطين للتعارف والدردشة مع شباب وبنات من دولة فلسطين. دردشة فلسطينية مجانية بدون تسجيل، تعرف على أصدقاء جدد من القدس وغزة ورام الله.',
+    keywords: ['شات فلسطين', 'دردشة فلسطينية', 'شات القدس', 'شات غزة', 'تعارف فلسطين', 'بنات فلسطين'],
+    chatLinks: [
+      { name: 'شات القدس', description: 'دردشة مدينة القدس' },
+      { name: 'شات غزة', description: 'دردشة قطاع غزة' },
+      { name: 'شات رام الله', description: 'دردشة مدينة رام الله' },
+      { name: 'شات نابلس', description: 'دردشة مدينة نابلس' },
+      { name: 'شات الخليل', description: 'دردشة مدينة الخليل' },
+      { name: 'شات بيت لحم', description: 'دردشة مدينة بيت لحم' },
+      { name: 'شات فلسطيني جوال', description: 'دردشة الجوال الفلسطيني' },
+      { name: 'شات جنين', description: 'دردشة مدينة جنين' }
+    ]
+  },
+  {
+    id: 'qatar',
+    nameAr: 'شات قطر',
+    nameEn: 'Qatar Chat',
+    path: '/qatar',
+    title: 'شات قطر - دردشة قطرية | تعارف شباب وبنات قطر',
+    metaDescription: 'شات قطر للتعارف والدردشة مع شباب وبنات من دولة قطر. دردشة قطرية مجانية بدون تسجيل، تعرف على أصدقاء جدد من الدوحة والريان والوكرة.',
+    keywords: ['شات قطر', 'دردشة قطرية', 'شات الدوحة', 'شات الريان', 'تعارف قطر', 'بنات قطر'],
+    chatLinks: [
+      { name: 'شات الدوحة', description: 'دردشة العاصمة الدوحة' },
+      { name: 'شات الريان', description: 'دردشة مدينة الريان' },
+      { name: 'شات الوكرة', description: 'دردشة مدينة الوكرة' },
+      { name: 'شات الخور', description: 'دردشة مدينة الخور' },
+      { name: 'شات قطري جوال', description: 'دردشة الجوال القطري' },
+      { name: 'شات أم صلال', description: 'دردشة أم صلال' },
+      { name: 'شات لوسيل', description: 'دردشة مدينة لوسيل' },
+      { name: 'شات الشمال', description: 'دردشة بلدية الشمال' }
+    ]
+  },
+  {
+    id: 'yemen',
+    nameAr: 'شات اليمن',
+    nameEn: 'Yemen Chat',
+    path: '/yemen',
+    title: 'شات اليمن - دردشة يمنية | تعارف شباب وبنات اليمن',
+    metaDescription: 'شات اليمن للتعارف والدردشة مع شباب وبنات من الجمهورية اليمنية. دردشة يمنية مجانية بدون تسجيل، تعرف على أصدقاء جدد من صنعاء وعدن وتعز.',
+    keywords: ['شات اليمن', 'دردشة يمنية', 'شات صنعاء', 'شات عدن', 'تعارف اليمن', 'بنات اليمن'],
+    chatLinks: [
+      { name: 'شات صنعاء', description: 'دردشة العاصمة صنعاء' },
+      { name: 'شات عدن', description: 'دردشة مدينة عدن' },
+      { name: 'شات تعز', description: 'دردشة مدينة تعز' },
+      { name: 'شات الحديدة', description: 'دردشة مدينة الحديدة' },
+      { name: 'شات إب', description: 'دردشة مدينة إب' },
+      { name: 'شات يمني جوال', description: 'دردشة الجوال اليمني' },
+      { name: 'شات حضرموت', description: 'دردشة محافظة حضرموت' },
+      { name: 'شات المكلا', description: 'دردشة مدينة المكلا' }
+    ]
+  },
+  {
+    id: 'lebanon',
+    nameAr: 'شات لبنان',
+    nameEn: 'Lebanon Chat',
+    path: '/lebanon',
+    title: 'شات لبنان - دردشة لبنانية | تعارف شباب وبنات لبنان',
+    metaDescription: 'شات لبنان للتعارف والدردشة مع شباب وبنات من الجمهورية اللبنانية. دردشة لبنانية مجانية بدون تسجيل، تعرف على أصدقاء جدد من بيروت وطرابلس وصيدا.',
+    keywords: ['شات لبنان', 'دردشة لبنانية', 'شات بيروت', 'شات طرابلس', 'تعارف لبنان', 'بنات لبنان'],
+    chatLinks: [
+      { name: 'شات بيروت', description: 'دردشة العاصمة بيروت' },
+      { name: 'شات طرابلس', description: 'دردشة مدينة طرابلس' },
+      { name: 'شات صيدا', description: 'دردشة مدينة صيدا' },
+      { name: 'شات صور', description: 'دردشة مدينة صور' },
+      { name: 'شات زحلة', description: 'دردشة مدينة زحلة' },
+      { name: 'شات لبناني جوال', description: 'دردشة الجوال اللبناني' },
+      { name: 'شات جبيل', description: 'دردشة مدينة جبيل' },
+      { name: 'شات بعلبك', description: 'دردشة مدينة بعلبك' }
+    ]
+  },
+  {
+    id: 'syria',
+    nameAr: 'شات سوريا',
+    nameEn: 'Syria Chat',
+    path: '/syria',
+    title: 'شات سوريا - دردشة سورية | تعارف شباب وبنات سوريا',
+    metaDescription: 'شات سوريا للتعارف والدردشة مع شباب وبنات من الجمهورية العربية السورية. دردشة سورية مجانية بدون تسجيل، تعرف على أصدقاء جدد من دمشق وحلب وحمص.',
+    keywords: ['شات سوريا', 'دردشة سورية', 'شات دمشق', 'شات حلب', 'تعارف سوريا', 'بنات سوريا'],
+    chatLinks: [
+      { name: 'شات دمشق', description: 'دردشة العاصمة دمشق' },
+      { name: 'شات حلب', description: 'دردشة مدينة حلب' },
+      { name: 'شات حمص', description: 'دردشة مدينة حمص' },
+      { name: 'شات اللاذقية', description: 'دردشة مدينة اللاذقية' },
+      { name: 'شات حماة', description: 'دردشة مدينة حماة' },
+      { name: 'شات سوري جوال', description: 'دردشة الجوال السوري' },
+      { name: 'شات طرطوس', description: 'دردشة مدينة طرطوس' },
+      { name: 'شات دير الزور', description: 'دردشة دير الزور' }
+    ]
+  },
+  {
+    id: 'iraq',
+    nameAr: 'شات العراق',
+    nameEn: 'Iraq Chat',
+    path: '/iraq',
+    title: 'شات العراق - دردشة عراقية | تعارف شباب وبنات العراق',
+    metaDescription: 'شات العراق للتعارف والدردشة مع شباب وبنات من جمهورية العراق. دردشة عراقية مجانية بدون تسجيل، تعرف على أصدقاء جدد من بغداد والبصرة والموصل.',
+    keywords: ['شات العراق', 'دردشة عراقية', 'شات بغداد', 'شات البصرة', 'تعارف العراق', 'بنات العراق'],
+    chatLinks: [
+      { name: 'شات بغداد', description: 'دردشة العاصمة بغداد' },
+      { name: 'شات البصرة', description: 'دردشة مدينة البصرة' },
+      { name: 'شات الموصل', description: 'دردشة مدينة الموصل' },
+      { name: 'شات أربيل', description: 'دردشة مدينة أربيل' },
+      { name: 'شات النجف', description: 'دردشة مدينة النجف' },
+      { name: 'شات كربلاء', description: 'دردشة مدينة كربلاء' },
+      { name: 'شات عراقي جوال', description: 'دردشة الجوال العراقي' },
+      { name: 'شات السليمانية', description: 'دردشة السليمانية' }
+    ]
+  },
+  {
+    id: 'comoros',
+    nameAr: 'شات جزر القمر',
+    nameEn: 'Comoros Chat',
+    path: '/comoros',
+    title: 'شات جزر القمر - دردشة قمرية | تعارف شباب وبنات جزر القمر',
+    metaDescription: 'شات جزر القمر للتعارف والدردشة مع شباب وبنات من جمهورية جزر القمر. دردشة قمرية مجانية بدون تسجيل.',
+    keywords: ['شات جزر القمر', 'دردشة قمرية', 'شات موروني', 'تعارف جزر القمر'],
+    chatLinks: [
+      { name: 'شات موروني', description: 'دردشة العاصمة موروني' },
+      { name: 'شات أنجوان', description: 'دردشة جزيرة أنجوان' },
+      { name: 'شات موهيلي', description: 'دردشة جزيرة موهيلي' },
+      { name: 'شات القمر الكبرى', description: 'دردشة القمر الكبرى' },
+      { name: 'شات قمري جوال', description: 'دردشة الجوال القمري' },
+      { name: 'شات مايوت', description: 'دردشة جزيرة مايوت' },
+      { name: 'شات دوموني', description: 'دردشة مدينة دوموني' },
+      { name: 'شات فومبوني', description: 'دردشة مدينة فومبوني' }
+    ]
+  },
+  {
+    id: 'djibouti',
+    nameAr: 'شات جيبوتي',
+    nameEn: 'Djibouti Chat',
+    path: '/djibouti',
+    title: 'شات جيبوتي - دردشة جيبوتية | تعارف شباب وبنات جيبوتي',
+    metaDescription: 'شات جيبوتي للتعارف والدردشة مع شباب وبنات من جمهورية جيبوتي. دردشة جيبوتية مجانية بدون تسجيل.',
+    keywords: ['شات جيبوتي', 'دردشة جيبوتية', 'شات جيبوتي العاصمة', 'تعارف جيبوتي'],
+    chatLinks: [
+      { name: 'شات جيبوتي العاصمة', description: 'دردشة العاصمة' },
+      { name: 'شات علي صبيح', description: 'دردشة مدينة علي صبيح' },
+      { name: 'شات تاجورة', description: 'دردشة مدينة تاجورة' },
+      { name: 'شات أوبوك', description: 'دردشة مدينة أوبوك' },
+      { name: 'شات دخيل', description: 'دردشة مدينة دخيل' },
+      { name: 'شات جيبوتي جوال', description: 'دردشة الجوال الجيبوتي' },
+      { name: 'شات أرتا', description: 'دردشة مدينة أرتا' },
+      { name: 'شات القرن الأفريقي', description: 'دردشة القرن الأفريقي' }
+    ]
+  }
+];
+
+// دالة للحصول على بيانات دولة معينة
+export function getCountryByPath(path: string): CountryChat | undefined {
+  return countryChats.find(country => country.path === path);
+}
+
+// دالة للحصول على بيانات دولة بواسطة المعرف
+export function getCountryById(id: string): CountryChat | undefined {
+  return countryChats.find(country => country.id === id);
+}
+
+// دالة للحصول على جميع الدول
+export function getAllCountries(): CountryChat[] {
+  return countryChats;
+}
+
+// دالة للبحث عن دولة بواسطة الاسم
+export function searchCountries(query: string): CountryChat[] {
+  const lowerQuery = query.toLowerCase();
+  return countryChats.filter(country =>
+    country.nameAr.toLowerCase().includes(lowerQuery) ||
+    country.nameEn.toLowerCase().includes(lowerQuery) ||
+    country.title.toLowerCase().includes(lowerQuery)
+  );
+}
+
+// دالة للحصول على إحصائيات الدول
+export function getCountriesStats() {
+  return {
+    total: countryChats.length,
+    byRegion: {
+      middleEast: countryChats.filter(c => ['oman', 'egypt', 'saudi', 'algeria', 'bahrain', 'uae', 'jordan', 'kuwait', 'libya', 'tunisia', 'morocco', 'sudan', 'palestine', 'qatar', 'yemen', 'lebanon', 'syria', 'iraq'].includes(c.id)).length,
+      africa: countryChats.filter(c => ['comoros', 'djibouti'].includes(c.id)).length,
+      general: countryChats.filter(c => !['comoros', 'djibouti'].includes(c.id) && !['oman', 'egypt', 'saudi', 'algeria', 'bahrain', 'uae', 'jordan', 'kuwait', 'libya', 'tunisia', 'morocco', 'sudan', 'palestine', 'qatar', 'yemen', 'lebanon', 'syria', 'iraq'].includes(c.id)).length
+    }
+  };
+}
