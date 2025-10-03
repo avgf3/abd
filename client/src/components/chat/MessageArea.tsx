@@ -1,4 +1,4 @@
-import { Send, Smile, ChevronDown, Sparkles, MoreVertical, Lock, UserX } from 'lucide-react';
+import { Send, Smile, ChevronDown, Sparkles, Flag, Lock, UserX } from 'lucide-react';
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { Virtuoso, type VirtuosoHandle } from 'react-virtuoso';
 
@@ -32,12 +32,7 @@ import { formatTime } from '@/utils/timeUtils';
 // Removed ComposerPlusMenu (ready/quick options)
 import { useComposerStyle } from '@/contexts/ComposerStyleContext';
 import { renderMessageWithAnimatedEmojis, convertTextToAnimatedEmojis } from '@/utils/animatedEmojiUtils';
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-} from '@/components/ui/dropdown-menu';
+// Removed dropdown menu in favor of inline report flag (arabic.chat style)
 
 interface MessageAreaProps {
   messages: ChatMessage[];
@@ -662,8 +657,8 @@ export default function MessageArea({
             itemContent={(index, message) => (
               <div
                 key={message.id}
-                className={`ac-message-row ${index % 2 ? 'log2' : ''} ${isMobile ? 'items-start' : 'items-center'} gap-2 py-1.5 px-2 rounded-lg transition-all duration-300`}
-                style={{ borderRightColor: getDynamicBorderColor(message.sender) }}
+                className={`ac-message-row flex ${isMobile ? 'items-start' : 'items-center'} gap-2 py-1 px-2 transition-all duration-300 ${index % 2 ? 'log2' : ''}`}
+                style={{ borderRightColor: getDynamicBorderColor(message.sender), direction: 'rtl' }}
                 data-message-type={message.messageType || 'normal'}
               >
                 {/* Reaction Effects */}
@@ -691,6 +686,11 @@ export default function MessageArea({
                       <div className={`flex items-start gap-2 ${isMobile ? 'system-message-mobile' : ''}`}>
                         {/* Name and badge section - fixed width */}
                         <div className="flex items-center gap-1 shrink-0">
+                          {message.sender && (
+                            <span className="inline-flex items-center justify-center">
+                              <UserRoleBadge user={message.sender} size={14} hideGuestAndGender />
+                            </span>
+                          )}
                           <button
                             onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
                             className="font-semibold hover:underline transition-colors duration-200 text-sm"
@@ -708,6 +708,15 @@ export default function MessageArea({
                           </span>
                         </div>
                       </div>
+                      {onReportMessage && message.sender && currentUser && message.sender.id !== currentUser.id && (
+                        <button
+                          className="self-start ml-1 text-gray-500 hover:text-red-600"
+                          title="تبليغ"
+                          onClick={() => onReportMessage(message.sender!, message.content, message.id)}
+                        >
+                          <Flag className="w-4 h-4" />
+                        </button>
+                      )}
                     </div>
 
                     {/* Right side: time */}
@@ -732,7 +741,12 @@ export default function MessageArea({
                     {/* Unified run-in layout for both mobile and desktop */}
                     <div className={`flex-1 min-w-0`}>
                       <div className="runin-container">
-                        <div className="runin-name">
+                      <div className="runin-name">
+                        {message.sender && (
+                          <span className="inline-flex items-center justify-center mr-1">
+                            <UserRoleBadge user={message.sender} size={14} hideGuestAndGender />
+                          </span>
+                        )}
                           <button
                             onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
                             className="font-semibold hover:underline transition-colors duration-200 text-sm"
@@ -810,82 +824,15 @@ export default function MessageArea({
                       </div>
                     </div>
 
-                      {/* قائمة ثلاث نقاط موحدة للجوال وسطح المكتب */}
-                      {currentUser && (
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <button
-                              className="h-6 w-6 p-0 text-gray-600 hover:text-gray-900 self-start ml-1"
-                              title="المزيد"
-                              aria-label="المزيد"
-                            >
-                              <MoreVertical className="w-4 h-4" />
-                            </button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="start" sideOffset={6} className="min-w-[180px]">
-                            {/* Reactions */}
-                            {!message.isPrivate && (["like","dislike","heart"] as const).map((r) => {
-                              const isMine = message.myReaction === r;
-                              const count = message.reactions?.[r] ?? 0;
-                              const label = r === 'like' ? '👍 إعجاب' : r === 'dislike' ? '👎 عدم إعجاب' : '❤️ قلب';
-                              const toggle = async () => {
-                                try {
-                                  if (isMine) {
-                                    await apiRequest(`/api/messages/${message.id}/reactions`, { method: 'DELETE' });
-                                  } else {
-                                    // تشغيل التأثير المرئي
-                                    setReactionEffects((prev) => {
-                                      const next = new Map(prev);
-                                      next.set(message.id, { type: r, trigger: Date.now() });
-                                      return next;
-                                    });
-                                    // تشغيل الصوت
-                                    playReactionSound(r);
-                                    // إرسال الـ reaction للخادم
-                                    await apiRequest(`/api/messages/${message.id}/reactions`, { method: 'POST', body: { type: r } });
-                                  }
-                                } catch (e) {
-                                  console.error('reaction error', e);
-                                }
-                              };
-                              return (
-                                <DropdownMenuItem key={r} onClick={toggle} className={`flex items-center justify-between gap-2 ${isMine ? 'text-primary' : ''}`}>
-                                  <span>{label}</span>
-                                  <span className="text-xs text-gray-500">{count}</span>
-                                </DropdownMenuItem>
-                              );
-                            })}
-                            {/* Report */}
-                            {onReportMessage && message.sender && currentUser && message.sender.id !== currentUser.id && (
-                              <DropdownMenuItem onClick={() => onReportMessage(message.sender!, message.content, message.id)}>
-                                🚩 تبليغ
-                              </DropdownMenuItem>
-                            )}
-                            {/* Delete */}
-                            {(() => {
-                              if (!message.sender || !currentUser) return null;
-                              const isOwner = currentUser.userType === 'owner';
-                              const isAdmin = currentUser.userType === 'admin';
-                              const isSender = currentUser.id === message.sender.id;
-                              const canDelete = isSender || isOwner || isAdmin;
-                              if (!canDelete) return null;
-                              const handleDelete = async () => {
-                                try {
-                                  await apiRequest(`/api/messages/${message.id}`, {
-                                    method: 'DELETE',
-                                    body: { userId: currentUser.id, roomId: message.roomId || 'general' },
-                                  });
-                                } catch (e) {
-                                  console.error('خطأ في حذف الرسالة', e);
-                                }
-                              };
-                              return (
-                                <DropdownMenuItem onClick={handleDelete}>🗑️ حذف</DropdownMenuItem>
-                              );
-                            })()}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      )}
+                  {onReportMessage && message.sender && currentUser && message.sender.id !== currentUser.id && (
+                    <button
+                      className="self-start ml-1 text-gray-500 hover:text-red-600"
+                      title="تبليغ"
+                      onClick={() => onReportMessage(message.sender!, message.content, message.id)}
+                    >
+                      <Flag className="w-4 h-4" />
+                    </button>
+                  )}
                   </>
                 )}
               </div>
@@ -1006,7 +953,7 @@ export default function MessageArea({
         >
           {/* Input row: plus, emoji, input, send (order like arabic.chat) */}
           <div className={`flex flex-1 items-end gap-2`}>
-            {/* Plus menu (moved to start) */}
+            {/* Plus menu (moved to start) - keep but minimal visual change to mimic arabic.chat */}
             <React.Suspense fallback={null}>
               <div className="chat-plus-button">
                 <ComposerPlusMenu
