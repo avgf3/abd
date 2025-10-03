@@ -1663,31 +1663,29 @@ li > * > div.effect-crystal {
 
 .runin-text { display: inline; text-align: start; word-break: break-word; overflow-wrap: anywhere; white-space: pre-wrap; line-height: 1.4; }
 
-/* arabic.chat-like alternating rows and message visuals — MOBILE ONLY */
+/* Mobile message rows: match desktop (no zebra, no right strip) */
 @media (max-width: 768px) {
   .mobile-message-area .ac-message-row {
-    background: #ffffff;
-    border-right: 4px solid transparent; /* rank color strip like arabic.chat */
-    border-radius: 0; /* square rows like arabic.chat */
+    background: transparent !important;
+    border-right: 0 !important; /* remove colored strip */
+    border-radius: inherit !important;
   }
   .mobile-message-area .ac-message-row.log2 {
-    background: #f9f9f9; /* subtle zebra */
+    background: transparent !important; /* remove zebra */
+  }
+  /* Also ensure desktop doesn't alternate: remove any zebra globally */
+  .ac-message-row.log2 {
+    background: transparent !important;
   }
   .mobile-message-area .ac-message-row .runin-name button {
     font-weight: 700;
   }
-  /* the colon ':' */
-  .mobile-message-area .ac-message-row .runin-name + span {
-    color: #9aa0a6;
-  }
-  .mobile-message-area .ac-message-row .runin-text {
-    color: #111827;
-  }
-  /* hide inline timestamp like arabic.chat */
+  /* keep colon and text colors consistent with desktop classes */
+  /* hide inline timestamp on mobile (unchanged) */
   .mobile-message-area .ac-time {
     display: none !important;
   }
-  /* composer block closer to arabic.chat: bordered, rounded, white */
+  /* composer styling unchanged */
   .ac-composer {
     border: 1px solid #e5e7eb;
     border-radius: 10px;
@@ -2677,7 +2675,7 @@ li::before {
   
   /* تحسين منطقة الرسائل للجوال */
   .mobile-message-area {
-    font-size: 14px;
+    font-size: inherit; /* unify with desktop */
   }
   
   .mobile-message-area .chat-message {
