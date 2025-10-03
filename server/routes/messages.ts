@@ -456,7 +456,8 @@ router.delete('/:messageId/reactions', protect.auth, limiters.reaction, async (r
     const message = await storage.getMessage(messageId);
     if (!message) return res.status(404).json({ error: 'الرسالة غير موجودة' });
 
-    const result = await storage.removeReaction(messageId, userId);
+    // إزالة تفاعل المستخدم (يعيد الحالة بدون هذا التفاعل)
+    const result = await storage.removeMessageReaction(messageId, userId);
     if (!result) return res.status(500).json({ error: 'تعذر حذف التفاعل' });
 
     // بث التحديث عبر Socket.IO إلى الغرفة المناسبة فقط
