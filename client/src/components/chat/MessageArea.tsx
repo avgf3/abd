@@ -27,7 +27,7 @@ import {
   insertMention,
 } from '@/utils/mentionUtils';
 import { getDynamicBorderColor } from '@/utils/messageUtils';
-import { getFinalUsernameColor } from '@/utils/themeUtils';
+import { getFinalUsernameColor, getUserNameplateStyles } from '@/utils/themeUtils';
 import { formatTime } from '@/utils/timeUtils';
 // Removed ComposerPlusMenu (ready/quick options)
 import { useComposerStyle } from '@/contexts/ComposerStyleContext';
@@ -691,13 +691,33 @@ export default function MessageArea({
                               <UserRoleBadge user={message.sender} size={14} hideGuestAndGender />
                             </span>
                           )}
-                          <button
-                            onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
-                            className="font-semibold hover:underline transition-colors duration-200 text-sm"
-                            style={{ color: getFinalUsernameColor(message.sender) }}
-                          >
-                            {message.sender?.username || 'جاري التحميل...'}
-                          </button>
+                          {(() => {
+                            const np = getUserNameplateStyles(message.sender);
+                            const hasNp = np && Object.keys(np).length > 0;
+                            if (hasNp) {
+                              return (
+                                <button
+                                  onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
+                                  className="transition-transform duration-200 hover:scale-[1.02]"
+                                  title={message.sender?.username}
+                                >
+                                  <span className="ac-nameplate" style={np}>
+                                    <span className="ac-name">{message.sender?.username || '...'}</span>
+                                    <span className="ac-mark">〰</span>
+                                  </span>
+                                </button>
+                              );
+                            }
+                            return (
+                              <button
+                                onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
+                                className="font-semibold hover:underline transition-colors duration-200 text-sm"
+                                style={{ color: getFinalUsernameColor(message.sender) }}
+                              >
+                                {message.sender?.username || 'جاري التحميل...'}
+                              </button>
+                            );
+                          })()}
                           <span className="text-red-400 mx-1">:</span>
                         </div>
 
@@ -747,13 +767,33 @@ export default function MessageArea({
                             <UserRoleBadge user={message.sender} size={14} hideGuestAndGender />
                           </span>
                         )}
-                          <button
-                            onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
-                            className="font-semibold hover:underline transition-colors duration-200 text-sm"
-                            style={{ color: getFinalUsernameColor(message.sender) }}
-                          >
-                            {message.sender?.username || 'جاري التحميل...'}
-                          </button>
+                          {(() => {
+                            const np = getUserNameplateStyles(message.sender);
+                            const hasNp = np && Object.keys(np).length > 0;
+                            if (hasNp) {
+                              return (
+                                <button
+                                  onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
+                                  className="transition-transform duration-200 hover:scale-[1.02]"
+                                  title={message.sender?.username}
+                                >
+                                  <span className="ac-nameplate" style={np}>
+                                    <span className="ac-name">{message.sender?.username || '...'}</span>
+                                    <span className="ac-mark">〰</span>
+                                  </span>
+                                </button>
+                              );
+                            }
+                            return (
+                              <button
+                                onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
+                                className="font-semibold hover:underline transition-colors duration-200 text-sm"
+                                style={{ color: getFinalUsernameColor(message.sender) }}
+                              >
+                                {message.sender?.username || 'جاري التحميل...'}
+                              </button>
+                            );
+                          })()}
                           <span className="text-gray-400 mx-1">:</span>
                         </div>
                         <div className="runin-text text-gray-900 message-content-fix">

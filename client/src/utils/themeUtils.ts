@@ -255,6 +255,32 @@ export const getUserListItemClasses = (user: any): string => {
   return classes.join(' ');
 };
 
+// ===== Nameplate (username badge) helpers =====
+// Build inline styles for a gradient nameplate that exactly matches the
+// user's profile background color. Applied only for privileged roles
+// that have custom backgrounds (admin/moderator/owner) as requested.
+export const getUserNameplateStyles = (user: any): Record<string, string> => {
+  if (!user) return {};
+  const role: string = String(user.userType || '').toLowerCase();
+  const isPrivileged = role === 'admin' || role === 'moderator' || role === 'owner';
+  const hasBg = !!(user.profileBackgroundColor && user.profileBackgroundColor !== 'null' && user.profileBackgroundColor !== 'undefined');
+  if (!isPrivileged || !hasBg) return {};
+
+  const bg = buildProfileBackgroundGradient(String(user.profileBackgroundColor));
+  if (!bg || !bg.startsWith('linear-gradient(')) return {};
+
+  // Ensure perfect visual match with the user list/profile card
+  const styles: Record<string, string> = {
+    backgroundImage: bg,
+    backgroundBlendMode: 'normal',
+    color: '#ffffff',
+    border: '1px solid rgba(255,255,255,0.28)',
+    boxShadow: '0 1px 4px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.18)',
+    // Geometry and spacing kept in CSS class `.ac-nameplate`
+  };
+  return styles;
+};
+
 // دالة للحصول على البيانات الكاملة للتأثير للمستخدم
 export const getUserThemeAndEffect = (user: any) => {
   return {
