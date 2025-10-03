@@ -51,6 +51,26 @@ export default function AnimatedEmojiPicker({ onEmojiSelect, onClose }: Animated
                     alt={emoji.name}
                     className="w-8 h-8 object-contain"
                     loading="lazy"
+                    onError={(ev) => {
+                      const img = ev.currentTarget as HTMLImageElement;
+                      const tried = img.getAttribute('data-tried') || '';
+                      const id = (emoji as any).id as string;
+                      if (!tried) {
+                        img.setAttribute('data-tried', 'classic');
+                        img.src = `/assets/emojis/classic/${id}.gif`;
+                        return;
+                      }
+                      if (tried === 'classic') {
+                        img.setAttribute('data-tried', 'modern');
+                        img.src = `/assets/emojis/modern/${id}.gif`;
+                        return;
+                      }
+                      // Hide button as last resort
+                      try {
+                        const btn = img.closest('button') as HTMLButtonElement | null;
+                        if (btn) btn.style.display = 'none';
+                      } catch {}
+                    }}
                   />
                 </Button>
               ))}

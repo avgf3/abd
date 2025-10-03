@@ -1104,13 +1104,12 @@ export default function MessageArea({
                 variant="outline"
                 size={isMobile ? 'icon' : 'icon'}
                 onClick={() => {
-                  // إغلاق جميع المنتقات الأخرى
+                  // فتح منتقي السمايلات المتحركة ليتوافق مع arabic.chat
                   setShowEmojiPicker(false);
-                  setShowAnimatedEmojiPicker(false);
+                  setShowEnhancedEmoji(false);
                   setShowEmojiMart(false);
                   setShowLottieEmoji(false);
-                  // فتح المنتقي المحسن
-                  setShowEnhancedEmoji(!showEnhancedEmoji);
+                  setShowAnimatedEmojiPicker((v) => !v);
                 }}
                 disabled={isChatRestricted}
                 className={`chat-emoji-button aspect-square mobile-touch-button ${isMobile ? 'min-w-[44px] min-h-[44px]' : ''} ${isChatRestricted ? 'opacity-60 cursor-not-allowed' : ''} rounded-lg border border-input bg-background text-foreground hover:bg-accent hover:text-accent-foreground`}
@@ -1119,8 +1118,8 @@ export default function MessageArea({
                 <Smile className={`${isMobile ? 'w-5 h-5' : 'w-4 h-4'}`} />
               </Button>
               
-              {/* Enhanced Emoji Picker (Default) */}
-              {showEnhancedEmoji && (
+              {/* Enhanced Emoji Picker (Disabled by default to mimic arabic.chat) */}
+              {false && showEnhancedEmoji && (
                 <div className="absolute bottom-full mb-2 z-30">
                   <React.Suspense fallback={null}>
                     <AnimatedEmojiEnhanced
@@ -1185,11 +1184,12 @@ export default function MessageArea({
               <button
                 type="button"
                 onClick={() => {
-                  setShowEnhancedEmoji((v) => !v);
+                  // نفس سلوك الزر العلوي: افتح منتقي السمايلات المتحركة
                   setShowEmojiPicker(false);
-                  setShowAnimatedEmojiPicker(false);
+                  setShowEnhancedEmoji(false);
                   setShowEmojiMart(false);
                   setShowLottieEmoji(false);
+                  setShowAnimatedEmojiPicker((v) => !v);
                 }}
                 className="absolute inset-y-0 left-2 my-auto h-6 w-6 flex items-center justify-center text-gray-500 hover:text-gray-700"
                 title="إظهار السمايلات"

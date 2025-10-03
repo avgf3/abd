@@ -32,7 +32,8 @@
     "build-production": "npm run clean-logs && npm run build",
     "smoke": "node scripts/smoke-api.js",
     "db:verify-reads": "node scripts/verify-conversation-reads.js",
-    "verify-all": "npm run build && npm run db:verify-reads && echo '✅ Build & DB verification passed'"
+    "verify-all": "npm run build && npm run db:verify-reads && echo '✅ Build & DB verification passed'",
+    "fetch:arabic-emoticons": "node tools/fetch-arabic-emoticons.js"
   },
   "dependencies": {
     "@emoji-mart/data": "^1.2.1",
@@ -171,7 +172,7 @@
     "tsx": "^4.20.6",
     "typescript": "^5.9.2",
     "typescript-eslint": "^8.39.0",
-    "vite": "^6.3.5"
+    "vite": "^7.1.9"
   },
   "optionalDependencies": {
     "bufferutil": "^4.0.8"
