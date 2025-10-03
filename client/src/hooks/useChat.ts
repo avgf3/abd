@@ -4,6 +4,7 @@ import type { Socket } from 'socket.io-client';
 import type { PrivateConversation } from '../../../shared/types';
 
 import { apiRequest, queryClient } from '@/lib/queryClient';
+import { createDefaultConnectionManager } from '@/lib/connectionManager';
 import { connectSocket, saveSession, clearSession, getSession } from '@/lib/socket';
 import type { ChatUser, ChatMessage } from '@/types/chat';
 import type { Notification } from '@/types/chat';
@@ -1613,6 +1614,44 @@ export const useChat = () => {
         console.error('خطأ من السيرفر:', data.message);
       }
     });
+  }, []);
+
+  // === Polling-based connection manager to mimic competitor when WebSocket is unavailable ===
+  useEffect(() => {
+    // Guard: require a room to poll
+    const rid = currentRoomIdRef.current || getSession()?.roomId || 'general';
+    const token = getSession()?.token;
+    const manager = createDefaultConnectionManager({ roomId: rid, token });
+
+    // When poll returns data, inject into state similar to incoming socket messages
+    const onPoll = (e: any) => {
+      try {
+        const items: any[] = Array.isArray(e?.detail?.items) ? e.detail.items : [];
+        if (items.length === 0) return;
+        const formatted = mapDbMessagesToChatMessages(items, rid);
+        const existing = roomMessagesRef.current[rid] || [];
+        const existingIds = new Set(existing.map((m) => m.id));
+        const toAppend = formatted.filter((m) => !existingIds.has(m.id));
+        if (toAppend.length > 0) {
+          const next = [...existing, ...toAppend];
+          dispatch({ type: 'SET_ROOM_MESSAGES', payload: { roomId: rid, messages: next } });
+          // update last meta
+          const last = toAppend[toAppend.length - 1];
+          if (last?.id) {
+            const meta = new Map(lastRoomMessageMetaRef.current);
+            meta.set(rid, { lastId: Number(last.id) });
+            lastRoomMessageMetaRef.current = meta;
+          }
+        }
+      } catch {}
+    };
+    window.addEventListener('chatPollData', onPoll as EventListener);
+    manager.start();
+
+    return () => {
+      window.removeEventListener('chatPollData', onPoll as EventListener);
+      manager.stop();
+    };
   }, []);
 
   // Ensure cleanup on unmount
