@@ -155,6 +155,72 @@
           "code": ":rocket:"
         }
       ]
+    },
+    "custom": {
+      "name": "مخصصة",
+      "icon": "🎭",
+      "emojis": [
+        {
+          "id": "angry_red",
+          "name": "غضب أحمر",
+          "url": "/assets/emojis/custom/angry_red.gif",
+          "code": ":angry_red:"
+        },
+        {
+          "id": "begging",
+          "name": "توسل",
+          "url": "/assets/emojis/custom/begging.gif",
+          "code": ":begging:"
+        },
+        {
+          "id": "cheer_crazy",
+          "name": "تشجيع مجنون",
+          "url": "/assets/emojis/custom/cheer_crazy.gif",
+          "code": ":cheer_crazy:"
+        },
+        {
+          "id": "cheer_girl",
+          "name": "فتاة تشجع",
+          "url": "/assets/emojis/custom/cheer_girl.gif",
+          "code": ":cheer_girl:"
+        },
+        {
+          "id": "gunshot",
+          "name": "طلقة",
+          "url": "/assets/emojis/custom/gunshot.gif",
+          "code": ":gunshot:"
+        },
+        {
+          "id": "pom_poms",
+          "name": "بوم بوم",
+          "url": "/assets/emojis/custom/pom_poms.gif",
+          "code": ":pom_poms:"
+        },
+        {
+          "id": "reading",
+          "name": "قراءة",
+          "url": "/assets/emojis/custom/reading.gif",
+          "code": ":reading:"
+        },
+        {
+          "id": "slap",
+          "name": "صفعة",
+          "url": "/assets/emojis/custom/slap.gif",
+          "code": ":slap:"
+        },
+        {
+          "id": "stare",
+          "name": "تحديق",
+          "url": "/assets/emojis/custom/stare.gif",
+          "code": ":stare:"
+        },
+        {
+          "id": "vanish",
+          "name": "اختفاء",
+          "url": "/assets/emojis/custom/vanish.gif",
+          "code": ":vanish:"
+        }
+      ]
     }
   }
 }
