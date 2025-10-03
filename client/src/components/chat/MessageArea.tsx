@@ -433,6 +433,22 @@ export default function MessageArea({
     }
   }, [messageText, clampToMaxChars]);
 
+  // استقبال إدراج كود سمايل من تبويب "السمايلات"
+  useEffect(() => {
+    const onInsert = (ev: Event) => {
+      try {
+        const detail = (ev as CustomEvent)?.detail as { code?: string } | undefined;
+        const code = (detail && detail.code) || '';
+        if (!code) return;
+        const next = clampToMaxChars((messageText || '') + code);
+        setMessageText(next);
+        inputRef.current?.focus();
+      } catch {}
+    };
+    window.addEventListener('insertEmojiCode' as any, onInsert as any);
+    return () => window.removeEventListener('insertEmojiCode' as any, onInsert as any);
+  }, [messageText, clampToMaxChars]);
+
   // Emoji select handler
   const handleEmojiSelect = useCallback((emoji: string) => {
     const newText = clampToMaxChars(messageText + emoji);
