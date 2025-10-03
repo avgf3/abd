@@ -2266,9 +2266,11 @@ export default function ProfileModal({
         .profile-avatar img {
           width: 100%;
           height: 100%;
-          object-fit: cover;
+          object-fit: contain;
+          object-position: center;
           display: block;
           border-radius: 0; /* إزالة أي استدارة للصورة */
+          background: rgba(0,0,0,0.2); /* خلفية خفيفة في حال كانت الصورة أصغر من الإطار */
         }
 
         .change-avatar-btn {
