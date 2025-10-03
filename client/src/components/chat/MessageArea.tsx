@@ -488,6 +488,24 @@ export default function MessageArea({
     } catch {}
   }, []);
 
+  // Toggle reaction (like/dislike/heart) for a message
+  const handleToggleReaction = useCallback(
+    async (message: ChatMessage, type: 'like' | 'dislike' | 'heart') => {
+      if (!currentUser) return;
+      try {
+        const endpoint = `/api/messages/${message.id}/reactions`;
+        if (message.myReaction === type) {
+          await apiRequest(endpoint, { method: 'DELETE', body: { type } });
+        } else {
+          await apiRequest(endpoint, { method: 'POST', body: { type } });
+        }
+      } catch (error) {
+        console.error('فشل تحديث التفاعل:', error);
+      }
+    },
+    [currentUser]
+  );
+
   // File upload handler - محسن
   const handleFileUpload = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -728,9 +746,9 @@ export default function MessageArea({
                           <span className="text-red-400 mx-1">:</span>
                         </div>
 
-                        {/* Content section - flexible width */}
-                        <div className={`flex-1 min-w-0 text-red-600 break-words message-content-fix ${isMobile ? 'system-message-content' : ''}`}>
-                          <span className="line-clamp-2">{message.content}</span>
+                        {/* Content section - flexible width (one-line, full content) */}
+                        <div className={`flex-1 min-w-0 text-red-600 message-content-fix ${isMobile ? 'system-message-content' : ''} whitespace-nowrap`}>
+                          <span>{message.content}</span>
                         </div>
 
                         {/* Actions: report + menu */}
@@ -751,6 +769,24 @@ export default function MessageArea({
                               </button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="bg-popover border-border text-popover-foreground">
+                              <DropdownMenuItem onClick={() => handleToggleReaction(message, 'like')}>
+                                {message.myReaction === 'like' ? 'إزالة الإعجاب' : 'إعجاب 👍'}
+                                {(message.reactions?.like ?? 0) > 0 && (
+                                  <span className="ml-2 text-xs text-muted-foreground">({message.reactions?.like ?? 0})</span>
+                                )}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleToggleReaction(message, 'dislike')}>
+                                {message.myReaction === 'dislike' ? 'إزالة عدم الإعجاب' : 'عدم إعجاب 👎'}
+                                {(message.reactions?.dislike ?? 0) > 0 && (
+                                  <span className="ml-2 text-xs text-muted-foreground">({message.reactions?.dislike ?? 0})</span>
+                                )}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleToggleReaction(message, 'heart')}>
+                                {message.myReaction === 'heart' ? 'إزالة القلب' : 'قلب ❤️'}
+                                {(message.reactions?.heart ?? 0) > 0 && (
+                                  <span className="ml-2 text-xs text-muted-foreground">({message.reactions?.heart ?? 0})</span>
+                                )}
+                              </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => handleCopyMessage(message.content)}>نسخ الرسالة</DropdownMenuItem>
                               {onReportMessage && message.sender && currentUser && message.sender.id !== currentUser.id && (
                                 <DropdownMenuItem onClick={() => onReportMessage(message.sender!, message.content, message.id)}>تبليغ</DropdownMenuItem>
@@ -902,6 +938,24 @@ export default function MessageArea({
                               </button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="bg-popover border-border text-popover-foreground">
+                              <DropdownMenuItem onClick={() => handleToggleReaction(message, 'like')}>
+                                {message.myReaction === 'like' ? 'إزالة الإعجاب' : 'إعجاب 👍'}
+                                {(message.reactions?.like ?? 0) > 0 && (
+                                  <span className="ml-2 text-xs text-muted-foreground">({message.reactions?.like ?? 0})</span>
+                                )}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleToggleReaction(message, 'dislike')}>
+                                {message.myReaction === 'dislike' ? 'إزالة عدم الإعجاب' : 'عدم إعجاب 👎'}
+                                {(message.reactions?.dislike ?? 0) > 0 && (
+                                  <span className="ml-2 text-xs text-muted-foreground">({message.reactions?.dislike ?? 0})</span>
+                                )}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleToggleReaction(message, 'heart')}>
+                                {message.myReaction === 'heart' ? 'إزالة القلب' : 'قلب ❤️'}
+                                {(message.reactions?.heart ?? 0) > 0 && (
+                                  <span className="ml-2 text-xs text-muted-foreground">({message.reactions?.heart ?? 0})</span>
+                                )}
+                              </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => handleCopyMessage(message.content)}>نسخ الرسالة</DropdownMenuItem>
                               {onReportMessage && message.sender && currentUser && message.sender.id !== currentUser.id && (
                                 <DropdownMenuItem onClick={() => onReportMessage(message.sender!, message.content, message.id)}>تبليغ</DropdownMenuItem>
