@@ -7,6 +7,7 @@ const AnimatedEmojiPicker = React.lazy(() => import('./AnimatedEmojiPicker'));
 const EmojiMartPicker = React.lazy(() => import('./EmojiMartPicker'));
 const LottieEmojiPicker = React.lazy(() => import('./LottieEmojiPicker'));
 const AnimatedEmojiEnhanced = React.lazy(() => import('./AnimatedEmojiEnhanced'));
+const ArabicChatEmojiPicker = React.lazy(() => import('./ArabicChatEmojiPicker'));
 const ComposerPlusMenu = React.lazy(() => import('./ComposerPlusMenu'));
 import ProfileImage from './ProfileImage';
 import UserRoleBadge from './UserRoleBadge';
@@ -74,6 +75,7 @@ export default function MessageArea({
   const [showEmojiMart, setShowEmojiMart] = useState(false);
   const [showLottieEmoji, setShowLottieEmoji] = useState(false);
   const [showEnhancedEmoji, setShowEnhancedEmoji] = useState(false);
+  const [showArabicEmoji, setShowArabicEmoji] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const isMobile = useIsMobile();
   const { textColor: composerTextColor, bold: composerBold } = useComposerStyle();
@@ -478,6 +480,15 @@ export default function MessageArea({
     const newText = clampToMaxChars(messageText + emoji.emoji);
     setMessageText(newText);
     setShowEnhancedEmoji(false);
+    inputRef.current?.focus();
+  }, [messageText, clampToMaxChars]);
+
+  // Arabic.chat Emoji handler
+  const handleArabicEmojiSelect = useCallback((emoji: { id: string; url: string; code: string; name?: string }) => {
+    // إدراج بصيغة [[emoji:id:url]] ليتم عرضها كصورة متحركة/ثابتة
+    const newText = clampToMaxChars(messageText + ` [[emoji:${emoji.id}:${emoji.url}]] `);
+    setMessageText(newText);
+    setShowArabicEmoji(false);
     inputRef.current?.focus();
   }, [messageText, clampToMaxChars]);
 
@@ -1185,18 +1196,31 @@ export default function MessageArea({
               <button
                 type="button"
                 onClick={() => {
-                  setShowEnhancedEmoji((v) => !v);
+                  setShowArabicEmoji((v) => !v);
+                  setShowEnhancedEmoji(false);
                   setShowEmojiPicker(false);
                   setShowAnimatedEmojiPicker(false);
                   setShowEmojiMart(false);
                   setShowLottieEmoji(false);
                 }}
                 className="absolute inset-y-0 left-2 my-auto h-6 w-6 flex items-center justify-center text-gray-500 hover:text-gray-700"
-                title="إظهار السمايلات"
+                title="إظهار سمايلات arabic.chat"
                 disabled={!currentUser || isChatRestricted}
               >
                 <Smile className="w-5 h-5" />
               </button>
+
+              {/* Arabic.chat Emoji Picker */}
+              {showArabicEmoji && (
+                <div className="absolute bottom-full left-0 mb-2 z-30">
+                  <React.Suspense fallback={null}>
+                    <ArabicChatEmojiPicker
+                      onSelect={handleArabicEmojiSelect}
+                      onClose={() => setShowArabicEmoji(false)}
+                    />
+                  </React.Suspense>
+                </div>
+              )}
             </div>
 
             {/* Send Button at the end */}
