@@ -662,7 +662,7 @@ export default function MessageArea({
             itemContent={(index, message) => (
               <div
                 key={message.id}
-                className={`relative flex ${isMobile ? 'items-start' : 'items-center'} gap-2 py-1.5 px-2 rounded-lg border-r-4 bg-white shadow-sm hover:shadow-md transition-all duration-300`}
+                className={`ac-message-row ${index % 2 ? 'log2' : ''} ${isMobile ? 'items-start' : 'items-center'} gap-2 py-1.5 px-2 rounded-lg transition-all duration-300`}
                 style={{ borderRightColor: getDynamicBorderColor(message.sender) }}
                 data-message-type={message.messageType || 'normal'}
               >
@@ -711,7 +711,7 @@ export default function MessageArea({
                     </div>
 
                     {/* Right side: time */}
-                    <span className="text-xs text-red-500 whitespace-nowrap ml-2 self-start">
+                    <span className="ac-time hidden ml-2 self-start">
                       {formatTime(message.timestamp)}
                     </span>
                   </>
@@ -742,7 +742,7 @@ export default function MessageArea({
                           </button>
                           <span className="text-gray-400 mx-1">:</span>
                         </div>
-                        <div className="runin-text text-gray-800 message-content-fix">
+                        <div className="runin-text text-gray-900 message-content-fix">
                           {message.messageType === 'image' ? (
                             <button
                               type="button"
@@ -759,7 +759,7 @@ export default function MessageArea({
                               if (ids.length > 0) {
                                 const firstId = ids[0];
                                 return (
-                                  <span className="text-sm leading-relaxed inline-flex items-center gap-2">
+                                <span className="text-[13px] font-semibold leading-6 inline-flex items-center gap-2">
                                     {cleaned && (
                                       <span
                                         style={{
@@ -787,7 +787,7 @@ export default function MessageArea({
                               }
                               return (
                                 <span
-                                  className="text-sm leading-relaxed"
+                                  className="text-[13px] font-semibold leading-6"
                                   style={{
                                     color: message.textColor || '#000000',
                                     fontWeight: message.bold ? 700 : undefined
@@ -804,7 +804,7 @@ export default function MessageArea({
                         </div>
 
                         {/* Time section - fixed width */}
-                        <span className="text-xs text-gray-500 whitespace-nowrap shrink-0 self-start">
+                        <span className="ac-time hidden whitespace-nowrap shrink-0 self-start">
                           {formatTime(message.timestamp)}
                         </span>
                       </div>
@@ -1000,13 +1000,25 @@ export default function MessageArea({
           <div className="mb-1.5 text-[11px] text-gray-500 animate-pulse">{typingDisplay}</div>
         )}
 
-        <div
-          className={`flex ${isMobile ? 'gap-2 p-2' : 'gap-2 p-2'} items-end max-w-full mx-auto bg-white/80 backdrop-blur-sm transition-all duration-300`}
+      <div
+        className={`ac-composer flex ${isMobile ? 'gap-2 p-2' : 'gap-2 p-2'} items-end max-w-full mx-auto bg-white transition-all duration-300 rounded-lg border border-gray-200`}
           style={{ paddingBottom: isMobile ? 'calc(env(safe-area-inset-bottom) + 0.5rem)' : '0.75rem' }}
         >
-          {/* Input row: Emoji buttons, input field, and send button */}
+          {/* Input row: plus, emoji, input, send (order like arabic.chat) */}
           <div className={`flex flex-1 items-end gap-2`}>
-            {/* Animated Emoji Options */}
+            {/* Plus menu (moved to start) */}
+            <React.Suspense fallback={null}>
+              <div className="chat-plus-button">
+                <ComposerPlusMenu
+                  onOpenImagePicker={() => fileInputRef.current?.click()}
+                  disabled={!currentUser || isChatRestricted}
+                  isMobile={isMobile}
+                  currentUser={currentUser}
+                />
+              </div>
+            </React.Suspense>
+
+            {/* Emoji button */}
             <div className="relative">
               <Button
                 type="button"
@@ -1077,7 +1089,38 @@ export default function MessageArea({
               )}
             </div>
 
-            {/* Send Button moved next to emoji buttons (in place of +) */}
+            {/* Message Input (with inline emoji trigger like arabic.chat) */}
+            <div className="relative flex-1">
+              <Input
+                ref={inputRef}
+                value={messageText}
+                onChange={handleMessageChange}
+                onKeyDown={handleKeyPress}
+                onPaste={handlePaste}
+                placeholder={!currentUser || isChatRestricted ? (getRestrictionMessage || 'هذه الخاصية غير متوفرة الآن') : "اكتب هنا..."}
+                className={`rooms-message-input w-full bg-white text-foreground placeholder:text-muted-foreground rounded-lg border border-gray-300 h-10 pr-10 focus:border-transparent focus:ring-offset-0 focus-visible:ring-offset-0 text-[14px]`}
+                disabled={!currentUser || isChatRestricted}
+                style={{ color: composerTextColor, fontWeight: composerBold ? 700 : undefined }}
+                maxLength={MAX_CHARS}
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  setShowEnhancedEmoji((v) => !v);
+                  setShowEmojiPicker(false);
+                  setShowAnimatedEmojiPicker(false);
+                  setShowEmojiMart(false);
+                  setShowLottieEmoji(false);
+                }}
+                className="absolute inset-y-0 left-2 my-auto h-6 w-6 flex items-center justify-center text-gray-500 hover:text-gray-700"
+                title="إظهار السمايلات"
+                disabled={!currentUser || isChatRestricted}
+              >
+                <Smile className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Send Button at the end */}
             <Button
               onClick={handleSendMessage}
               disabled={!messageText.trim() || !currentUser || isChatRestricted}
@@ -1086,30 +1129,6 @@ export default function MessageArea({
             >
               <Send className="w-4 h-4" />
             </Button>
-
-            {/* Message Input - simple input field like PrivateMessageBox */}
-            <Input
-              ref={inputRef}
-              value={messageText}
-              onChange={handleMessageChange}
-              onKeyDown={handleKeyPress}
-              onPaste={handlePaste}
-              placeholder={!currentUser || isChatRestricted ? (getRestrictionMessage || 'هذه الخاصية غير متوفرة الآن') : "اكتب رسالتك هنا..."}
-              className={`rooms-message-input flex-1 bg-white text-foreground placeholder:text-muted-foreground rounded-lg border border-gray-300 h-9 focus:border-transparent focus:ring-offset-0 focus-visible:ring-offset-0`}
-              disabled={!currentUser || isChatRestricted}
-              style={{ color: composerTextColor, fontWeight: composerBold ? 700 : undefined }}
-              maxLength={MAX_CHARS}
-            />
-
-            {/* Composer Plus Menu moved to the end */}
-            <React.Suspense fallback={null}>
-              <ComposerPlusMenu
-                onOpenImagePicker={() => fileInputRef.current?.click()}
-                disabled={!currentUser || isChatRestricted}
-                isMobile={isMobile}
-                currentUser={currentUser}
-              />
-            </React.Suspense>
           </div>
 
           {/* Hidden File Input */}
