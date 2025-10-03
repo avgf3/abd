@@ -1,4 +1,4 @@
-import { Send, Smile, ChevronDown, Sparkles, Flag, Lock, UserX } from 'lucide-react';
+import { Send, Smile, ChevronDown, Sparkles, Flag, Lock, UserX, MoreVertical } from 'lucide-react';
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { Virtuoso, type VirtuosoHandle } from 'react-virtuoso';
 
@@ -15,6 +15,7 @@ import { ReactionEffects, playReactionSound } from './ReactionEffects';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, FloatingDialogContent } from '@/components/ui/dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import ImageLightbox from '@/components/ui/ImageLightbox';
 import ImageAttachmentBadge from '@/components/ui/ImageAttachmentBadge';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -480,6 +481,13 @@ export default function MessageArea({
     inputRef.current?.focus();
   }, [messageText, clampToMaxChars]);
 
+  // Copy message content to clipboard
+  const handleCopyMessage = useCallback((text: string) => {
+    try {
+      void navigator.clipboard.writeText(text || '');
+    } catch {}
+  }, []);
+
   // File upload handler - محسن
   const handleFileUpload = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -657,7 +665,7 @@ export default function MessageArea({
             itemContent={(index, message) => (
               <div
                 key={message.id}
-                className={`ac-message-row flex ${isMobile ? 'items-start' : 'items-center'} gap-2 py-1 px-2 transition-all duration-300 ${index % 2 ? 'log2' : ''}`}
+                className={`ac-message-row flex items-start gap-2 py-1 px-2 transition-all duration-300 ${index % 2 ? 'log2' : ''}`}
                 style={{ borderRightColor: getDynamicBorderColor(message.sender), direction: 'rtl' }}
                 data-message-type={message.messageType || 'normal'}
               >
@@ -668,7 +676,7 @@ export default function MessageArea({
                     trigger={reactionEffects.get(message.id)!.trigger}
                   />
                 )}
-                {/* System message: optimized layout for both mobile and desktop */}
+                {/* System message: optimized layout for both mobile and desktop with unified alignment */}
                 {message.messageType === 'system' ? (
                   <>
                     {message.sender && (
@@ -681,8 +689,7 @@ export default function MessageArea({
                         />
                       </div>
                     )}
-                    <div className={`flex-1 min-w-0`}>
-                      {/* Unified layout for both mobile and desktop */}
+                    <div className="flex-1 min-w-0">
                       <div className={`flex items-start gap-2 ${isMobile ? 'system-message-mobile' : ''}`}>
                         {/* Name and badge section - fixed width */}
                         <div className="flex items-center gap-1 shrink-0">
@@ -723,26 +730,39 @@ export default function MessageArea({
 
                         {/* Content section - flexible width */}
                         <div className={`flex-1 min-w-0 text-red-600 break-words message-content-fix ${isMobile ? 'system-message-content' : ''}`}>
-                          <span className="line-clamp-2">
-                            {message.content}
-                          </span>
+                          <span className="line-clamp-2">{message.content}</span>
+                        </div>
+
+                        {/* Actions: report + menu */}
+                        <div className="flex items-center gap-1 shrink-0">
+                          {onReportMessage && message.sender && currentUser && message.sender.id !== currentUser.id && (
+                            <button
+                              className="text-gray-500 hover:text-red-600"
+                              title="تبليغ"
+                              onClick={() => onReportMessage(message.sender!, message.content, message.id)}
+                            >
+                              <Flag className="w-4 h-4" />
+                            </button>
+                          )}
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <button className="text-gray-500 hover:text-gray-700" title="خيارات" aria-label="خيارات">
+                                <MoreVertical className="w-4 h-4" />
+                              </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="bg-popover border-border text-popover-foreground">
+                              <DropdownMenuItem onClick={() => handleCopyMessage(message.content)}>نسخ الرسالة</DropdownMenuItem>
+                              {onReportMessage && message.sender && currentUser && message.sender.id !== currentUser.id && (
+                                <DropdownMenuItem onClick={() => onReportMessage(message.sender!, message.content, message.id)}>تبليغ</DropdownMenuItem>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </div>
                       </div>
-                      {onReportMessage && message.sender && currentUser && message.sender.id !== currentUser.id && (
-                        <button
-                          className="self-start ml-1 text-gray-500 hover:text-red-600"
-                          title="تبليغ"
-                          onClick={() => onReportMessage(message.sender!, message.content, message.id)}
-                        >
-                          <Flag className="w-4 h-4" />
-                        </button>
-                      )}
                     </div>
 
                     {/* Right side: time */}
-                    <span className="ac-time hidden ml-2 self-start">
-                      {formatTime(message.timestamp)}
-                    </span>
+                    <span className="ac-time hidden ml-2 self-start">{formatTime(message.timestamp)}</span>
                   </>
                 ) : (
                   <>
@@ -758,121 +778,139 @@ export default function MessageArea({
                       </div>
                     )}
 
-                    {/* Unified run-in layout for both mobile and desktop */}
-                    <div className={`flex-1 min-w-0`}>
-                      <div className="runin-container">
-                      <div className="runin-name">
-                        {message.sender && (
-                          <span className="inline-flex items-center justify-center mr-1">
-                            <UserRoleBadge user={message.sender} size={14} hideGuestAndGender />
-                          </span>
-                        )}
-                          {(() => {
-                            const np = getUserNameplateStyles(message.sender);
-                            const hasNp = np && Object.keys(np).length > 0;
-                            if (hasNp) {
-                              return (
-                                <button
-                                  onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
-                                  className="transition-transform duration-200 hover:scale-[1.02]"
-                                  title={message.sender?.username}
-                                >
-                                  <span className="ac-nameplate" style={np}>
-                                    <span className="ac-name">{message.sender?.username || '...'}</span>
-                                    <span className="ac-mark">〰</span>
-                                  </span>
-                                </button>
-                              );
-                            }
-                            return (
-                              <button
-                                onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
-                                className="font-semibold hover:underline transition-colors duration-200 text-sm"
-                                style={{ color: getFinalUsernameColor(message.sender) }}
-                              >
-                                {message.sender?.username || 'جاري التحميل...'}
-                              </button>
-                            );
-                          })()}
-                          <span className="text-gray-400 mx-1">:</span>
-                        </div>
-                        <div className="runin-text text-gray-900 message-content-fix">
-                          {message.messageType === 'image' ? (
-                            <button
-                              type="button"
-                              onClick={() => setImageLightbox({ open: true, src: message.content })}
-                              className="inline-flex items-center justify-center p-0 bg-transparent"
-                              title="عرض الصورة"
-                              aria-label="عرض الصورة"
-                            >
-                              <ImageAttachmentBadge />
-                            </button>
-                          ) : (
-                            (() => {
-                              const { cleaned, ids } = parseYouTubeFromText(message.content);
-                              if (ids.length > 0) {
-                                const firstId = ids[0];
-                                return (
-                                <span className="text-[13px] font-semibold leading-6 inline-flex items-center gap-2">
-                                    {cleaned && (
-                                      <span
-                                        style={{
-                                          color: message.textColor || '#000000',
-                                          fontWeight: message.bold ? 700 : undefined
-                                        }}
-                                      >
-                                        {renderMessageWithAnimatedEmojis(
-                                          cleaned,
-                                          (text) => renderMessageWithMentions(text, currentUser, onlineUsers)
-                                        )}
-                                      </span>
-                                    )}
+                    {/* Unified run-in layout for both mobile and desktop with inline actions and top alignment */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start gap-2">
+                        <div className="flex-1 min-w-0">
+                          <div className="runin-container">
+                          <div className="runin-name">
+                            {message.sender && (
+                              <span className="inline-flex items-center justify-center mr-1">
+                                <UserRoleBadge user={message.sender} size={14} hideGuestAndGender />
+                              </span>
+                            )}
+                              {(() => {
+                                const np = getUserNameplateStyles(message.sender);
+                                const hasNp = np && Object.keys(np).length > 0;
+                                if (hasNp) {
+                                  return (
                                     <button
-                                      onClick={() => setYoutubeModal({ open: true, videoId: firstId })}
-                                      className="flex items-center justify-center w-8 h-6 rounded bg-red-600 hover:bg-red-700 transition-colors"
-                                      title="فتح فيديو YouTube"
+                                      onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
+                                      className="transition-transform duration-200 hover:scale-[1.02]"
+                                      title={message.sender?.username}
                                     >
-                                      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-                                        <path fill="#fff" d="M10 15l5.19-3L10 9v6z"></path>
-                                      </svg>
+                                      <span className="ac-nameplate" style={np}>
+                                        <span className="ac-name">{message.sender?.username || '...'}</span>
+                                        <span className="ac-mark">〰</span>
+                                      </span>
                                     </button>
-                                  </span>
+                                  );
+                                }
+                                return (
+                                  <button
+                                    onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
+                                    className="font-semibold hover:underline transition-colors duration-200 text-sm"
+                                    style={{ color: getFinalUsernameColor(message.sender) }}
+                                  >
+                                    {message.sender?.username || 'جاري التحميل...'}
+                                  </button>
                                 );
-                              }
-                              return (
-                                <span
-                                  className="text-[13px] font-semibold leading-6"
-                                  style={{
-                                    color: message.textColor || '#000000',
-                                    fontWeight: message.bold ? 700 : undefined
-                                  }}
+                              })()}
+                              <span className="text-gray-400 mx-1">:</span>
+                            </div>
+                            <div className="runin-text text-gray-900 message-content-fix">
+                              {message.messageType === 'image' ? (
+                                <button
+                                  type="button"
+                                  onClick={() => setImageLightbox({ open: true, src: message.content })}
+                                  className="inline-flex items-center justify-center p-0 bg-transparent"
+                                  title="عرض الصورة"
+                                  aria-label="عرض الصورة"
                                 >
-                                  {renderMessageWithAnimatedEmojis(
-                                    message.content,
-                                    (text) => renderMessageWithMentions(text, currentUser, onlineUsers)
-                                  )}
-                                </span>
-                              );
-                            })()
-                          )}
-                        </div>
+                                  <ImageAttachmentBadge />
+                                </button>
+                              ) : (
+                                (() => {
+                                  const { cleaned, ids } = parseYouTubeFromText(message.content);
+                                  if (ids.length > 0) {
+                                    const firstId = ids[0];
+                                    return (
+                                    <span className="text-[13px] font-semibold leading-6 inline-flex items-center gap-2">
+                                        {cleaned && (
+                                          <span
+                                            style={{
+                                              color: message.textColor || '#000000',
+                                              fontWeight: message.bold ? 700 : undefined
+                                            }}
+                                          >
+                                            {renderMessageWithAnimatedEmojis(
+                                              cleaned,
+                                              (text) => renderMessageWithMentions(text, currentUser, onlineUsers)
+                                            )}
+                                          </span>
+                                        )}
+                                        <button
+                                          onClick={() => setYoutubeModal({ open: true, videoId: firstId })}
+                                          className="flex items-center justify-center w-8 h-6 rounded bg-red-600 hover:bg-red-700 transition-colors"
+                                          title="فتح فيديو YouTube"
+                                        >
+                                          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                                            <path fill="#fff" d="M10 15l5.19-3L10 9v6z"></path>
+                                          </svg>
+                                        </button>
+                                      </span>
+                                    );
+                                  }
+                                  return (
+                                    <span
+                                      className="text-[13px] font-semibold leading-6"
+                                      style={{
+                                        color: message.textColor || '#000000',
+                                        fontWeight: message.bold ? 700 : undefined
+                                      }}
+                                    >
+                                      {renderMessageWithAnimatedEmojis(
+                                        message.content,
+                                        (text) => renderMessageWithMentions(text, currentUser, onlineUsers)
+                                      )}
+                                    </span>
+                                  );
+                                })()
+                              )}
+                            </div>
 
-                        {/* Time section - fixed width */}
-                        <span className="ac-time hidden whitespace-nowrap shrink-0 self-start">
-                          {formatTime(message.timestamp)}
-                        </span>
+                            {/* Time section - fixed width */}
+                            <span className="ac-time hidden whitespace-nowrap shrink-0 self-start">
+                              {formatTime(message.timestamp)}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1 shrink-0">
+                          {onReportMessage && message.sender && currentUser && message.sender.id !== currentUser.id && (
+                            <button
+                              className="text-gray-500 hover:text-red-600"
+                              title="تبليغ"
+                              onClick={() => onReportMessage(message.sender!, message.content, message.id)}
+                            >
+                              <Flag className="w-4 h-4" />
+                            </button>
+                          )}
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <button className="text-gray-500 hover:text-gray-700" title="خيارات" aria-label="خيارات">
+                                <MoreVertical className="w-4 h-4" />
+                              </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="bg-popover border-border text-popover-foreground">
+                              <DropdownMenuItem onClick={() => handleCopyMessage(message.content)}>نسخ الرسالة</DropdownMenuItem>
+                              {onReportMessage && message.sender && currentUser && message.sender.id !== currentUser.id && (
+                                <DropdownMenuItem onClick={() => onReportMessage(message.sender!, message.content, message.id)}>تبليغ</DropdownMenuItem>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
                       </div>
                     </div>
-
-                  {onReportMessage && message.sender && currentUser && message.sender.id !== currentUser.id && (
-                    <button
-                      className="self-start ml-1 text-gray-500 hover:text-red-600"
-                      title="تبليغ"
-                      onClick={() => onReportMessage(message.sender!, message.content, message.id)}
-                    >
-                      <Flag className="w-4 h-4" />
-                    </button>
-                  )}
                   </>
                 )}
               </div>
