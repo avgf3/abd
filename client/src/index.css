@@ -1663,19 +1663,16 @@ li > * > div.effect-crystal {
 
 .runin-text { display: inline; text-align: start; word-break: break-word; overflow-wrap: anywhere; white-space: pre-wrap; line-height: 1.4; }
 
-/* Mobile message rows: match desktop (no zebra, no right strip) */
+/* Zebra striping for room messages (mobile and desktop) */
+.ac-message-row.log2 {
+  background: #f8fafc;
+}
+
+/* Mobile message rows: keep same structure, remove colored right strip only */
 @media (max-width: 768px) {
   .mobile-message-area .ac-message-row {
-    background: transparent !important;
     border-right: 0 !important; /* remove colored strip */
     border-radius: inherit !important;
-  }
-  .mobile-message-area .ac-message-row.log2 {
-    background: transparent !important; /* remove zebra */
-  }
-  /* Also ensure desktop doesn't alternate: remove any zebra globally */
-  .ac-message-row.log2 {
-    background: transparent !important;
   }
   .mobile-message-area .ac-message-row .runin-name button {
     font-weight: 700;
