@@ -1637,7 +1637,8 @@ li > * > div.effect-crystal {
 /* arabic.chat-like alternating rows and message visuals */
 .ac-message-row {
   background: #ffffff;
-  border-right: 4px solid transparent;
+  border-right: 4px solid transparent; /* rank color strip like arabic.chat */
+  border-radius: 0; /* square rows like arabic.chat */
 }
 .ac-message-row.log2 {
   background: #f9f9f9; /* subtle zebra */
