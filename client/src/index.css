@@ -1606,16 +1606,20 @@ li > * > div.effect-crystal {
 }
 
 /* === محاذاة الرسائل الجديدة: الاسم في السطر الأول، النص تحته مباشرة === */
-/* ========== LEGACY RUNIN STYLES - UPDATED FOR MOBILE FLOAT RUN-IN ========== */
+/* ========== arabic.chat-style run-in using CSS Grid ========== */
 
-/* أسلوب run-in للجوال: الاسم يظهر في السطر الأول فقط، وبقية الأسطر تمتد بكامل العرض */
+/* الاسم + ":" في عمود ثابت، والنص في عمود مرن يلتف تحته فقط */
 .runin-container {
-  display: block;
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  column-gap: 0.5rem;
+  align-items: start;
   width: 100%;
 }
 
 .runin-name {
-  display: inline;
+  display: inline-flex;
+  align-items: flex-start;
   white-space: nowrap;
   line-height: 1.4;
 }
@@ -1626,7 +1630,7 @@ li > * > div.effect-crystal {
 }
 
 .runin-text {
-  display: inline; /* start inline with the name, wraps to next lines */
+  display: block; /* يظهر بجانب الاسم وتلتف الأسطر تحت النص فقط */
   text-align: start;
   word-break: break-word;
   overflow-wrap: anywhere;
@@ -1663,25 +1667,7 @@ li > * > div.effect-crystal {
   background: #ffffff;
 }
 
-/* تطبيق تأثير run-in محسّن للجوال */
-@media (max-width: 768px) {
-  .runin-container {
-    position: relative;
-  }
-  .runin-name {
-    display: inline;
-    line-height: 1.4;
-  }
-  .runin-name > * {
-    display: inline;
-    vertical-align: baseline;
-  }
-  .runin-text {
-    display: inline;
-    text-align: start;
-    line-height: 1.4;
-  }
-}
+/* لا حاجة لتعديلات خاصة بالجوال؛ CSS Grid يتصرف كما هو مطلوب */
 
 /* ========== MODERN ADVANCED DESIGN SYSTEM ========== */
 
