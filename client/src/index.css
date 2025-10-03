@@ -1609,10 +1609,8 @@ li > * > div.effect-crystal {
 /* ========== LEGACY RUNIN STYLES - UPDATED FOR MOBILE FLOAT RUN-IN ========== */
 
 /* أسلوب run-in للجوال: الاسم يظهر في السطر الأول فقط، وبقية الأسطر تمتد بكامل العرض */
-.runin-container {
-  display: block;
-  width: 100%;
-}
+/* Keep run-in container flexible for both, but optimize only on mobile */
+.runin-container { display: block; width: 100%; }
 
 .runin-name {
   display: inline;
@@ -1625,42 +1623,38 @@ li > * > div.effect-crystal {
   vertical-align: baseline;
 }
 
-.runin-text {
-  display: inline; /* start inline with the name, wraps to next lines */
-  text-align: start;
-  word-break: break-word;
-  overflow-wrap: anywhere;
-  white-space: pre-wrap;
-  line-height: 1.4;
-}
+.runin-text { display: inline; text-align: start; word-break: break-word; overflow-wrap: anywhere; white-space: pre-wrap; line-height: 1.4; }
 
-/* arabic.chat-like alternating rows and message visuals */
-.ac-message-row {
-  background: #ffffff;
-  border-right: 4px solid transparent; /* rank color strip like arabic.chat */
-  border-radius: 0; /* square rows like arabic.chat */
-}
-.ac-message-row.log2 {
-  background: #f9f9f9; /* subtle zebra */
-}
-.ac-message-row .runin-name button {
-  font-weight: 700;
-}
-.ac-message-row .runin-name + span { /* the colon ':' */
-  color: #9aa0a6;
-}
-.ac-message-row .runin-text {
-  color: #111827;
-}
-.ac-time { /* hide inline timestamp like arabic.chat */
-  display: none !important;
-}
-
-/* composer block closer to arabic.chat: bordered, rounded, white */
-.ac-composer {
-  border: 1px solid #e5e7eb;
-  border-radius: 10px;
-  background: #ffffff;
+/* arabic.chat-like alternating rows and message visuals — MOBILE ONLY */
+@media (max-width: 768px) {
+  .mobile-message-area .ac-message-row {
+    background: #ffffff;
+    border-right: 4px solid transparent; /* rank color strip like arabic.chat */
+    border-radius: 0; /* square rows like arabic.chat */
+  }
+  .mobile-message-area .ac-message-row.log2 {
+    background: #f9f9f9; /* subtle zebra */
+  }
+  .mobile-message-area .ac-message-row .runin-name button {
+    font-weight: 700;
+  }
+  /* the colon ':' */
+  .mobile-message-area .ac-message-row .runin-name + span {
+    color: #9aa0a6;
+  }
+  .mobile-message-area .ac-message-row .runin-text {
+    color: #111827;
+  }
+  /* hide inline timestamp like arabic.chat */
+  .mobile-message-area .ac-time {
+    display: none !important;
+  }
+  /* composer block closer to arabic.chat: bordered, rounded, white */
+  .ac-composer {
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    background: #ffffff;
+  }
 }
 
 /* تطبيق تأثير run-in محسّن للجوال */
