@@ -33,7 +33,8 @@
     "smoke": "node scripts/smoke-api.js",
     "db:verify-reads": "node scripts/verify-conversation-reads.js",
     "verify-all": "npm run build && npm run db:verify-reads && echo '✅ Build & DB verification passed'",
-    "fetch:arabic-emoticons": "node tools/fetch-arabic-emoticons.js"
+    "fetch:arabic-emoticons": "node tools/fetch-arabic-emoticons.js",
+    "har:extract-emoticons": "node tools/har-extract-emoticons.js"
   },
   "dependencies": {
     "@emoji-mart/data": "^1.2.1",
