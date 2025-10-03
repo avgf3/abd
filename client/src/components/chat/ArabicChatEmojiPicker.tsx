@@ -30,8 +30,9 @@ export default function ArabicChatEmojiPicker({ onSelect, onClose }: ArabicChatE
   const tabs = useMemo(() => (
     [
       { key: 'base', name: 'أساسية', icon: '🙂', items: arabicChatEmojis.base },
-      { key: 'food', name: 'أطعمة', icon: '🍔', items: arabicChatEmojis.food },
-      { key: 'stickers', name: 'ملصقات', icon: '🐾', items: arabicChatEmojis.stickers },
+      { key: 'anim1', name: 'متحرك 1', icon: '🎞️', items: (arabicChatEmojis as any).anim1 || [] },
+      { key: 'anim2', name: 'متحرك 2', icon: '🎞️', items: (arabicChatEmojis as any).anim2 || [] },
+      { key: 'anim3', name: 'متحرك 3', icon: '🎞️', items: (arabicChatEmojis as any).anim3 || [] },
     ] as const
   ), []);
 
@@ -45,7 +46,7 @@ export default function ArabicChatEmojiPicker({ onSelect, onClose }: ArabicChatE
   return (
     <div className="bg-white border border-gray-200 rounded-lg shadow-lg w-96">
       <div className="flex justify-between items-center p-2 border-b">
-        <h3 className="text-sm font-medium text-gray-700">سمايلات arabic.chat</h3>
+        <h3 className="text-sm font-medium text-gray-700">سمايلات</h3>
         <Button onClick={onClose} variant="ghost" size="sm" className="p-1 hover:bg-gray-100">✕</Button>
       </div>
 

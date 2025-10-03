@@ -1115,71 +1115,36 @@ export default function MessageArea({
                 variant="outline"
                 size={isMobile ? 'icon' : 'icon'}
                 onClick={() => {
-                  // إغلاق جميع المنتقات الأخرى
+                  // استخدم زر الإيموجي لفتح سمايلات Arabic (محلية)
+                  setShowArabicEmoji((v) => !v);
+                  // إغلاق أي منتقيات أخرى
+                  setShowEnhancedEmoji(false);
                   setShowEmojiPicker(false);
                   setShowAnimatedEmojiPicker(false);
                   setShowEmojiMart(false);
                   setShowLottieEmoji(false);
-                  // فتح المنتقي المحسن
-                  setShowEnhancedEmoji(!showEnhancedEmoji);
                 }}
                 disabled={isChatRestricted}
                 className={`chat-emoji-button aspect-square mobile-touch-button ${isMobile ? 'min-w-[44px] min-h-[44px]' : ''} ${isChatRestricted ? 'opacity-60 cursor-not-allowed' : ''} rounded-lg border border-input bg-background text-foreground hover:bg-accent hover:text-accent-foreground`}
-                title="سمايلات متحركة متقدمة"
+                title="سمايلات"
               >
                 <Smile className={`${isMobile ? 'w-5 h-5' : 'w-4 h-4'}`} />
               </Button>
-              
-              {/* Enhanced Emoji Picker (Default) */}
-              {showEnhancedEmoji && (
+
+              {/* Arabic.chat-style Emoji Picker (Local assets) */}
+              {showArabicEmoji && (
                 <div className="absolute bottom-full mb-2 z-30">
                   <React.Suspense fallback={null}>
-                    <AnimatedEmojiEnhanced
-                      onEmojiSelect={handleEnhancedEmojiSelect}
-                      onClose={() => setShowEnhancedEmoji(false)}
-                    />
-                  </React.Suspense>
-                </div>
-              )}
-              
-              {/* Original Animated Emoji Picker */}
-              {showAnimatedEmojiPicker && (
-                <div className="absolute bottom-full mb-2 z-30">
-                  <React.Suspense fallback={null}>
-                    <AnimatedEmojiPicker
-                      onEmojiSelect={handleAnimatedEmojiSelect}
-                      onClose={() => setShowAnimatedEmojiPicker(false)}
-                    />
-                  </React.Suspense>
-                </div>
-              )}
-              
-              {/* Emoji Mart Picker */}
-              {showEmojiMart && (
-                <div className="absolute bottom-full mb-2 z-30">
-                  <React.Suspense fallback={null}>
-                    <EmojiMartPicker
-                      onEmojiSelect={handleEmojiMartSelect}
-                      onClose={() => setShowEmojiMart(false)}
-                    />
-                  </React.Suspense>
-                </div>
-              )}
-              
-              {/* Lottie Emoji Picker */}
-              {showLottieEmoji && (
-                <div className="absolute bottom-full mb-2 z-30">
-                  <React.Suspense fallback={null}>
-                    <LottieEmojiPicker
-                      onEmojiSelect={handleLottieEmojiSelect}
-                      onClose={() => setShowLottieEmoji(false)}
+                    <ArabicChatEmojiPicker
+                      onSelect={handleArabicEmojiSelect}
+                      onClose={() => setShowArabicEmoji(false)}
                     />
                   </React.Suspense>
                 </div>
               )}
             </div>
 
-            {/* Message Input (with inline emoji trigger like arabic.chat) */}
+            {/* Message Input */}
             <div className="relative flex-1">
               <Input
                 ref={inputRef}
@@ -1193,34 +1158,7 @@ export default function MessageArea({
                 style={{ color: composerTextColor, fontWeight: composerBold ? 700 : undefined }}
                 maxLength={MAX_CHARS}
               />
-              <button
-                type="button"
-                onClick={() => {
-                  setShowArabicEmoji((v) => !v);
-                  setShowEnhancedEmoji(false);
-                  setShowEmojiPicker(false);
-                  setShowAnimatedEmojiPicker(false);
-                  setShowEmojiMart(false);
-                  setShowLottieEmoji(false);
-                }}
-                className="absolute inset-y-0 left-2 my-auto h-6 w-6 flex items-center justify-center text-gray-500 hover:text-gray-700"
-                title="إظهار سمايلات arabic.chat"
-                disabled={!currentUser || isChatRestricted}
-              >
-                <Smile className="w-5 h-5" />
-              </button>
-
-              {/* Arabic.chat Emoji Picker */}
-              {showArabicEmoji && (
-                <div className="absolute bottom-full left-0 mb-2 z-30">
-                  <React.Suspense fallback={null}>
-                    <ArabicChatEmojiPicker
-                      onSelect={handleArabicEmojiSelect}
-                      onClose={() => setShowArabicEmoji(false)}
-                    />
-                  </React.Suspense>
-                </div>
-              )}
+              {/* Removed secondary inline emoji button to use a single trigger */}
             </div>
 
             {/* Send Button at the end */}
