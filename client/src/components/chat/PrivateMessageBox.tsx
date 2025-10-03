@@ -20,7 +20,7 @@ import {
   formatMessagePreview,
   setPmLastOpened,
 } from '@/utils/messageUtils';
-import { getFinalUsernameColor } from '@/utils/themeUtils';
+import { getFinalUsernameColor, getUserNameplateStyles } from '@/utils/themeUtils';
 import { getSocket } from '@/lib/socket';
 import { formatTime } from '@/utils/timeUtils';
 // إزالة استخدام fallback الذي يُظهر "مستخدم #id" لتفادي ظهور اسم افتراضي خاطئ في الخاص
@@ -425,30 +425,58 @@ export default function PrivateMessageBox({
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2 min-w-0">
-                    <span
-                      className="text-base font-medium transition-all duration-300 truncate cursor-pointer hover:underline"
-                      onClick={handleViewProfileClick}
-                      role="button"
-                      tabIndex={0}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault();
-                          handleViewProfileClick();
-                        }
-                      }}
-                      style={{
-                        color: getFinalUsernameColor(user),
-                        textShadow: getFinalUsernameColor(user)
-                          ? `0 0 10px ${getFinalUsernameColor(user)}40`
-                          : 'none',
-                        filter: getFinalUsernameColor(user)
-                          ? 'drop-shadow(0 0 3px rgba(255,255,255,0.3))'
-                          : 'none',
-                      }}
-                      title={user.username}
-                    >
-                      {user.username || 'جاري التحميل...'}
-                    </span>
+                    {(() => {
+                      const np = getUserNameplateStyles(user);
+                      const hasNp = np && Object.keys(np).length > 0;
+                      if (hasNp) {
+                        return (
+                          <button
+                            onClick={handleViewProfileClick}
+                            role="button"
+                            tabIndex={0}
+                            className="truncate transition-transform duration-200 hover:scale-[1.02]"
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                handleViewProfileClick();
+                              }
+                            }}
+                            title={user.username}
+                          >
+                            <span className="ac-nameplate" style={np}>
+                              <span className="ac-name">{user.username || '...'}</span>
+                              <span className="ac-mark">〰</span>
+                            </span>
+                          </button>
+                        );
+                      }
+                      return (
+                        <span
+                          className="text-base font-medium transition-all duration-300 truncate cursor-pointer hover:underline"
+                          onClick={handleViewProfileClick}
+                          role="button"
+                          tabIndex={0}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              handleViewProfileClick();
+                            }
+                          }}
+                          style={{
+                            color: getFinalUsernameColor(user),
+                            textShadow: getFinalUsernameColor(user)
+                              ? `0 0 10px ${getFinalUsernameColor(user)}40`
+                              : 'none',
+                            filter: getFinalUsernameColor(user)
+                              ? 'drop-shadow(0 0 3px rgba(255,255,255,0.3))'
+                              : 'none',
+                          }}
+                          title={user.username}
+                        >
+                          {user.username || 'جاري التحميل...'}
+                        </span>
+                      );
+                    })()}
                     <UserRoleBadge user={user} size={20} />
                   </div>
                   {/* زر الإغلاق يسار بنفس نمط الأثرياء/الإعدادات */}
@@ -530,12 +558,30 @@ export default function PrivateMessageBox({
                         {/* run-in on mobile; horizontal on desktop */}
                         <div className="runin-container">
                           <div className="runin-name">
-                            <span
-                              className="font-semibold text-sm"
-                              style={{ color: getFinalUsernameColor(m.sender || user) }}
-                            >
-                              {m.sender?.username || (isMe ? (currentUser?.username || '') : (user.username || '')) || 'جاري التحميل...'}
-                            </span>
+                            {(() => {
+                              const senderUser = (m.sender as ChatUser) || (isMe ? currentUser : user);
+                              const np = getUserNameplateStyles(senderUser);
+                              const hasNp = np && Object.keys(np).length > 0;
+                              const displayName = senderUser?.username || '...';
+                              if (hasNp) {
+                                return (
+                                  <span className="font-semibold text-sm">
+                                    <span className="ac-nameplate" style={np}>
+                                      <span className="ac-name">{displayName}</span>
+                                      <span className="ac-mark">〰</span>
+                                    </span>
+                                  </span>
+                                );
+                              }
+                              return (
+                                <span
+                                  className="font-semibold text-sm"
+                                  style={{ color: getFinalUsernameColor(senderUser) }}
+                                >
+                                  {displayName}
+                                </span>
+                              );
+                            })()}
                             <span className="text-gray-400 mx-1">:</span>
                           </div>
 
