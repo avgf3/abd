@@ -755,8 +755,8 @@ export default function MessageArea({
                           <span className="text-red-400 mx-1">:</span>
                         </div>
 
-                        {/* Content section - flexible width (one-line, full content) */}
-                        <div className="flex-1 min-w-0 text-red-600 message-content-fix whitespace-nowrap">
+                        {/* Content section - flexible width, allow wrapping like desktop */}
+                        <div className="flex-1 min-w-0 text-red-600 message-content-fix">
                           <span>{message.content}</span>
                         </div>
 
