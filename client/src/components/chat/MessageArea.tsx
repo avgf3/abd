@@ -780,7 +780,7 @@ export default function MessageArea({
                               const contentStyle = forceSingleLine ? { whiteSpace: 'nowrap' as const } : undefined;
                               return (
                                 <div className={contentClass} style={contentStyle}>
-                                  <span>{message.content}</span>
+                                  <span className="ac-message-text">{message.content}</span>
                                 </div>
                               );
                             })()}
@@ -935,7 +935,7 @@ export default function MessageArea({
                                   }
                                   return (
                                     <span
-                                      className="text-[13px] font-semibold leading-6"
+                                      className="ac-message-text"
                                       style={{
                                         color: message.textColor || '#000000',
                                         fontWeight: message.bold ? 700 : undefined
