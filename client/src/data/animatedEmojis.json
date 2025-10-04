@@ -153,6 +153,12 @@
           "name": "صاروخ",
           "url": "/assets/emojis/modern/rocket.gif",
           "code": ":rocket:"
+        },
+        {
+          "id": "bee",
+          "name": "نحلة",
+          "url": "/assets/emojis/modern/bee.gif",
+          "code": ":bee:"
         }
       ]
     }
