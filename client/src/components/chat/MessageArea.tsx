@@ -1125,7 +1125,7 @@ export default function MessageArea({
             <Button
               onClick={handleSendMessage}
               disabled={!messageText.trim() || !currentUser || isChatRestricted}
-              className={`aspect-square bg-primary hover:bg-primary/90 text-primary-foreground rounded-full mobile-touch-button ${isMobile ? 'min-w-[44px] min-h-[44px]' : ''} ${isChatRestricted ? 'opacity-60 cursor-not-allowed' : ''}`}
+              className={`chat-send-button aspect-square bg-primary hover:bg-primary/90 text-primary-foreground rounded-full mobile-touch-button ${isMobile ? 'min-w-[44px] min-h-[44px]' : ''}`}
               title="إرسال"
             >
               <Send className="w-4 h-4" />

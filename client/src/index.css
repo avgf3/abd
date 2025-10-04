@@ -2340,17 +2340,33 @@ li > * > div.effect-crystal {
 }
 
 /* ===== Theme-specific overrides for Toti Bard (berryCool) ===== */
-[data-theme-id="berryCool"] .chat-emoji-button,
-[data-theme-id="berryCool"] .chat-plus-button {
-  /* Use send button (primary) color instead of dark/neutral */
+/* Fix send button color: keep consistent pre-typing primary */
+[data-theme-id="berryCool"] .chat-send-button {
   background-color: var(--primary-solid) !important;
   color: var(--primary-foreground) !important;
-  border-color: color-mix(in srgb, var(--primary-solid) 50%, #000) !important;
+}
+[data-theme-id="berryCool"] .chat-send-button:hover {
+  background-color: color-mix(in srgb, var(--primary-solid) 90%, #000) !important;
 }
 
-[data-theme-id="berryCool"] .chat-emoji-button:hover,
+/* Plus tab: icon only and same color as send button */
+[data-theme-id="berryCool"] .chat-plus-button {
+  background-color: var(--primary-solid) !important;
+  color: var(--primary-foreground) !important;
+  border: none !important;
+}
 [data-theme-id="berryCool"] .chat-plus-button:hover {
   background-color: color-mix(in srgb, var(--primary-solid) 90%, #000) !important;
+}
+
+/* Emoji tab: remove blue color, keep neutral icon (no forced color) */
+[data-theme-id="berryCool"] .chat-emoji-button {
+  background-color: transparent !important;
+  color: inherit !important;
+  border-color: var(--border) !important;
+}
+[data-theme-id="berryCool"] .chat-emoji-button:hover {
+  background-color: rgba(255,255,255,0.06) !important;
 }
 
 /* Private messages: make gallery icon white on berryCool */
