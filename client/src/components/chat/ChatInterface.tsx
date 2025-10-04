@@ -89,7 +89,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   const [showStoryViewer, setShowStoryViewer] = useState<{ show: boolean; userId?: number | null }>({ show: false, userId: null });
   const [showAdminReports, setShowAdminReports] = useState(false);
   const [showStoriesSettings, setShowStoriesSettings] = useState(false);
-  const [activeView, setActiveView] = useState<'hidden' | 'users' | 'walls' | 'rooms' | 'friends'>(
+  const [activeView, setActiveView] = useState<'hidden' | 'users' | 'walls' | 'rooms' | 'friends' | 'smilies'>(
     () => (typeof window !== 'undefined' && window.innerWidth < 768 ? 'hidden' : 'users')
   );
   const isMobile = useIsMobile();
@@ -1372,6 +1372,24 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
               <path d="M16 11h6"></path>
             </svg>
             <span className={isMobile ? 'tab-text-hide' : ''}>الأصدقاء</span>
+          </Button>
+
+          {/* السمايلات */}
+          <Button
+            size="sm"
+            className={`glass-effect themed-nav transition-all duration-200 flex items-center gap-1.5 ${
+              isMobile ? 'flex-1 px-2 py-2 text-xs' : 'px-2 py-1.5 text-sm'
+            }${activeView === 'smilies' ? ' themed-active' : ' hover:bg-accent'} rounded-lg`}
+            onClick={() => setActiveView((prev) => (prev === 'smilies' ? 'hidden' : 'smilies'))}
+            title="السمايلات"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-label="Smilies">
+              <circle cx="12" cy="12" r="10"></circle>
+              <path d="M8 15c1.333 1 2.667 1.5 4 1.5s2.667-.5 4-1.5" />
+              <circle cx="9" cy="10" r="1" />
+              <circle cx="15" cy="10" r="1" />
+            </svg>
+            <span className={isMobile ? 'tab-text-hide' : ''}>السمايلات</span>
           </Button>
         </div>
       </footer>

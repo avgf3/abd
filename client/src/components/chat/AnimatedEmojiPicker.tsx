@@ -9,7 +9,7 @@ interface AnimatedEmojiPickerProps {
 }
 
 export default function AnimatedEmojiPicker({ onEmojiSelect, onClose }: AnimatedEmojiPickerProps) {
-  const [selectedCategory, setSelectedCategory] = useState('classic');
+  const [selectedCategory, setSelectedCategory] = useState(Object.keys(animatedEmojis.categories)[0] || 'classic');
 
   return (
     <div className="absolute bottom-full right-0 mb-2 bg-white border border-gray-200 rounded-lg shadow-lg p-4 w-96 max-h-80 overflow-hidden z-50">
@@ -26,7 +26,7 @@ export default function AnimatedEmojiPicker({ onEmojiSelect, onClose }: Animated
       </div>
 
       <Tabs value={selectedCategory} onValueChange={setSelectedCategory} className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           {Object.entries(animatedEmojis.categories).map(([key, category]) => (
             <TabsTrigger key={key} value={key} className="text-xs">
               <span className="ml-1">{category.icon}</span>
