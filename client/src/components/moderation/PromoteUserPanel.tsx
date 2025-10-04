@@ -220,7 +220,7 @@ export default function PromoteUserPanel({
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-2xl max-h-[85vh] bg-popover border-border flex flex-col admin-modal-card">
+      <Card className="w-full max-w-2xl max-h-[85vh] bg-popover border border-border flex flex-col admin-modal-card">
         <CardHeader className="border-b border-border admin-modal-header relative pl-12">
           <button
             onClick={onClose}
