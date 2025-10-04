@@ -115,8 +115,8 @@ export default function AdminReportsPanel({
         if (!open) onClose();
       }}
     >
-      <DialogContent className="sm:max-w-[800px] max-h-[600px] overflow-hidden" dir="rtl">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-[800px] max-h-[600px] overflow-hidden bg-popover border border-border admin-modal-card" dir="rtl">
+        <DialogHeader className="admin-modal-header border-b border-border">
           <DialogTitle>لوحة إدارة التبليغات</DialogTitle>
           <DialogDescription>مراجعة التبليغات وإدارة نظام مكافحة السبام</DialogDescription>
         </DialogHeader>

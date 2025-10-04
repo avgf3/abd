@@ -1140,7 +1140,7 @@ export default function MessageArea({
                 onKeyDown={handleKeyPress}
                 onPaste={handlePaste}
                 placeholder={!currentUser || isChatRestricted ? (getRestrictionMessage || 'هذه الخاصية غير متوفرة الآن') : "اكتب هنا..."}
-                className={`rooms-message-input w-full bg-white text-foreground placeholder:text-muted-foreground rounded-lg border border-gray-300 h-10 pr-3 pl-10 focus:border-transparent focus:ring-offset-0 focus-visible:ring-offset-0 text-[14px]`}
+                className={`rooms-message-input w-full bg-white text-foreground placeholder:text-muted-foreground rounded-lg border border-gray-300 h-10 pr-10 pl-3 focus:border-transparent focus:ring-offset-0 focus-visible:ring-offset-0 text-[14px]`}
                 disabled={!currentUser || isChatRestricted}
                 style={{ color: composerTextColor, fontWeight: composerBold ? 700 : undefined }}
                 maxLength={MAX_CHARS}
@@ -1154,7 +1154,7 @@ export default function MessageArea({
                   setShowEmojiMart(false);
                   setShowLottieEmoji(false);
                 }}
-                className="absolute inset-y-0 left-2 my-auto h-6 w-6 flex items-center justify-center text-gray-500 hover:text-gray-700"
+                className="absolute inset-y-0 right-2 my-auto h-6 w-6 flex items-center justify-center chat-emoji-button text-gray-500 hover:text-gray-700"
                 title="إظهار السمايلات"
                 disabled={!currentUser || isChatRestricted}
               >
@@ -1163,7 +1163,7 @@ export default function MessageArea({
 
               {/* Emoji pickers anchored to input container */}
               {showEnhancedEmoji && (
-                <div className="absolute bottom-full left-0 mb-2 z-30">
+                <div className="absolute bottom-full right-0 mb-2 z-30">
                   <React.Suspense fallback={null}>
                     <AnimatedEmojiEnhanced
                       onEmojiSelect={handleEnhancedEmojiSelect}
@@ -1173,7 +1173,7 @@ export default function MessageArea({
                 </div>
               )}
               {showAnimatedEmojiPicker && (
-                <div className="absolute bottom-full left-0 mb-2 z-30">
+                <div className="absolute bottom-full right-0 mb-2 z-30">
                   <React.Suspense fallback={null}>
                     <AnimatedEmojiPicker
                       onEmojiSelect={handleAnimatedEmojiSelect}
@@ -1183,7 +1183,7 @@ export default function MessageArea({
                 </div>
               )}
               {showEmojiMart && (
-                <div className="absolute bottom-full left-0 mb-2 z-30">
+                <div className="absolute bottom-full right-0 mb-2 z-30">
                   <React.Suspense fallback={null}>
                     <EmojiMartPicker
                       onEmojiSelect={handleEmojiMartSelect}
@@ -1193,7 +1193,7 @@ export default function MessageArea({
                 </div>
               )}
               {showLottieEmoji && (
-                <div className="absolute bottom-full left-0 mb-2 z-30">
+                <div className="absolute bottom-full right-0 mb-2 z-30">
                   <React.Suspense fallback={null}>
                     <LottieEmojiPicker
                       onEmojiSelect={handleLottieEmojiSelect}

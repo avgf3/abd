@@ -154,7 +154,7 @@ export default function ActiveModerationLog({
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-4xl h-[80vh] bg-popover border-border admin-modal-card">
+      <Card className="w-full max-w-4xl h-[80vh] bg-popover border border-border admin-modal-card">
         <CardHeader className="border-b border-border admin-modal-header relative pl-12">
           <button
             onClick={onClose}
