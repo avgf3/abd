@@ -11,13 +11,13 @@ export default defineConfig({
 	],
 	resolve: {
 		alias: {
-			'@': path.resolve(import.meta.dirname, 'src'),
+			'@': path.resolve(import.meta.dirname, 'client/src'),
 			'@shared': path.resolve(import.meta.dirname, 'shared'),
 			'@assets': path.resolve(import.meta.dirname, 'attached_assets'),
 		},
 	},
-	root: import.meta.dirname,
-	publicDir: path.resolve(import.meta.dirname, 'public'),
+	root: path.resolve(import.meta.dirname, 'client'),
+	publicDir: path.resolve(import.meta.dirname, 'client/public'),
 	build: {
 		outDir: path.resolve(import.meta.dirname, 'dist/public'),
 		emptyOutDir: true,
