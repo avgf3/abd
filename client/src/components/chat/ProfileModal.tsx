@@ -2250,7 +2250,7 @@ export default function ProfileModal({
           border-radius: 16px;
           overflow: hidden;
           position: absolute;
-          top: calc(100% - 90px);
+          top: calc(100% - 130px);
           right: 20px;
           background-color: rgba(0,0,0,0.5);
           box-shadow: 0 6px 20px rgba(0,0,0,0.6);
@@ -2272,7 +2272,7 @@ export default function ProfileModal({
 
         .change-avatar-btn {
           position: absolute;
-          top: calc(100% - 57px);
+          top: calc(100% - 30px);
           right: 28px;
           background: rgba(0,0,0,0.8);
           border-radius: 50%;
@@ -2889,13 +2889,13 @@ export default function ProfileModal({
           .profile-avatar {
             width: 100px;
             height: 100px;
-            top: calc(100% - 50px);
+            top: calc(100% - 100px);
             right: 16px;
             border-radius: 12px; /* زوايا مدورة قليلاً للأجهزة المحمولة */
           }
           
           .change-avatar-btn {
-            top: calc(100% - 24px);
+            top: calc(100% - 25px);
             right: 22px;
             width: 25px;
             height: 25px;
