@@ -703,7 +703,7 @@ export default function MessageArea({
                     trigger={reactionEffects.get(message.id)!.trigger}
                   />
                 )}
-                {/* System message: optimized layout for both mobile and desktop with unified alignment */}
+                {/* System message: unify layout and spacing with run-in style, keep line breaks */}
                 {message.messageType === 'system' ? (
                   <>
                     {message.sender && (
@@ -718,48 +718,52 @@ export default function MessageArea({
                     )}
                     <div className="flex-1 min-w-0">
                       <div className={`flex items-start gap-2 ${isMobile ? 'system-message-mobile' : ''}`}>
-                        {/* Name and badge section - fixed width */}
-                        <div className="flex items-center gap-1 shrink-0">
-                          {message.sender && (
-                            <span className="inline-flex items-center justify-center">
-                              <UserRoleBadge user={message.sender} size={14} hideGuestAndGender />
+                        <div className="flex-1 min-w-0">
+                          <div className="runin-container">
+                            <div className="runin-name">
+                              {message.sender && (
+                                <span className="inline-flex items-center justify-center mr-1">
+                                  <UserRoleBadge user={message.sender} size={14} hideGuestAndGender />
+                                </span>
+                              )}
+                              {(() => {
+                                const np = getUserNameplateStyles(message.sender);
+                                const hasNp = np && Object.keys(np).length > 0;
+                                if (hasNp) {
+                                  return (
+                                    <button
+                                      onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
+                                      className="transition-transform duration-200 hover:scale-[1.02]"
+                                      title={message.sender?.username}
+                                    >
+                                      <span className="ac-nameplate" style={np}>
+                                        <span className="ac-name">{message.sender?.username || '...'}</span>
+                                        <span className="ac-mark">〰</span>
+                                      </span>
+                                    </button>
+                                  );
+                                }
+                                return (
+                                  <button
+                                    onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
+                                    className="font-semibold hover:underline transition-colors duration-200 text-sm"
+                                    style={{ color: getFinalUsernameColor(message.sender) }}
+                                  >
+                                    {message.sender?.username || 'جاري التحميل...'}
+                                  </button>
+                                );
+                              })()}
+                              <span className="text-red-400 mx-1">:</span>
+                            </div>
+                            <div className={`runin-text text-red-600 message-content-fix ${isMobile ? 'system-message-content' : ''}`}>
+                              <span>{message.content}</span>
+                            </div>
+                            {/* Time section - hidden like regular messages */}
+                            <span className="ac-time hidden whitespace-nowrap shrink-0 self-start">
+                              {formatTime(message.timestamp)}
                             </span>
-                          )}
-                          {(() => {
-                            const np = getUserNameplateStyles(message.sender);
-                            const hasNp = np && Object.keys(np).length > 0;
-                            if (hasNp) {
-                              return (
-                                <button
-                                  onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
-                                  className="transition-transform duration-200 hover:scale-[1.02]"
-                                  title={message.sender?.username}
-                                >
-                                  <span className="ac-nameplate" style={np}>
-                                    <span className="ac-name">{message.sender?.username || '...'}</span>
-                                    <span className="ac-mark">〰</span>
-                                  </span>
-                                </button>
-                              );
-                            }
-                            return (
-                              <button
-                                onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
-                                className="font-semibold hover:underline transition-colors duration-200 text-sm"
-                                style={{ color: getFinalUsernameColor(message.sender) }}
-                              >
-                                {message.sender?.username || 'جاري التحميل...'}
-                              </button>
-                            );
-                          })()}
-                          <span className="text-red-400 mx-1">:</span>
+                          </div>
                         </div>
-
-                        {/* Content section - flexible width (one-line, full content) */}
-                        <div className={`flex-1 min-w-0 text-red-600 message-content-fix ${isMobile ? 'system-message-content' : ''} whitespace-nowrap`}>
-                          <span>{message.content}</span>
-                        </div>
-
                         {/* Actions: report + menu */}
                         <div className="flex items-center gap-1 shrink-0">
                           {onReportMessage && message.sender && currentUser && message.sender.id !== currentUser.id && (
@@ -805,9 +809,6 @@ export default function MessageArea({
                         </div>
                       </div>
                     </div>
-
-                    {/* Right side: time */}
-                    <span className="ac-time hidden ml-2 self-start">{formatTime(message.timestamp)}</span>
                   </>
                 ) : (
                   <>
