@@ -2340,7 +2340,7 @@ li > * > div.effect-crystal {
 }
 
 /* ===== Theme-specific overrides for Toti Bard (berryCool) ===== */
-[data-theme-id="berryCool"] .chat-emoji-button,
+/* Keep primary styling for plus button only; emoji button stays neutral */
 [data-theme-id="berryCool"] .chat-plus-button {
   /* Use send button (primary) color instead of dark/neutral */
   background-color: var(--primary-solid) !important;
@@ -2348,7 +2348,6 @@ li > * > div.effect-crystal {
   border-color: color-mix(in srgb, var(--primary-solid) 50%, #000) !important;
 }
 
-[data-theme-id="berryCool"] .chat-emoji-button:hover,
 [data-theme-id="berryCool"] .chat-plus-button:hover {
   background-color: color-mix(in srgb, var(--primary-solid) 90%, #000) !important;
 }
