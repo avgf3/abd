@@ -443,8 +443,9 @@ export default function MessageArea({
 
   // Animated Emoji select handler
   const handleAnimatedEmojiSelect = useCallback((emoji: { id: string; url: string; name: string; code: string }) => {
-    // إدراج كود السمايل في الرسالة
-    const newText = clampToMaxChars(messageText + ` [[emoji:${emoji.id}:${emoji.url}]] `);
+    // أدخل كود السمايل المختصر بدل الرابط لتجنب ظهور رابط داخل خانة الدردشة
+    const token = (emoji.code && emoji.code.trim()) || `[[emoji:${emoji.id}:${emoji.url}]]`;
+    const newText = clampToMaxChars(messageText + ` ${token} `);
     setMessageText(newText);
     setShowAnimatedEmojiPicker(false);
     inputRef.current?.focus();
@@ -454,11 +455,11 @@ export default function MessageArea({
   const handleEmojiMartSelect = useCallback((emoji: any) => {
     let newText;
     if (emoji.src) {
-      // إيموجي مخصص (GIF)
+      // إيموجي مخصص (GIF) من emoji-mart: نُبقيه بصيغة الرمز حتى العرض
       newText = clampToMaxChars(messageText + ` [[emoji:${emoji.id}:${emoji.src}]] `);
     } else {
-      // إيموجي عادي
-      newText = clampToMaxChars(messageText + emoji.native);
+      // إيموجي عادي (نظامي)
+      newText = clampToMaxChars(messageText + (emoji.native || ''));
     }
     setMessageText(newText);
     setShowEmojiMart(false);
@@ -475,14 +476,15 @@ export default function MessageArea({
 
   // Enhanced Emoji handler
   const handleEnhancedEmojiSelect = useCallback((emoji: { id: string; emoji?: string; name: string; code: string; url?: string }) => {
-    let newText: string;
+    let token: string;
     if (emoji.url) {
-      // إيموجي مخصص بصورة متحركة
-      newText = clampToMaxChars(messageText + ` [[emoji:${emoji.id}:${emoji.url}]] `);
+      // استخدم الكود المختصر بدلاً من الرابط لتفادي ظهور رابط داخل خانة الدردشة
+      token = (emoji.code && emoji.code.trim()) || `[[emoji:${emoji.id}:${emoji.url}]]`;
     } else {
       // إيموجي عادي
-      newText = clampToMaxChars(messageText + (emoji.emoji || emoji.code));
+      token = emoji.emoji || emoji.code;
     }
+    const newText = clampToMaxChars(messageText + ` ${token} `);
     setMessageText(newText);
     setShowEnhancedEmoji(false);
     inputRef.current?.focus();
