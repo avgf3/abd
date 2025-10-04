@@ -1106,20 +1106,20 @@ export default function MessageArea({
                 onClick={() => {
                   // إغلاق جميع المنتقات الأخرى
                   setShowEmojiPicker(false);
-                  setShowAnimatedEmojiPicker(false);
+                  setShowEnhancedEmoji(false);
                   setShowEmojiMart(false);
                   setShowLottieEmoji(false);
-                  // فتح المنتقي المحسن
-                  setShowEnhancedEmoji(!showEnhancedEmoji);
+                  // فتح منتقي السمايلات المتحركة الفعلي (GIF)
+                  setShowAnimatedEmojiPicker((v) => !v);
                 }}
                 disabled={isChatRestricted}
                 className={`chat-emoji-button aspect-square mobile-touch-button ${isMobile ? 'min-w-[44px] min-h-[44px]' : ''} ${isChatRestricted ? 'opacity-60 cursor-not-allowed' : ''} rounded-lg border border-input bg-background text-foreground hover:bg-accent hover:text-accent-foreground`}
-                title="سمايلات متحركة متقدمة"
+                title="سمايلات متحركة"
               >
                 <Smile className={`${isMobile ? 'w-5 h-5' : 'w-4 h-4'}`} />
               </Button>
               
-              {/* Enhanced Emoji Picker (Default) */}
+              {/* Enhanced Emoji Picker (ثانوي) */}
               {showEnhancedEmoji && (
                 <div className="absolute bottom-full mb-2 z-30">
                   <React.Suspense fallback={null}>
@@ -1185,14 +1185,14 @@ export default function MessageArea({
               <button
                 type="button"
                 onClick={() => {
-                  setShowEnhancedEmoji((v) => !v);
+                  setShowAnimatedEmojiPicker((v) => !v);
                   setShowEmojiPicker(false);
-                  setShowAnimatedEmojiPicker(false);
+                  setShowEnhancedEmoji(false);
                   setShowEmojiMart(false);
                   setShowLottieEmoji(false);
                 }}
                 className="absolute inset-y-0 left-2 my-auto h-6 w-6 flex items-center justify-center text-gray-500 hover:text-gray-700"
-                title="إظهار السمايلات"
+                title="إظهار السمايلات المتحركة"
                 disabled={!currentUser || isChatRestricted}
               >
                 <Smile className="w-5 h-5" />

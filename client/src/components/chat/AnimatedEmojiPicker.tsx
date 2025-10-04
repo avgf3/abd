@@ -1,7 +1,9 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import animatedEmojis from '@/data/animatedEmojis.json';
+
+type AnimatedEmoji = { id: string; url: string; name: string; code: string };
 
 interface AnimatedEmojiPickerProps {
   onEmojiSelect: (emoji: { id: string; url: string; name: string; code: string }) => void;
@@ -9,7 +11,32 @@ interface AnimatedEmojiPickerProps {
 }
 
 export default function AnimatedEmojiPicker({ onEmojiSelect, onClose }: AnimatedEmojiPickerProps) {
-  const [selectedCategory, setSelectedCategory] = useState('classic');
+  // خمس صفحات صغيرة كما هو مطلوب
+  const TOTAL_PAGES = 5;
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const allEmojis: AnimatedEmoji[] = useMemo(() => {
+    const list: AnimatedEmoji[] = [];
+    Object.values((animatedEmojis as any).categories || {}).forEach((category: any) => {
+      (category.emojis || []).forEach((e: any) => {
+        list.push({ id: e.id, url: e.url, name: e.name, code: e.code });
+      });
+    });
+    return list;
+  }, []);
+
+  const pageSize = useMemo(() => {
+    if (allEmojis.length === 0) return 1;
+    return Math.ceil(allEmojis.length / TOTAL_PAGES);
+  }, [allEmojis.length]);
+
+  const getPageSlice = useMemo(() => {
+    return (page: number) => {
+      const start = (page - 1) * pageSize;
+      const end = start + pageSize;
+      return allEmojis.slice(start, end);
+    };
+  }, [allEmojis, pageSize]);
 
   return (
     <div className="absolute bottom-full right-0 mb-2 bg-white border border-gray-200 rounded-lg shadow-lg p-4 w-96 max-h-80 overflow-hidden z-50">
@@ -25,20 +52,20 @@ export default function AnimatedEmojiPicker({ onEmojiSelect, onClose }: Animated
         </Button>
       </div>
 
-      <Tabs value={selectedCategory} onValueChange={setSelectedCategory} className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          {Object.entries(animatedEmojis.categories).map(([key, category]) => (
-            <TabsTrigger key={key} value={key} className="text-xs">
-              <span className="ml-1">{category.icon}</span>
-              {category.name}
+      {/* خمس صفحات رقمية تعرض كل السمايلات المحلية */}
+      <Tabs value={String(currentPage)} onValueChange={(v) => setCurrentPage(parseInt(v || '1', 10) || 1)} className="w-full">
+        <TabsList className="grid w-full grid-cols-5">
+          {Array.from({ length: TOTAL_PAGES }, (_, i) => String(i + 1)).map((num) => (
+            <TabsTrigger key={num} value={num} className="text-xs">
+              صفحة {num}
             </TabsTrigger>
           ))}
         </TabsList>
 
-        {Object.entries(animatedEmojis.categories).map(([key, category]) => (
-          <TabsContent key={key} value={key} className="mt-3">
+        {Array.from({ length: TOTAL_PAGES }, (_, i) => i + 1).map((page) => (
+          <TabsContent key={page} value={String(page)} className="mt-3">
             <div className="grid grid-cols-6 gap-2 max-h-48 overflow-y-auto">
-              {category.emojis.map((emoji) => (
+              {getPageSlice(page).map((emoji) => (
                 <Button
                   key={emoji.id}
                   onClick={() => onEmojiSelect(emoji)}
