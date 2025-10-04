@@ -288,7 +288,7 @@ export default function RichestModal({ isOpen, onClose, currentUser, onUserClick
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2">
                           <span
-                            className="text-base font-medium transition-colors duration-300"
+                            className="ac-user-name transition-colors duration-300"
                             style={{ color: getFinalUsernameColor(u) }}
                             title={u.username}
                           >
@@ -325,20 +325,24 @@ export default function RichestModal({ isOpen, onClose, currentUser, onUserClick
               <div className="text-sm text-muted-foreground mb-2">مرشحون للإضافة:</div>
               <div className="space-y-2 max-h-32 overflow-y-auto overflow-x-hidden">
                 {candidates.map((c) => (
-                  <div key={c.id} className="flex items-center gap-2">
+                <div key={c.id} className="flex items-center gap-2">
                     <img
-                      src={getImageSrc(c.profileImage || '/default_avatar.svg')}
-                      alt={c.username}
-                      className="w-6 h-6 rounded-full"
+                    src={getImageSrc(c.profileImage || '/default_avatar.svg')}
+                    alt={c.username}
+                    className="w-6 h-6 rounded-full"
                     />
-                    <div className="flex-1 text-sm">{c.username}</div>
+                    <div className="flex-1">
+                      <span className="ac-user-name" style={{ color: getFinalUsernameColor(c) }} title={c.username}>
+                        {c.username}
+                      </span>
+                    </div>
                     <button
-                      className="text-xs px-2 py-1 rounded bg-primary/10 hover:bg-primary/20 text-primary"
-                      onClick={() => handleAddVip(c.id)}
+                    className="text-xs px-2 py-1 rounded bg-primary/10 hover:bg-primary/20 text-primary"
+                    onClick={() => handleAddVip(c.id)}
                     >
-                      إضافة
+                    إضافة
                     </button>
-                  </div>
+                </div>
                 ))}
               </div>
             </div>
