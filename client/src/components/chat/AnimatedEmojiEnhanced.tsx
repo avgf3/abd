@@ -3,13 +3,15 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { X, Sparkles, Heart, PartyPopper, Flame, Star } from 'lucide-react';
+import animatedEmojisData from '@/data/animatedEmojis.json';
 
 interface AnimatedEmoji {
   id: string;
-  emoji: string;
+  emoji?: string;
   name: string;
-  animation: string;
+  animation?: string;
   code: string;
+  url?: string; // لدعم الصور المتحركة المخصصة
 }
 
 // السمايلات العادية (من EmojiPicker)
@@ -74,13 +76,15 @@ const animatedEmojis: Record<string, AnimatedEmoji[]> = {
   ]
 };
 
-const categoryIcons = {
+const categoryIcons: Record<string, string> = {
   regular: '😀',
   classic: '😊',
   hearts: '❤️',
   celebration: '🎉',
   gestures: '👋',
-  special: '✨'
+  special: '✨',
+  animated: '🎬',
+  stickers: '🎨'
 };
 
 interface AnimatedEmojiEnhancedProps {
@@ -113,7 +117,7 @@ export default function AnimatedEmojiEnhanced({ onEmojiSelect, onClose }: Animat
         </div>
 
         <Tabs value={selectedCategory} onValueChange={setSelectedCategory} className="w-full">
-          <TabsList className="grid w-full grid-cols-6 mb-3 bg-gray-100">
+          <TabsList className="grid w-full grid-cols-8 mb-3 bg-gray-100">
             {Object.entries(categoryIcons).map(([key, icon]) => (
               <TabsTrigger 
                 key={key} 
@@ -168,6 +172,59 @@ export default function AnimatedEmojiEnhanced({ onEmojiSelect, onClose }: Animat
                 </div>
               </TabsContent>
             ))}
+
+            {/* تبويبات الإيموجي المخصصة من animatedEmojis.json */}
+            <TabsContent value="animated" className="mt-0">
+              <div className="grid grid-cols-6 gap-2">
+                {animatedEmojisData.categories.animated.emojis.map((emoji: any) => (
+                  <Button
+                    key={emoji.id}
+                    onClick={() => onEmojiSelect({ 
+                      id: emoji.id, 
+                      name: emoji.name, 
+                      code: emoji.code, 
+                      url: emoji.url 
+                    })}
+                    variant="ghost"
+                    className="p-2 h-auto aspect-square hover:bg-gray-100 rounded-lg transition-colors"
+                    title={`${emoji.name} ${emoji.code}`}
+                  >
+                    <img
+                      src={emoji.url}
+                      alt={emoji.name}
+                      className="w-full h-full object-contain"
+                      loading="lazy"
+                    />
+                  </Button>
+                ))}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="stickers" className="mt-0">
+              <div className="grid grid-cols-6 gap-2">
+                {animatedEmojisData.categories.stickers.emojis.map((emoji: any) => (
+                  <Button
+                    key={emoji.id}
+                    onClick={() => onEmojiSelect({ 
+                      id: emoji.id, 
+                      name: emoji.name, 
+                      code: emoji.code, 
+                      url: emoji.url 
+                    })}
+                    variant="ghost"
+                    className="p-2 h-auto aspect-square hover:bg-gray-100 rounded-lg transition-colors"
+                    title={`${emoji.name} ${emoji.code}`}
+                  >
+                    <img
+                      src={emoji.url}
+                      alt={emoji.name}
+                      className="w-full h-full object-contain"
+                      loading="lazy"
+                    />
+                  </Button>
+                ))}
+              </div>
+            </TabsContent>
           </div>
         </Tabs>
     </div>
