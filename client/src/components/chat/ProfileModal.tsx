@@ -15,9 +15,7 @@ import {
   getFinalUsernameColor,
   buildProfileBackgroundGradient,
 } from '@/utils/themeUtils';
-import { getCountryFlag } from '@/utils';
 import { getUserLevelIcon } from '@/components/chat/UserRoleBadge';
-import CountryFlag from '@/components/ui/CountryFlag';
 import ProfileImage from './ProfileImage';
 import { useStories } from '@/hooks/useStories';
 import { useRoomManager } from '@/hooks/useRoomManager';
@@ -3306,9 +3304,8 @@ export default function ProfileModal({
                   onClick={() => localUser?.id === currentUser?.id && openEditModal('country')}
                   style={{ cursor: localUser?.id === currentUser?.id ? 'pointer' : 'default' }}
                 >
-                  🌍 البلد: <span className="inline-flex items-center gap-1">
+                  البلد: <span className="inline-flex items-center gap-1">
                     {localUser?.country || 'غير محدد'}
-                    {localUser?.country && <CountryFlag country={localUser?.country} size={14} />}
                   </span>
                 </p>
                 <p
@@ -3355,7 +3352,7 @@ export default function ProfileModal({
                 {localUser?.id === currentUser?.id && (
                   <>
                     <p>
-                      ⭐ مستوى العضو: <span>مستوى {localUser?.level || 1}</span>
+                      مستوى العضو: <span>مستوى {localUser?.level || 1}</span>
                     </p>
                   </>
                 )}
@@ -3521,10 +3518,10 @@ export default function ProfileModal({
                   ) && (
                     <>
                       <p onClick={() => setCurrentEditType('theme')} style={{ cursor: 'pointer' }}>
-                        🎨 لون الملف الشخصي: <span>اضغط للتغيير</span>
+                        لون الملف الشخصي: <span>اضغط للتغيير</span>
                       </p>
                       <p onClick={() => setCurrentEditType('effects')} style={{ cursor: 'pointer' }}>
-                        ✨ تأثيرات حركية: <span>اضغط للتغيير</span>
+                        تأثيرات حركية: <span>اضغط للتغيير</span>
                       </p>
                     </>
                   )}
@@ -3545,7 +3542,7 @@ export default function ProfileModal({
                       }}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                        <strong>🎵 موسيقى البروفايل</strong>
+                        <strong>موسيقى البروفايل</strong>
                         {localUser?.profileMusicUrl && (
                           <span style={{ fontSize: '11px', color: '#4caf50' }}>✅ نشط</span>
                         )}
@@ -3555,7 +3552,7 @@ export default function ProfileModal({
                         {localUser?.profileMusicUrl ? (
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                             <span style={{ fontSize: '12px', color: '#fff', flex: 1 }}>
-                              🎵 {musicTitle || 'موسيقى البروفايل'}
+                              {musicTitle || 'موسيقى البروفايل'}
                             </span>
                             <button
                               onClick={async () => {
