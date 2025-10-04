@@ -7,6 +7,7 @@ const AnimatedEmojiPicker = React.lazy(() => import('./AnimatedEmojiPicker'));
 const EmojiMartPicker = React.lazy(() => import('./EmojiMartPicker'));
 const LottieEmojiPicker = React.lazy(() => import('./LottieEmojiPicker'));
 const AnimatedEmojiEnhanced = React.lazy(() => import('./AnimatedEmojiEnhanced'));
+const CustomEmojiPicker = React.lazy(() => import('./CustomEmojiPicker'));
 const ComposerPlusMenu = React.lazy(() => import('./ComposerPlusMenu'));
 import ProfileImage from './ProfileImage';
 import UserRoleBadge from './UserRoleBadge';
@@ -74,6 +75,7 @@ export default function MessageArea({
   const [showEmojiMart, setShowEmojiMart] = useState(false);
   const [showLottieEmoji, setShowLottieEmoji] = useState(false);
   const [showEnhancedEmoji, setShowEnhancedEmoji] = useState(false);
+  const [showCustomEmojiPicker, setShowCustomEmojiPicker] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const isMobile = useIsMobile();
   const { textColor: composerTextColor, bold: composerBold } = useComposerStyle();
@@ -478,6 +480,14 @@ export default function MessageArea({
     const newText = clampToMaxChars(messageText + emoji.emoji);
     setMessageText(newText);
     setShowEnhancedEmoji(false);
+    inputRef.current?.focus();
+  }, [messageText, clampToMaxChars]);
+
+  // Custom Emoji (images) handler
+  const handleCustomEmojiSelect = useCallback((emoji: { id: string; name: string; url: string; category: 'small' | 'medium' | 'animated' }) => {
+    const newText = clampToMaxChars(messageText + ` [[emoji:${emoji.id}:${emoji.url}]] `);
+    setMessageText(newText);
+    setShowCustomEmojiPicker(false);
     inputRef.current?.focus();
   }, [messageText, clampToMaxChars]);
 
@@ -1109,17 +1119,30 @@ export default function MessageArea({
                   setShowAnimatedEmojiPicker(false);
                   setShowEmojiMart(false);
                   setShowLottieEmoji(false);
-                  // فتح المنتقي المحسن
-                  setShowEnhancedEmoji(!showEnhancedEmoji);
+                  setShowEnhancedEmoji(false);
+                  // فتح منتقي السمايلات بالصور
+                  setShowCustomEmojiPicker(!showCustomEmojiPicker);
                 }}
                 disabled={isChatRestricted}
                 className={`chat-emoji-button aspect-square mobile-touch-button ${isMobile ? 'min-w-[44px] min-h-[44px]' : ''} ${isChatRestricted ? 'opacity-60 cursor-not-allowed' : ''} rounded-lg border border-input bg-background text-foreground hover:bg-accent hover:text-accent-foreground`}
-                title="سمايلات متحركة متقدمة"
+                title="سمايلات الموقع"
               >
                 <Smile className={`${isMobile ? 'w-5 h-5' : 'w-4 h-4'}`} />
               </Button>
               
-              {/* Enhanced Emoji Picker (Default) */}
+              {/* Custom Emoji Picker (site images) */}
+              {showCustomEmojiPicker && (
+                <div className="absolute bottom-full mb-2 z-30">
+                  <React.Suspense fallback={null}>
+                    <CustomEmojiPicker
+                      onEmojiSelect={handleCustomEmojiSelect}
+                      onClose={() => setShowCustomEmojiPicker(false)}
+                    />
+                  </React.Suspense>
+                </div>
+              )}
+
+              {/* Enhanced Emoji Picker */}
               {showEnhancedEmoji && (
                 <div className="absolute bottom-full mb-2 z-30">
                   <React.Suspense fallback={null}>
@@ -1185,14 +1208,15 @@ export default function MessageArea({
               <button
                 type="button"
                 onClick={() => {
-                  setShowEnhancedEmoji((v) => !v);
+                  setShowCustomEmojiPicker((v) => !v);
                   setShowEmojiPicker(false);
                   setShowAnimatedEmojiPicker(false);
                   setShowEmojiMart(false);
                   setShowLottieEmoji(false);
+                  setShowEnhancedEmoji(false);
                 }}
                 className="absolute inset-y-0 left-2 my-auto h-6 w-6 flex items-center justify-center text-gray-500 hover:text-gray-700"
-                title="إظهار السمايلات"
+                title="إظهار سمايلات الموقع"
                 disabled={!currentUser || isChatRestricted}
               >
                 <Smile className="w-5 h-5" />

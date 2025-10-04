@@ -25,6 +25,7 @@ import { getSocket } from '@/lib/socket';
 import { formatTime } from '@/utils/timeUtils';
 // إزالة استخدام fallback الذي يُظهر "مستخدم #id" لتفادي ظهور اسم افتراضي خاطئ في الخاص
 import { api } from '@/lib/queryClient';
+import { renderMessageWithAnimatedEmojis } from '@/utils/animatedEmojiUtils';
 
 interface PrivateMessageBoxProps {
   isOpen: boolean;
@@ -656,7 +657,7 @@ export default function PrivateMessageBox({
                                           : undefined
                                       }
                                     >
-                                      {cleaned}
+                                      {renderMessageWithAnimatedEmojis(cleaned)}
                                     </span>
                                   )}
                                   <button
@@ -680,7 +681,7 @@ export default function PrivateMessageBox({
                                     : undefined
                                 }
                               >
-                                {m.content}
+                                {renderMessageWithAnimatedEmojis(m.content)}
                               </span>
                             );
                           })()}
