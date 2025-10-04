@@ -280,6 +280,25 @@ app.use(
   })
 );
 
+  // Serve public emojis under /emojis (client assets)
+  const publicEmojisPath = path.join(process.cwd(), 'client', 'public', 'emojis');
+  app.use(
+    '/emojis',
+    express.static(publicEmojisPath, {
+      etag: true,
+      lastModified: true,
+      maxAge: '30d',
+      setHeaders: (res, filePath) => {
+        if (filePath.endsWith('.svg')) res.setHeader('Content-Type', 'image/svg+xml');
+        else if (filePath.endsWith('.png')) res.setHeader('Content-Type', 'image/png');
+        else if (filePath.endsWith('.jpg') || filePath.endsWith('.jpeg')) res.setHeader('Content-Type', 'image/jpeg');
+        else if (filePath.endsWith('.gif')) res.setHeader('Content-Type', 'image/gif');
+        else if (filePath.endsWith('.webp')) res.setHeader('Content-Type', 'image/webp');
+        res.setHeader('Cache-Control', 'public, max-age=2592000');
+      },
+    })
+  );
+
   // تم نقل /health endpoint إلى أعلى الملف قبل أي middleware
 
 // More detailed health endpoint
