@@ -2196,7 +2196,7 @@ export default function ProfileModal({
 
         .profile-card {
           width: 100%;
-          max-width: 480px;
+          max-width: 520px;
           border-radius: 16px;
           overflow: hidden;
           background: var(--card-bg);
@@ -2214,7 +2214,7 @@ export default function ProfileModal({
 
         .profile-cover {
           position: relative;
-          height: 248px; /* 220px + 28px للامتداد الكامل */
+          height: 268px; /* زيادة طفيفة لارتفاع الغلاف */
           background-size: cover;
           background-position: center;
           background-repeat: no-repeat;
@@ -2883,7 +2883,7 @@ export default function ProfileModal({
 
         @media (max-width: 480px) {
           .profile-card {
-            max-width: 100%;
+            max-width: calc(100% - 16px);
           }
           
           .profile-avatar {
@@ -2903,9 +2903,9 @@ export default function ProfileModal({
             font-size: 12px;
           }
 
-          /* على الجوال، نمد الغلاف بدون حشوة */
+          /* على الجوال، زيادة بسيطة أيضاً لضمان تناسق النِسَب */
           .profile-cover {
-            height: 278px; /* 220px + 58px للامتداد الكامل على الجوال */
+            height: 298px; /* زيادة 20px إضافية على الجوال */
           }
           
           .profile-body {
