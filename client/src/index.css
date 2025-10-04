@@ -2364,6 +2364,11 @@ li > * > div.effect-crystal {
   background-color: rgba(255, 255, 255, 0.08) !important;
 }
 
+/* Admin modals (Reports, Active Actions, Promote User) top bar unification on berryCool */
+[data-theme-id="berryCool"] .admin-modal-header {
+  background-color: #000000 !important; /* pure black to match other top bars */
+}
+
 /* Modern Loading States */
 .loading-shimmer {
   background: linear-gradient(90deg, 

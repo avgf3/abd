@@ -186,8 +186,16 @@ export default function ReportsLog({ currentUser, isVisible, onClose }: ReportsL
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-4xl h-[80vh] bg-popover border-border">
-        <CardHeader className="border-b border-border">
+      <Card className="w-full max-w-4xl h-[80vh] bg-popover border-border admin-modal-card">
+        <CardHeader className="border-b border-border admin-modal-header relative pl-12">
+          <button
+            onClick={onClose}
+            aria-label="إغلاق"
+            title="إغلاق"
+            className="absolute left-3 top-3 px-2 py-1 hover:bg-red-100 text-red-600 text-sm font-medium rounded"
+          >
+            ✖️
+          </button>
           <div className="flex items-center justify-between">
             <CardTitle className="text-xl text-gray-100 flex items-center gap-2">
               <AlertTriangle className="w-6 h-6 text-red-400" />
@@ -202,9 +210,6 @@ export default function ReportsLog({ currentUser, isVisible, onClose }: ReportsL
               <Badge variant="outline" className="text-blue-400 border-blue-400">
                 {currentUser.userType === 'owner' ? 'المالك' : 'مشرف'}
               </Badge>
-              <Button onClick={onClose} variant="ghost" size="sm">
-                ✕
-              </Button>
             </div>
           </div>
         </CardHeader>
