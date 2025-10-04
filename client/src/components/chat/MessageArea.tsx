@@ -474,8 +474,15 @@ export default function MessageArea({
   }, [messageText, clampToMaxChars]);
 
   // Enhanced Emoji handler
-  const handleEnhancedEmojiSelect = useCallback((emoji: { id: string; emoji: string; name: string; code: string }) => {
-    const newText = clampToMaxChars(messageText + emoji.emoji);
+  const handleEnhancedEmojiSelect = useCallback((emoji: { id: string; emoji?: string; name: string; code: string; url?: string }) => {
+    let newText: string;
+    if (emoji.url) {
+      // إيموجي مخصص بصورة متحركة
+      newText = clampToMaxChars(messageText + ` [[emoji:${emoji.id}:${emoji.url}]] `);
+    } else {
+      // إيموجي عادي
+      newText = clampToMaxChars(messageText + (emoji.emoji || emoji.code));
+    }
     setMessageText(newText);
     setShowEnhancedEmoji(false);
     inputRef.current?.focus();
