@@ -301,6 +301,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/emojis', async (_req, res) => {
     try {
       const baseDir = path.join(process.cwd(), 'client', 'public', 'emojis');
+      const legacyDir = path.join(process.cwd(), 'client', 'public', 'assets', 'emojis');
       const categories = ['small', 'medium', 'animated'];
       const result: Record<string, Array<{ id: string; name: string; url: string; ext: string }>> = {
         small: [],
@@ -330,6 +331,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Stable sort by name
         result[cat].sort((a, b) => a.name.localeCompare(b.name, 'ar')); 
       }
+
+      // Include legacy assets under /assets/emojis/{classic,modern} as animated
+      try {
+        const classic = await safeReadDir(path.join(legacyDir, 'classic'));
+        for (const file of classic) {
+          const ext = path.extname(file).toLowerCase();
+          if (!['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg'].includes(ext)) continue;
+          const id = `classic-${file}`;
+          const name = path.basename(file, ext);
+          const url = `/assets/emojis/classic/${encodeURIComponent(file)}`;
+          result.animated.push({ id, name, url, ext });
+        }
+      } catch {}
+      try {
+        const modern = await safeReadDir(path.join(legacyDir, 'modern'));
+        for (const file of modern) {
+          const ext = path.extname(file).toLowerCase();
+          if (!['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg'].includes(ext)) continue;
+          const id = `modern-${file}`;
+          const name = path.basename(file, ext);
+          const url = `/assets/emojis/modern/${encodeURIComponent(file)}`;
+          result.animated.push({ id, name, url, ext });
+        }
+      } catch {}
+
+      // Sort animated (now includes legacy)
+      result.animated.sort((a, b) => a.name.localeCompare(b.name, 'ar'));
 
       // Caching headers: emojis are static assets, allow short cache
       try {
