@@ -1140,7 +1140,7 @@ export default function MessageArea({
                 onKeyDown={handleKeyPress}
                 onPaste={handlePaste}
                 placeholder={!currentUser || isChatRestricted ? (getRestrictionMessage || 'هذه الخاصية غير متوفرة الآن') : "اكتب هنا..."}
-                className={`rooms-message-input w-full bg-white text-foreground placeholder:text-muted-foreground rounded-lg border border-gray-300 h-10 pr-10 pl-3 focus:border-transparent focus:ring-offset-0 focus-visible:ring-offset-0 text-[14px]`}
+                className={`rooms-message-input w-full bg-white text-foreground placeholder:text-muted-foreground rounded-lg border border-gray-300 h-10 pr-10 pl-3 focus:border-transparent focus:ring-0 focus:ring-transparent focus:shadow-none focus-visible:ring-0 focus-visible:ring-transparent focus-visible:shadow-none focus:ring-offset-0 focus-visible:ring-offset-0 text-[14px]`}
                 disabled={!currentUser || isChatRestricted}
                 style={{ color: composerTextColor, fontWeight: composerBold ? 700 : undefined }}
                 maxLength={MAX_CHARS}
@@ -1154,7 +1154,7 @@ export default function MessageArea({
                   setShowEmojiMart(false);
                   setShowLottieEmoji(false);
                 }}
-                className="absolute inset-y-0 right-2 my-auto h-6 w-6 flex items-center justify-center chat-emoji-button text-gray-500 hover:text-gray-700"
+                className="absolute inset-y-0 right-2 my-auto h-6 w-6 flex items-center justify-center chat-emoji-button text-gray-500 hover:text-gray-700 focus:outline-none focus-visible:outline-none focus:ring-0 focus:shadow-none"
                 title="إظهار السمايلات"
                 disabled={!currentUser || isChatRestricted}
               >

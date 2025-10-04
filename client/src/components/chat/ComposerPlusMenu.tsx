@@ -37,10 +37,10 @@ export default function ComposerPlusMenu({ onOpenImagePicker, disabled, isMobile
       <DropdownMenuTrigger asChild>
         <Button
           type="button"
-          variant="outline"
+          variant="default"
           size={isMobile ? 'icon' : 'icon'}
           disabled={disabled}
-          className={`chat-plus-button mobile-touch-button ${isMobile ? 'h-11 w-11' : 'h-10 w-10'} rounded-lg px-0 border border-input bg-background text-foreground hover:bg-accent hover:text-accent-foreground`}
+          className={`chat-plus-button mobile-touch-button ${isMobile ? 'h-11 w-11' : 'h-10 w-10'} rounded-full px-0 bg-primary text-primary-foreground hover:bg-primary/90 focus:outline-none focus-visible:outline-none`}
           title="خيارات"
           aria-label="زر الخيارات"
         >

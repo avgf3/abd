@@ -2230,11 +2230,12 @@ li > * > div.effect-crystal {
     inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
-/* Rooms chat input: keep only blue focus ring, remove black border on focus */
+/* Rooms chat input: remove blue ring and keep neutral border on focus */
 .chat-input .rooms-message-input:focus,
 .chat-input .rooms-message-input:focus-visible {
-  border-color: transparent !important;
+  border-color: #d1d5db !important; /* keep subtle gray border */
   outline: none !important;
+  box-shadow: none !important; /* disable Tailwind ring */
 }
 
 /* Modern Room Cards */
@@ -2326,11 +2327,12 @@ li > * > div.effect-crystal {
   color: white;
 }
 
-  /* Rooms chat send input: keep only blue ring on focus (remove inner black border) */
+  /* Rooms chat send input: remove blue ring completely on focus */
   .rooms-message-input:focus,
   .rooms-message-input:focus-visible {
-    border-color: transparent !important;
+    border-color: #d1d5db !important; /* subtle gray border */
     outline: none !important;
+    box-shadow: none !important;
   }
 
 /* Modern Focus States */
@@ -2340,17 +2342,56 @@ li > * > div.effect-crystal {
 }
 
 /* ===== Theme-specific overrides for Toti Bard (berryCool) ===== */
-[data-theme-id="berryCool"] .chat-emoji-button,
+/* BerryCool theme: style only the plus button to match send button */
 [data-theme-id="berryCool"] .chat-plus-button {
-  /* Use send button (primary) color instead of dark/neutral */
-  background-color: var(--primary-solid) !important;
-  color: var(--primary-foreground) !important;
-  border-color: color-mix(in srgb, var(--primary-solid) 50%, #000) !important;
+  /* button body */
+  background-color: #ffffff !important; /* white body like reference */
+  color: var(--primary-solid) !important; /* plus icon matches send color */
+  border-color: color-mix(in srgb, var(--primary-solid) 35%, #ddd) !important;
+  border-width: 1px !important;
+  border-style: solid !important;
+  border-radius: 14px !important; /* softer shape */
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 10px rgba(0,0,0,.08);
 }
 
-[data-theme-id="berryCool"] .chat-emoji-button:hover,
+[data-theme-id="berryCool"] .chat-plus-button::after {
+  /* subtle colored base strip (like image bottom accent) */
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 26%;
+  background: linear-gradient(
+    to top,
+    color-mix(in srgb, var(--primary-solid) 28%, #ffffff),
+    transparent
+  );
+}
+
 [data-theme-id="berryCool"] .chat-plus-button:hover {
-  background-color: color-mix(in srgb, var(--primary-solid) 90%, #000) !important;
+  filter: brightness(0.98);
+}
+
+/* Emoji trigger: keep neutral (no blue/purple) on berryCool */
+[data-theme-id="berryCool"] .chat-emoji-button {
+  background-color: transparent !important;
+  color: inherit !important; /* keep default icon color */
+  border-color: transparent !important;
+}
+
+[data-theme-id="berryCool"] .chat-emoji-button:hover {
+  background-color: transparent !important;
+  color: inherit !important;
+}
+
+/* Remove focus outline/ring specifically from emoji trigger */
+.chat-emoji-button:focus,
+.chat-emoji-button:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
 }
 
 /* Private messages: make gallery icon white on berryCool */
