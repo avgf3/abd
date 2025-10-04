@@ -673,7 +673,7 @@ export default function PrivateMessageBox({
                             }
                             return (
                               <span
-                                className="text-sm leading-relaxed"
+                                className="ac-message-text"
                                 style={
                                   currentUser && m.senderId === currentUser.id
                                     ? { color: composerTextColor, fontWeight: composerBold ? 700 : undefined }

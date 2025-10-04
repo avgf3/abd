@@ -2439,6 +2439,31 @@ li::before {
   display: none !important;
 }
 
+/* ===== Arabic.chat-like typography ===== */
+/* Username in user list: bold, slightly larger, Cairo */
+.ac-user-name {
+  font-family: 'Cairo', Arial, sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+/* Message text in rooms and private DM: medium weight, size 13px */
+.ac-message-text {
+  font-family: 'Cairo', Arial, sans-serif;
+  font-weight: 600;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+/* Small label text to match counters/badges */
+.ac-small-label {
+  font-family: 'Cairo', Arial, sans-serif;
+  font-weight: 700;
+  font-size: 10px;
+  line-height: 1.2;
+}
+
 /* App bars with safe area handling */
 .app-header {
   background-color: var(--background-solid, rgba(15, 23, 42, 0.98));
