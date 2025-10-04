@@ -220,8 +220,16 @@ export default function PromoteUserPanel({
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-2xl max-h-[85vh] bg-popover border-border flex flex-col">
-        <CardHeader className="border-b border-border">
+      <Card className="w-full max-w-2xl max-h-[85vh] bg-popover border-border flex flex-col admin-modal-card">
+        <CardHeader className="border-b border-border admin-modal-header relative pl-12">
+          <button
+            onClick={onClose}
+            aria-label="إغلاق"
+            title="إغلاق"
+            className="absolute left-3 top-3 px-2 py-1 hover:bg-red-100 text-red-600 text-sm font-medium rounded"
+          >
+            ✖️
+          </button>
           <CardTitle className="text-xl text-gray-100 flex items-center gap-2">
             <UserCheck className="w-6 h-6 text-blue-400" />
             ترقية المستخدمين
