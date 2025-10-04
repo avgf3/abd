@@ -2247,7 +2247,7 @@ export default function ProfileModal({
         .profile-avatar {
           width: 130px;
           height: 130px;
-          border-radius: 16px;
+          border-radius: 0;
           overflow: hidden;
           position: absolute;
           top: calc(100% - 130px);
