@@ -2249,7 +2249,6 @@ export default function ProfileModal({
           height: 130px;
           border-radius: 16px;
           overflow: hidden;
-          border: 4px solid rgba(255,255,255,0.9);
           position: absolute;
           top: calc(100% - 90px);
           right: 20px;
