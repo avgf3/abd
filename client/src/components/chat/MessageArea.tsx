@@ -1092,90 +1092,17 @@ export default function MessageArea({
         className={`ac-composer flex ${isMobile ? 'gap-2 p-2' : 'gap-2 p-2'} items-end max-w-full mx-auto bg-white transition-all duration-300 rounded-lg border border-gray-200`}
           style={{ paddingBottom: isMobile ? 'calc(env(safe-area-inset-bottom) + 0.5rem)' : '0.75rem' }}
         >
-          {/* Input row: plus, emoji, input, send (order like arabic.chat) */}
+          {/* Input row: send, input (with inline emoji), plus */}
           <div className={`flex flex-1 items-end gap-2`}>
-            {/* Plus menu (moved to start) - keep but minimal visual change to mimic arabic.chat */}
-            <React.Suspense fallback={null}>
-              <div className="chat-plus-button">
-                <ComposerPlusMenu
-                  onOpenImagePicker={() => fileInputRef.current?.click()}
-                  disabled={!currentUser || isChatRestricted}
-                  isMobile={isMobile}
-                  currentUser={currentUser}
-                />
-              </div>
-            </React.Suspense>
-
-            {/* Emoji button */}
-            <div className="relative">
-              <Button
-                type="button"
-                variant="outline"
-                size={isMobile ? 'icon' : 'icon'}
-                onClick={() => {
-                  // إغلاق جميع المنتقات الأخرى
-                  setShowEmojiPicker(false);
-                  setShowAnimatedEmojiPicker(false);
-                  setShowEmojiMart(false);
-                  setShowLottieEmoji(false);
-                  // فتح المنتقي المحسن
-                  setShowEnhancedEmoji(!showEnhancedEmoji);
-                }}
-                disabled={isChatRestricted}
-                className={`chat-emoji-button aspect-square mobile-touch-button ${isMobile ? 'min-w-[44px] min-h-[44px]' : ''} ${isChatRestricted ? 'opacity-60 cursor-not-allowed' : ''} rounded-lg border border-input bg-background text-foreground hover:bg-accent hover:text-accent-foreground`}
-                title="سمايلات متحركة متقدمة"
-              >
-                <Smile className={`${isMobile ? 'w-5 h-5' : 'w-4 h-4'}`} />
-              </Button>
-              
-              {/* Enhanced Emoji Picker (Default) */}
-              {showEnhancedEmoji && (
-                <div className="absolute bottom-full mb-2 z-30">
-                  <React.Suspense fallback={null}>
-                    <AnimatedEmojiEnhanced
-                      onEmojiSelect={handleEnhancedEmojiSelect}
-                      onClose={() => setShowEnhancedEmoji(false)}
-                    />
-                  </React.Suspense>
-                </div>
-              )}
-              
-              {/* Original Animated Emoji Picker */}
-              {showAnimatedEmojiPicker && (
-                <div className="absolute bottom-full mb-2 z-30">
-                  <React.Suspense fallback={null}>
-                    <AnimatedEmojiPicker
-                      onEmojiSelect={handleAnimatedEmojiSelect}
-                      onClose={() => setShowAnimatedEmojiPicker(false)}
-                    />
-                  </React.Suspense>
-                </div>
-              )}
-              
-              {/* Emoji Mart Picker */}
-              {showEmojiMart && (
-                <div className="absolute bottom-full mb-2 z-30">
-                  <React.Suspense fallback={null}>
-                    <EmojiMartPicker
-                      onEmojiSelect={handleEmojiMartSelect}
-                      onClose={() => setShowEmojiMart(false)}
-                    />
-                  </React.Suspense>
-                </div>
-              )}
-              
-              {/* Lottie Emoji Picker */}
-              {showLottieEmoji && (
-                <div className="absolute bottom-full mb-2 z-30">
-                  <React.Suspense fallback={null}>
-                    <LottieEmojiPicker
-                      onEmojiSelect={handleLottieEmojiSelect}
-                      onClose={() => setShowLottieEmoji(false)}
-                    />
-                  </React.Suspense>
-                </div>
-              )}
-            </div>
+            {/* Send Button (moved to start) */}
+            <Button
+              onClick={handleSendMessage}
+              disabled={!messageText.trim() || !currentUser || isChatRestricted}
+              className={`aspect-square bg-primary hover:bg-primary/90 text-primary-foreground rounded-full mobile-touch-button ${isMobile ? 'min-w-[44px] min-h-[44px]' : ''} ${isChatRestricted ? 'opacity-60 cursor-not-allowed' : ''}`}
+              title="إرسال"
+            >
+              <Send className="w-4 h-4" />
+            </Button>
 
             {/* Message Input (with inline emoji trigger like arabic.chat) */}
             <div className="relative flex-1">
@@ -1186,7 +1113,7 @@ export default function MessageArea({
                 onKeyDown={handleKeyPress}
                 onPaste={handlePaste}
                 placeholder={!currentUser || isChatRestricted ? (getRestrictionMessage || 'هذه الخاصية غير متوفرة الآن') : "اكتب هنا..."}
-                className={`rooms-message-input w-full bg-white text-foreground placeholder:text-muted-foreground rounded-lg border border-gray-300 h-10 pr-10 focus:border-transparent focus:ring-offset-0 focus-visible:ring-offset-0 text-[14px]`}
+                className={`rooms-message-input w-full bg-white text-foreground placeholder:text-muted-foreground rounded-lg border border-gray-300 h-10 pr-3 pl-10 focus:border-transparent focus:ring-offset-0 focus-visible:ring-offset-0 text-[14px]`}
                 disabled={!currentUser || isChatRestricted}
                 style={{ color: composerTextColor, fontWeight: composerBold ? 700 : undefined }}
                 maxLength={MAX_CHARS}
@@ -1206,17 +1133,61 @@ export default function MessageArea({
               >
                 <Smile className="w-5 h-5" />
               </button>
+
+              {/* Emoji pickers anchored to input container */}
+              {showEnhancedEmoji && (
+                <div className="absolute bottom-full left-0 mb-2 z-30">
+                  <React.Suspense fallback={null}>
+                    <AnimatedEmojiEnhanced
+                      onEmojiSelect={handleEnhancedEmojiSelect}
+                      onClose={() => setShowEnhancedEmoji(false)}
+                    />
+                  </React.Suspense>
+                </div>
+              )}
+              {showAnimatedEmojiPicker && (
+                <div className="absolute bottom-full left-0 mb-2 z-30">
+                  <React.Suspense fallback={null}>
+                    <AnimatedEmojiPicker
+                      onEmojiSelect={handleAnimatedEmojiSelect}
+                      onClose={() => setShowAnimatedEmojiPicker(false)}
+                    />
+                  </React.Suspense>
+                </div>
+              )}
+              {showEmojiMart && (
+                <div className="absolute bottom-full left-0 mb-2 z-30">
+                  <React.Suspense fallback={null}>
+                    <EmojiMartPicker
+                      onEmojiSelect={handleEmojiMartSelect}
+                      onClose={() => setShowEmojiMart(false)}
+                    />
+                  </React.Suspense>
+                </div>
+              )}
+              {showLottieEmoji && (
+                <div className="absolute bottom-full left-0 mb-2 z-30">
+                  <React.Suspense fallback={null}>
+                    <LottieEmojiPicker
+                      onEmojiSelect={handleLottieEmojiSelect}
+                      onClose={() => setShowLottieEmoji(false)}
+                    />
+                  </React.Suspense>
+                </div>
+              )}
             </div>
 
-            {/* Send Button at the end */}
-            <Button
-              onClick={handleSendMessage}
-              disabled={!messageText.trim() || !currentUser || isChatRestricted}
-              className={`aspect-square bg-primary hover:bg-primary/90 text-primary-foreground rounded-full mobile-touch-button ${isMobile ? 'min-w-[44px] min-h-[44px]' : ''} ${isChatRestricted ? 'opacity-60 cursor-not-allowed' : ''}`}
-              title="إرسال"
-            >
-              <Send className="w-4 h-4" />
-            </Button>
+            {/* Plus menu (moved to end) */}
+            <React.Suspense fallback={null}>
+              <div className="chat-plus-button">
+                <ComposerPlusMenu
+                  onOpenImagePicker={() => fileInputRef.current?.click()}
+                  disabled={!currentUser || isChatRestricted}
+                  isMobile={isMobile}
+                  currentUser={currentUser}
+                />
+              </div>
+            </React.Suspense>
           </div>
 
           {/* Hidden File Input */}
