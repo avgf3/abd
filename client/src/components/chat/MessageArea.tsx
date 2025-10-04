@@ -127,6 +127,23 @@ export default function MessageArea({
   // Track reaction effects - تتبع التأثيرات للرسائل
   const [reactionEffects, setReactionEffects] = useState<Map<number, { type: 'heart' | 'like' | 'dislike'; trigger: number }>>(new Map());
 
+  // Helper: اكتشاف رسائل النظام الخاصة بالانضمام/المغادرة لعرضها في سطر واحد دائماً
+  const isJoinLeaveSystemContent = useCallback((content: string | undefined) => {
+    if (!content) return false;
+    const patterns = [
+      /\bانضم\b/u,
+      /\bغادر\b/u,
+      /\bدخل\b/u,
+      /\bخرج\b/u,
+      /\bغادر\s+الموقع\b/u,
+      /\bjoined\b/i,
+      /\bleft\b/i,
+      /\bleft\s+the\s+room\b/i,
+      /\bjoined\s+the\s+room\b/i,
+    ];
+    return patterns.some((re) => re.test(content));
+  }, []);
+
   // Check if user is restricted from chatting
   const isChatRestricted = useMemo(() => {
     if (!currentUser) return true;
@@ -703,7 +720,7 @@ export default function MessageArea({
                     trigger={reactionEffects.get(message.id)!.trigger}
                   />
                 )}
-                {/* System message: optimized layout for both mobile and desktop with unified alignment */}
+                {/* System message: use the same run-in layout as regular messages for perfect consistency */}
                 {message.messageType === 'system' ? (
                   <>
                     {message.sender && (
@@ -718,48 +735,61 @@ export default function MessageArea({
                     )}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start gap-2">
-                        {/* Name and badge section - fixed width */}
-                        <div className="flex items-center gap-1 shrink-0">
-                          {message.sender && (
-                            <span className="inline-flex items-center justify-center">
-                              <UserRoleBadge user={message.sender} size={14} hideGuestAndGender />
-                            </span>
-                          )}
-                          {(() => {
-                            const np = getUserNameplateStyles(message.sender);
-                            const hasNp = np && Object.keys(np).length > 0;
-                            if (hasNp) {
+                        <div className="flex-1 min-w-0">
+                          <div className="runin-container">
+                            <div className="runin-name">
+                              {message.sender && (
+                                <span className="inline-flex items-center justify-center mr-1">
+                                  <UserRoleBadge user={message.sender} size={14} hideGuestAndGender />
+                                </span>
+                              )}
+                              {(() => {
+                                const np = getUserNameplateStyles(message.sender);
+                                const hasNp = np && Object.keys(np).length > 0;
+                                if (hasNp) {
+                                  return (
+                                    <button
+                                      onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
+                                      className="transition-transform duration-200 hover:scale-[1.02]"
+                                      title={message.sender?.username}
+                                    >
+                                      <span className="ac-nameplate" style={np}>
+                                        <span className="ac-name">{message.sender?.username || '...'}</span>
+                                        <span className="ac-mark">〰</span>
+                                      </span>
+                                    </button>
+                                  );
+                                }
+                                return (
+                                  <button
+                                    onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
+                                    className="font-semibold hover:underline transition-colors duration-200 text-sm"
+                                    style={{ color: getFinalUsernameColor(message.sender) }}
+                                  >
+                                    {message.sender?.username || 'جاري التحميل...'}
+                                  </button>
+                                );
+                              })()}
+                              <span className="text-red-400 mx-1">:</span>
+                            </div>
+                            {(() => {
+                              const forceSingleLine = isJoinLeaveSystemContent(message.content);
+                              const contentClass = forceSingleLine
+                                ? 'runin-text text-red-600 truncate'
+                                : 'runin-text text-red-600 message-content-fix';
+                              const contentStyle = forceSingleLine ? { whiteSpace: 'nowrap' as const } : undefined;
                               return (
-                                <button
-                                  onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
-                                  className="transition-transform duration-200 hover:scale-[1.02]"
-                                  title={message.sender?.username}
-                                >
-                                  <span className="ac-nameplate" style={np}>
-                                    <span className="ac-name">{message.sender?.username || '...'}</span>
-                                    <span className="ac-mark">〰</span>
-                                  </span>
-                                </button>
+                                <div className={contentClass} style={contentStyle}>
+                                  <span>{message.content}</span>
+                                </div>
                               );
-                            }
-                            return (
-                              <button
-                                onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
-                                className="font-semibold hover:underline transition-colors duration-200 text-sm"
-                                style={{ color: getFinalUsernameColor(message.sender) }}
-                              >
-                                {message.sender?.username || 'جاري التحميل...'}
-                              </button>
-                            );
-                          })()}
-                          <span className="text-red-400 mx-1">:</span>
+                            })()}
+                            {/* Time section - fixed width */}
+                            <span className="ac-time hidden whitespace-nowrap shrink-0 self-start">
+                              {formatTime(message.timestamp)}
+                            </span>
+                          </div>
                         </div>
-
-                        {/* Content section - flexible width (one-line, full content) */}
-                        <div className="flex-1 min-w-0 text-red-600 message-content-fix whitespace-nowrap">
-                          <span>{message.content}</span>
-                        </div>
-
                         {/* Actions: report + menu */}
                         <div className="flex items-center gap-1 shrink-0">
                           {onReportMessage && message.sender && currentUser && message.sender.id !== currentUser.id && (
@@ -805,9 +835,6 @@ export default function MessageArea({
                         </div>
                       </div>
                     </div>
-
-                    {/* Right side: time */}
-                    <span className="ac-time hidden ml-2 self-start">{formatTime(message.timestamp)}</span>
                   </>
                 ) : (
                   <>
