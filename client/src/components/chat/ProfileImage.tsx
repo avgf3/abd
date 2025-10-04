@@ -59,7 +59,7 @@ export default function ProfileImage({
       <img
         src={imageSrc}
         alt={`صورة ${user.username}`}
-        className={`${sizeClasses[size]} rounded-full ring-2 ${borderColor} shadow-sm object-cover ${className}`}
+        className={`${sizeClasses[size]} ring-2 ${borderColor} shadow-sm object-cover ${className}`}
         style={{
           transition: 'none',
           backfaceVisibility: 'hidden',
