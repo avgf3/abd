@@ -2341,29 +2341,30 @@ li > * > div.effect-crystal {
   outline-offset: 2px;
 }
 
-/* ===== Theme-specific overrides for Toti Bard (berryCool) ===== */
+/* ===== Theme-specific overrides for BerryCool (restore originals) ===== */
 [data-theme-id="berryCool"] .chat-emoji-button,
 [data-theme-id="berryCool"] .chat-plus-button {
-  /* Use send button (primary) color instead of dark/neutral */
-  background-color: var(--primary-solid) !important;
-  color: var(--primary-foreground) !important;
-  border-color: color-mix(in srgb, var(--primary-solid) 50%, #000) !important;
+  /* Revert to neutral outline look (original theme behavior) */
+  background-color: var(--background-solid) !important;
+  color: var(--foreground) !important;
+  border-color: var(--input) !important;
 }
 
 [data-theme-id="berryCool"] .chat-emoji-button:hover,
 [data-theme-id="berryCool"] .chat-plus-button:hover {
-  background-color: color-mix(in srgb, var(--primary-solid) 90%, #000) !important;
+  background-color: color-mix(in srgb, var(--foreground) 8%, transparent) !important;
+  color: var(--foreground) !important;
 }
 
-/* Private messages: make gallery icon white on berryCool */
+/* Private messages: make gallery button match send button on berryCool */
 [data-theme-id="berryCool"] .pm-gallery-button {
-  background-color: transparent !important; /* keep subtle */
-  color: #ffffff !important; /* icon to white */
-  border-color: rgba(255, 255, 255, 0.18) !important; /* subtle white border */
+  background-color: var(--primary-solid) !important;
+  color: var(--primary-foreground) !important;
+  border-color: transparent !important;
 }
 
 [data-theme-id="berryCool"] .pm-gallery-button:hover {
-  background-color: rgba(255, 255, 255, 0.08) !important;
+  background-color: color-mix(in srgb, var(--primary-solid) 90%, #000) !important;
 }
 
 /* Modern Loading States */
