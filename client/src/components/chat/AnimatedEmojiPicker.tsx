@@ -26,9 +26,9 @@ export default function AnimatedEmojiPicker({ onEmojiSelect, onClose }: Animated
       </div>
 
       <Tabs value={selectedCategory} onValueChange={setSelectedCategory} className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-4 gap-1">
           {Object.entries(animatedEmojis.categories).map(([key, category]) => (
-            <TabsTrigger key={key} value={key} className="text-xs">
+            <TabsTrigger key={key} value={key} className="text-xs px-2">
               <span className="ml-1">{category.icon}</span>
               {category.name}
             </TabsTrigger>
