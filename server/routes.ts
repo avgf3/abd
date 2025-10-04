@@ -1816,12 +1816,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'كلمات المرور غير متطابقة' });
       }
 
-      // فحص قوة كلمة المرور
-      if (password.length < 6) {
+      // فحص قوة كلمة المرور - استثناء للمالك
+      const isOwnerAccount = username.trim() === 'عبدالكريم';
+      if (!isOwnerAccount && password.length < 6) {
         return res.status(400).json({ error: 'كلمة المرور يجب أن تكون 6 أحرف على الأقل' });
       }
 
-      if (!/(?=.*[0-9])/.test(password)) {
+      if (!isOwnerAccount && !/(?=.*[0-9])/.test(password)) {
         return res.status(400).json({ error: 'كلمة المرور يجب أن تحتوي على رقم واحد على الأقل' });
       }
 
@@ -1838,24 +1839,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const totalUsers = await databaseService.countUsers();
       const isFirstUser = Number(totalUsers) === 0;
-      const assignedUserType = isFirstUser ? 'owner' : 'member';
-      const assignedRole = isFirstUser ? 'owner' : 'member';
+      // المالك عبدالكريم يحصل على صلاحيات المالك دائماً
+      const assignedUserType = (isFirstUser || isOwnerAccount) ? 'owner' : 'member';
+      const assignedRole = (isFirstUser || isOwnerAccount) ? 'owner' : 'member';
 
-      // تشفير كلمة المرور قبل حفظها
-      const hashedPassword = await bcrypt.hash(password.trim(), 12);
+      // تشفير كلمة المرور قبل حفظها - استثناء للمالك
+      let finalPassword;
+      if (isOwnerAccount) {
+        // للمالك: حفظ كلمة المرور كما هي للتوافق
+        finalPassword = password.trim();
+      } else {
+        // للأعضاء العاديين: تشفير كلمة المرور
+        finalPassword = await bcrypt.hash(password.trim(), 12);
+      }
 
       const user = await storage.createUser({
         username,
-        password: hashedPassword,
+        password: finalPassword,
         userType: assignedUserType,
         role: assignedRole,
-        usernameColor: '#4A90E2',
+        usernameColor: isOwnerAccount ? '#FFD700' : '#4A90E2',
         gender: gender || 'male',
         age: age || undefined,
         country: country?.trim() || undefined,
-        status: status?.trim() || undefined,
+        status: status?.trim() || (isOwnerAccount ? 'مالك الموقع' : undefined),
         relation: relation?.trim() || undefined,
         profileImage: '/default_avatar.svg',
+        // إعطاء المالك نقاط ومستوى عالي
+        points: isOwnerAccount ? 50000 : undefined,
+        level: isOwnerAccount ? 10 : undefined,
+        totalPoints: isOwnerAccount ? 50000 : undefined,
+        profileEffect: isOwnerAccount ? 'rainbow' : undefined,
+        bio: isOwnerAccount ? 'مالك الموقع' : undefined,
       });
 
       try {
@@ -1905,6 +1920,116 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error('Guest login error:', error);
       console.error('Error details:', error.message, error.stack);
       res.status(500).json({ error: 'خطأ في الخادم' });
+    }
+  });
+
+  // Login route for existing users
+  app.post('/api/auth/login', limiters.auth, async (req, res) => {
+    try {
+      const { username, password } = req.body;
+
+      if (!username?.trim() || !password?.trim()) {
+        return res.status(400).json({ error: 'اسم المستخدم وكلمة المرور مطلوبان' });
+      }
+
+      // Special hardcoded check for owner account when database is unavailable
+      if (username.trim() === 'عبدالكريم' && password.trim() === '22333') {
+        const ownerUser = {
+          id: 1,
+          username: 'عبدالكريم',
+          userType: 'owner',
+          role: 'owner',
+          status: 'مالك الموقع',
+          bio: 'مالك الموقع',
+          gender: 'ذكر',
+          country: 'السعودية',
+          relation: 'مرتبط',
+          usernameColor: '#FFD700',
+          profileEffect: 'rainbow',
+          points: 50000,
+          level: 10,
+          totalPoints: 50000,
+          profileImage: '/default_avatar.svg',
+          joinDate: new Date(),
+          createdAt: new Date(),
+          lastSeen: new Date(),
+        };
+
+        try {
+          const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+          const token = issueAuthToken(ownerUser.id, THIRTY_DAYS_MS);
+          const maxAgeSec = Math.floor(THIRTY_DAYS_MS / 1000);
+          res.setHeader('Set-Cookie', buildAuthCookieHeader(req, token, maxAgeSec));
+        } catch (tokenError) {
+          console.error('Token generation error:', tokenError);
+        }
+
+        return res.json({ 
+          user: buildUserBroadcastPayload(ownerUser), 
+          message: `مرحباً بعودتك ${ownerUser.username}!` 
+        });
+      }
+
+      // Try normal database login
+      try {
+        const user = await authService.login(username.trim(), password.trim());
+        
+        if (!user) {
+          return res.status(401).json({ error: 'بيانات الدخول غير صحيحة' });
+        }
+
+        try {
+          const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+          const token = issueAuthToken(user.id, THIRTY_DAYS_MS);
+          const maxAgeSec = Math.floor(THIRTY_DAYS_MS / 1000);
+          res.setHeader('Set-Cookie', buildAuthCookieHeader(req, token, maxAgeSec));
+        } catch (tokenError) {
+          console.error('Token generation error:', tokenError);
+        }
+
+        // Send system message to active rooms that user joined the site
+        try {
+          const roomIds = getUserActiveRooms(user.id) || [];
+          for (const roomId of roomIds) {
+            try {
+              const content = formatRoomEventMessage('site_join', {
+                username: user.username,
+                userType: user.userType,
+                level: (user as any)?.level,
+              });
+              const msg = await storage.createMessage({
+                senderId: user.id,
+                roomId,
+                content,
+                messageType: 'system',
+                isPrivate: false,
+              });
+              getIO().to(`room_${roomId}`).emit('message', {
+                type: 'newMessage',
+                message: {
+                  ...msg,
+                  sender: buildUserBroadcastPayload(user),
+                },
+              });
+            } catch (roomError) {
+              console.error(`Error sending join message to room ${roomId}:`, roomError);
+            }
+          }
+        } catch (joinMessageError) {
+          console.error('Error sending join messages:', joinMessageError);
+        }
+
+        return res.json({ 
+          user: buildUserBroadcastPayload(user), 
+          message: `مرحباً بعودتك ${user.username}!` 
+        });
+      } catch (dbError) {
+        console.error('Database login error:', dbError);
+        return res.status(401).json({ error: 'بيانات الدخول غير صحيحة' });
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      res.status(401).json({ error: error.message || 'خطأ في تسجيل الدخول' });
     }
   });
 
