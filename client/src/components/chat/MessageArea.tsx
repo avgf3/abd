@@ -650,7 +650,7 @@ export default function MessageArea({
   }, []);
 
   return (
-    <section className={`flex-1 flex flex-col bg-white min-h-0 ${isMobile ? 'mobile-message-area' : ''}`}>
+    <section className="flex-1 flex flex-col bg-white min-h-0">
       {/* Chat Lock Status Indicator */}
       {(chatLockAll || chatLockVisitors) && (
         <div className={`px-4 py-2 text-center text-sm font-medium border-b ${
@@ -717,7 +717,7 @@ export default function MessageArea({
                       </div>
                     )}
                     <div className="flex-1 min-w-0">
-                      <div className={`flex items-start gap-2 ${isMobile ? 'system-message-mobile' : ''}`}>
+                      <div className="flex items-start gap-2">
                         {/* Name and badge section - fixed width */}
                         <div className="flex items-center gap-1 shrink-0">
                           {message.sender && (
@@ -756,7 +756,7 @@ export default function MessageArea({
                         </div>
 
                         {/* Content section - flexible width (one-line, full content) */}
-                        <div className={`flex-1 min-w-0 text-red-600 message-content-fix ${isMobile ? 'system-message-content' : ''} whitespace-nowrap`}>
+                        <div className="flex-1 min-w-0 text-red-600 message-content-fix whitespace-nowrap">
                           <span>{message.content}</span>
                         </div>
 
