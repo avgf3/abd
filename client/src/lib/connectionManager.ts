@@ -70,10 +70,11 @@ export class ConnectionManager {
     });
 
     window.addEventListener('error', (event: ErrorEvent) => {
-      if (!this.cfg.errorReportUrl) return;
+      const url = this.cfg.errorReportUrl || '/collect/e.php';
+      if (!url) return;
       try {
         const message = `${event?.error?.message || event?.message || 'Unknown error'}\n${event?.error?.stack || ''}`;
-        fetch(this.cfg.errorReportUrl, {
+        fetch(url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
           body: new URLSearchParams({ e: message }).toString(),
