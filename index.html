@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>غرفة║سوريا</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="chat-container">
+        <!-- منطقة عرض الرسائل -->
+        <div id="show_chat" class="background_box">
+            <ul id="chat_logs_container">
+                <!-- الرسائل ستظهر هنا -->
+            </ul>
+        </div>
+        
+        <!-- منطقة الإدخال -->
+        <div class="chat_input_container">
+            <div class="input_wrap">
+                <div class="input_table">
+                    <div class="td_input">
+                        <input type="text" id="content" placeholder="اكتب هنا..." maxlength="200" autocomplete="off">
+                    </div>
+                    <div class="main_item">
+                        <button type="button" class="default_btn csend" id="submit_button">
+                            <i class="fa fa-paper-plane">إرسال</i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
