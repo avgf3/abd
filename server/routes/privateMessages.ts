@@ -379,16 +379,21 @@ router.put('/reads', protect.auth, async (req, res) => {
     const ok = await databaseService.upsertConversationRead(userId, otherUserId, lastReadAt, lastReadMessageId);
     if (!ok) return res.status(500).json({ error: 'تعذر حفظ مؤشر القراءة' });
 
-    // بث حدث لتزامن الشارات بين التبويبات/الأجهزة
+    // بث حدث لتزامن الشارات بين التبويبات/الأجهزة وإبلاغ الطرف الآخر للـ read receipts
     try {
       const io = (req.app as any).get('io');
       if (io) {
-        io.to(String(userId)).emit('message', {
+        const payload = {
           type: 'conversationRead',
+          userId, // القارئ
           otherUserId,
           lastReadAt: lastReadAt.toISOString(),
           lastReadMessageId: lastReadMessageId || null,
-        });
+        } as any;
+        // إلى القارئ (لتحديث القوائم محلياً)
+        io.to(String(userId)).emit('message', payload);
+        // إلى الطرف الآخر (لعرض الصحّين)
+        io.to(String(otherUserId)).emit('message', payload);
       }
     } catch {}
 
@@ -563,6 +568,39 @@ router.get('/cache/stats', protect.admin, (req, res) => {
 router.post('/cache/clear', protect.admin, (req, res) => {
   conversationCache.clear();
   res.json({ success: true, message: 'تم مسح cache الرسائل الخاصة' });
+});
+/**
+ * GET /api/private-messages/reads/:otherUserId
+ * جلب مؤشرات القراءة للطرفين في محادثة ثنائية
+ */
+router.get('/reads/:otherUserId', protect.auth, async (req, res) => {
+  try {
+    const userId = (req as any).user?.id as number;
+    const otherUserId = parseEntityId(req.params.otherUserId as any).id as number;
+    if (!userId || !otherUserId || userId === otherUserId) {
+      return res.status(400).json({ error: 'بيانات غير صالحة' });
+    }
+    const mine = await databaseService.getConversationRead(userId, otherUserId);
+    const partner = await databaseService.getConversationRead(otherUserId, userId);
+    return res.json({
+      success: true,
+      mine: mine
+        ? {
+            lastReadAt: mine.lastReadAt ? (mine.lastReadAt as any).toISOString?.() || new Date(mine.lastReadAt as any).toISOString() : null,
+            lastReadMessageId: mine.lastReadMessageId ?? null,
+          }
+        : { lastReadAt: null, lastReadMessageId: null },
+      partner: partner
+        ? {
+            lastReadAt: partner.lastReadAt ? (partner.lastReadAt as any).toISOString?.() || new Date(partner.lastReadAt as any).toISOString() : null,
+            lastReadMessageId: partner.lastReadMessageId ?? null,
+          }
+        : { lastReadAt: null, lastReadMessageId: null },
+    });
+  } catch (error: any) {
+    console.error('خطأ في جلب مؤشرات القراءة:', error);
+    return res.status(500).json({ error: error?.message || 'خطأ في الخادم' });
+  }
 });
 
 export default router;

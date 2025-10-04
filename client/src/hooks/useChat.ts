@@ -59,6 +59,14 @@ interface ChatState {
   showKickCountdown: boolean;
   globalSoundEnabled: boolean;
   showSystemMessages: boolean;
+  // مؤشرات قراءة الخاص لكل مستخدم آخر
+  dmReadPointers: Record<
+    number,
+    {
+      mine?: { lastReadAt: string | null; lastReadMessageId: number | null } | null;
+      partner?: { lastReadAt: string | null; lastReadMessageId: number | null } | null;
+    }
+  >;
 }
 
 // 🔥 SIMPLIFIED Action types - حذف التضارب
@@ -82,6 +90,7 @@ type ChatAction =
   | { type: 'UNIGNORE_USER'; payload: number }
   | { type: 'CLEAR_ALL'; payload: void }
   | { type: 'UPSERT_ONLINE_USER'; payload: ChatUser }
+  | { type: 'SET_DM_READ_POINTERS'; payload: { userId: number; mine?: { lastReadAt: string | null; lastReadMessageId: number | null } | null; partner?: { lastReadAt: string | null; lastReadMessageId: number | null } | null } };
   | { type: 'REMOVE_ONLINE_USER'; payload: number };
 
 type ReactionCounts = { like: number; dislike: number; heart: number };
@@ -103,6 +112,7 @@ const initialState: ChatState = {
   showKickCountdown: false,
   globalSoundEnabled: true,
   showSystemMessages: true,
+  dmReadPointers: {},
 };
 
 // 🔥 SIMPLIFIED Reducer function - حذف التعقيدات والتضارب
@@ -313,6 +323,21 @@ function chatReducer(state: ChatState, action: ChatAction): ChatState {
 
     case 'CLEAR_ALL':
       return { ...initialState };
+
+    case 'SET_DM_READ_POINTERS': {
+      const { userId, mine, partner } = action.payload;
+      const prev = state.dmReadPointers[userId] || {};
+      return {
+        ...state,
+        dmReadPointers: {
+          ...state.dmReadPointers,
+          [userId]: {
+            mine: mine !== undefined ? mine : prev.mine || null,
+            partner: partner !== undefined ? partner : prev.partner || null,
+          },
+        },
+      };
+    }
 
     default:
       return state;
@@ -872,6 +897,28 @@ export const useChat = () => {
           try {
             const ev = new CustomEvent('conversationRead', { detail: envelope });
             window.dispatchEvent(ev);
+          } catch {}
+          try {
+            const readerId = (envelope as any).userId as number;
+            const otherId = (envelope as any).otherUserId as number;
+            const lastReadAt = (envelope as any).lastReadAt as string | null;
+            const lastReadMessageId = (envelope as any).lastReadMessageId as number | null;
+            // إذا كان الطرف الآخر هو القارئ، حدّث مؤشر partner
+            if (readerId && otherId && currentUserRef.current?.id) {
+              if (readerId !== currentUserRef.current.id) {
+                // شريكي قرأ محادثتنا
+                dispatch({
+                  type: 'SET_DM_READ_POINTERS',
+                  payload: { userId: readerId, partner: { lastReadAt, lastReadMessageId } },
+                });
+              } else {
+                // أنا الذي قرأت - حدّث mine للطرف الآخر
+                dispatch({
+                  type: 'SET_DM_READ_POINTERS',
+                  payload: { userId: otherId, mine: { lastReadAt, lastReadMessageId } },
+                });
+              }
+            }
           } catch {}
         }
 
@@ -1759,6 +1806,13 @@ export const useChat = () => {
                   payload: { userId: otherId, messages: formatted },
                 });
               }
+              // جلب مؤشرات القراءة للطرفين لإظهار الصحّين لاحقاً
+              try {
+                const reads = await apiRequest(`/api/private-messages/reads/${otherId}`);
+                const mine = (reads as any)?.mine || null;
+                const partner = (reads as any)?.partner || null;
+                dispatch({ type: 'SET_DM_READ_POINTERS', payload: { userId: otherId, mine, partner } });
+              } catch {}
             } catch {}
           })
         );
@@ -2117,6 +2171,13 @@ export const useChat = () => {
           type: 'SET_PRIVATE_CONVERSATION',
           payload: { userId: otherUserId, messages: formatted },
         });
+        // بعد تحميل المحادثة، اجلب مؤشرات القراءة للطرفين
+        try {
+          const reads = await apiRequest(`/api/private-messages/reads/${otherUserId}`);
+          const mine = (reads as any)?.mine || null;
+          const partner = (reads as any)?.partner || null;
+          dispatch({ type: 'SET_DM_READ_POINTERS', payload: { userId: otherUserId, mine, partner } });
+        } catch {}
       } catch (error) {
         console.error('❌ خطأ في تحميل رسائل الخاص:', error);
       }
@@ -2160,6 +2221,7 @@ export const useChat = () => {
     onlineUsers: memoizedOnlineUsers,
     publicMessages: currentRoomMessages, // ✅ مصدر واحد للحقيقة
     privateConversations: state.privateConversations,
+    dmReadPointers: state.dmReadPointers,
     ignoredUsers: state.ignoredUsers,
     isConnected: state.isConnected,
     typingUsers: state.typingUsers,

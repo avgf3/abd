@@ -547,6 +547,17 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
     }
   }, [showPmBox, selectedPrivateUser]);
 
+  // اشتق مؤشرات القراءة لطرف المحادثة من حالة chat (إن توفرت)
+  const currentReadPointers = useMemo(() => {
+    try {
+      const targetId = selectedPrivateUser?.id;
+      const ptrs = (chat as any)?.dmReadPointers?.[targetId || -1];
+      return ptrs || null;
+    } catch {
+      return null;
+    }
+  }, [selectedPrivateUser?.id, (chat as any)?.dmReadPointers]);
+
   const closePrivateMessage = () => {
     setSelectedPrivateUser(null);
   };
@@ -1531,6 +1542,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             onLoadMore={() => (chat as any).loadOlderPrivateConversation?.(selectedPrivateUser.id, 20)}
             onViewProfile={(u) => handleViewProfile(u)}
             onViewStoryByUser={(uid) => setShowStoryViewer({ show: true, userId: uid })}
+            readPointers={currentReadPointers || undefined}
           />
         </Suspense>
       )}

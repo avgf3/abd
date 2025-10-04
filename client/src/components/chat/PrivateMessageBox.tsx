@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
-import { Send, Image as ImageIcon } from 'lucide-react';
+import { Send, Image as ImageIcon, Check, CheckCheck } from 'lucide-react';
 import { Virtuoso, type VirtuosoHandle } from 'react-virtuoso';
 import { toast } from 'sonner';
 
@@ -36,6 +36,10 @@ interface PrivateMessageBoxProps {
   onLoadMore?: () => Promise<{ addedCount: number; hasMore: boolean }>; // تحميل رسائل أقدم
   onViewProfile?: (user: ChatUser) => void;
   onViewStoryByUser?: (userId: number) => void;
+  readPointers?: {
+    mine?: { lastReadAt: string | null; lastReadMessageId: number | null } | null;
+    partner?: { lastReadAt: string | null; lastReadMessageId: number | null } | null;
+  };
 }
 
 export default function PrivateMessageBox({
@@ -48,6 +52,7 @@ export default function PrivateMessageBox({
   onLoadMore,
   onViewProfile,
   onViewStoryByUser,
+  readPointers,
 }: PrivateMessageBoxProps) {
   const [messageText, setMessageText] = useState('');
   const MAX_CHARS = 192;
@@ -395,6 +400,27 @@ export default function PrivateMessageBox({
 
   if (!isOpen) return null;
 
+  // Helpers: read receipts
+  const isReadByPartner = useCallback(
+    (m: ChatMessage): boolean => {
+      if (!readPointers?.partner) return false;
+      const pr = readPointers.partner;
+      const byId = typeof pr.lastReadMessageId === 'number' && typeof m.id === 'number'
+        ? m.id <= (pr.lastReadMessageId as number)
+        : false;
+      if (byId) return true;
+      if (pr.lastReadAt) {
+        try {
+          return new Date(m.timestamp).getTime() <= new Date(pr.lastReadAt).getTime();
+        } catch {
+          return false;
+        }
+      }
+      return false;
+    },
+    [readPointers?.partner]
+  );
+
   return (
     <Dialog
       open={isOpen}
@@ -540,24 +566,17 @@ export default function PrivateMessageBox({
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -20 }}
                       transition={{ duration: 0.3, ease: "easeOut" }}
-                      className={`flex items-start gap-3 p-3 rounded-lg transition-all duration-300 ${
-                        isMe ? 'bg-blue-50/80 border-r-4 ml-4' : 'bg-green-50/80 border-r-4 mr-4'
-                      }`}
-                      style={{
-                        borderRightColor: getDynamicBorderColor(
-                          m.sender || (isMe ? currentUser : user)
-                        ),
-                      }}
+                      className={`w-full flex ${isMe ? 'justify-end' : 'justify-start'} py-1 px-2`}
                     >
-                      <ProfileImage
-                        user={(m.sender as ChatUser) || (isMe && currentUser ? (currentUser as ChatUser) : user)}
-                        size="small"
-                        className="w-8 h-8"
-                      />
-                      <div className="flex-1 min-w-0">
-                        {/* run-in on mobile; horizontal on desktop */}
-                        <div className="runin-container">
-                          <div className="runin-name">
+                      <div className={`flex items-end gap-2 max-w-[80%] ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
+                        <ProfileImage
+                          user={(m.sender as ChatUser) || (isMe && currentUser ? (currentUser as ChatUser) : user)}
+                          size="small"
+                          className="w-8 h-8"
+                        />
+                        <div className={`rounded-2xl px-3 py-2 ${isMe ? 'bg-blue-500 text-white rounded-br-sm' : 'bg-gray-100 text-gray-900 rounded-bl-sm'}`}>
+                          {/* Sender name */}
+                          <div className={`text-[11px] mb-1 ${isMe ? 'text-white/80 text-right' : 'text-gray-600'}`}>
                             {(() => {
                               const senderUser = (m.sender as ChatUser) || (isMe ? currentUser : user);
                               const np = getUserNameplateStyles(senderUser);
@@ -565,7 +584,7 @@ export default function PrivateMessageBox({
                               const displayName = senderUser?.username || '...';
                               if (hasNp) {
                                 return (
-                                  <span className="font-semibold text-sm">
+                                  <span className="inline-block" title={displayName}>
                                     <span className="ac-nameplate" style={np}>
                                       <span className="ac-name">{displayName}</span>
                                       <span className="ac-mark">〰</span>
@@ -574,19 +593,15 @@ export default function PrivateMessageBox({
                                 );
                               }
                               return (
-                                <span
-                                  className="font-semibold text-sm"
-                                  style={{ color: getFinalUsernameColor(senderUser) }}
-                                >
+                                <span style={{ color: isMe ? 'inherit' : getFinalUsernameColor(senderUser) }}>
                                   {displayName}
                                 </span>
                               );
                             })()}
-                            <span className="text-gray-400 mx-1">:</span>
                           </div>
 
-                          {/* Content section - full width under the name (mobile), inline on first line */}
-                          <div className="runin-text text-gray-800 break-words message-content-fix">
+                          {/* Content section */}
+                          <div className={`break-words message-content-fix ${isMe ? 'text-white' : 'text-gray-900'}`}>
                           {hasStoryContext && (
                             <div className="mb-2">
                               <div className="flex items-center gap-3 p-2 rounded-lg border bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200">
@@ -686,10 +701,17 @@ export default function PrivateMessageBox({
                           })()}
                           </div>
 
-                          {/* Time section - fixed width */}
-                          <span className="text-xs text-gray-500 whitespace-nowrap shrink-0 self-start">
-                            {formatTime(m.timestamp)}
-                          </span>
+                          {/* Time + receipts */}
+                          <div className={`mt-1 flex items-center gap-1 ${isMe ? 'justify-end' : 'justify-start'} text-[11px] ${isMe ? 'text-white/80' : 'text-gray-500'}`}>
+                            <span>{formatTime(m.timestamp)}</span>
+                            {isMe && (
+                              isReadByPartner(m) ? (
+                                <CheckCheck className="w-3.5 h-3.5" />
+                              ) : (
+                                <Check className="w-3.5 h-3.5" />
+                              )
+                            )}
+                          </div>
                         </div>
                       </div>
                     </motion.div>
