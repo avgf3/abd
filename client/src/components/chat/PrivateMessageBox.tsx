@@ -61,6 +61,7 @@ export default function PrivateMessageBox({
   const inputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isAtBottom, setIsAtBottom] = useState(true);
+  const atBottomTimerRef = useRef<number | null>(null);
   const { textColor: composerTextColor, bold: composerBold } = useComposerStyle();
   const isDmClosed = (user as any)?.dmPrivacy === 'none';
   const [isOtherTyping, setIsOtherTyping] = useState(false);
@@ -232,6 +233,35 @@ export default function PrivateMessageBox({
     [sortedMessages.length]
   );
 
+  // Debounced/stabilized at-bottom state to prevent flicker while scrolling
+  const handleAtBottomStateChange = useCallback((at: boolean) => {
+    // If we're at bottom, commit immediately; otherwise, delay slightly to avoid bounce
+    if (at) {
+      if (atBottomTimerRef.current) {
+        clearTimeout(atBottomTimerRef.current);
+        atBottomTimerRef.current = null;
+      }
+      setIsAtBottom(true);
+    } else {
+      if (atBottomTimerRef.current) {
+        clearTimeout(atBottomTimerRef.current);
+      }
+      atBottomTimerRef.current = window.setTimeout(() => {
+        setIsAtBottom(false);
+        atBottomTimerRef.current = null;
+      }, 150);
+    }
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (atBottomTimerRef.current) {
+        clearTimeout(atBottomTimerRef.current);
+        atBottomTimerRef.current = null;
+      }
+    };
+  }, []);
+
   // عند فتح الصندوق: إعادة تعيين حالة التمرير وتركيز الإدخال
   useEffect(() => {
     if (!isOpen) {
@@ -242,15 +272,8 @@ export default function PrivateMessageBox({
     const t1 = setTimeout(() => {
       inputRef.current?.focus();
     }, 100);
-    // تمرير إضافي للتأكد من الوصول لآخر رسالة
-    const t2 = setTimeout(() => {
-      if (sortedMessages.length > 0) {
-        scrollToBottom('auto');
-      }
-    }, 200);
     return () => {
       clearTimeout(t1);
-      clearTimeout(t2);
     };
   }, [isOpen, sortedMessages.length, scrollToBottom]);
 
@@ -301,12 +324,12 @@ export default function PrivateMessageBox({
       return () => clearTimeout(timer);
     }
     
-    // التمرير التلقائي عند وصول رسائل جديدة من المستخدم الحالي
+    // التمرير التلقائي فقط عندما تكون الرسالة الأخيرة مرسلة منّي
     const lastMessage = sortedMessages[sortedMessages.length - 1];
     const isSentByMe = currentUser && lastMessage && lastMessage.senderId === currentUser.id;
-    if (isSentByMe || isAtBottom) {
-      // تمرير سلس فوري لإظهار الرسالة المرسلة
-      setTimeout(() => scrollToBottom('smooth'), 50);
+    if (isSentByMe) {
+      // تمرير لإظهار رسالتي الجديدة حتى لو لم أكن عند القاع
+      setTimeout(() => scrollToBottom('smooth'), 0);
     }
   }, [isOpen, isLoadingOlder, sortedMessages.length, isAtBottom, currentUser?.id, scrollToBottom]);
 
@@ -360,8 +383,6 @@ export default function PrivateMessageBox({
         const success = await sendMessageWithRetry(text);
         if (success) {
           setMessageText('');
-          // التمرير للأسفل بعد الإرسال مباشرة
-          setTimeout(() => scrollToBottom('smooth'), 50);
         }
       }
     } catch (error) {
@@ -553,9 +574,9 @@ export default function PrivateMessageBox({
                 style={{ overscrollBehavior: 'contain', scrollBehavior: 'auto' }}
                 increaseViewportBy={{ top: 300, bottom: 300 }}
                 defaultItemHeight={56}
-                followOutput={isAtBottom ? 'smooth' : false}
-                atBottomThreshold={64}
-                atBottomStateChange={(at) => setIsAtBottom(!!at)}
+            followOutput={isAtBottom ? 'smooth' : false}
+            atBottomThreshold={96}
+            atBottomStateChange={handleAtBottomStateChange}
                 startReached={handleLoadMore}
                 computeItemKey={(index, m) => (m as any)?.id ?? `${(m as any)?.senderId}-${(m as any)?.timestamp}-${index}`}
                 components={{
