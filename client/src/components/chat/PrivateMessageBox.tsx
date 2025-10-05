@@ -58,6 +58,8 @@ export default function PrivateMessageBox({
   const [imageFile, setImageFile] = useState<File | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const prevMessagesLenRef = useRef<number>(0);
+  const prevScrollHeightRef = useRef<number>(0);
+  const [isAtBottom, setIsAtBottom] = useState(true);
   const inputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { textColor: composerTextColor, bold: composerBold } = useComposerStyle();
@@ -269,7 +271,7 @@ export default function PrivateMessageBox({
 
   // تمرير ذكي عند وصول رسائل جديدة في الخاص
   // - في التحميل الأول فقط: مرّر للأسفل مرة واحدة
-  // - بعد ذلك اترك Virtuoso يدير followOutput تلقائياً دون قفزات إضافية
+  // - لاحقاً: مرّر فقط إذا كنت عند الأسفل أو كانت الرسالة مني
   useEffect(() => {
     if (!isOpen || isLoadingOlder) return;
     const prevLen = prevMessagesLenRef.current;
@@ -283,11 +285,15 @@ export default function PrivateMessageBox({
       return;
     }
 
-    // بعد التحميل الأول، لا نفرض أي تمرير يدوي إضافي
-    if (currLen !== prevLen) {
+    if (currLen > prevLen) {
+      const last: any = sortedMessages[currLen - 1];
+      const sentByMe = !!(currentUser && last?.senderId === currentUser.id);
+      if (isAtBottom || sentByMe) {
+        scrollToBottom('smooth');
+      }
       prevMessagesLenRef.current = currLen;
     }
-  }, [sortedMessages.length, isOpen, isLoadingOlder, scrollToBottom]);
+  }, [sortedMessages.length, isOpen, isLoadingOlder, scrollToBottom, isAtBottom, currentUser?.id]);
 
   // أزلنا التمرير عند تركيز الإدخال
 
@@ -404,15 +410,23 @@ export default function PrivateMessageBox({
   const handleLoadMore = useCallback(async () => {
     if (isLoadingOlder || !hasMore || !onLoadMore) return;
     setIsLoadingOlder(true);
+    // احفظ الارتفاع والموضع للحفاظ على المكان بعد الإدراج في الأعلى
+    const el = listRef.current;
+    const prevHeight = el?.scrollHeight || 0;
+    const prevTop = el?.scrollTop || 0;
     try {
       const res = await onLoadMore();
       setHasMore(res.hasMore);
-      if (res.addedCount > 0) {
-        // حافظ على موضع التمرير ثابت بعد إدراج عناصر في الأعلى
+      // أعِد ضبط الموضع بعدها مباشرة للحفاظ على المكان
+      setTimeout(() => {
         try {
-          (virtuosoRef.current as any)?.adjustForPrependedItems?.(res.addedCount);
+          const el2 = listRef.current;
+          if (!el2) return;
+          const newHeight = el2.scrollHeight;
+          const delta = newHeight - prevHeight;
+          el2.scrollTop = prevTop + delta;
         } catch {}
-      }
+      }, 0);
     } finally {
       setIsLoadingOlder(false);
     }
@@ -533,10 +547,11 @@ export default function PrivateMessageBox({
                 className="h-full overflow-y-auto"
                 onScroll={async (e) => {
                   const el = e.currentTarget as HTMLDivElement;
+                  const threshold = 20;
+                  const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight <= threshold;
+                  if (atBottom !== isAtBottom) setIsAtBottom(atBottom);
                   if (el.scrollTop <= 0 && hasMore && !isLoadingOlder) {
-                    try {
-                      await handleLoadMore();
-                    } catch {}
+                    try { await handleLoadMore(); } catch {}
                   }
                 }}
               >
