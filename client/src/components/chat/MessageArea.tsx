@@ -701,8 +701,12 @@ export default function MessageArea({
             ref={virtuosoRef}
             data={validMessages}
             className="!h-full"
-            style={{ paddingBottom: `${24 + (isMobile ? keyboardInset : 0)}px` }}
-            followOutput={'smooth'}
+            style={{
+              paddingBottom: `${24 + (isMobile ? keyboardInset : 0)}px`,
+              overscrollBehavior: 'contain',
+              scrollBehavior: 'auto',
+            }}
+            followOutput={isAtBottom ? 'smooth' : false}
             atBottomThreshold={64}
             atBottomStateChange={handleAtBottomChange}
             increaseViewportBy={{ top: 400, bottom: 400 }}
