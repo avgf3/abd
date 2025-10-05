@@ -57,11 +57,8 @@ export default function PrivateMessageBox({
   const [hasMore, setHasMore] = useState(true);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const virtuosoRef = useRef<VirtuosoHandle>(null);
-  const hasScrolledInitiallyRef = useRef<boolean>(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [isAtBottom, setIsAtBottom] = useState(true);
-  const atBottomTimerRef = useRef<number | null>(null);
   const { textColor: composerTextColor, bold: composerBold } = useComposerStyle();
   const isDmClosed = (user as any)?.dmPrivacy === 'none';
   const [isOtherTyping, setIsOtherTyping] = useState(false);
@@ -218,56 +215,13 @@ export default function PrivateMessageBox({
     return Math.abs(tb - ta) <= GROUP_TIME_MS;
   }, []);
 
-  // دالة التمرير البسيطة - تستخدم فقط عند الحاجة
-  const scrollToBottom = useCallback(
-    (behavior: 'auto' | 'smooth' = 'auto') => {
-      if (!virtuosoRef.current || sortedMessages.length === 0) return;
-      try {
-        virtuosoRef.current.scrollToIndex({
-          index: sortedMessages.length - 1,
-          align: 'end',
-          behavior,
-        });
-      } catch {}
-    },
-    [sortedMessages.length]
-  );
+  // تم إزالة أي تمرير تلقائي أو دوال مساعدة للتمرير
 
-  // Debounced/stabilized at-bottom state to prevent flicker while scrolling
-  const handleAtBottomStateChange = useCallback((at: boolean) => {
-    // If we're at bottom, commit immediately; otherwise, delay slightly to avoid bounce
-    if (at) {
-      if (atBottomTimerRef.current) {
-        clearTimeout(atBottomTimerRef.current);
-        atBottomTimerRef.current = null;
-      }
-      setIsAtBottom(true);
-    } else {
-      if (atBottomTimerRef.current) {
-        clearTimeout(atBottomTimerRef.current);
-      }
-      atBottomTimerRef.current = window.setTimeout(() => {
-        setIsAtBottom(false);
-        atBottomTimerRef.current = null;
-      }, 150);
-    }
-  }, []);
+  // تمت إزالة إدارة حالة القاع بالكامل لإرجاع السلوك الطبيعي
 
+  // عند فتح الصندوق: تركيز الإدخال فقط (بدون أي تمرير تلقائي)
   useEffect(() => {
-    return () => {
-      if (atBottomTimerRef.current) {
-        clearTimeout(atBottomTimerRef.current);
-        atBottomTimerRef.current = null;
-      }
-    };
-  }, []);
-
-  // عند فتح الصندوق: إعادة تعيين حالة التمرير وتركيز الإدخال
-  useEffect(() => {
-    if (!isOpen) {
-      hasScrolledInitiallyRef.current = false;
-      return;
-    }
+    if (!isOpen) return;
     // تركيز الإدخال فورًا بعد فتح الصندوق
     const t1 = setTimeout(() => {
       inputRef.current?.focus();
@@ -275,7 +229,7 @@ export default function PrivateMessageBox({
     return () => {
       clearTimeout(t1);
     };
-  }, [isOpen, sortedMessages.length, scrollToBottom]);
+  }, [isOpen]);
 
   // تحديث آخر وقت فتح للمحادثة لاحتساب غير المقروء
   useEffect(() => {
@@ -310,28 +264,7 @@ export default function PrivateMessageBox({
     } catch {}
   }, [isOpen, user?.id, currentUser?.id, lastMessageDeps]);
 
-  // التمرير الأولي عند فتح الصندوق وعند وصول رسائل جديدة
-  useEffect(() => {
-    if (!isOpen || isLoadingOlder) return;
-    if (sortedMessages.length === 0) return;
-    
-    // التمرير للأسفل عند فتح الصندوق لأول مرة
-    if (!hasScrolledInitiallyRef.current) {
-      const timer = setTimeout(() => {
-        scrollToBottom('auto');
-        hasScrolledInitiallyRef.current = true;
-      }, 150);
-      return () => clearTimeout(timer);
-    }
-    
-    // التمرير التلقائي فقط عندما تكون الرسالة الأخيرة مرسلة منّي
-    const lastMessage = sortedMessages[sortedMessages.length - 1];
-    const isSentByMe = currentUser && lastMessage && lastMessage.senderId === currentUser.id;
-    if (isSentByMe) {
-      // تمرير لإظهار رسالتي الجديدة حتى لو لم أكن عند القاع
-      setTimeout(() => scrollToBottom('smooth'), 0);
-    }
-  }, [isOpen, isLoadingOlder, sortedMessages.length, isAtBottom, currentUser?.id, scrollToBottom]);
+  // تمت إزالة أي تمرير تلقائي عند فتح أو وصول رسائل جديدة
 
 
   // محسن: دالة إرسال مع إعادة المحاولة ومعالجة أخطاء محسنة
@@ -398,7 +331,7 @@ export default function PrivateMessageBox({
       setIsSending(false);
       setTimeout(() => inputRef.current?.focus(), 50);
     }
-  }, [messageText, imageFile, isSending, sendMessageWithRetry, currentUser?.id, user?.id, scrollToBottom]);
+  }, [messageText, imageFile, isSending, sendMessageWithRetry, currentUser?.id, user?.id]);
 
   // محسن: معالج الضغط على Enter
   const handleKeyDown = useCallback(
@@ -574,9 +507,6 @@ export default function PrivateMessageBox({
                 style={{ overscrollBehavior: 'contain', scrollBehavior: 'auto' }}
                 increaseViewportBy={{ top: 300, bottom: 300 }}
                 defaultItemHeight={56}
-            followOutput={isAtBottom ? 'smooth' : false}
-            atBottomThreshold={96}
-            atBottomStateChange={handleAtBottomStateChange}
                 startReached={handleLoadMore}
                 computeItemKey={(index, m) => (m as any)?.id ?? `${(m as any)?.senderId}-${(m as any)?.timestamp}-${index}`}
                 components={{
