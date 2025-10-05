@@ -379,13 +379,28 @@ router.put('/reads', protect.auth, async (req, res) => {
     const ok = await databaseService.upsertConversationRead(userId, otherUserId, lastReadAt, lastReadMessageId);
     if (!ok) return res.status(500).json({ error: 'تعذر حفظ مؤشر القراءة' });
 
-    // بث حدث لتزامن الشارات بين التبويبات/الأجهزة
+    // بث حدث لتزامن الشارات بين التبويبات/الأجهزة لكلا الطرفين
+    // ملاحظة: نرسل حدثين مخصصين لتبسيط منطق الواجهة:
+    // - إلى القارئ نفسه: otherUserId يبقى كما أُرسل في الطلب (المستخدم الآخر)
+    // - إلى الطرف الآخر: otherUserId يصبح معرّف القارئ، حتى تتمكن واجهة الطرف الآخر من
+    //   مطابقة الحدث مباشرةً مع المستخدم المفتوح في نافذة الخاص (user.id)
     try {
       const io = (req.app as any).get('io');
       if (io) {
+        // إلى القارئ (لتصفير عداد غير المقروء على أجهزته/تبويباته)
         io.to(String(userId)).emit('message', {
           type: 'conversationRead',
           otherUserId,
+          readerUserId: userId,
+          lastReadAt: lastReadAt.toISOString(),
+          lastReadMessageId: lastReadMessageId || null,
+        });
+
+        // إلى الطرف الآخر (لتفعيل إشارة "تمت القراءة" فوراً)
+        io.to(String(otherUserId)).emit('message', {
+          type: 'conversationRead',
+          otherUserId: userId, // اجعل otherUserId = القارئ لسهولة المطابقة على الواجهة
+          readerUserId: userId,
           lastReadAt: lastReadAt.toISOString(),
           lastReadMessageId: lastReadMessageId || null,
         });
