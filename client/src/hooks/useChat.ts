@@ -179,25 +179,30 @@ function chatReducer(state: ChatState, action: ChatAction): ChatState {
       const { userId, message } = action.payload;
       const existingMessages = state.privateConversations[userId] || [];
 
-      // منع التكرار - التحقق من وجود الرسالة بنفس ID أو نفس المحتوى والوقت
+      // منع التكرار - التحقق المحسن مع تحسين الأداء
       const isDuplicate = existingMessages.some(
         (msg) =>
           (message.id && msg.id === message.id) ||
           (msg.content === message.content &&
             msg.senderId === message.senderId &&
             Math.abs(new Date(msg.timestamp).getTime() - new Date(message.timestamp).getTime()) <
-              1000)
+              2000) // زيادة النافذة الزمنية لتجنب التكرار
       );
 
       if (isDuplicate) {
         return state; // تجاهل الرسالة المكررة
       }
 
+      // ترتيب الرسائل حسب الوقت لضمان التسلسل الصحيح
+      const newMessages = [...existingMessages, message].sort(
+        (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+      );
+
       return {
         ...state,
         privateConversations: {
           ...state.privateConversations,
-          [userId]: [...existingMessages, message],
+          [userId]: newMessages,
         },
       };
     }

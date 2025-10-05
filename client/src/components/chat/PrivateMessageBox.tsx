@@ -234,14 +234,24 @@ export default function PrivateMessageBox({
   useEffect(() => {
     if (!isOpen) return;
     prevMessagesLenRef.current = sortedMessages.length;
-    if (inputRef.current) {
-      const timer = setTimeout(() => {
+    
+    // تمرير فوري عند فتح المحادثة - حل مشكلة البدء من البداية
+    const scrollToLatest = () => {
+      if (sortedMessages.length > 0) {
         scrollToBottom('auto');
-        inputRef.current?.focus();
-      }, 100);
-      return () => clearTimeout(timer);
-    }
-  }, [isOpen, scrollToBottom]);
+        // تمرير إضافي للتأكد من الوصول لآخر رسالة
+        setTimeout(() => scrollToBottom('auto'), 50);
+        setTimeout(() => scrollToBottom('auto'), 200);
+      }
+      inputRef.current?.focus();
+    };
+    
+    // تمرير فوري ثم تمرير مؤجل للتأكد
+    scrollToLatest();
+    const timer = setTimeout(scrollToLatest, 100);
+    
+    return () => clearTimeout(timer);
+  }, [isOpen, scrollToBottom, sortedMessages.length]);
 
   // تحديث آخر وقت فتح للمحادثة لاحتساب غير المقروء
   useEffect(() => {
@@ -271,17 +281,24 @@ export default function PrivateMessageBox({
     } catch {}
   }, [isOpen, user?.id, currentUser?.id, sortedMessages.length]);
 
-  // تمرير ذكي عند وصول رسائل جديدة (مطابقة لسلوك دردشة الغرف)
+  // تمرير ذكي عند وصول رسائل جديدة (محسن لتقليل الاهتزازات)
   useEffect(() => {
     if (!isOpen || isLoadingOlder) return;
     const prevLen = prevMessagesLenRef.current;
     const currLen = sortedMessages.length;
     if (currLen <= prevLen || currLen === 0) return;
+    
     const last = sortedMessages[currLen - 1];
     const sentByMe = !!(currentUser && (last as any)?.senderId === currentUser.id);
-    if (isAtBottomPrivate || sentByMe) {
-      scrollToBottom('smooth');
+    
+    // تمرير فوري للرسائل المرسلة مني، تمرير سلس للرسائل الواردة
+    if (sentByMe) {
+      scrollToBottom('auto');
+    } else if (isAtBottomPrivate) {
+      // تأخير قصير لتقليل الاهتزازات
+      setTimeout(() => scrollToBottom('smooth'), 50);
     }
+    
     prevMessagesLenRef.current = currLen;
   }, [sortedMessages.length, isOpen, isLoadingOlder, scrollToBottom, isAtBottomPrivate, currentUser?.id]);
 
@@ -548,11 +565,12 @@ export default function PrivateMessageBox({
                 ref={virtuosoRef}
                 data={sortedMessages}
                 className="!h-full"
-                followOutput={'smooth'}
-                atBottomThreshold={64}
+                followOutput={true}
+                atBottomThreshold={100}
                 atBottomStateChange={handleAtBottomChange}
-                increaseViewportBy={{ top: 300, bottom: 300 }}
-                defaultItemHeight={56}
+                increaseViewportBy={{ top: 400, bottom: 400 }}
+                defaultItemHeight={60}
+                initialTopMostItemIndex={sortedMessages.length > 0 ? sortedMessages.length - 1 : 0}
                 startReached={handleLoadMore}
                 computeItemKey={(index, m) => (m as any)?.id ?? `${(m as any)?.senderId}-${(m as any)?.timestamp}-${index}`}
                 components={{

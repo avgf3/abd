@@ -11,6 +11,7 @@ import { z } from 'zod';
 import { parseEntityId } from '../types/entities';
 import { friendService } from '../services/friendService';
 import { databaseService } from '../services/databaseService';
+import { privateMessageService } from '../services/privateMessageService';
 
 // Helper type for conversation item (server-side internal)
 type ConversationItem = {
@@ -25,9 +26,10 @@ type ConversationItem = {
 
 const router = Router();
 
-// Cache for recent conversations to reduce database queries
-const conversationCache = new Map<string, { messages: any[]; timestamp: number }>();
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+// Cache for recent conversations to reduce database queries (محسن)
+const conversationCache = new Map<string, { messages: any[]; timestamp: number; lastAccess: number }>();
+const CACHE_TTL = 10 * 60 * 1000; // 10 minutes (زيادة مدة الكاش)
+const MAX_CACHE_ENTRIES = 1000; // حد أقصى للإدخالات
 
 /**
  * POST /api/private-messages/send
@@ -262,10 +264,13 @@ router.get('/:userId/:otherUserId', protect.auth, async (req, res, next) => {
     let messages: any[] = [];
     let fetchedFromCache = false;
 
-    // دعم الجلب للأقدم
+    // دعم الجلب للأقدم (محسن مع تحديث lastAccess)
     if (beforeTs || beforeId) {
       // إذا كان لدينا كاش، حاول التزويد منه أولاً
       if (cachedData && Array.isArray(cachedData.messages) && cachedData.messages.length > 0) {
+        // تحديث وقت الوصول للكاش
+        cachedData.lastAccess = Date.now();
+        
         const thresholdTs = beforeTs ? new Date(beforeTs) : undefined;
         const thresholdId = beforeId ? parseInt(beforeId) : undefined;
         const filtered = cachedData.messages.filter((m: any) => {
@@ -297,7 +302,7 @@ router.get('/:userId/:otherUserId', protect.auth, async (req, res, next) => {
         );
         messages = older || [];
 
-        // دمج مع الكاش الحالي لتسريع الطلبات القادمة
+        // دمج مع الكاش الحالي لتسريع الطلبات القادمة (محسن)
         const existing = (cachedData?.messages || []) as any[];
         if (messages.length > 0 || existing.length > 0) {
           const byId = new Map<number, any>();
@@ -307,7 +312,11 @@ router.get('/:userId/:otherUserId', protect.auth, async (req, res, next) => {
           const merged = Array.from(byId.values()).sort(
             (a: any, b: any) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
           );
-          conversationCache.set(conversationKey, { messages: merged, timestamp: Date.now() });
+          conversationCache.set(conversationKey, { 
+            messages: merged, 
+            timestamp: Date.now(),
+            lastAccess: Date.now()
+          });
           cleanOldCache();
         }
       }
@@ -324,8 +333,12 @@ router.get('/:userId/:otherUserId', protect.auth, async (req, res, next) => {
       const senderMap = new Map<number, any>((senders || []).map((u: any) => [u.id, u]));
       const finalMessages = messages.map((m: any) => ({ ...m, sender: senderMap.get(m.senderId) }));
 
-      // حفظ في cache كأحدث نسخة
-      conversationCache.set(conversationKey, { messages: finalMessages, timestamp: Date.now() });
+      // حفظ في cache كأحدث نسخة (محسن)
+      conversationCache.set(conversationKey, { 
+        messages: finalMessages, 
+        timestamp: Date.now(),
+        lastAccess: Date.now()
+      });
       cleanOldCache();
       messages = finalMessages;
     }
@@ -542,14 +555,25 @@ router.get('/conversations/:userId', protect.auth, async (req, res) => {
 });
 
 /**
- * تنظيف cache القديم لتوفير الذاكرة
+ * تنظيف cache القديم لتوفير الذاكرة (محسن مع LRU)
  */
 function cleanOldCache() {
   const now = Date.now();
+  
+  // إزالة الإدخالات المنتهية الصلاحية
   for (const [key, value] of conversationCache.entries()) {
     if (now - value.timestamp > CACHE_TTL) {
       conversationCache.delete(key);
     }
+  }
+  
+  // إذا تجاوز الحد الأقصى، احذف الأقل استخداماً (LRU)
+  if (conversationCache.size > MAX_CACHE_ENTRIES) {
+    const entries = Array.from(conversationCache.entries());
+    entries.sort((a, b) => a[1].lastAccess - b[1].lastAccess);
+    
+    const toDelete = entries.slice(0, entries.length - MAX_CACHE_ENTRIES + 100);
+    toDelete.forEach(([key]) => conversationCache.delete(key));
   }
 }
 
