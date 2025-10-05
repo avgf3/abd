@@ -2759,6 +2759,65 @@ li::before {
   column-gap: 0.5rem;
   align-items: start;
 }
+
+/* ===== Direct Messages: Facebook-like bubbles ===== */
+.pm-bubble {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 8px 12px;
+  border-radius: 16px;
+  max-width: 100%;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  line-height: 1.5;
+  border: 1px solid transparent;
+}
+
+.pm-bubble--me {
+  background: #0084ff; /* Messenger blue */
+  color: #fff;
+}
+
+.pm-bubble--other {
+  background: #f1f0f0; /* Messenger gray */
+  color: #111827; /* gray-900 */
+}
+
+/* Rounded corners per group position */
+.pm-bubble--start.pm-bubble--me { border-top-right-radius: 4px; }
+.pm-bubble--end.pm-bubble--me { border-bottom-right-radius: 16px; }
+.pm-bubble--start.pm-bubble--other { border-top-left-radius: 4px; }
+.pm-bubble--end.pm-bubble--other { border-bottom-left-radius: 16px; }
+
+/* Optional subtle tails (simple pseudo-elements) */
+.pm-bubble--me.pm-bubble--start::after {
+  content: '';
+  position: absolute;
+  right: -4px;
+  top: 8px;
+  width: 8px;
+  height: 8px;
+  background: #0084ff;
+  transform: rotate(45deg);
+  border-top-right-radius: 2px;
+}
+
+.pm-bubble--other.pm-bubble--start::after {
+  content: '';
+  position: absolute;
+  left: -4px;
+  top: 8px;
+  width: 8px;
+  height: 8px;
+  background: #f1f0f0;
+  transform: rotate(45deg);
+  border-top-left-radius: 2px;
+}
+
+/* Ensure message text retains current typography */
+.pm-bubble .ac-message-text { font-weight: 600; font-size: 13px; }
 .ch_logs .my_text .cname > .rtl_fright {
   float: none !important;
   white-space: nowrap;
