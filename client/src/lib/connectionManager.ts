@@ -70,7 +70,7 @@ export class ConnectionManager {
     });
 
     window.addEventListener('error', (event: ErrorEvent) => {
-      const url = this.cfg.errorReportUrl || '/collect/e.php';
+      const url = this.cfg.errorReportUrl; // only post if explicitly configured
       if (!url) return;
       try {
         const message = `${event?.error?.message || event?.message || 'Unknown error'}\n${event?.error?.stack || ''}`;
@@ -176,7 +176,8 @@ export class ConnectionManager {
       })
       .catch(() => {
         this.consecutiveFailures += 1;
-        if (this.consecutiveFailures >= (this.cfg.failuresBeforeHardReload ?? 8)) {
+        const reloadLimit = this.cfg.failuresBeforeHardReload;
+        if (typeof reloadLimit === 'number' && reloadLimit > 0 && this.consecutiveFailures >= reloadLimit) {
           this.hardReload();
           return;
         }
@@ -190,10 +191,10 @@ export function createDefaultConnectionManager(opts: Partial<ConnectionManagerCo
     chatPollUrl: '/api/messages/room/:roomId/since',
     usersPollUrl: '/api/users/online',
     pingUrl: '/api/ping',
-    // errorReportUrl: '/collect/e.php', // implement server-side if desired
+    // errorReportUrl: undefined, // opt-in only if server endpoint implemented
     speedVisibleMs: 1500,
     speedHiddenMs: 4000,
-    failuresBeforeHardReload: 8,
+    failuresBeforeHardReload: 25,
     hardReloadOnServerAck: true,
     ...opts,
   });
