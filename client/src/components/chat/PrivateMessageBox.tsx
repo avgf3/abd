@@ -304,11 +304,11 @@ export default function PrivateMessageBox({
     // التمرير التلقائي عند وصول رسائل جديدة من المستخدم الحالي
     const lastMessage = sortedMessages[sortedMessages.length - 1];
     const isSentByMe = currentUser && lastMessage && lastMessage.senderId === currentUser.id;
-    if (isSentByMe) {
+    if (isSentByMe || isAtBottom) {
       // تمرير سلس فوري لإظهار الرسالة المرسلة
       setTimeout(() => scrollToBottom('smooth'), 50);
     }
-  }, [isOpen, isLoadingOlder, sortedMessages.length, currentUser?.id, scrollToBottom]);
+  }, [isOpen, isLoadingOlder, sortedMessages.length, isAtBottom, currentUser?.id, scrollToBottom]);
 
 
   // محسن: دالة إرسال مع إعادة المحاولة ومعالجة أخطاء محسنة
@@ -550,9 +550,10 @@ export default function PrivateMessageBox({
                 ref={virtuosoRef}
                 data={sortedMessages}
                 className="!h-full"
+                style={{ overscrollBehavior: 'contain', scrollBehavior: 'auto' }}
                 increaseViewportBy={{ top: 300, bottom: 300 }}
                 defaultItemHeight={56}
-                followOutput={'smooth'}
+                followOutput={isAtBottom ? 'smooth' : false}
                 atBottomThreshold={64}
                 atBottomStateChange={(at) => setIsAtBottom(!!at)}
                 startReached={handleLoadMore}

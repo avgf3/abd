@@ -240,6 +240,7 @@
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
     scrollbar-gutter: stable both-edges;
+    overscroll-behavior-y: contain; /* prevent page bounce interfering with nested lists */
   }
   
   /* Modern Scrollbar */
@@ -1287,7 +1288,7 @@ body.ltr {
 .overflow-y-auto {
   overscroll-behavior: contain;
   /* Ensure wheel events work properly */
-  touch-action: auto;
+  touch-action: pan-y pinch-zoom;
 }
 
 /* Chat layout improvements - تحسينات خاصة بتخطيط الدردشة */
