@@ -11,6 +11,8 @@ import { apiRequest } from '@/lib/queryClient';
 try {
   let keepAliveAudioEl: HTMLAudioElement | null = null;
   let keepAliveUrl: string | null = null;
+  let keepAliveAudioCtx: (AudioContext | (Window & typeof globalThis)['webkitAudioContext']) | null = null;
+  let keepAliveCleanup: (() => void) | null = null;
 
   const createSilentWavUrl = (seconds = 1, sampleRate = 8000): string => {
     const numChannels = 1;
@@ -39,6 +41,38 @@ try {
     return URL.createObjectURL(new Blob([buffer], { type: 'audio/wav' }));
   };
 
+  const startKeepAliveViaAudioContext = async (): Promise<boolean> => {
+    try {
+      const Ctx = (window as any).AudioContext || (window as any).webkitAudioContext;
+      if (!Ctx) return false;
+      if (!keepAliveAudioCtx) keepAliveAudioCtx = new Ctx();
+      // Create a near-silent oscillator chain to keep the audio subsystem active
+      const oscillator = keepAliveAudioCtx.createOscillator();
+      const gain = keepAliveAudioCtx.createGain();
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(10, keepAliveAudioCtx.currentTime);
+      gain.gain.setValueAtTime(0.00001, keepAliveAudioCtx.currentTime);
+      oscillator.connect(gain);
+      gain.connect(keepAliveAudioCtx.destination);
+      oscillator.start();
+      keepAliveCleanup = () => {
+        try { oscillator.stop(); } catch {}
+        try { oscillator.disconnect(); } catch {}
+        try { gain.disconnect(); } catch {}
+      };
+      // Resume on visibility changes if needed
+      document.addEventListener('visibilitychange', () => {
+        try { if (document.visibilityState === 'visible') keepAliveAudioCtx?.resume?.(); } catch {}
+      });
+      window.addEventListener('pageshow', () => {
+        try { keepAliveAudioCtx?.resume?.(); } catch {}
+      });
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
   const ensureKeepAliveAudioPlaying = async (): Promise<boolean> => {
     try {
       if (keepAliveAudioEl && !keepAliveAudioEl.paused) return true;
@@ -50,8 +84,13 @@ try {
         keepAliveAudioEl.preload = 'auto';
         keepAliveAudioEl.style.display = 'none';
         document.documentElement.appendChild(keepAliveAudioEl);
-        keepAliveUrl = createSilentWavUrl(1, 8000);
-        keepAliveAudioEl.src = keepAliveUrl;
+        // Some deployments disallow blob: via CSP media-src 'self'. If so, fallback below.
+        try {
+          keepAliveUrl = createSilentWavUrl(1, 8000);
+          keepAliveAudioEl.src = keepAliveUrl;
+        } catch {
+          // If creating or assigning a blob URL fails, rely on AudioContext fallback
+        }
 
         // Resume when tab returns visible or BFCache restores the page
         document.addEventListener('visibilitychange', () => {
@@ -68,12 +107,27 @@ try {
         });
       }
 
-      await keepAliveAudioEl.play();
-      return true;
+      try {
+        await keepAliveAudioEl.play();
+        return true;
+      } catch (err: any) {
+        // If play() fails due to CSP (blob: blocked) or unsupported source, try AudioContext fallback
+        const started = await startKeepAliveViaAudioContext();
+        if (started) return true;
+        throw err; // propagate to outer catch to set gesture listeners
+      }
     } catch {
-      // Autoplay blocked: wait for first gesture
+      // Autoplay blocked or no supported media: wait for first gesture and retry (AudioContext or element)
       const onFirstGesture = async () => {
-        try { await keepAliveAudioEl?.play(); } finally {
+        try {
+          // Prefer resuming/starting AudioContext if available
+          if (keepAliveAudioCtx && (keepAliveAudioCtx.state === 'suspended')) {
+            try { await keepAliveAudioCtx.resume(); } catch {}
+          } else {
+            const ok = await startKeepAliveViaAudioContext();
+            if (!ok) await keepAliveAudioEl?.play();
+          }
+        } finally {
           window.removeEventListener('pointerdown', onFirstGesture as any, { passive: true } as any);
           window.removeEventListener('click', onFirstGesture as any, { passive: true } as any);
           window.removeEventListener('touchstart', onFirstGesture as any, { passive: true } as any);
