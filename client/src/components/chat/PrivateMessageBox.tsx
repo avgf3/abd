@@ -67,6 +67,8 @@ export default function PrivateMessageBox({
   const [isOtherTyping, setIsOtherTyping] = useState(false);
   const otherTypingTimerRef = useRef<number | null>(null);
   const lastTypingEmitRef = useRef<number>(0);
+  // Read receipts: last read timestamp received from other user via socket
+  const [otherLastReadAt, setOtherLastReadAt] = useState<string | null>(null);
 
   // Emit private typing (throttled ~3s)
   const emitPrivateTyping = useCallback(() => {
@@ -80,28 +82,38 @@ export default function PrivateMessageBox({
     } catch {}
   }, [currentUser?.id, user?.id]);
 
-  // Listen for privateTyping from the other user
+  // Listen for privateTyping from the other user + conversationRead sync
   useEffect(() => {
     const s = getSocket();
     const onMessage = (payload: any) => {
       try {
         const envelope = (payload && payload.envelope) ? payload.envelope : payload;
-        if (envelope?.type !== 'privateTyping') return;
-        const fromId = envelope?.fromUserId;
-        const isTyping = !!envelope?.isTyping;
-        if (!fromId || fromId !== user?.id) return;
-        if (isTyping) {
-          setIsOtherTyping(true);
-          if (otherTypingTimerRef.current) {
-            clearTimeout(otherTypingTimerRef.current);
-          }
-          otherTypingTimerRef.current = window.setTimeout(() => {
-            setIsOtherTyping(false);
+        if (!envelope || typeof envelope !== 'object') return;
+        // Typing indicator
+        if (envelope?.type === 'privateTyping') {
+          const fromId = envelope?.fromUserId;
+          const isTyping = !!envelope?.isTyping;
+          if (!fromId || fromId !== user?.id) return;
+          if (isTyping) {
+            setIsOtherTyping(true);
             if (otherTypingTimerRef.current) {
               clearTimeout(otherTypingTimerRef.current);
-              otherTypingTimerRef.current = null;
             }
-          }, 3000);
+            otherTypingTimerRef.current = window.setTimeout(() => {
+              setIsOtherTyping(false);
+              if (otherTypingTimerRef.current) {
+                clearTimeout(otherTypingTimerRef.current);
+                otherTypingTimerRef.current = null;
+              }
+            }, 3000);
+          }
+        }
+        // Conversation read sync
+        if (envelope?.type === 'conversationRead') {
+          const fromId = envelope?.otherUserId;
+          if (fromId && fromId === user?.id && typeof envelope?.lastReadAt === 'string') {
+            setOtherLastReadAt(envelope.lastReadAt);
+          }
         }
       } catch {}
     };
@@ -192,6 +204,18 @@ export default function PrivateMessageBox({
 
   // محسن: ترتيب الرسائل مع تحسين الأداء
   const sortedMessages = useMemo(() => sortMessagesAscending(messages || []), [messages]);
+
+  // تجميع الرسائل المتتالية لنفس المرسل ضمن نافذة زمنية قصيرة (مثل Messenger)
+  const GROUP_TIME_MS = 5 * 60 * 1000; // 5 دقائق
+  const getIsMe = useCallback((m: any) => !!(currentUser && m && m.senderId === currentUser.id), [currentUser]);
+  const isSameSender = useCallback((a: any, b: any) => !!a && !!b && a.senderId === b.senderId, []);
+  const isWithinWindow = useCallback((a: any, b: any) => {
+    if (!a || !b) return false;
+    const ta = new Date(a.timestamp as any).getTime();
+    const tb = new Date(b.timestamp as any).getTime();
+    if (!Number.isFinite(ta) || !Number.isFinite(tb)) return false;
+    return Math.abs(tb - ta) <= GROUP_TIME_MS;
+  }, []);
 
   // محسن: دالة التمرير مع تحسين الأداء
   type ScrollBehaviorStrict = 'auto' | 'smooth';
@@ -524,7 +548,7 @@ export default function PrivateMessageBox({
                     ) : null,
                 }}
                 itemContent={(index, m) => {
-                  const isMe = currentUser && m.senderId === currentUser.id;
+                  const isMe = !!(currentUser && m.senderId === currentUser.id);
                   const key = m.id ?? `${m.senderId}-${m.timestamp}-${index}`;
                   const isImage =
                     m.messageType === 'image' ||
@@ -533,60 +557,36 @@ export default function PrivateMessageBox({
                     ? (m as any).attachments.find((a: any) => a?.channel === 'story')
                     : null;
                   const hasStoryContext = !!storyAttachment;
-                  return (
-                    <motion.div
-                      key={key}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -20 }}
-                      transition={{ duration: 0.3, ease: "easeOut" }}
-                      className={`flex items-start gap-3 p-3 rounded-lg transition-all duration-300 ${
-                        isMe ? 'bg-blue-50/80 border-r-4 ml-4' : 'bg-green-50/80 border-r-4 mr-4'
-                      }`}
-                      style={{
-                        borderRightColor: getDynamicBorderColor(
-                          m.sender || (isMe ? currentUser : user)
-                        ),
-                      }}
-                    >
-                      <ProfileImage
-                        user={(m.sender as ChatUser) || (isMe && currentUser ? (currentUser as ChatUser) : user)}
-                        size="small"
-                        className="w-8 h-8"
-                      />
-                      <div className="flex-1 min-w-0">
-                        {/* run-in on mobile; horizontal on desktop */}
-                        <div className="runin-container">
-                          <div className="runin-name">
-                            {(() => {
-                              const senderUser = (m.sender as ChatUser) || (isMe ? currentUser : user);
-                              const np = getUserNameplateStyles(senderUser);
-                              const hasNp = np && Object.keys(np).length > 0;
-                              const displayName = senderUser?.username || '...';
-                              if (hasNp) {
-                                return (
-                                  <span className="font-semibold text-sm">
-                                    <span className="ac-nameplate" style={np}>
-                                      <span className="ac-name">{displayName}</span>
-                                      <span className="ac-mark">〰</span>
-                                    </span>
-                                  </span>
-                                );
-                              }
-                              return (
-                                <span
-                                  className="font-semibold text-sm"
-                                  style={{ color: getFinalUsernameColor(senderUser) }}
-                                >
-                                  {displayName}
-                                </span>
-                              );
-                            })()}
-                            <span className="text-gray-400 mx-1">:</span>
-                          </div>
 
-                          {/* Content section - full width under the name (mobile), inline on first line */}
-                          <div className="runin-text text-gray-800 break-words message-content-fix">
+                  const prev = index > 0 ? sortedMessages[index - 1] : null;
+                  const next = index + 1 < sortedMessages.length ? sortedMessages[index + 1] : null;
+                  const groupStart = !prev || !isSameSender(prev, m) || !isWithinWindow(prev, m);
+                  const groupEnd = !next || !isSameSender(next, m) || !isWithinWindow(next, m);
+                  const alignClass = isMe ? 'justify-end' : 'justify-start';
+                  const bubbleSide = isMe ? 'me' : 'other';
+                  const showAvatar = !isMe && groupEnd;
+
+                  return (
+                    <div key={key} className={`w-full flex ${alignClass} mb-1`}>
+                      <div className={`max-w-[80%] flex items-end gap-2 ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
+                        {/* Avatar at end of other-user group */}
+                        {showAvatar ? (
+                          <ProfileImage
+                            user={(m.sender as ChatUser) || user}
+                            size="small"
+                            className="w-7 h-7"
+                          />
+                        ) : (
+                          <div className="w-7 h-7" />
+                        )}
+
+                        <motion.div
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.2, ease: 'easeOut' }}
+                          className={`pm-bubble pm-bubble--${bubbleSide} ${groupStart ? 'pm-bubble--start' : ''} ${groupEnd ? 'pm-bubble--end' : ''}`}
+                          style={{ borderColor: getDynamicBorderColor(m.sender || (isMe ? currentUser : user)) }}
+                        >
                           {hasStoryContext && (
                             <div className="mb-2">
                               <div className="flex items-center gap-3 p-2 rounded-lg border bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200">
@@ -684,18 +684,46 @@ export default function PrivateMessageBox({
                               </span>
                             );
                           })()}
-                          </div>
-
-                          {/* Time section - fixed width */}
-                          <span className="text-xs text-gray-500 whitespace-nowrap shrink-0 self-start">
-                            {formatTime(m.timestamp)}
-                          </span>
-                        </div>
+                        </motion.div>
                       </div>
-                    </motion.div>
+                    </div>
                   );
                 }}
               />
+            )}
+
+            {/* Time & read receipts under last bubble in each group */}
+            {sortedMessages.length > 0 && (
+              <div className="px-12 mt-1 space-y-1">
+                {sortedMessages.map((m, index) => {
+                  const isMe = !!(currentUser && m.senderId === currentUser.id);
+                  const next = index + 1 < sortedMessages.length ? sortedMessages[index + 1] : null;
+                  const groupEnd = !next || !isSameSender(next, m) || !isWithinWindow(next, m);
+                  if (!groupEnd) return null;
+                  const isLastOutgoing = isMe && index === sortedMessages.length - 1;
+                  return (
+                    <React.Fragment key={`meta-${m.id || index}`}>
+                      <div className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
+                        <span className="text-[11px] text-gray-500">{formatTime(m.timestamp)}</span>
+                      </div>
+                      {isLastOutgoing && otherLastReadAt && (() => {
+                        try {
+                          const lastReadMs = new Date(otherLastReadAt).getTime();
+                          const thisMsgMs = new Date(m.timestamp as any).getTime();
+                          if (lastReadMs >= thisMsgMs) {
+                            return (
+                              <div className="flex justify-end">
+                                <span className="text-[11px] text-blue-600">تمت المشاهدة</span>
+                              </div>
+                            );
+                          }
+                        } catch {}
+                        return null;
+                      })()}
+                    </React.Fragment>
+                  );
+                })}
+              </div>
             )}
 
             {/* تم إخفاء زر "الانتقال لأسفل" */}
