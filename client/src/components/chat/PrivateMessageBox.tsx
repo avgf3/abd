@@ -50,7 +50,6 @@ export default function PrivateMessageBox({
   const [messageText, setMessageText] = useState('');
   const MAX_CHARS = 192;
   const clampToMaxChars = useCallback((text: string) => (text.length > MAX_CHARS ? text.slice(0, MAX_CHARS) : text), [MAX_CHARS]);
-  const [isAtBottomPrivate, setIsAtBottomPrivate] = useState(true);
   const [isSending, setIsSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
   const retryTimeoutRef = useRef<NodeJS.Timeout>();
@@ -58,7 +57,7 @@ export default function PrivateMessageBox({
   const [hasMore, setHasMore] = useState(true);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const virtuosoRef = useRef<VirtuosoHandle>(null);
-  const prevMessagesLenRef = useRef<number>(0);
+  const hasScrolledInitiallyRef = useRef<boolean>(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { textColor: composerTextColor, bold: composerBold } = useComposerStyle();
@@ -217,27 +216,32 @@ export default function PrivateMessageBox({
     return Math.abs(tb - ta) <= GROUP_TIME_MS;
   }, []);
 
-  // محسن: دالة التمرير مع تحسين الأداء
-  type ScrollBehaviorStrict = 'auto' | 'smooth';
+  // دالة التمرير البسيطة - تستخدم فقط عند الحاجة
   const scrollToBottom = useCallback(
-    (behavior: ScrollBehaviorStrict = 'auto') => {
+    (behavior: 'auto' | 'smooth' = 'auto') => {
       if (!virtuosoRef.current || sortedMessages.length === 0) return;
-      virtuosoRef.current.scrollToIndex({
-        index: sortedMessages.length - 1,
-        align: 'end',
-        behavior,
-      });
+      try {
+        virtuosoRef.current.scrollToIndex({
+          index: sortedMessages.length - 1,
+          align: 'end',
+          behavior,
+        });
+      } catch {}
     },
     [sortedMessages.length]
   );
 
-  // تثبيت الفتح: اضبط عداد الطول وركّز الإدخال دون تمرير متكرر
+  // عند فتح الصندوق: إعادة تعيين حالة التمرير وتركيز الإدخال
   useEffect(() => {
-    if (!isOpen) return;
-    // ابدأ من الصفر كي يتكفل تأثير الرسائل الأولى بالتمرير عند وصول البيانات
-    prevMessagesLenRef.current = 0;
-    const t = setTimeout(() => inputRef.current?.focus(), 150);
-    return () => { clearTimeout(t); };
+    if (!isOpen) {
+      hasScrolledInitiallyRef.current = false;
+      return;
+    }
+    // تركيز الإدخال بعد فتح الصندوق
+    const t = setTimeout(() => {
+      inputRef.current?.focus();
+    }, 200);
+    return () => clearTimeout(t);
   }, [isOpen]);
 
   // تحديث آخر وقت فتح للمحادثة لاحتساب غير المقروء
@@ -273,48 +277,21 @@ export default function PrivateMessageBox({
     } catch {}
   }, [isOpen, user?.id, currentUser?.id, lastMessageDeps]);
 
-  // تمرير ذكي عند وصول رسائل جديدة في الخاص
-  // - في التحميل الأول: مرّر للأسفل مرة واحدة
-  // - عند رسائل جديدة لاحقاً: مرّر فقط إذا كنا أسفل أو كانت الرسالة مني
+  // التمرير الأولي فقط عند فتح الصندوق لأول مرة
   useEffect(() => {
     if (!isOpen || isLoadingOlder) return;
-    const prevLen = prevMessagesLenRef.current;
-    const currLen = sortedMessages.length;
-
-    if (currLen === 0) return;
-
-    if (prevLen === 0 && currLen > 0) {
-      scrollToBottom('auto');
-      prevMessagesLenRef.current = currLen;
-      return;
+    if (sortedMessages.length === 0) return;
+    
+    // التمرير للأسفل مرة واحدة فقط عند التحميل الأول
+    if (!hasScrolledInitiallyRef.current) {
+      const timer = setTimeout(() => {
+        scrollToBottom('auto');
+        hasScrolledInitiallyRef.current = true;
+      }, 100);
+      return () => clearTimeout(timer);
     }
+  }, [isOpen, isLoadingOlder, sortedMessages.length, scrollToBottom]);
 
-    if (currLen <= prevLen) return;
-
-    const last: any = sortedMessages[currLen - 1];
-    const sentByMe = !!(currentUser && last?.senderId === currentUser.id);
-    if (isAtBottomPrivate || sentByMe) {
-      scrollToBottom('smooth');
-    }
-
-    prevMessagesLenRef.current = currLen;
-  }, [sortedMessages.length, isOpen, isLoadingOlder, scrollToBottom, isAtBottomPrivate, currentUser?.id]);
-
-  // أزلنا التمرير عند تركيز الإدخال لتجنب التنازع مع Virtuoso
-
-  // مُحسن: دالة مراقبة التمرير مع منع التحديثات غير الضرورية
-  const handleAtBottomChange = useCallback((atBottom: boolean) => {
-    setIsAtBottomPrivate(prev => prev !== atBottom ? atBottom : prev);
-  }, []);
-
-  // سجلات خفيفة للتشخيص يمكن تعطيلها لاحقاً
-  useEffect(() => {
-    try {
-      if ((import.meta as any)?.env?.DEV) {
-        console.debug('[PM] isAtBottom:', isAtBottomPrivate, 'len:', sortedMessages.length);
-      }
-    } catch {}
-  }, [isAtBottomPrivate, sortedMessages.length]);
 
   // محسن: دالة إرسال مع إعادة المحاولة ومعالجة أخطاء محسنة
   const sendMessageWithRetry = useCallback(
@@ -365,10 +342,10 @@ export default function PrivateMessageBox({
         const success = await sendMessageWithRetry(text);
         if (success) {
           setMessageText('');
-          // لا نعرض toast للرسائل العادية لتجنب الإزعاج
+          // التمرير للأسفل بعد الإرسال مباشرة
+          setTimeout(() => scrollToBottom('smooth'), 50);
         }
       }
-      // لا حاجة لاستدعاء التمرير هنا؛ Virtuoso و/أو تأثير الرسائل سيتكفلان
     } catch (error) {
       console.error('خطأ في إرسال الرسالة:', error);
       const errorMessage = error instanceof Error ? error.message : 'فشل إرسال الرسالة';
@@ -380,9 +357,9 @@ export default function PrivateMessageBox({
       retryTimeoutRef.current = setTimeout(() => setSendError(null), 5000);
     } finally {
       setIsSending(false);
-      inputRef.current?.focus();
+      setTimeout(() => inputRef.current?.focus(), 50);
     }
-  }, [messageText, imageFile, isSending, sendMessageWithRetry, scrollToBottom]);
+  }, [messageText, imageFile, isSending, sendMessageWithRetry, currentUser?.id, user?.id, scrollToBottom]);
 
   // محسن: معالج الضغط على Enter
   const handleKeyDown = useCallback(
@@ -555,9 +532,6 @@ export default function PrivateMessageBox({
                 ref={virtuosoRef}
                 data={sortedMessages}
                 className="!h-full"
-                followOutput={'smooth'}
-                atBottomThreshold={20}
-                atBottomStateChange={handleAtBottomChange}
                 increaseViewportBy={{ top: 300, bottom: 300 }}
                 defaultItemHeight={56}
                 startReached={handleLoadMore}
