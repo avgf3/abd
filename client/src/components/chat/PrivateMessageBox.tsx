@@ -84,6 +84,7 @@ export default function PrivateMessageBox({
   // Listen for privateTyping from the other user + conversationRead sync
   useEffect(() => {
     const s = getSocket();
+    // حافظ على مرجع مستقر للمعالج لمنع إضافة/إزالة متعددة بلا داعٍ
     const onMessage = (payload: any) => {
       try {
         const envelope = (payload && payload.envelope) ? payload.envelope : payload;
@@ -230,18 +231,15 @@ export default function PrivateMessageBox({
     [sortedMessages.length]
   );
 
-  // التمرير للأسفل عند فتح النافذة وتعيين طول الرسائل السابق
+  // التمرير للأسفل عند فتح النافذة وتثبيت الوضع دون اهتزاز
   useEffect(() => {
     if (!isOpen) return;
     prevMessagesLenRef.current = sortedMessages.length;
-    if (inputRef.current) {
-      const timer = setTimeout(() => {
-        scrollToBottom('auto');
-        inputRef.current?.focus();
-      }, 100);
-      return () => clearTimeout(timer);
-    }
-  }, [isOpen, scrollToBottom]);
+    const t1 = setTimeout(() => scrollToBottom('auto'), 50);
+    const t2 = setTimeout(() => scrollToBottom('auto'), 200);
+    const t3 = setTimeout(() => inputRef.current?.focus(), 260);
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
+  }, [isOpen, scrollToBottom, sortedMessages.length]);
 
   // تحديث آخر وقت فتح للمحادثة لاحتساب غير المقروء
   useEffect(() => {
@@ -271,19 +269,35 @@ export default function PrivateMessageBox({
     } catch {}
   }, [isOpen, user?.id, currentUser?.id, sortedMessages.length]);
 
-  // تمرير ذكي عند وصول رسائل جديدة (مطابقة لسلوك دردشة الغرف)
+  // تمرير ذكي عند وصول رسائل جديدة في الخاص
+  // - في التحميل الأول (prevLen === 0) مرّر للأسفل دائماً بعد وصول البيانات
+  // - عند رسائل جديدة: دع Virtuoso يتبع تلقائياً عندما نكون في الأسفل (followOutput)
+  //   ومرّر يدوياً فقط إذا كانت الرسالة الأخيرة مني (حتى لو لست في الأسفل)
   useEffect(() => {
     if (!isOpen || isLoadingOlder) return;
     const prevLen = prevMessagesLenRef.current;
     const currLen = sortedMessages.length;
+
+    // التحميل الأول للمحادثة بعد فتح النافذة
+    if (prevLen === 0 && currLen > 0) {
+      scrollToBottom('auto');
+      prevMessagesLenRef.current = currLen;
+      return;
+    }
+
     if (currLen <= prevLen || currLen === 0) return;
+
     const last = sortedMessages[currLen - 1];
     const sentByMe = !!(currentUser && (last as any)?.senderId === currentUser.id);
-    if (isAtBottomPrivate || sentByMe) {
+
+    // مرّر فقط إذا كانت الرسالة الأخيرة مرسلة منّي.
+    // في غير ذلك، Virtuoso سيتكفّل بالتمرير إن كنت في الأسفل بفضل followOutput
+    if (sentByMe) {
       scrollToBottom('smooth');
     }
+
     prevMessagesLenRef.current = currLen;
-  }, [sortedMessages.length, isOpen, isLoadingOlder, scrollToBottom, isAtBottomPrivate, currentUser?.id]);
+  }, [sortedMessages.length, isOpen, isLoadingOlder, scrollToBottom, currentUser?.id]);
 
   // عند تركيز حقل الإدخال، مرّر للأسفل مرتين لضمان ثبات الموضع
   useEffect(() => {
@@ -301,6 +315,15 @@ export default function PrivateMessageBox({
   const handleAtBottomChange = useCallback((atBottom: boolean) => {
     setIsAtBottomPrivate(atBottom);
   }, []);
+
+  // سجلات خفيفة للتشخيص يمكن تعطيلها لاحقاً
+  useEffect(() => {
+    try {
+      if ((import.meta as any)?.env?.DEV) {
+        console.debug('[PM] isAtBottom:', isAtBottomPrivate, 'len:', sortedMessages.length);
+      }
+    } catch {}
+  }, [isAtBottomPrivate, sortedMessages.length]);
 
   // محسن: دالة إرسال مع إعادة المحاولة ومعالجة أخطاء محسنة
   const sendMessageWithRetry = useCallback(
@@ -417,15 +440,10 @@ export default function PrivateMessageBox({
       const res = await onLoadMore();
       setHasMore(res.hasMore);
       if (res.addedCount > 0) {
-        setTimeout(() => {
-          try {
-            virtuosoRef.current?.scrollToIndex({
-              index: res.addedCount,
-              align: 'start',
-              behavior: 'auto' as any,
-            });
-          } catch {}
-        }, 0);
+        // حافظ على موضع التمرير ثابت بعد إدراج عناصر في الأعلى
+        try {
+          (virtuosoRef.current as any)?.adjustForPrependedItems?.(res.addedCount);
+        } catch {}
       }
     } finally {
       setIsLoadingOlder(false);
@@ -548,9 +566,14 @@ export default function PrivateMessageBox({
                 ref={virtuosoRef}
                 data={sortedMessages}
                 className="!h-full"
-                followOutput={'smooth'}
+                followOutput={isAtBottomPrivate ? 'smooth' : false}
                 atBottomThreshold={64}
-                atBottomStateChange={handleAtBottomChange}
+                atBottomStateChange={(atBottom) => {
+                  // حارس لمنع اهتزاز: لا تحدّث الحالة إذا لم تتغير فعلياً
+                  // يقلل من إعادة التصيير غير الضرورية التي قد تسبب قفزات
+                  setIsAtBottomPrivate((prev) => (prev !== atBottom ? atBottom : prev));
+                  handleAtBottomChange(atBottom);
+                }}
                 increaseViewportBy={{ top: 300, bottom: 300 }}
                 defaultItemHeight={56}
                 startReached={handleLoadMore}
