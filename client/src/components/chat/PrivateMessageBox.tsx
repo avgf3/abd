@@ -237,12 +237,21 @@ export default function PrivateMessageBox({
       hasScrolledInitiallyRef.current = false;
       return;
     }
-    // تركيز الإدخال بعد فتح الصندوق
-    const t = setTimeout(() => {
+    // تركيز الإدخال فورًا بعد فتح الصندوق
+    const t1 = setTimeout(() => {
       inputRef.current?.focus();
+    }, 100);
+    // تمرير إضافي للتأكد من الوصول لآخر رسالة
+    const t2 = setTimeout(() => {
+      if (sortedMessages.length > 0) {
+        scrollToBottom('auto');
+      }
     }, 200);
-    return () => clearTimeout(t);
-  }, [isOpen]);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
+  }, [isOpen, sortedMessages.length, scrollToBottom]);
 
   // تحديث آخر وقت فتح للمحادثة لاحتساب غير المقروء
   useEffect(() => {
@@ -277,20 +286,28 @@ export default function PrivateMessageBox({
     } catch {}
   }, [isOpen, user?.id, currentUser?.id, lastMessageDeps]);
 
-  // التمرير الأولي فقط عند فتح الصندوق لأول مرة
+  // التمرير الأولي عند فتح الصندوق وعند وصول رسائل جديدة
   useEffect(() => {
     if (!isOpen || isLoadingOlder) return;
     if (sortedMessages.length === 0) return;
     
-    // التمرير للأسفل مرة واحدة فقط عند التحميل الأول
+    // التمرير للأسفل عند فتح الصندوق لأول مرة
     if (!hasScrolledInitiallyRef.current) {
       const timer = setTimeout(() => {
         scrollToBottom('auto');
         hasScrolledInitiallyRef.current = true;
-      }, 100);
+      }, 150);
       return () => clearTimeout(timer);
     }
-  }, [isOpen, isLoadingOlder, sortedMessages.length, scrollToBottom]);
+    
+    // التمرير التلقائي عند وصول رسائل جديدة من المستخدم الحالي
+    const lastMessage = sortedMessages[sortedMessages.length - 1];
+    const isSentByMe = currentUser && lastMessage && lastMessage.senderId === currentUser.id;
+    if (isSentByMe) {
+      // تمرير سلس فوري لإظهار الرسالة المرسلة
+      setTimeout(() => scrollToBottom('smooth'), 50);
+    }
+  }, [isOpen, isLoadingOlder, sortedMessages.length, currentUser?.id, scrollToBottom]);
 
 
   // محسن: دالة إرسال مع إعادة المحاولة ومعالجة أخطاء محسنة
@@ -342,8 +359,9 @@ export default function PrivateMessageBox({
         const success = await sendMessageWithRetry(text);
         if (success) {
           setMessageText('');
-          // التمرير للأسفل بعد الإرسال مباشرة
+          // التمرير للأسفل بعد الإرسال مباشرة - مرتين للتأكد
           setTimeout(() => scrollToBottom('smooth'), 50);
+          setTimeout(() => scrollToBottom('smooth'), 200);
         }
       }
     } catch (error) {
