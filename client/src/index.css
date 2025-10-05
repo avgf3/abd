@@ -1662,6 +1662,8 @@ li > * > div.effect-crystal {
 }
 
 .runin-text { display: inline; text-align: start; word-break: break-word; overflow-wrap: anywhere; white-space: pre-wrap; line-height: 1.4; }
+/* محاذاة الصورة/المحتوى مع السطر الأول تماماً */
+.runin-name.align-top, .runin-text.align-top, .runin-text.align-top * { vertical-align: top; }
 
 /* Zebra striping for room messages (mobile and desktop) */
 .ac-message-row.log2 {
@@ -1701,11 +1703,8 @@ li > * > div.effect-crystal {
     display: inline;
     vertical-align: baseline;
   }
-  .runin-text {
-    display: inline;
-    text-align: start;
-    line-height: 1.4;
-  }
+  .runin-text { display: inline; text-align: start; line-height: 1.4; }
+  .runin-name.align-top, .runin-text.align-top, .runin-text.align-top * { vertical-align: top; }
 }
 
 /* ========== MODERN ADVANCED DESIGN SYSTEM ========== */

@@ -17,7 +17,6 @@ import { Input } from '@/components/ui/input';
 import { Dialog, FloatingDialogContent } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import ImageLightbox from '@/components/ui/ImageLightbox';
-import ImageAttachmentBadge from '@/components/ui/ImageAttachmentBadge';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { apiRequest, api } from '@/lib/queryClient';
 import type { ChatMessage, ChatUser } from '@/types/chat';
@@ -724,7 +723,7 @@ export default function MessageArea({
                 {message.messageType === 'system' ? (
                   <>
                     {message.sender && (
-                      <div className="flex-shrink-0">
+                      <div className="flex-shrink-0 self-start">
                         <ProfileImage
                           user={message.sender}
                           size="small"
@@ -737,7 +736,7 @@ export default function MessageArea({
                       <div className="flex items-start gap-2">
                         <div className="flex-1 min-w-0">
                           <div className="runin-container">
-                            <div className="runin-name">
+                            <div className="runin-name align-top">
                               {message.sender && (
                                 <span className="inline-flex items-center justify-center mr-1">
                                   <UserRoleBadge user={message.sender} size={14} hideGuestAndGender />
@@ -775,8 +774,8 @@ export default function MessageArea({
                             {(() => {
                               const forceSingleLine = isJoinLeaveSystemContent(message.content);
                               const contentClass = forceSingleLine
-                                ? 'runin-text text-red-600 truncate'
-                                : 'runin-text text-red-600 message-content-fix';
+                                ? 'runin-text align-top text-red-600 truncate'
+                                : 'runin-text align-top text-red-600 message-content-fix';
                               const contentStyle = forceSingleLine ? { whiteSpace: 'nowrap' as const } : undefined;
                               return (
                                 <div className={contentClass} style={contentStyle}>
@@ -840,7 +839,7 @@ export default function MessageArea({
                   <>
                     {/* Profile Image */}
                     {message.sender && (
-                      <div className="flex-shrink-0">
+                      <div className="flex-shrink-0 self-start">
                         <ProfileImage
                           user={message.sender}
                           size="small"
@@ -855,7 +854,7 @@ export default function MessageArea({
                       <div className="flex items-start gap-2">
                         <div className="flex-1 min-w-0">
                           <div className="runin-container">
-                          <div className="runin-name">
+                          <div className="runin-name align-top">
                             {message.sender && (
                               <span className="inline-flex items-center justify-center mr-1">
                                 <UserRoleBadge user={message.sender} size={14} hideGuestAndGender />
@@ -890,16 +889,22 @@ export default function MessageArea({
                               })()}
                               <span className="text-gray-400 mx-1">:</span>
                             </div>
-                            <div className="runin-text text-gray-900 message-content-fix">
+                            <div className="runin-text align-top text-gray-900 message-content-fix">
                               {message.messageType === 'image' ? (
                                 <button
                                   type="button"
                                   onClick={() => setImageLightbox({ open: true, src: message.content })}
-                                  className="inline-flex items-center justify-center p-0 bg-transparent"
+                                  className="inline-block align-top p-0 bg-transparent rounded-md overflow-hidden"
                                   title="عرض الصورة"
                                   aria-label="عرض الصورة"
                                 >
-                                  <ImageAttachmentBadge />
+                                  <img
+                                    src={message.content}
+                                    alt="صورة مرفقة"
+                                    className="inline-block align-top max-w-[220px] max-h-[260px] object-cover rounded-md"
+                                    loading="lazy"
+                                    decoding="async"
+                                  />
                                 </button>
                               ) : (
                                 (() => {
@@ -907,7 +912,7 @@ export default function MessageArea({
                                   if (ids.length > 0) {
                                     const firstId = ids[0];
                                     return (
-                                    <span className="text-[13px] font-semibold leading-6 inline-flex items-center gap-2">
+                                    <span className="text-[13px] font-semibold leading-6 inline-flex items-start gap-2 align-top">
                                         {cleaned && (
                                           <span
                                             style={{
@@ -923,7 +928,7 @@ export default function MessageArea({
                                         )}
                                         <button
                                           onClick={() => setYoutubeModal({ open: true, videoId: firstId })}
-                                          className="flex items-center justify-center w-8 h-6 rounded bg-red-600 hover:bg-red-700 transition-colors"
+                                          className="flex items-center justify-center w-8 h-6 rounded bg-red-600 hover:bg-red-700 transition-colors align-top"
                                           title="فتح فيديو YouTube"
                                         >
                                           <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
