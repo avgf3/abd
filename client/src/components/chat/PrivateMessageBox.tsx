@@ -417,15 +417,23 @@ export default function PrivateMessageBox({
       const res = await onLoadMore();
       setHasMore(res.hasMore);
       if (res.addedCount > 0) {
-        setTimeout(() => {
-          try {
-            virtuosoRef.current?.scrollToIndex({
-              index: res.addedCount,
-              align: 'start',
-              behavior: 'auto' as any,
-            });
-          } catch {}
-        }, 0);
+        // Prefer Virtuoso's adjustForPrependedItems for stable position; fallback to scrollToIndex
+        try {
+          const api: any = virtuosoRef.current as any;
+          if (api && typeof api.adjustForPrependedItems === 'function') {
+            api.adjustForPrependedItems(res.addedCount);
+          } else {
+            setTimeout(() => {
+              try {
+                virtuosoRef.current?.scrollToIndex({
+                  index: res.addedCount,
+                  align: 'start',
+                  behavior: 'auto' as any,
+                });
+              } catch {}
+            }, 0);
+          }
+        } catch {}
       }
     } finally {
       setIsLoadingOlder(false);
@@ -548,6 +556,7 @@ export default function PrivateMessageBox({
                 ref={virtuosoRef}
                 data={sortedMessages}
                 className="!h-full"
+                initialTopMostItemIndex={sortedMessages.length - 1}
                 followOutput={'smooth'}
                 atBottomThreshold={64}
                 atBottomStateChange={handleAtBottomChange}
@@ -566,6 +575,7 @@ export default function PrivateMessageBox({
                         اسحب للأعلى لتحميل المزيد
                       </div>
                     ) : null,
+                  Footer: () => <div style={{ height: 12 }} />,
                 }}
                 itemContent={(index, m) => {
                   const isMe = !!(currentUser && m.senderId === currentUser.id);

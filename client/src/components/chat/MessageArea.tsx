@@ -702,10 +702,12 @@ export default function MessageArea({
             data={validMessages}
             className="!h-full"
             style={{ paddingBottom: `${24 + (isMobile ? keyboardInset : 0)}px` }}
+            initialTopMostItemIndex={validMessages.length - 1}
             followOutput={'smooth'}
             atBottomThreshold={64}
             atBottomStateChange={handleAtBottomChange}
             increaseViewportBy={{ top: 400, bottom: 400 }}
+            components={{ Footer: () => <div style={{ height: 12 }} /> }}
             itemContent={(index, message) => (
               <div
                 key={message.id}
