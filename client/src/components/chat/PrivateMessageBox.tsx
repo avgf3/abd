@@ -57,7 +57,6 @@ export default function PrivateMessageBox({
   const [imageFile, setImageFile] = useState<File | null>(null);
   const virtuosoRef = useRef<VirtuosoHandle>(null);
   const prevMessagesLenRef = useRef<number>(0);
-  const [isAtBottom, setIsAtBottom] = useState(true);
   const inputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { textColor: composerTextColor, bold: composerBold } = useComposerStyle();
@@ -266,31 +265,10 @@ export default function PrivateMessageBox({
     } catch {}
   }, [isOpen, user?.id, currentUser?.id, lastMessageDeps]);
 
-  // تمرير ذكي عند وصول رسائل جديدة في الخاص
-  // - في التحميل الأول فقط: مرّر للأسفل مرة واحدة
-  // - لاحقاً: مرّر فقط إذا كنت عند الأسفل أو كانت الرسالة مني
+  // لا تمرير تلقائي إطلاقاً: فقط خزّن الطول الحالي للاستخدام الداخلي إذا لزم
   useEffect(() => {
-    if (!isOpen || isLoadingOlder) return;
-    const prevLen = prevMessagesLenRef.current;
-    const currLen = sortedMessages.length;
-
-    if (currLen === 0) return;
-
-    if (prevLen === 0 && currLen > 0) {
-      scrollToBottom('auto');
-      prevMessagesLenRef.current = currLen;
-      return;
-    }
-
-    if (currLen > prevLen) {
-      const last: any = sortedMessages[currLen - 1];
-      const sentByMe = !!(currentUser && last?.senderId === currentUser.id);
-      if (isAtBottom || sentByMe) {
-        scrollToBottom('smooth');
-      }
-      prevMessagesLenRef.current = currLen;
-    }
-  }, [sortedMessages.length, isOpen, isLoadingOlder, scrollToBottom, isAtBottom, currentUser?.id]);
+    prevMessagesLenRef.current = sortedMessages.length;
+  }, [sortedMessages.length]);
 
   // أزلنا التمرير عند تركيز الإدخال
 
@@ -531,9 +509,8 @@ export default function PrivateMessageBox({
                 data={sortedMessages}
                 className="h-full"
                 style={{ height: '100%' }}
-                followOutput={{ whenScrolled: 'auto', behavior: 'smooth' } as any}
-                atBottomThreshold={20}
-                atBottomStateChange={(v) => setIsAtBottom(v)}
+                // لا تتبع الخرج تلقائياً
+                followOutput={false as any}
                 increaseViewportBy={{ top: 300, bottom: 300 }}
                 defaultItemHeight={56}
                 startReached={handleLoadMore}
