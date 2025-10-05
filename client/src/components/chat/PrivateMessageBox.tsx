@@ -67,6 +67,22 @@ export default function PrivateMessageBox({
   // Read receipts: last read timestamp received from other user via socket
   const [otherLastReadAt, setOtherLastReadAt] = useState<string | null>(null);
 
+  // Scroll management for DM: track bottom and enable followOutput
+  const [isAtBottom, setIsAtBottom] = useState(true);
+  const prevMessagesLenRef = useRef<number>(0);
+  type ScrollBehaviorStrict = 'auto' | 'smooth';
+  const scrollToBottom = React.useCallback(
+    (behavior: ScrollBehaviorStrict = 'smooth') => {
+      if (!virtuosoRef.current || sortedMessages.length === 0) return;
+      virtuosoRef.current.scrollToIndex({
+        index: sortedMessages.length - 1,
+        align: 'end',
+        behavior,
+      });
+    },
+    [sortedMessages.length]
+  );
+
   // Emit private typing (throttled ~3s)
   const emitPrivateTyping = useCallback(() => {
     try {
@@ -226,10 +242,17 @@ export default function PrivateMessageBox({
     const t1 = setTimeout(() => {
       inputRef.current?.focus();
     }, 100);
+    // تمرير للأسفل بعد فتح الصندوق ليظهر آخر الرسائل مباشرة
+    const t2 = setTimeout(() => {
+      scrollToBottom('auto');
+      setIsAtBottom(true);
+      prevMessagesLenRef.current = sortedMessages.length;
+    }, 120);
     return () => {
       clearTimeout(t1);
+      clearTimeout(t2);
     };
-  }, [isOpen]);
+  }, [isOpen, scrollToBottom, sortedMessages.length]);
 
   // تحديث آخر وقت فتح للمحادثة لاحتساب غير المقروء
   useEffect(() => {
@@ -264,7 +287,19 @@ export default function PrivateMessageBox({
     } catch {}
   }, [isOpen, user?.id, currentUser?.id, lastMessageDeps]);
 
-  // تمت إزالة أي تمرير تلقائي عند فتح أو وصول رسائل جديدة
+  // تمرير تلقائي عند وصول رسائل جديدة: إذا كنت في الأسفل أو الرسالة مني
+  useEffect(() => {
+    const prevLen = prevMessagesLenRef.current;
+    const currLen = sortedMessages.length;
+    if (currLen <= prevLen) return;
+
+    const last = sortedMessages[currLen - 1];
+    const sentByMe = !!(currentUser && last?.senderId === currentUser.id);
+    if (isOpen && (isAtBottom || sentByMe)) {
+      scrollToBottom('smooth');
+    }
+    prevMessagesLenRef.current = currLen;
+  }, [sortedMessages.length, isAtBottom, currentUser, isOpen, scrollToBottom]);
 
 
   // محسن: دالة إرسال مع إعادة المحاولة ومعالجة أخطاء محسنة
@@ -352,6 +387,20 @@ export default function PrivateMessageBox({
     },
     [clampToMaxChars, emitPrivateTyping]
   );
+
+  // عند تركيز حقل الإدخال: مرّر للأسفل لضمان ظهور آخر الرسائل
+  useEffect(() => {
+    const el = inputRef.current;
+    if (!el) return;
+    const onFocus = () => {
+      setTimeout(() => scrollToBottom('auto'), 50);
+      setTimeout(() => scrollToBottom('auto'), 200);
+    };
+    el.addEventListener('focus', onFocus);
+    return () => {
+      try { el.removeEventListener('focus', onFocus); } catch {}
+    };
+  }, [scrollToBottom]);
 
   // دعم لصق الصور مباشرة في صندوق الإدخال
   const handlePaste = useCallback((e: React.ClipboardEvent<HTMLInputElement>) => {
@@ -508,6 +557,9 @@ export default function PrivateMessageBox({
                 increaseViewportBy={{ top: 300, bottom: 300 }}
                 defaultItemHeight={56}
                 startReached={handleLoadMore}
+                followOutput={isAtBottom ? 'smooth' : false}
+                atBottomThreshold={64}
+                atBottomStateChange={(atBottom) => setIsAtBottom(atBottom)}
                 computeItemKey={(index, m) => (m as any)?.id ?? `${(m as any)?.senderId}-${(m as any)?.timestamp}-${index}`}
                 components={{
                   Header: () =>
