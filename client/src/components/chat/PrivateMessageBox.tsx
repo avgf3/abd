@@ -57,6 +57,7 @@ export default function PrivateMessageBox({
   const [imageFile, setImageFile] = useState<File | null>(null);
   const virtuosoRef = useRef<VirtuosoHandle>(null);
   const prevMessagesLenRef = useRef<number>(0);
+  const [isAtBottom, setIsAtBottom] = useState(true);
   const inputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { textColor: composerTextColor, bold: composerBold } = useComposerStyle();
@@ -265,10 +266,20 @@ export default function PrivateMessageBox({
     } catch {}
   }, [isOpen, user?.id, currentUser?.id, lastMessageDeps]);
 
-  // لا تمرير تلقائي إطلاقاً: فقط خزّن الطول الحالي للاستخدام الداخلي إذا لزم
+  // عند الفتح: اعرض آخر الرسائل فورًا بلا حركة، ثم لا تمرير تلقائي بعدها
   useEffect(() => {
-    prevMessagesLenRef.current = sortedMessages.length;
-  }, [sortedMessages.length]);
+    if (!isOpen) return;
+    const prevLen = prevMessagesLenRef.current;
+    const currLen = sortedMessages.length;
+    if (prevLen === 0 && currLen > 0) {
+      scrollToBottom('auto');
+      prevMessagesLenRef.current = currLen;
+      return;
+    }
+    if (currLen !== prevLen) {
+      prevMessagesLenRef.current = currLen;
+    }
+  }, [isOpen, sortedMessages.length, scrollToBottom]);
 
   // أزلنا التمرير عند تركيز الإدخال
 
