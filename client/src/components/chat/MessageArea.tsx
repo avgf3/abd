@@ -778,6 +778,39 @@ export default function MessageArea({
                                 ? 'runin-text text-red-600 truncate'
                                 : 'runin-text text-red-600 message-content-fix';
                               const contentStyle = forceSingleLine ? { whiteSpace: 'nowrap' as const } : undefined;
+                              
+                              // Handle image messages in system messages
+                              if (message.messageType === 'image') {
+                                return (
+                                  <div className={contentClass} style={contentStyle}>
+                                    <button
+                                      type="button"
+                                      onClick={() => setImageLightbox({ open: true, src: message.content })}
+                                      className="inline-block p-0 bg-transparent rounded-lg overflow-hidden align-top"
+                                      title="عرض الصورة"
+                                      aria-label="عرض الصورة"
+                                    >
+                                      <img
+                                        src={message.content}
+                                        alt="صورة مرفقة"
+                                        className="block max-w-[200px] max-h-[200px] object-cover rounded-lg"
+                                        loading="lazy"
+                                        decoding="async"
+                                        onError={(e: any) => {
+                                          if (e?.currentTarget) {
+                                            e.currentTarget.style.display = 'none';
+                                            const parent = e.currentTarget.parentElement;
+                                            if (parent) {
+                                              parent.innerHTML = '<div class="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 rounded text-xs text-gray-600"><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd"></path></svg>صورة</div>';
+                                            }
+                                          }
+                                        }}
+                                      />
+                                    </button>
+                                  </div>
+                                );
+                              }
+                              
                               return (
                                 <div className={contentClass} style={contentStyle}>
                                   <span className="ac-message-text">{message.content}</span>
@@ -895,11 +928,27 @@ export default function MessageArea({
                                 <button
                                   type="button"
                                   onClick={() => setImageLightbox({ open: true, src: message.content })}
-                                  className="inline-flex items-center justify-center p-0 bg-transparent"
+                                  className="inline-block p-0 bg-transparent rounded-lg overflow-hidden align-top"
                                   title="عرض الصورة"
                                   aria-label="عرض الصورة"
                                 >
-                                  <ImageAttachmentBadge />
+                                  <img
+                                    src={message.content}
+                                    alt="صورة مرفقة"
+                                    className="block max-w-[200px] max-h-[200px] object-cover rounded-lg"
+                                    loading="lazy"
+                                    decoding="async"
+                                    onError={(e: any) => {
+                                      if (e?.currentTarget) {
+                                        e.currentTarget.style.display = 'none';
+                                        // Show fallback badge if image fails to load
+                                        const parent = e.currentTarget.parentElement;
+                                        if (parent) {
+                                          parent.innerHTML = '<div class="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 rounded text-xs text-gray-600"><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd"></path></svg>صورة</div>';
+                                        }
+                                      }
+                                    }}
+                                  />
                                 </button>
                               ) : (
                                 (() => {

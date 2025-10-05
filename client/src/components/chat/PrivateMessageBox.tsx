@@ -658,7 +658,7 @@ export default function PrivateMessageBox({
                               <button
                                 type="button"
                                 onClick={() => setImageLightbox({ open: true, src: m.content })}
-                                className="p-0 bg-transparent rounded-lg overflow-hidden"
+                                className="p-0 bg-transparent rounded-lg overflow-hidden block"
                                 title="عرض الصورة"
                                 aria-label="عرض الصورة"
                               >
@@ -668,6 +668,15 @@ export default function PrivateMessageBox({
                                   className="block max-w-[220px] max-h-[260px] object-cover rounded-lg"
                                   loading="lazy"
                                   decoding="async"
+                                  onError={(e: any) => {
+                                    if (e?.currentTarget) {
+                                      // Show fallback content if image fails to load
+                                      const parent = e.currentTarget.parentElement;
+                                      if (parent) {
+                                        parent.innerHTML = '<div class="inline-flex items-center gap-1 px-3 py-2 bg-gray-100 rounded-lg text-sm text-gray-600"><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd"></path></svg>صورة غير متوفرة</div>';
+                                      }
+                                    }
+                                  }}
                                 />
                               </button>
                             ) : (() => {

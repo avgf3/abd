@@ -1591,6 +1591,44 @@ li > * > div.effect-crystal {
   text-align: start; /* يمين في RTL */
 }
 
+/* إصلاح محاذاة الصور مع السطر الأول في الرسائل */
+.message-content-fix img,
+.message-content-fix button img {
+  vertical-align: top;
+  margin-top: 0;
+  margin-bottom: 0;
+  display: inline-block;
+}
+
+/* تحسين محاذاة الصور في الرسائل الخاصة */
+.runin-text img,
+.runin-text button img {
+  vertical-align: top;
+  margin: 0;
+  display: inline-block;
+  line-height: 1;
+}
+
+/* ضمان ظهور الصور بشكل صحيح في كل الرسائل */
+.ac-message-text img {
+  max-width: 200px;
+  max-height: 200px;
+  border-radius: 8px;
+  vertical-align: top;
+  margin: 2px 4px;
+  display: inline-block;
+}
+
+/* إصلاح عرض الصور في الدردشة الخاصة */
+.private-message-container img {
+  max-width: 220px;
+  max-height: 260px;
+  border-radius: 12px;
+  vertical-align: top;
+  display: block;
+  margin: 4px 0;
+}
+
 .message-content-fix .truncate {
   line-height: inherit;
   vertical-align: baseline;

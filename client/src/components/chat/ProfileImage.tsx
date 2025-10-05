@@ -71,6 +71,7 @@ export default function ProfileImage({
         sizes={size === 'small' ? '40px' : size === 'large' ? '80px' : '64px'}
         onError={(e: any) => {
           if (e?.currentTarget && e.currentTarget.src !== '/default_avatar.svg') {
+            console.warn(`Failed to load profile image for ${user.username}, falling back to default`);
             e.currentTarget.src = '/default_avatar.svg';
           }
         }}
