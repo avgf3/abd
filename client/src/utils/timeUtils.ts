@@ -23,6 +23,7 @@ export function formatTime(date?: Date | string | number): string {
   return d.toLocaleTimeString('ar-SA', {
     hour: '2-digit',
     minute: '2-digit',
+    hour12: true,
   });
 }
 
@@ -46,6 +47,17 @@ export function formatDateTime(timestamp: number): string {
     hour: '2-digit',
     minute: '2-digit',
   });
+}
+
+// "26/09 03:22 PM" style like screenshot
+export function formatTimeWithDate(date?: Date | string | number): string {
+  if (date == null) return '';
+  const d = date instanceof Date ? date : new Date(date);
+  if (isNaN(d.getTime())) return '';
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const time = d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+  return `${day}/${month} ${time}`;
 }
 
 export function formatCountdownTime(seconds: number): string {

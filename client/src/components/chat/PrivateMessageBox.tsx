@@ -20,7 +20,7 @@ import {
 } from '@/utils/messageUtils';
 import { getFinalUsernameColor, getUserNameplateStyles } from '@/utils/themeUtils';
 import { getSocket } from '@/lib/socket';
-import { formatTime } from '@/utils/timeUtils';
+import { formatTimeWithDate } from '@/utils/timeUtils';
 // إزالة استخدام fallback الذي يُظهر "مستخدم #id" لتفادي ظهور اسم افتراضي خاطئ في الخاص
 import { api } from '@/lib/queryClient';
 
@@ -550,7 +550,7 @@ export default function PrivateMessageBox({
                   const key = m.id ?? `${m.senderId}-${m.timestamp}-${index}`;
                   const isImage =
                     m.messageType === 'image' ||
-                    (typeof m.content === 'string' && m.content.startsWith('data:image'));
+                    (typeof m.content === 'string' && (m.content.startsWith('data:image') || /\.(png|jpe?g|gif|webp)$/i.test(m.content)));
                   const storyAttachment = Array.isArray((m as any).attachments)
                     ? (m as any).attachments.find((a: any) => a?.channel === 'story')
                     : null;
@@ -566,16 +566,16 @@ export default function PrivateMessageBox({
 
                   return (
                     <div key={key} className={`w-full flex ${alignClass} mb-1`}>
-                      <div className={`max-w-[75%] flex items-end gap-2 ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
+                      <div className={`max-w-[78%] flex items-end gap-2 ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
                         {/* Avatar at end of other-user group */}
                         {showAvatar ? (
                           <ProfileImage
                             user={(m.sender as ChatUser) || user}
                             size="small"
-                            className="w-7 h-7"
+                            className="w-8 h-8"
                           />
                         ) : (
-                          <div className="w-7 h-7" />
+                          <div className="w-8 h-8" />
                         )}
 
                         <motion.div
@@ -633,11 +633,17 @@ export default function PrivateMessageBox({
                             <button
                               type="button"
                               onClick={() => setImageLightbox({ open: true, src: m.content })}
-                              className="inline-flex items-center justify-center p-0 bg-transparent"
+                              className="p-0 bg-transparent rounded-lg overflow-hidden border border-white/20"
                               title="عرض الصورة"
                               aria-label="عرض الصورة"
                             >
-                              <ImageAttachmentBadge />
+                              <img
+                                src={m.content}
+                                alt="صورة مرفقة"
+                                className="block max-w-[220px] max-h-[260px] object-cover"
+                                loading="lazy"
+                                decoding="async"
+                              />
                             </button>
                           ) : (() => {
                             const { cleaned, ids } = parseYouTubeFromText(m.content);
@@ -668,29 +674,32 @@ export default function PrivateMessageBox({
                               </span>
                             );
                           })()}
-                          {(() => {
-                            const isLastOutgoing = isMe && index === sortedMessages.length - 1;
-                            if (!isLastOutgoing) return null;
-                            const seen = (() => {
-                              try {
-                                if (!otherLastReadAt) return false;
-                                const lastReadMs = new Date(otherLastReadAt).getTime();
-                                const thisMsgMs = new Date(m.timestamp as any).getTime();
-                                return Number.isFinite(lastReadMs) && Number.isFinite(thisMsgMs) && lastReadMs >= thisMsgMs;
-                              } catch { return false; }
-                            })();
-                            return (
-                              <span className="pm-meta self-end">
-                                <span>{formatTime(m.timestamp)}</span>
-                                {seen ? (
-                                  <CheckCheck className="w-3.5 h-3.5 text-[#dbeafe]" />
-                                ) : (
-                                  <Check className="w-3.5 h-3.5 text-white/70" />
-                                )}
-                              </span>
-                            );
-                          })()}
+                          {/* meta moved outside bubble */}
                         </motion.div>
+                        {(() => {
+                          const metaAlignContainer = isMe ? 'justify-end' : 'justify-start';
+                          const textColor = isMe ? 'text-gray-400' : 'text-gray-400';
+                          const seen = (() => {
+                            try {
+                              if (!isMe || !otherLastReadAt) return false;
+                              const lastReadMs = new Date(otherLastReadAt).getTime();
+                              const thisMsgMs = new Date(m.timestamp as any).getTime();
+                              return Number.isFinite(lastReadMs) && Number.isFinite(thisMsgMs) && lastReadMs >= thisMsgMs;
+                            } catch { return false; }
+                          })();
+                          return (
+                            <div className={`flex items-center gap-1 mt-0.5 ${metaAlignContainer}`}>
+                              <span className={`pm-meta ${textColor}`}>
+                                <span>{formatTimeWithDate(m.timestamp as any)}</span>
+                              </span>
+                              {isMe && (seen ? (
+                                <CheckCheck className="w-4 h-4 text-blue-400" />
+                              ) : (
+                                <Check className="w-4 h-4 text-gray-400" />
+                              ))}
+                            </div>
+                          );
+                        })()}
                       </div>
                     </div>
                   );
