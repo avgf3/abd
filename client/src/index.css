@@ -797,9 +797,21 @@ img, video, canvas, iframe {
   transform: translateX(-2px);
 }
 
-/* Deprecated legacy DM floating box (component now uses modal with flex column).
-   Keeping class to avoid accidental usage; ensure it doesn't interfere. */
-.private-message-box { display: contents; }
+/* Legacy style kept as-is (no effect on current modal layout) */
+.private-message-box {
+  position: fixed;
+  bottom: 80px;
+  right: 20px;
+  width: 320px;
+  background: linear-gradient(135deg, var(--chat-secondary), var(--chat-accent));
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  color: white;
+  padding: 16px;
+  z-index: 10000;
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(15px);
+}
 
 /* Language Transition Animations */
 @keyframes fadeInScale {

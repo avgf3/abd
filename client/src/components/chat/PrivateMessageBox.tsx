@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { Send, Image as ImageIcon, Check, CheckCheck } from 'lucide-react';
-// Removed virtualization for a simple native scroll list
+import { Virtuoso, type VirtuosoHandle } from 'react-virtuoso';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -49,16 +49,14 @@ export default function PrivateMessageBox({
   const [messageText, setMessageText] = useState('');
   const MAX_CHARS = 192;
   const clampToMaxChars = useCallback((text: string) => (text.length > MAX_CHARS ? text.slice(0, MAX_CHARS) : text), [MAX_CHARS]);
-  // rely on Virtuoso followOutput for bottom-stick behavior; no extra local state needed
   const [isSending, setIsSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
   const retryTimeoutRef = useRef<NodeJS.Timeout>();
   const [isLoadingOlder, setIsLoadingOlder] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [imageFile, setImageFile] = useState<File | null>(null);
-  const listRef = useRef<HTMLDivElement>(null);
+  const virtuosoRef = useRef<VirtuosoHandle>(null);
   const prevMessagesLenRef = useRef<number>(0);
-  const prevScrollHeightRef = useRef<number>(0);
   const [isAtBottom, setIsAtBottom] = useState(true);
   const inputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -221,11 +219,10 @@ export default function PrivateMessageBox({
   // محسن: دالة التمرير مع تحسين الأداء
   const scrollToBottom = useCallback((behavior: ScrollBehavior = 'auto') => {
     try {
-      const el = listRef.current;
-      if (!el) return;
-      el.scrollTo({ top: el.scrollHeight, behavior });
+      if (!virtuosoRef.current || sortedMessages.length === 0) return;
+      virtuosoRef.current.scrollToIndex({ index: sortedMessages.length - 1, align: 'end', behavior });
     } catch {}
-  }, []);
+  }, [sortedMessages.length]);
 
   // تثبيت الفتح: اضبط عداد الطول وركّز الإدخال دون تمرير متكرر
   useEffect(() => {
@@ -297,7 +294,7 @@ export default function PrivateMessageBox({
 
   // أزلنا التمرير عند تركيز الإدخال
 
-  // تمت إزالة سجلات التشخيص ومراقبة القاع؛ Virtuoso يتولى ذلك داخلياً
+  // تمت إزالة سجلات التشخيص ومراقبة القاع
 
   // محسن: دالة إرسال مع إعادة المحاولة ومعالجة أخطاء محسنة
   const sendMessageWithRetry = useCallback(
@@ -410,23 +407,10 @@ export default function PrivateMessageBox({
   const handleLoadMore = useCallback(async () => {
     if (isLoadingOlder || !hasMore || !onLoadMore) return;
     setIsLoadingOlder(true);
-    // احفظ الارتفاع والموضع للحفاظ على المكان بعد الإدراج في الأعلى
-    const el = listRef.current;
-    const prevHeight = el?.scrollHeight || 0;
-    const prevTop = el?.scrollTop || 0;
     try {
       const res = await onLoadMore();
       setHasMore(res.hasMore);
-      // أعِد ضبط الموضع بعدها مباشرة للحفاظ على المكان
-      setTimeout(() => {
-        try {
-          const el2 = listRef.current;
-          if (!el2) return;
-          const newHeight = el2.scrollHeight;
-          const delta = newHeight - prevHeight;
-          el2.scrollTop = prevTop + delta;
-        } catch {}
-      }, 0);
+      try { (virtuosoRef.current as any)?.adjustForPrependedItems?.(res.addedCount || 0); } catch {}
     } finally {
       setIsLoadingOlder(false);
     }
@@ -542,20 +526,29 @@ export default function PrivateMessageBox({
                 <p className="text-sm opacity-70 mt-2">لا توجد رسائل سابقة</p>
               </div>
             ) : (
-              <div
-                ref={listRef}
-                className="h-full overflow-y-auto"
-                onScroll={async (e) => {
-                  const el = e.currentTarget as HTMLDivElement;
-                  const threshold = 20;
-                  const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight <= threshold;
-                  if (atBottom !== isAtBottom) setIsAtBottom(atBottom);
-                  if (el.scrollTop <= 0 && hasMore && !isLoadingOlder) {
-                    try { await handleLoadMore(); } catch {}
-                  }
+              <Virtuoso
+                ref={virtuosoRef}
+                data={sortedMessages}
+                className="h-full"
+                style={{ height: '100%' }}
+                followOutput={{ whenScrolled: 'auto', behavior: 'smooth' } as any}
+                atBottomThreshold={20}
+                atBottomStateChange={(v) => setIsAtBottom(v)}
+                increaseViewportBy={{ top: 300, bottom: 300 }}
+                defaultItemHeight={56}
+                startReached={handleLoadMore}
+                computeItemKey={(index, m) => (m as any)?.id ?? `${(m as any)?.senderId}-${(m as any)?.timestamp}-${index}`}
+                components={{
+                  Header: () =>
+                    isLoadingOlder ? (
+                      <div className="flex justify-center py-2">
+                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-300 border-t-transparent"></div>
+                      </div>
+                    ) : hasMore ? (
+                      <div className="text-center py-1 text-xs text-gray-400">اسحب للأعلى لتحميل المزيد</div>
+                    ) : null,
                 }}
-              >
-                {sortedMessages.map((m, index) => {
+                itemContent={(index, m) => {
                   const isMe = !!(currentUser && m.senderId === currentUser.id);
                   const key = m.id ?? `${m.senderId}-${m.timestamp}-${index}`;
                   const isImage =
@@ -677,8 +670,8 @@ export default function PrivateMessageBox({
                       </div>
                     </div>
                   );
-                })}
-              </div>
+                }}
+              />
             )}
 
             {/* تم إخفاء زر "الانتقال لأسفل" */}
