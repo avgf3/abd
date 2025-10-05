@@ -7,6 +7,97 @@ import './index.css';
 import { applyThemeById } from '@/utils/applyTheme';
 import { apiRequest } from '@/lib/queryClient';
 
+// === Keep page active via muted, looping, silent audio (autoplay-safe) ===
+try {
+  let keepAliveAudioEl: HTMLAudioElement | null = null;
+  let keepAliveUrl: string | null = null;
+
+  const createSilentWavUrl = (seconds = 1, sampleRate = 8000): string => {
+    const numChannels = 1;
+    const bitsPerSample = 16;
+    const numFrames = Math.max(1, Math.floor(seconds * sampleRate));
+    const dataSize = numFrames * numChannels * (bitsPerSample / 8);
+    const buffer = new ArrayBuffer(44 + dataSize);
+    const view = new DataView(buffer);
+    const writeString = (offset: number, str: string) => {
+      for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i));
+    };
+    writeString(0, 'RIFF');
+    view.setUint32(4, 36 + dataSize, true);
+    writeString(8, 'WAVE');
+    writeString(12, 'fmt ');
+    view.setUint32(16, 16, true); // PCM header size
+    view.setUint16(20, 1, true); // PCM format
+    view.setUint16(22, numChannels, true);
+    view.setUint32(24, sampleRate, true);
+    const byteRate = sampleRate * numChannels * (bitsPerSample / 8);
+    view.setUint32(28, byteRate, true);
+    view.setUint16(32, numChannels * (bitsPerSample / 8), true);
+    view.setUint16(34, bitsPerSample, true);
+    writeString(36, 'data');
+    view.setUint32(40, dataSize, true);
+    return URL.createObjectURL(new Blob([buffer], { type: 'audio/wav' }));
+  };
+
+  const ensureKeepAliveAudioPlaying = async (): Promise<boolean> => {
+    try {
+      if (keepAliveAudioEl && !keepAliveAudioEl.paused) return true;
+      if (!keepAliveAudioEl) {
+        keepAliveAudioEl = document.createElement('audio');
+        keepAliveAudioEl.setAttribute('playsinline', '');
+        keepAliveAudioEl.muted = true; // critical for autoplay
+        keepAliveAudioEl.loop = true;
+        keepAliveAudioEl.preload = 'auto';
+        keepAliveAudioEl.style.display = 'none';
+        document.documentElement.appendChild(keepAliveAudioEl);
+        keepAliveUrl = createSilentWavUrl(1, 8000);
+        keepAliveAudioEl.src = keepAliveUrl;
+
+        // Resume when tab returns visible or BFCache restores the page
+        document.addEventListener('visibilitychange', () => {
+          try {
+            if (document.visibilityState === 'visible' && keepAliveAudioEl && keepAliveAudioEl.paused) {
+              keepAliveAudioEl.play().catch(() => {});
+            }
+          } catch {}
+        });
+        window.addEventListener('pageshow', () => {
+          try {
+            if (keepAliveAudioEl && keepAliveAudioEl.paused) keepAliveAudioEl.play().catch(() => {});
+          } catch {}
+        });
+      }
+
+      await keepAliveAudioEl.play();
+      return true;
+    } catch {
+      // Autoplay blocked: wait for first gesture
+      const onFirstGesture = async () => {
+        try { await keepAliveAudioEl?.play(); } finally {
+          window.removeEventListener('pointerdown', onFirstGesture as any, { passive: true } as any);
+          window.removeEventListener('click', onFirstGesture as any, { passive: true } as any);
+          window.removeEventListener('touchstart', onFirstGesture as any, { passive: true } as any);
+          window.removeEventListener('keydown', onFirstGesture as any, { passive: true } as any);
+        }
+      };
+      try {
+        window.addEventListener('pointerdown', onFirstGesture, { once: true, passive: true });
+        window.addEventListener('click', onFirstGesture, { once: true, passive: true });
+        window.addEventListener('touchstart', onFirstGesture, { once: true, passive: true });
+        window.addEventListener('keydown', onFirstGesture, { once: true, passive: true });
+      } catch {}
+      return false;
+    }
+  };
+
+  // Try to start quickly; if blocked it will arm the gesture fallback
+  // Defer a tick to avoid competing with initial layout/paint
+  setTimeout(() => { ensureKeepAliveAudioPlaying().catch(() => {}); }, 0);
+
+  // Expose for optional manual triggering elsewhere
+  (window as any).ensureKeepAliveAudioPlaying = ensureKeepAliveAudioPlaying;
+} catch {}
+
 // تطبيق الثيم المحفوظ عند بدء التطبيق
 try {
 	const saved = localStorage.getItem('selectedTheme');
