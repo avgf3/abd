@@ -59,6 +59,8 @@ export default function PrivateMessageBox({
   const [imageFile, setImageFile] = useState<File | null>(null);
   const virtuosoRef = useRef<VirtuosoHandle>(null);
   const prevMessagesLenRef = useRef<number>(0);
+  const openedOnceRef = useRef<boolean>(false);
+  const lastLoadOlderTsRef = useRef<number>(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { textColor: composerTextColor, bold: composerBold } = useComposerStyle();
@@ -230,27 +232,17 @@ export default function PrivateMessageBox({
     [sortedMessages.length]
   );
 
-  // التمرير للأسفل عند فتح النافذة وتعيين طول الرسائل السابق
+  // التمرير للأسفل مرة واحدة عند فتح النافذة فقط
   useEffect(() => {
     if (!isOpen) return;
     prevMessagesLenRef.current = sortedMessages.length;
-    
-    // تمرير فوري عند فتح المحادثة - حل مشكلة البدء من البداية
-    const scrollToLatest = () => {
+    if (!openedOnceRef.current) {
+      openedOnceRef.current = true;
       if (sortedMessages.length > 0) {
         scrollToBottom('auto');
-        // تمرير إضافي للتأكد من الوصول لآخر رسالة
-        setTimeout(() => scrollToBottom('auto'), 50);
-        setTimeout(() => scrollToBottom('auto'), 200);
       }
       inputRef.current?.focus();
-    };
-    
-    // تمرير فوري ثم تمرير مؤجل للتأكد
-    scrollToLatest();
-    const timer = setTimeout(scrollToLatest, 100);
-    
-    return () => clearTimeout(timer);
+    }
   }, [isOpen, scrollToBottom, sortedMessages.length]);
 
   // تحديث آخر وقت فتح للمحادثة لاحتساب غير المقروء
@@ -291,13 +283,11 @@ export default function PrivateMessageBox({
     const last = sortedMessages[currLen - 1];
     const sentByMe = !!(currentUser && (last as any)?.senderId === currentUser.id);
     
-    // تمرير فوري للرسائل المرسلة مني، تمرير سلس للرسائل الواردة
+    // تمرير فوري للرسائل المرسلة مني
     if (sentByMe) {
       scrollToBottom('auto');
-    } else if (isAtBottomPrivate) {
-      // تأخير قصير لتقليل الاهتزازات
-      setTimeout(() => scrollToBottom('smooth'), 50);
     }
+    // للرسائل الواردة، اترك Virtuoso يتولى الأمر عبر followOutput عندما نكون في الأسفل
     
     prevMessagesLenRef.current = currLen;
   }, [sortedMessages.length, isOpen, isLoadingOlder, scrollToBottom, isAtBottomPrivate, currentUser?.id]);
@@ -429,12 +419,16 @@ export default function PrivateMessageBox({
   // تحميل المزيد عند الوصول للأعلى
   const handleLoadMore = useCallback(async () => {
     if (isLoadingOlder || !hasMore || !onLoadMore) return;
+    const now = Date.now();
+    if (now - lastLoadOlderTsRef.current < 600) return; // حارس لمنع الطلبات المتكررة السريعة
+    lastLoadOlderTsRef.current = now;
     setIsLoadingOlder(true);
     try {
       const res = await onLoadMore();
       setHasMore(res.hasMore);
       if (res.addedCount > 0) {
-        setTimeout(() => {
+        // الحفاظ على موضع التمرير بعد إدراج رسائل في الأعلى
+        requestAnimationFrame(() => {
           try {
             virtuosoRef.current?.scrollToIndex({
               index: res.addedCount,
@@ -442,7 +436,7 @@ export default function PrivateMessageBox({
               behavior: 'auto' as any,
             });
           } catch {}
-        }, 0);
+        });
       }
     } finally {
       setIsLoadingOlder(false);
@@ -565,11 +559,12 @@ export default function PrivateMessageBox({
                 ref={virtuosoRef}
                 data={sortedMessages}
                 className="!h-full"
-                followOutput={true}
+                // اتبع المخرجات فقط عندما نكون أسفل القائمة لتجنب الاهتزاز
+                followOutput={isAtBottomPrivate ? ('smooth' as any) : false}
                 atBottomThreshold={100}
                 atBottomStateChange={handleAtBottomChange}
                 increaseViewportBy={{ top: 400, bottom: 400 }}
-                defaultItemHeight={60}
+                defaultItemHeight={64}
                 initialTopMostItemIndex={sortedMessages.length > 0 ? sortedMessages.length - 1 : 0}
                 startReached={handleLoadMore}
                 computeItemKey={(index, m) => (m as any)?.id ?? `${(m as any)?.senderId}-${(m as any)?.timestamp}-${index}`}

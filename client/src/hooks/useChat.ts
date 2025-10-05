@@ -178,51 +178,39 @@ function chatReducer(state: ChatState, action: ChatAction): ChatState {
     case 'SET_PRIVATE_MESSAGE': {
       const { userId, message } = action.payload;
       const existingMessages = state.privateConversations[userId] || [];
-
-      // منع التكرار - التحقق المحسن مع تحسين الأداء
-      const isDuplicate = existingMessages.some(
-        (msg) =>
-          (message.id && msg.id === message.id) ||
-          (msg.content === message.content &&
-            msg.senderId === message.senderId &&
-            Math.abs(new Date(msg.timestamp).getTime() - new Date(message.timestamp).getTime()) <
-              2000) // زيادة النافذة الزمنية لتجنب التكرار
-      );
-
-      if (isDuplicate) {
-        return state; // تجاهل الرسالة المكررة
+      // تجاهل التطابق بالمعرف إن وجد
+      if (message?.id != null && existingMessages.some((m) => m.id === message.id)) {
+        return state;
       }
-
-      // ترتيب الرسائل حسب الوقت لضمان التسلسل الصحيح
-      const newMessages = [...existingMessages, message].sort(
+      // إدراج في النهاية مع الحفاظ على ترتيب تصاعدي ثابت
+      const next = [...existingMessages, message].sort(
         (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
       );
-
       return {
         ...state,
         privateConversations: {
           ...state.privateConversations,
-          [userId]: newMessages,
+          [userId]: next,
         },
       };
     }
 
     case 'SET_PRIVATE_CONVERSATION': {
       const { userId, messages } = action.payload;
-      // إزالة التكرارات بناءً على ID الرسالة
-      const uniqueMessages = messages.reduce((acc: ChatMessage[], msg) => {
-        const exists = acc.some(
-          (m) =>
-            (msg.id && m.id === msg.id) ||
-            (m.content === msg.content &&
-              m.senderId === msg.senderId &&
-              Math.abs(new Date(m.timestamp).getTime() - new Date(msg.timestamp).getTime()) < 1000)
-        );
-        if (!exists) {
-          acc.push(msg);
+      // إزالة التكرارات وترتيب تصاعدي بثبات لضمان ثبات العرض
+      const byId = new Map<number, ChatMessage>();
+      const provisional: ChatMessage[] = [];
+      for (const m of messages) {
+        if (m?.id != null) {
+          if (!byId.has(m.id as any)) byId.set(m.id as any, m);
+        } else {
+          provisional.push(m);
         }
-        return acc;
-      }, []);
+      }
+      const uniqueMessages = [
+        ...Array.from(byId.values()),
+        ...provisional,
+      ].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
 
       return {
         ...state,
@@ -236,8 +224,8 @@ function chatReducer(state: ChatState, action: ChatAction): ChatState {
     case 'PREPEND_PRIVATE_MESSAGES': {
       const { userId, messages } = action.payload;
       const existing = state.privateConversations[userId] || [];
-      const existingIds = new Set(existing.map((m) => m.id));
-      const toPrepend = messages.filter((m) => !existingIds.has(m.id));
+      const existingIds = new Set(existing.map((m) => m.id).filter((v) => v != null));
+      const toPrepend = messages.filter((m) => m?.id == null || !existingIds.has(m.id as any));
       return {
         ...state,
         privateConversations: {
