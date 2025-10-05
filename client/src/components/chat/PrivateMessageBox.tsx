@@ -268,15 +268,15 @@ export default function PrivateMessageBox({
     } catch {}
   }, [isOpen, user?.id, currentUser?.id, sortedMessages.length]);
 
-  // التمرير عند وصول رسائل جديدة (محسن)
+  // التمرير عند وصول رسائل جديدة (دائماً للأسفل)
   useEffect(() => {
-    if (sortedMessages.length > 0 && isAtBottomPrivate) {
-      const timer = setTimeout(() => {
-        scrollToBottom(sortedMessages.length <= 20 ? 'smooth' : 'auto');
-      }, 50);
-      return () => clearTimeout(timer);
-    }
-  }, [sortedMessages.length, isAtBottomPrivate, scrollToBottom]);
+    if (!isOpen || isLoadingOlder) return;
+    if (sortedMessages.length === 0) return;
+    const timer = setTimeout(() => {
+      scrollToBottom(sortedMessages.length <= 50 ? 'smooth' : 'auto');
+    }, 50);
+    return () => clearTimeout(timer);
+  }, [sortedMessages.length, isOpen, isLoadingOlder, scrollToBottom]);
 
   // مُحسن: دالة مراقبة التمرير
   const handleAtBottomChange = useCallback((atBottom: boolean) => {
@@ -562,14 +562,14 @@ export default function PrivateMessageBox({
                   const groupEnd = !next || !isSameSender(next, m) || !isWithinWindow(next, m);
                   const alignClass = isMe ? 'justify-end' : 'justify-start';
                   const bubbleSide = isMe ? 'me' : 'other';
-                  const showAvatar = !isMe && groupEnd;
+                  const showAvatar = !isMe;
 
                   return (
                     <div key={key} className="w-full mb-2" dir="rtl">
-                      <div className={`flex ${isMe ? 'justify-end' : 'justify-start'} items-end gap-2`}>
+                      <div className={`flex ${isMe ? 'justify-end' : 'justify-start'} items-start gap-2`}>
                         {/* Avatar for received messages - positioned on the right in RTL */}
                         {!isMe && showAvatar && (
-                          <div className="flex-shrink-0 order-1">
+                          <div className="flex-shrink-0 order-1 self-start">
                             <ProfileImage
                               user={(m.sender as ChatUser) || user}
                               size="small"
@@ -579,8 +579,8 @@ export default function PrivateMessageBox({
                         )}
                         
                         {/* Avatar for sent messages - positioned on the left in RTL */}
-                        {isMe && groupEnd && (
-                          <div className="flex-shrink-0 order-3">
+                        {isMe && (
+                          <div className="flex-shrink-0 order-3 self-start">
                             <ProfileImage
                               user={currentUser!}
                               size="small"
