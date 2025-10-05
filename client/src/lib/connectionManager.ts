@@ -123,7 +123,9 @@ export class ConnectionManager {
   }
 
   private hardReload() {
-    try { window.location.reload(true); } catch { window.location.reload(); }
+    // بدل إعادة تحميل الصفحة، نفذ استعادة ناعمة وإعادة المحاولة بهدوء
+    this.consecutiveFailures = 0;
+    this.scheduleNextPoll(5000);
   }
 
   private updateMonitors(startedAt: number) {
@@ -190,11 +192,12 @@ export function createDefaultConnectionManager(opts: Partial<ConnectionManagerCo
     chatPollUrl: '/api/messages/room/:roomId/since',
     usersPollUrl: '/api/users/online',
     pingUrl: '/api/ping',
-    // errorReportUrl: '/collect/e.php', // implement server-side if desired
+    // errorReportUrl: '/collect/e.php', // implement server-side إذا لزم
     speedVisibleMs: 1500,
     speedHiddenMs: 4000,
-    failuresBeforeHardReload: 8,
-    hardReloadOnServerAck: true,
+    // تعطيل أي إعادة تحميل قسرية للصفحة
+    failuresBeforeHardReload: Number.POSITIVE_INFINITY,
+    hardReloadOnServerAck: false,
     ...opts,
   });
 }

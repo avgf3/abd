@@ -1695,24 +1695,11 @@ export const useChat = () => {
   }, []);
 
   useEffect(() => {
-    const handleOnline = () => {
-      if (socket.current && !socket.current.connected) {
-        try {
-          socket.current.connect();
-        } catch {}
-      }
-    };
-    const handleOffline = () => {
-      dispatch({ type: 'SET_CONNECTION_STATUS', payload: false });
-    };
-
-    window.addEventListener('online', handleOnline);
+    // تم نقل منطق إعادة الاتصال عند العودة أونلاين إلى وحدة socket المشتركة
+    // نكتفي بتحديث الحالة عند الانفصال فقط عبر أحداث Socket.IO
+    const handleOffline = () => dispatch({ type: 'SET_CONNECTION_STATUS', payload: false });
     window.addEventListener('offline', handleOffline);
-
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
+    return () => { window.removeEventListener('offline', handleOffline); };
   }, []);
 
   useEffect(() => {
