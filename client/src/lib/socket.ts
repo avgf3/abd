@@ -84,10 +84,16 @@ function attachCoreListeners(socket: Socket) {
   socket.on('connect', () => {
     reauth(false);
     // إذا لم تكن هناك جلسة محفوظة، لا نرسل auth هنا لتفادي مهلة غير ضرورية
+    try { window.dispatchEvent(new CustomEvent('socket:connected')); } catch {}
   });
 
   socket.on('reconnect', () => {
     reauth(true);
+    try { window.dispatchEvent(new CustomEvent('socket:connected')); } catch {}
+  });
+
+  socket.on('disconnect', () => {
+    try { window.dispatchEvent(new CustomEvent('socket:disconnected')); } catch {}
   });
 
   // إشارات حالة إعادة الاتصال لواجهة المستخدم إن لزم
