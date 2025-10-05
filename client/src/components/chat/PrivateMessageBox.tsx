@@ -106,11 +106,11 @@ export default function PrivateMessageBox({
             }, 3000);
           }
         }
-        // Conversation read sync
+        // Conversation read sync (update seen only when the OTHER user is the reader)
         if (envelope?.type === 'conversationRead') {
-          const fromId = envelope?.otherUserId;
-          if (fromId && fromId === user?.id && typeof envelope?.lastReadAt === 'string') {
-            setOtherLastReadAt(envelope.lastReadAt);
+          const readerId = (envelope as any)?.readerUserId ?? (envelope as any)?.readerId;
+          if (readerId && readerId === user?.id && typeof (envelope as any)?.lastReadAt === 'string') {
+            setOtherLastReadAt((envelope as any).lastReadAt);
           }
         }
       } catch {}
@@ -268,15 +268,19 @@ export default function PrivateMessageBox({
     } catch {}
   }, [isOpen, user?.id, currentUser?.id, sortedMessages.length]);
 
-  // التمرير عند وصول رسائل جديدة (دائماً للأسفل)
+  // التمرير عند وصول رسائل جديدة (للأسفل فقط إذا كنا في الأسفل أو المُرسل أنا)
   useEffect(() => {
     if (!isOpen || isLoadingOlder) return;
     if (sortedMessages.length === 0) return;
-    const timer = setTimeout(() => {
-      scrollToBottom(sortedMessages.length <= 50 ? 'smooth' : 'auto');
-    }, 50);
-    return () => clearTimeout(timer);
-  }, [sortedMessages.length, isOpen, isLoadingOlder, scrollToBottom]);
+    const last = sortedMessages[sortedMessages.length - 1];
+    const sentByMe = !!(currentUser && (last as any)?.senderId === currentUser.id);
+    if (isAtBottomPrivate || sentByMe) {
+      const timer = setTimeout(() => {
+        scrollToBottom(sortedMessages.length <= 50 ? 'smooth' : 'auto');
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [sortedMessages.length, isOpen, isLoadingOlder, scrollToBottom, isAtBottomPrivate, currentUser?.id]);
 
   // مُحسن: دالة مراقبة التمرير
   const handleAtBottomChange = useCallback((atBottom: boolean) => {
@@ -529,7 +533,7 @@ export default function PrivateMessageBox({
                 ref={virtuosoRef}
                 data={sortedMessages}
                 className="!h-full"
-                followOutput={'smooth'}
+                followOutput={isAtBottomPrivate ? 'smooth' : (false as any)}
                 atBottomStateChange={handleAtBottomChange}
                 increaseViewportBy={{ top: 300, bottom: 300 }}
                 startReached={handleLoadMore}
