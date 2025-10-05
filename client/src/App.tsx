@@ -9,6 +9,9 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { UserProvider } from '@/contexts/UserContext';
 import { ComposerStyleProvider } from '@/contexts/ComposerStyleContext';
 import ChatPage from '@/pages/chat';
+import EmojisAnimatedPage from '@/pages/EmojisAnimated';
+import EmojisStaticSmallPage from '@/pages/EmojisStaticSmall';
+import EmojisStaticLargePage from '@/pages/EmojisStaticLarge';
 import ArabicChat from '@/pages/ArabicChat';
 import CountryChat from '@/pages/CountryChat';
 import CityChat from '@/pages/CityChat';
@@ -51,6 +54,10 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={ChatPage} />
+      {/* Emoji pages */}
+      <Route path="/emojis/animated" component={EmojisAnimatedPage} />
+      <Route path="/emojis/static-small" component={EmojisStaticSmallPage} />
+      <Route path="/emojis/static-large" component={EmojisStaticLargePage} />
       <Route path="/privacy" component={PrivacyPolicy} />
       <Route path="/terms" component={TermsOfService} />
       <Route path="/arabic" component={ArabicChat} />
