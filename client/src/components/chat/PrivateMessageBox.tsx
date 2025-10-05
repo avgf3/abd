@@ -50,7 +50,7 @@ export default function PrivateMessageBox({
   const [messageText, setMessageText] = useState('');
   const MAX_CHARS = 192;
   const clampToMaxChars = useCallback((text: string) => (text.length > MAX_CHARS ? text.slice(0, MAX_CHARS) : text), [MAX_CHARS]);
-  const [isAtBottomPrivate, setIsAtBottomPrivate] = useState(true);
+  // rely on Virtuoso followOutput for bottom-stick behavior; no extra local state needed
   const [isSending, setIsSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
   const retryTimeoutRef = useRef<NodeJS.Timeout>();
@@ -274,8 +274,8 @@ export default function PrivateMessageBox({
   }, [isOpen, user?.id, currentUser?.id, lastMessageDeps]);
 
   // تمرير ذكي عند وصول رسائل جديدة في الخاص
-  // - في التحميل الأول: مرّر للأسفل مرة واحدة
-  // - عند رسائل جديدة لاحقاً: مرّر فقط إذا كنا أسفل أو كانت الرسالة مني
+  // - في التحميل الأول فقط: مرّر للأسفل مرة واحدة
+  // - بعد ذلك اترك Virtuoso يدير followOutput تلقائياً دون قفزات إضافية
   useEffect(() => {
     if (!isOpen || isLoadingOlder) return;
     const prevLen = prevMessagesLenRef.current;
@@ -289,32 +289,15 @@ export default function PrivateMessageBox({
       return;
     }
 
-    if (currLen <= prevLen) return;
-
-    const last: any = sortedMessages[currLen - 1];
-    const sentByMe = !!(currentUser && last?.senderId === currentUser.id);
-    if (isAtBottomPrivate || sentByMe) {
-      scrollToBottom('smooth');
+    // بعد التحميل الأول، لا نفرض أي تمرير يدوي إضافي
+    if (currLen !== prevLen) {
+      prevMessagesLenRef.current = currLen;
     }
-
-    prevMessagesLenRef.current = currLen;
-  }, [sortedMessages.length, isOpen, isLoadingOlder, scrollToBottom, isAtBottomPrivate, currentUser?.id]);
+  }, [sortedMessages.length, isOpen, isLoadingOlder, scrollToBottom]);
 
   // أزلنا التمرير عند تركيز الإدخال لتجنب التنازع مع Virtuoso
 
-  // مُحسن: دالة مراقبة التمرير مع منع التحديثات غير الضرورية
-  const handleAtBottomChange = useCallback((atBottom: boolean) => {
-    setIsAtBottomPrivate(prev => prev !== atBottom ? atBottom : prev);
-  }, []);
-
-  // سجلات خفيفة للتشخيص يمكن تعطيلها لاحقاً
-  useEffect(() => {
-    try {
-      if ((import.meta as any)?.env?.DEV) {
-        console.debug('[PM] isAtBottom:', isAtBottomPrivate, 'len:', sortedMessages.length);
-      }
-    } catch {}
-  }, [isAtBottomPrivate, sortedMessages.length]);
+  // تمت إزالة سجلات التشخيص ومراقبة القاع؛ Virtuoso يتولى ذلك داخلياً
 
   // محسن: دالة إرسال مع إعادة المحاولة ومعالجة أخطاء محسنة
   const sendMessageWithRetry = useCallback(
@@ -458,7 +441,7 @@ export default function PrivateMessageBox({
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.95, opacity: 0 }}
           transition={{ duration: 0.4, ease: "easeOut" }}
-          className="relative z-[12000] w-[95vw] max-w-lg max-h-[85vh] bg-background text-foreground border border-border shadow-2xl rounded-xl overflow-hidden"
+          className="relative z-[12000] w-[95vw] max-w-lg max-h-[85vh] bg-background text-foreground border border-border shadow-2xl rounded-xl overflow-hidden flex flex-col"
         >
           <DialogHeader className="relative border-b border-border px-3 py-2 modern-nav">
             <DialogTitle className="sr-only">محادثة خاصة مع {user?.username || 'مستخدم'}</DialogTitle>
@@ -541,7 +524,7 @@ export default function PrivateMessageBox({
             </div>
           </DialogHeader>
 
-          <div className="relative h-[55vh] w-full p-4 pb-4 bg-gray-100">
+          <div className="relative flex-1 min-h-0 w-full p-4 pb-4 bg-gray-100 overflow-hidden">
             {sortedMessages.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
                 <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="text-6xl mb-4">
@@ -554,10 +537,10 @@ export default function PrivateMessageBox({
               <Virtuoso
                 ref={virtuosoRef}
                 data={sortedMessages}
-                className="!h-full"
-                followOutput={'smooth'}
+                className="h-full"
+                style={{ height: '100%' }}
+                followOutput={{ whenScrolled: 'auto', behavior: 'smooth' } as any}
                 atBottomThreshold={20}
-                atBottomStateChange={handleAtBottomChange}
                 increaseViewportBy={{ top: 300, bottom: 300 }}
                 defaultItemHeight={56}
                 startReached={handleLoadMore}
