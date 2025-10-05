@@ -567,7 +567,7 @@ export default function PrivateMessageBox({
                   return (
                     <div key={key} className="w-full mb-2" dir="rtl">
                       <div className={`flex ${isMe ? 'justify-end' : 'justify-start'} items-end gap-2`}>
-                        {/* Avatar for received messages only, positioned on the right in RTL */}
+                        {/* Avatar for received messages - positioned on the right in RTL */}
                         {!isMe && showAvatar && (
                           <div className="flex-shrink-0 order-1">
                             <ProfileImage
@@ -578,8 +578,19 @@ export default function PrivateMessageBox({
                           </div>
                         )}
                         
+                        {/* Avatar for sent messages - positioned on the left in RTL */}
+                        {isMe && groupEnd && (
+                          <div className="flex-shrink-0 order-3">
+                            <ProfileImage
+                              user={currentUser!}
+                              size="small"
+                              className="w-8 h-8 rounded-full"
+                            />
+                          </div>
+                        )}
+                        
                         {/* Message bubble container */}
-                        <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-[75%] ${!isMe && showAvatar ? 'order-2' : ''}`}>
+                        <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-[75%] ${!isMe && showAvatar ? 'order-2' : isMe ? 'order-2' : ''}`}>
                           <motion.div
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
@@ -710,9 +721,6 @@ export default function PrivateMessageBox({
                             })()}
                           </div>
                         </div>
-                        
-                        {/* Spacer for sent messages to maintain consistent spacing */}
-                        {isMe && <div className="w-8 h-8 flex-shrink-0" />}
                       </div>
                     </div>
                   );
