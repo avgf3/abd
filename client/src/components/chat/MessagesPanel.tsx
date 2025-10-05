@@ -132,23 +132,30 @@ export default function MessagesPanel({
     };
   }, [conversationsData, privateConversations, onlineUsers]);
 
-  // تحسين: إزالة التحميل المزدوج - React Query يتعامل مع هذا تلقائياً
-  // useEffect تم إزالته لمنع التحميل المزدوج
-
-  // تحديث فوري للقائمة عند وصول/إرسال رسالة خاصة
+  // تحديث فوري للقائمة عند وصول/إرسال رسالة خاصة (محسن مع throttling)
   useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+    
     const handler = async (evt?: any) => {
       try {
-        const isStoryChannel = evt?.detail?.storyChannel === true;
-        // يمكن مستقبلاً فصل عرض محادثات حالات عن الخاص هنا
-        await refetch();
+        // تأخير قصير لتجميع التحديثات المتعددة وتقليل الاهتزازات
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(async () => {
+          const isStoryChannel = evt?.detail?.storyChannel === true;
+          // يمكن مستقبلاً فصل عرض محادثات حالات عن الخاص هنا
+          await refetch();
+        }, 200);
       } catch (error) {
         console.error('خطأ في تحديث المحادثات:', error);
         toast.error('فشل تحديث قائمة المحادثات');
       }
     };
+    
     window.addEventListener('privateMessageReceived', handler);
-    return () => window.removeEventListener('privateMessageReceived', handler as any);
+    return () => {
+      clearTimeout(timeoutId);
+      window.removeEventListener('privateMessageReceived', handler as any);
+    };
   }, [refetch]);
 
   // عرض رسالة خطأ إذا فشل الجلب
