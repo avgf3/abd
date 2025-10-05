@@ -231,14 +231,13 @@ export default function PrivateMessageBox({
     [sortedMessages.length]
   );
 
-  // التمرير للأسفل عند فتح النافذة وتثبيت الوضع دون اهتزاز
+  // التمرير للأسفل عند فتح النافذة مرة واحدة فقط
   useEffect(() => {
     if (!isOpen) return;
     prevMessagesLenRef.current = sortedMessages.length;
-    const t1 = setTimeout(() => scrollToBottom('auto'), 50);
-    const t2 = setTimeout(() => scrollToBottom('auto'), 200);
-    const t3 = setTimeout(() => inputRef.current?.focus(), 260);
-    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
+    const t1 = setTimeout(() => scrollToBottom('auto'), 100);
+    const t2 = setTimeout(() => inputRef.current?.focus(), 150);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
   }, [isOpen, scrollToBottom, sortedMessages.length]);
 
   // تحديث آخر وقت فتح للمحادثة لاحتساب غير المقروء
@@ -290,30 +289,28 @@ export default function PrivateMessageBox({
     const last = sortedMessages[currLen - 1];
     const sentByMe = !!(currentUser && (last as any)?.senderId === currentUser.id);
 
-    // مرّر فقط إذا كانت الرسالة الأخيرة مرسلة منّي.
-    // في غير ذلك، Virtuoso سيتكفّل بالتمرير إن كنت في الأسفل بفضل followOutput
-    if (sentByMe) {
-      scrollToBottom('smooth');
-    }
+    // مرّر للأسفل عند وصول رسائل جديدة (مني أو من الآخرين)
+    scrollToBottom('smooth');
 
     prevMessagesLenRef.current = currLen;
   }, [sortedMessages.length, isOpen, isLoadingOlder, scrollToBottom, currentUser?.id]);
 
-  // عند تركيز حقل الإدخال، مرّر للأسفل مرتين لضمان ثبات الموضع
+  // عند تركيز حقل الإدخال، مرّر للأسفل مرة واحدة فقط
   useEffect(() => {
     const el = inputRef.current;
     if (!el) return;
     const onFocus = () => {
-      setTimeout(() => scrollToBottom('auto'), 50);
-      setTimeout(() => scrollToBottom('auto'), 250);
+      if (isAtBottomPrivate) {
+        setTimeout(() => scrollToBottom('smooth'), 100);
+      }
     };
     el.addEventListener('focus', onFocus);
     return () => { try { el.removeEventListener('focus', onFocus); } catch {} };
-  }, [scrollToBottom]);
+  }, [scrollToBottom, isAtBottomPrivate]);
 
-  // مُحسن: دالة مراقبة التمرير
+  // مُحسن: دالة مراقبة التمرير مع منع التحديثات غير الضرورية
   const handleAtBottomChange = useCallback((atBottom: boolean) => {
-    setIsAtBottomPrivate(atBottom);
+    setIsAtBottomPrivate(prev => prev !== atBottom ? atBottom : prev);
   }, []);
 
   // سجلات خفيفة للتشخيص يمكن تعطيلها لاحقاً
@@ -377,7 +374,8 @@ export default function PrivateMessageBox({
           // لا نعرض toast للرسائل العادية لتجنب الإزعاج
         }
       }
-      setTimeout(() => scrollToBottom('smooth'), 100);
+      // التمرير سيحدث تلقائياً بفضل followOutput
+      setTimeout(() => scrollToBottom('smooth'), 50);
     } catch (error) {
       console.error('خطأ في إرسال الرسالة:', error);
       const errorMessage = error instanceof Error ? error.message : 'فشل إرسال الرسالة';
@@ -566,14 +564,9 @@ export default function PrivateMessageBox({
                 ref={virtuosoRef}
                 data={sortedMessages}
                 className="!h-full"
-                followOutput={isAtBottomPrivate ? 'smooth' : false}
-                atBottomThreshold={64}
-                atBottomStateChange={(atBottom) => {
-                  // حارس لمنع اهتزاز: لا تحدّث الحالة إذا لم تتغير فعلياً
-                  // يقلل من إعادة التصيير غير الضرورية التي قد تسبب قفزات
-                  setIsAtBottomPrivate((prev) => (prev !== atBottom ? atBottom : prev));
-                  handleAtBottomChange(atBottom);
-                }}
+                followOutput={'auto'}
+                atBottomThreshold={20}
+                atBottomStateChange={handleAtBottomChange}
                 increaseViewportBy={{ top: 300, bottom: 300 }}
                 defaultItemHeight={56}
                 startReached={handleLoadMore}
