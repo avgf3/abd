@@ -2854,6 +2854,29 @@ li::before {
   unicode-bidi: embed;
 }
 
+/* Private Message Box Improvements */
+.private-message-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.private-message-area {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+}
+
+/* تحسين التمرير في Virtuoso */
+.private-message-area > div {
+  height: 100% !important;
+}
+
+/* ضمان ظهور آخر رسالة */
+.private-message-area [data-test-id="virtuoso-scroller"] {
+  padding-bottom: 1rem !important;
+}
+
 /* Legacy bubble styles for compatibility */
 .pm-bubble {
   position: relative;

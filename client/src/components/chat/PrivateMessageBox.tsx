@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
-import { Send, Image as ImageIcon, Check, CheckCheck } from 'lucide-react';
+import { Send, Image as ImageIcon, Check, CheckCheck, ChevronDown } from 'lucide-react';
 import { Virtuoso, type VirtuosoHandle } from 'react-virtuoso';
 import { toast } from 'sonner';
 
@@ -67,6 +67,9 @@ export default function PrivateMessageBox({
   const lastTypingEmitRef = useRef<number>(0);
   // Read receipts: last read timestamp received from other user via socket
   const [otherLastReadAt, setOtherLastReadAt] = useState<string | null>(null);
+  const [showScrollButton, setShowScrollButton] = useState(false);
+  const [isAtBottom, setIsAtBottom] = useState(true);
+  const scrollDebounceRef = useRef<NodeJS.Timeout>();
 
   // Emit private typing (throttled ~3s)
   const emitPrivateTyping = useCallback(() => {
@@ -218,15 +221,26 @@ export default function PrivateMessageBox({
 
   // دالة التمرير البسيطة - تستخدم فقط عند الحاجة
   const scrollToBottom = useCallback(
-    (behavior: 'auto' | 'smooth' = 'auto') => {
+    (behavior: 'auto' | 'smooth' = 'auto', immediate = false) => {
       if (!virtuosoRef.current || sortedMessages.length === 0) return;
-      try {
-        virtuosoRef.current.scrollToIndex({
-          index: sortedMessages.length - 1,
-          align: 'end',
-          behavior,
-        });
-      } catch {}
+      
+      const doScroll = () => {
+        try {
+          virtuosoRef.current?.scrollToIndex({
+            index: sortedMessages.length - 1,
+            align: 'end',
+            behavior,
+          });
+        } catch {}
+      };
+      
+      if (immediate) {
+        doScroll();
+      } else {
+        // Debounce للتمرير لتحسين الأداء
+        clearTimeout(scrollDebounceRef.current);
+        scrollDebounceRef.current = setTimeout(doScroll, 100);
+      }
     },
     [sortedMessages.length]
   );
@@ -235,6 +249,7 @@ export default function PrivateMessageBox({
   useEffect(() => {
     if (!isOpen) {
       hasScrolledInitiallyRef.current = false;
+      clearTimeout(scrollDebounceRef.current);
       return;
     }
     // تركيز الإدخال فورًا بعد فتح الصندوق
@@ -244,12 +259,13 @@ export default function PrivateMessageBox({
     // تمرير إضافي للتأكد من الوصول لآخر رسالة
     const t2 = setTimeout(() => {
       if (sortedMessages.length > 0) {
-        scrollToBottom('auto');
+        scrollToBottom('auto', true);
       }
     }, 200);
     return () => {
       clearTimeout(t1);
       clearTimeout(t2);
+      clearTimeout(scrollDebounceRef.current);
     };
   }, [isOpen, sortedMessages.length, scrollToBottom]);
 
@@ -300,14 +316,21 @@ export default function PrivateMessageBox({
       return () => clearTimeout(timer);
     }
     
-    // التمرير التلقائي عند وصول رسائل جديدة من المستخدم الحالي
+    // التمرير التلقائي عند وصول رسائل جديدة
     const lastMessage = sortedMessages[sortedMessages.length - 1];
     const isSentByMe = currentUser && lastMessage && lastMessage.senderId === currentUser.id;
-    if (isSentByMe) {
-      // تمرير سلس فوري لإظهار الرسالة المرسلة
+    
+    // التمرير التلقائي فقط إذا:
+    // 1. الرسالة من المستخدم الحالي
+    // 2. أو المستخدم في أسفل المحادثة بالفعل
+    if (isSentByMe || isAtBottom) {
+      // تمرير سلس فوري لإظهار الرسالة الجديدة
       setTimeout(() => scrollToBottom('smooth'), 50);
+    } else {
+      // إظهار زر التمرير للأسفل إذا لم يكن المستخدم في الأسفل
+      setShowScrollButton(true);
     }
-  }, [isOpen, isLoadingOlder, sortedMessages.length, currentUser?.id, scrollToBottom]);
+  }, [isOpen, isLoadingOlder, sortedMessages.length, currentUser?.id, isAtBottom, scrollToBottom]);
 
 
   // محسن: دالة إرسال مع إعادة المحاولة ومعالجة أخطاء محسنة
@@ -453,7 +476,7 @@ export default function PrivateMessageBox({
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.95, opacity: 0 }}
           transition={{ duration: 0.4, ease: "easeOut" }}
-          className="relative z-[12000] w-[95vw] max-w-lg max-h-[85vh] bg-background text-foreground border border-border shadow-2xl rounded-xl overflow-hidden"
+          className="relative z-[12000] w-[95vw] max-w-lg h-[85vh] bg-background text-foreground border border-border shadow-2xl rounded-xl flex flex-col overflow-hidden"
         >
           <DialogHeader className="relative border-b border-border px-3 py-2 modern-nav">
             <DialogTitle className="sr-only">محادثة خاصة مع {user?.username || 'مستخدم'}</DialogTitle>
@@ -536,7 +559,7 @@ export default function PrivateMessageBox({
             </div>
           </DialogHeader>
 
-          <div className="relative h-[55vh] w-full p-4 pb-4 bg-gray-100">
+          <div className="relative flex-1 min-h-0 w-full p-4 pb-6 bg-gray-100 private-message-area">
             {sortedMessages.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
                 <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="text-6xl mb-4">
@@ -550,10 +573,16 @@ export default function PrivateMessageBox({
                 ref={virtuosoRef}
                 data={sortedMessages}
                 className="!h-full"
-                increaseViewportBy={{ top: 300, bottom: 300 }}
+                increaseViewportBy={{ top: 200, bottom: 100 }}
                 defaultItemHeight={56}
                 startReached={handleLoadMore}
                 computeItemKey={(index, m) => (m as any)?.id ?? `${(m as any)?.senderId}-${(m as any)?.timestamp}-${index}`}
+                followOutput="auto"
+                initialTopMostItemIndex={sortedMessages.length > 0 ? sortedMessages.length - 1 : 0}
+                atBottomStateChange={(atBottom) => {
+                  setIsAtBottom(atBottom);
+                  setShowScrollButton(!atBottom && sortedMessages.length > 10);
+                }}
                 components={{
                   Header: () =>
                     isLoadingOlder ? (
@@ -749,7 +778,19 @@ export default function PrivateMessageBox({
               />
             )}
 
-            {/* تم إخفاء زر "الانتقال لأسفل" */}
+            {/* زر التمرير للأسفل */}
+            {showScrollButton && sortedMessages.length > 0 && (
+              <motion.button
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                onClick={() => scrollToBottom('smooth')}
+                className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full p-2 shadow-lg transition-all duration-200"
+                title="الانتقال لأسفل"
+              >
+                <ChevronDown className="w-5 h-5" />
+              </motion.button>
+            )}
           </div>
 
           <div className="p-4 border-t border-border modern-nav">
