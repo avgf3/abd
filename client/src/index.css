@@ -2764,41 +2764,54 @@ li::before {
 .pm-bubble {
   position: relative;
   display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
   padding: 8px 12px;
-  border-radius: 16px;
+  border-radius: 18px;
   max-width: 100%;
   word-break: break-word;
   overflow-wrap: anywhere;
-  line-height: 1.5;
-  border: 1px solid transparent;
+  line-height: 1.4;
+  font-size: 14px;
 }
 
 .pm-bubble--me {
   background: #0084ff; /* Messenger blue */
   color: #fff;
+  align-items: flex-end;
 }
 
 .pm-bubble--other {
-  background: #f1f0f0; /* Messenger gray */
-  color: #111827; /* gray-900 */
+  background: #e4e6eb; /* Messenger gray */
+  color: #050505; /* Messenger dark text */
 }
 
 /* Rounded corners per group position */
-.pm-bubble--start.pm-bubble--me { border-top-right-radius: 4px; }
-.pm-bubble--end.pm-bubble--me { border-bottom-right-radius: 16px; }
-.pm-bubble--start.pm-bubble--other { border-top-left-radius: 4px; }
-.pm-bubble--end.pm-bubble--other { border-bottom-left-radius: 16px; }
+/* Group rounding (me = right side in LTR visual) */
+.pm-bubble--start.pm-bubble--me { border-top-right-radius: 6px; }
+.pm-bubble--end.pm-bubble--me { border-bottom-right-radius: 18px; }
+.pm-bubble--start.pm-bubble--other { border-top-left-radius: 6px; }
+.pm-bubble--end.pm-bubble--other { border-bottom-left-radius: 18px; }
+
+/* Middle items keep tighter corner on the joined side */
+.pm-bubble--me:not(.pm-bubble--start):not(.pm-bubble--end) {
+  border-top-right-radius: 6px;
+  border-bottom-right-radius: 6px;
+}
+.pm-bubble--other:not(.pm-bubble--start):not(.pm-bubble--end) {
+  border-top-left-radius: 6px;
+  border-bottom-left-radius: 6px;
+}
 
 /* Optional subtle tails (simple pseudo-elements) */
 .pm-bubble--me.pm-bubble--start::after {
   content: '';
   position: absolute;
   right: -4px;
-  top: 8px;
-  width: 8px;
-  height: 8px;
+  top: 10px;
+  width: 10px;
+  height: 10px;
   background: #0084ff;
   transform: rotate(45deg);
   border-top-right-radius: 2px;
@@ -2808,16 +2821,28 @@ li::before {
   content: '';
   position: absolute;
   left: -4px;
-  top: 8px;
-  width: 8px;
-  height: 8px;
-  background: #f1f0f0;
+  top: 10px;
+  width: 10px;
+  height: 10px;
+  background: #e4e6eb;
   transform: rotate(45deg);
   border-top-left-radius: 2px;
 }
 
 /* Ensure message text retains current typography */
-.pm-bubble .ac-message-text { font-weight: 600; font-size: 13px; }
+.pm-bubble .ac-message-text { font-weight: 500; font-size: 14px; }
+
+/* Inline meta (time + ticks) inside bubble for last outgoing */
+.pm-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  line-height: 1;
+  opacity: 0.9;
+}
+.pm-bubble--me .pm-meta { color: rgba(255,255,255,0.85); }
+.pm-bubble--other .pm-meta { color: #606770; }
 .ch_logs .my_text .cname > .rtl_fright {
   float: none !important;
   white-space: nowrap;

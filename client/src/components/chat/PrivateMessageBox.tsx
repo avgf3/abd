@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
-import { Send, Image as ImageIcon } from 'lucide-react';
+import { Send, Image as ImageIcon, Check, CheckCheck } from 'lucide-react';
 import { Virtuoso, type VirtuosoHandle } from 'react-virtuoso';
 import { toast } from 'sonner';
 
@@ -16,8 +16,6 @@ import type { ChatMessage, ChatUser } from '@/types/chat';
 import ProfileImage from '@/components/chat/ProfileImage';
 import {
   sortMessagesAscending,
-  getDynamicBorderColor,
-  formatMessagePreview,
   setPmLastOpened,
 } from '@/utils/messageUtils';
 import { getFinalUsernameColor, getUserNameplateStyles } from '@/utils/themeUtils';
@@ -568,7 +566,7 @@ export default function PrivateMessageBox({
 
                   return (
                     <div key={key} className={`w-full flex ${alignClass} mb-1`}>
-                      <div className={`max-w-[80%] flex items-end gap-2 ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
+                      <div className={`max-w-[75%] flex items-end gap-2 ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
                         {/* Avatar at end of other-user group */}
                         {showAvatar ? (
                           <ProfileImage
@@ -585,7 +583,6 @@ export default function PrivateMessageBox({
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ duration: 0.2, ease: 'easeOut' }}
                           className={`pm-bubble pm-bubble--${bubbleSide} ${groupStart ? 'pm-bubble--start' : ''} ${groupEnd ? 'pm-bubble--end' : ''}`}
-                          style={{ borderColor: getDynamicBorderColor(m.sender || (isMe ? currentUser : user)) }}
                         >
                           {hasStoryContext && (
                             <div className="mb-2">
@@ -649,13 +646,7 @@ export default function PrivateMessageBox({
                               return (
                                 <span className="text-sm leading-relaxed inline-flex items-center gap-2">
                                   {cleaned && (
-                                    <span
-                                      style={
-                                        currentUser && m.senderId === currentUser.id
-                                          ? { color: composerTextColor, fontWeight: composerBold ? 700 : undefined }
-                                          : undefined
-                                      }
-                                    >
+                                    <span>
                                       {cleaned}
                                     </span>
                                   )}
@@ -672,15 +663,30 @@ export default function PrivateMessageBox({
                               );
                             }
                             return (
-                              <span
-                                className="ac-message-text"
-                                style={
-                                  currentUser && m.senderId === currentUser.id
-                                    ? { color: composerTextColor, fontWeight: composerBold ? 700 : undefined }
-                                    : undefined
-                                }
-                              >
+                              <span className="ac-message-text">
                                 {m.content}
+                              </span>
+                            );
+                          })()}
+                          {(() => {
+                            const isLastOutgoing = isMe && index === sortedMessages.length - 1;
+                            if (!isLastOutgoing) return null;
+                            const seen = (() => {
+                              try {
+                                if (!otherLastReadAt) return false;
+                                const lastReadMs = new Date(otherLastReadAt).getTime();
+                                const thisMsgMs = new Date(m.timestamp as any).getTime();
+                                return Number.isFinite(lastReadMs) && Number.isFinite(thisMsgMs) && lastReadMs >= thisMsgMs;
+                              } catch { return false; }
+                            })();
+                            return (
+                              <span className="pm-meta self-end">
+                                <span>{formatTime(m.timestamp)}</span>
+                                {seen ? (
+                                  <CheckCheck className="w-3.5 h-3.5 text-[#dbeafe]" />
+                                ) : (
+                                  <Check className="w-3.5 h-3.5 text-white/70" />
+                                )}
                               </span>
                             );
                           })()}
@@ -690,40 +696,6 @@ export default function PrivateMessageBox({
                   );
                 }}
               />
-            )}
-
-            {/* Time & read receipts under last bubble in each group */}
-            {sortedMessages.length > 0 && (
-              <div className="px-12 mt-1 space-y-1">
-                {sortedMessages.map((m, index) => {
-                  const isMe = !!(currentUser && m.senderId === currentUser.id);
-                  const next = index + 1 < sortedMessages.length ? sortedMessages[index + 1] : null;
-                  const groupEnd = !next || !isSameSender(next, m) || !isWithinWindow(next, m);
-                  if (!groupEnd) return null;
-                  const isLastOutgoing = isMe && index === sortedMessages.length - 1;
-                  return (
-                    <React.Fragment key={`meta-${m.id || index}`}>
-                      <div className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
-                        <span className="text-[11px] text-gray-500">{formatTime(m.timestamp)}</span>
-                      </div>
-                      {isLastOutgoing && otherLastReadAt && (() => {
-                        try {
-                          const lastReadMs = new Date(otherLastReadAt).getTime();
-                          const thisMsgMs = new Date(m.timestamp as any).getTime();
-                          if (lastReadMs >= thisMsgMs) {
-                            return (
-                              <div className="flex justify-end">
-                                <span className="text-[11px] text-blue-600">تمت المشاهدة</span>
-                              </div>
-                            );
-                          }
-                        } catch {}
-                        return null;
-                      })()}
-                    </React.Fragment>
-                  );
-                })}
-              </div>
             )}
 
             {/* تم إخفاء زر "الانتقال لأسفل" */}
