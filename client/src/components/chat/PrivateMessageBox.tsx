@@ -566,7 +566,7 @@ export default function PrivateMessageBox({
 
                   return (
                     <div key={key} className={`w-full flex ${alignClass} mb-1`}>
-                      <div className={`max-w-[80%] flex items-end gap-2 ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
+                      <div className={`max-w-[75%] flex items-end gap-2 ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
                         {/* Avatar at end of other-user group */}
                         {showAvatar ? (
                           <ProfileImage
@@ -668,53 +668,34 @@ export default function PrivateMessageBox({
                               </span>
                             );
                           })()}
+                          {(() => {
+                            const isLastOutgoing = isMe && index === sortedMessages.length - 1;
+                            if (!isLastOutgoing) return null;
+                            const seen = (() => {
+                              try {
+                                if (!otherLastReadAt) return false;
+                                const lastReadMs = new Date(otherLastReadAt).getTime();
+                                const thisMsgMs = new Date(m.timestamp as any).getTime();
+                                return Number.isFinite(lastReadMs) && Number.isFinite(thisMsgMs) && lastReadMs >= thisMsgMs;
+                              } catch { return false; }
+                            })();
+                            return (
+                              <span className="pm-meta self-end">
+                                <span>{formatTime(m.timestamp)}</span>
+                                {seen ? (
+                                  <CheckCheck className="w-3.5 h-3.5 text-[#dbeafe]" />
+                                ) : (
+                                  <Check className="w-3.5 h-3.5 text-white/70" />
+                                )}
+                              </span>
+                            );
+                          })()}
                         </motion.div>
                       </div>
                     </div>
                   );
                 }}
               />
-            )}
-
-            {/* Time & read receipts under last bubble in each group (Messenger-like) */}
-            {sortedMessages.length > 0 && (
-              <div className="px-12 mt-1 space-y-1">
-                {sortedMessages.map((m, index) => {
-                  const isMe = !!(currentUser && m.senderId === currentUser.id);
-                  const next = index + 1 < sortedMessages.length ? sortedMessages[index + 1] : null;
-                  const groupEnd = !next || !isSameSender(next, m) || !isWithinWindow(next, m);
-                  if (!groupEnd) return null;
-                  const isLastOutgoing = isMe && index === sortedMessages.length - 1;
-                  const seen = (() => {
-                    try {
-                      if (!otherLastReadAt) return false;
-                      const lastReadMs = new Date(otherLastReadAt).getTime();
-                      const thisMsgMs = new Date(m.timestamp as any).getTime();
-                      return Number.isFinite(lastReadMs) && Number.isFinite(thisMsgMs) && lastReadMs >= thisMsgMs;
-                    } catch { return false; }
-                  })();
-                  return (
-                    <React.Fragment key={`meta-${m.id || index}`}>
-                      {isMe ? (
-                        <div className="flex justify-end items-center gap-1">
-                          {isLastOutgoing ? (
-                            seen ? (
-                              <CheckCheck className="w-3.5 h-3.5 text-[#0084ff]" />
-                            ) : (
-                              <Check className="w-3.5 h-3.5 text-gray-400" />
-                            )
-                          ) : null}
-                          <span className="text-[11px] text-gray-500">{formatTime(m.timestamp)}</span>
-                        </div>
-                      ) : (
-                        <div className="flex justify-start">
-                          <span className="text-[11px] text-gray-500">{formatTime(m.timestamp)}</span>
-                        </div>
-                      )}
-                    </React.Fragment>
-                  );
-                })}
-              </div>
             )}
 
             {/* تم إخفاء زر "الانتقال لأسفل" */}
