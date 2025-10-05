@@ -58,6 +58,7 @@ export default function PrivateMessageBox({
   const [hasMore, setHasMore] = useState(true);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const virtuosoRef = useRef<VirtuosoHandle>(null);
+  const prevMessagesLenRef = useRef<number>(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { textColor: composerTextColor, bold: composerBold } = useComposerStyle();
@@ -229,9 +230,11 @@ export default function PrivateMessageBox({
     [sortedMessages.length]
   );
 
-  // التمرير للأسفل عند فتح النافذة
+  // التمرير للأسفل عند فتح النافذة وتعيين طول الرسائل السابق
   useEffect(() => {
-    if (isOpen && inputRef.current) {
+    if (!isOpen) return;
+    prevMessagesLenRef.current = sortedMessages.length;
+    if (inputRef.current) {
       const timer = setTimeout(() => {
         scrollToBottom('auto');
         inputRef.current?.focus();
@@ -268,19 +271,31 @@ export default function PrivateMessageBox({
     } catch {}
   }, [isOpen, user?.id, currentUser?.id, sortedMessages.length]);
 
-  // التمرير عند وصول رسائل جديدة (للأسفل فقط إذا كنا في الأسفل أو المُرسل أنا)
+  // تمرير ذكي عند وصول رسائل جديدة (مطابقة لسلوك دردشة الغرف)
   useEffect(() => {
     if (!isOpen || isLoadingOlder) return;
-    if (sortedMessages.length === 0) return;
-    const last = sortedMessages[sortedMessages.length - 1];
+    const prevLen = prevMessagesLenRef.current;
+    const currLen = sortedMessages.length;
+    if (currLen <= prevLen || currLen === 0) return;
+    const last = sortedMessages[currLen - 1];
     const sentByMe = !!(currentUser && (last as any)?.senderId === currentUser.id);
     if (isAtBottomPrivate || sentByMe) {
-      const timer = setTimeout(() => {
-        scrollToBottom(sortedMessages.length <= 50 ? 'smooth' : 'auto');
-      }, 50);
-      return () => clearTimeout(timer);
+      scrollToBottom('smooth');
     }
+    prevMessagesLenRef.current = currLen;
   }, [sortedMessages.length, isOpen, isLoadingOlder, scrollToBottom, isAtBottomPrivate, currentUser?.id]);
+
+  // عند تركيز حقل الإدخال، مرّر للأسفل مرتين لضمان ثبات الموضع
+  useEffect(() => {
+    const el = inputRef.current;
+    if (!el) return;
+    const onFocus = () => {
+      setTimeout(() => scrollToBottom('auto'), 50);
+      setTimeout(() => scrollToBottom('auto'), 250);
+    };
+    el.addEventListener('focus', onFocus);
+    return () => { try { el.removeEventListener('focus', onFocus); } catch {} };
+  }, [scrollToBottom]);
 
   // مُحسن: دالة مراقبة التمرير
   const handleAtBottomChange = useCallback((atBottom: boolean) => {
@@ -533,10 +548,13 @@ export default function PrivateMessageBox({
                 ref={virtuosoRef}
                 data={sortedMessages}
                 className="!h-full"
-                followOutput={isAtBottomPrivate ? 'smooth' : (false as any)}
+                followOutput={'smooth'}
+                atBottomThreshold={64}
                 atBottomStateChange={handleAtBottomChange}
                 increaseViewportBy={{ top: 300, bottom: 300 }}
+                defaultItemHeight={56}
                 startReached={handleLoadMore}
+                computeItemKey={(index, m) => (m as any)?.id ?? `${(m as any)?.senderId}-${(m as any)?.timestamp}-${index}`}
                 components={{
                   Header: () =>
                     isLoadingOlder ? (
