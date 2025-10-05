@@ -69,6 +69,7 @@ export class ConnectionManager {
       } catch {}
     });
 
+    // تعطيل منطق الهارد-ريلود المعتمد على إقرار الخادم، نُرسل الخطأ فقط
     window.addEventListener('error', (event: ErrorEvent) => {
       const url = this.cfg.errorReportUrl || '/collect/e.php';
       if (!url) return;
@@ -79,12 +80,7 @@ export class ConnectionManager {
           headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
           body: new URLSearchParams({ e: message }).toString(),
           keepalive: true,
-        })
-          .then((r) => r.text())
-          .then((txt) => {
-            if ((this.cfg.hardReloadOnServerAck ?? true) && String(txt).trim() === '1') this.hardReload();
-          })
-          .catch(() => {});
+        }).catch(() => {});
       } catch {}
     });
 
@@ -176,7 +172,7 @@ export class ConnectionManager {
       })
       .catch(() => {
         this.consecutiveFailures += 1;
-        if (this.consecutiveFailures >= (this.cfg.failuresBeforeHardReload ?? 8)) {
+        if (this.consecutiveFailures >= (this.cfg.failuresBeforeHardReload ?? 15)) {
           this.hardReload();
           return;
         }
@@ -190,11 +186,11 @@ export function createDefaultConnectionManager(opts: Partial<ConnectionManagerCo
     chatPollUrl: '/api/messages/room/:roomId/since',
     usersPollUrl: '/api/users/online',
     pingUrl: '/api/ping',
-    // errorReportUrl: '/collect/e.php', // implement server-side if desired
+    // errorReportUrl: '/collect/e.php', // لا نُفعّل ريفرش تلقائي بناءً على الرد
     speedVisibleMs: 1500,
     speedHiddenMs: 4000,
-    failuresBeforeHardReload: 8,
-    hardReloadOnServerAck: true,
+    failuresBeforeHardReload: 15,
+    hardReloadOnServerAck: false,
     ...opts,
   });
 }

@@ -186,6 +186,18 @@ export class VoiceManager {
         this.emit('error', new Error(data.message));
       });
 
+      // إعادة الانضمام وإعادة التفاوض تلقائياً بعد إعادة الاتصال
+      this.socket.on('reconnect', async () => {
+        try {
+          const active = this.currentRoom?.id;
+          if (!active) return;
+          // أعد الانضمام للغرفة الصوتية بهدوء
+          await this.joinRoom(active);
+        } catch (e) {
+          /* ignore */
+        }
+      });
+
       console.log('✅ تم تهيئة Socket.IO للصوت');
     } catch (error) {
       console.error('❌ خطأ في تهيئة Socket.IO للصوت:', error);

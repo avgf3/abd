@@ -468,6 +468,12 @@ export const useChat = () => {
 
   // 🔥 SIMPLIFIED Socket event handling - حذف التضارب
   const setupSocketListeners = useCallback((socketInstance: Socket) => {
+    // منع تكرار إرفاق المستمعين لنفس الـ socket
+    try {
+      const anySocket = socketInstance as any;
+      if (anySocket.__chatListenersAttached) return;
+      anySocket.__chatListenersAttached = true;
+    } catch {}
     // دالة لمزامنة الرسائل التي فاتت أثناء الخلفية/الانقطاع
     const fetchMissedMessagesForRoom = async (roomId: string) => {
       try {
@@ -1802,15 +1808,6 @@ export const useChat = () => {
         // إعداد المستمعين
         setupSocketListeners(s);
 
-        // إذا كان متصلاً بالفعل، أرسل المصادقة فقط، والانضمام سيتم بعد التأكيد
-        if (s.connected) {
-          s.emit('auth', {
-            userId: user.id,
-            username: user.username,
-            userType: user.userType,
-          });
-        }
-
         // إرسال المصادقة عند الاتصال/إعادة الاتصال يتم من خلال الوحدة المشتركة
         s.on('connect', () => {
           dispatch({ type: 'SET_CONNECTION_STATUS', payload: true });
@@ -1822,15 +1819,6 @@ export const useChat = () => {
             clearTimeout(disconnectUiTimerRef.current);
             disconnectUiTimerRef.current = null;
           }
-
-          // إعادة إرسال المصادقة فقط، والانضمام للغرفة بعد Event roomJoined
-          try {
-            s.emit('auth', {
-              userId: user.id,
-              username: user.username,
-              userType: user.userType,
-            });
-          } catch {}
 
           // Prefetch expected data shortly after connection success
           try {
