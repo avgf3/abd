@@ -355,6 +355,9 @@ export const useChat = () => {
   const lastRoomMessageMetaRef = useRef<Map<string, { lastId?: number; lastTs?: string }>>(new Map());
   // صف رسائل أثناء الخلفية ليتم تفريغه عند العودة
   const messageBufferRef = useRef<Map<string, ChatMessage[]>>(new Map());
+  
+  // 🔥 Audio keepalive لمنع browser throttling في الخلفية
+  const audioKeepaliveRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     currentUserRef.current = state.currentUser;
@@ -521,6 +524,20 @@ export const useChat = () => {
     // تهيئة Service Worker
     initServiceWorker();
     
+    // 🎵 إنشاء Audio Keepalive element (صامت تماماً)
+    try {
+      const audio = document.createElement('audio');
+      audio.loop = true;
+      audio.volume = 0; // صامت 100%
+      audio.muted = true; // muted إضافي للتأكيد
+      // 1 second silent WAV (base64)
+      audio.src = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAAABmYWN0BAAAAAAAAABkYXRhAAAAAA==';
+      audioKeepaliveRef.current = audio;
+      console.log('🎵 تم إنشاء Audio Keepalive بنجاح');
+    } catch (error) {
+      console.warn('⚠️ فشل إنشاء Audio Keepalive:', error);
+    }
+
     // 🔥 تهيئة Web Worker للحفاظ على الاتصال في الخلفية
     const initSocketWorker = () => {
       try {
@@ -639,7 +656,14 @@ export const useChat = () => {
       if (document.hidden && !isBackgroundRef.current) {
         // الصفحة أصبحت في الخلفية - استخدام Web Worker للping
         isBackgroundRef.current = true;
-        console.log('🔄 الصفحة في الخلفية - تفعيل Web Worker للping');
+        console.log('🔄 الصفحة في الخلفية - تفعيل Audio Keepalive و Web Worker');
+        
+        // 🎵 تفعيل Silent Audio لمنع browser throttling
+        if (audioKeepaliveRef.current) {
+          audioKeepaliveRef.current.play().catch(err => {
+            console.warn('⚠️ فشل تشغيل audio keepalive:', err);
+          });
+        }
         
         if (pingIntervalRef.current) {
           clearInterval(pingIntervalRef.current);
@@ -669,7 +693,12 @@ export const useChat = () => {
       } else if (!document.hidden && isBackgroundRef.current) {
         // الصفحة عادت للمقدمة - إيقاف Web Worker واستعادة ping العادي
         isBackgroundRef.current = false;
-        console.log('🔄 الصفحة في المقدمة - إيقاف Web Worker واستعادة ping العادي');
+        console.log('🔄 الصفحة في المقدمة - إيقاف Audio Keepalive و Web Worker');
+        
+        // ⏸️ إيقاف Silent Audio
+        if (audioKeepaliveRef.current) {
+          audioKeepaliveRef.current.pause();
+        }
         
         // إيقاف Web Worker و Service Worker
         if (socketWorkerRef.current) {
