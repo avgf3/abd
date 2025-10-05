@@ -231,14 +231,14 @@ export default function PrivateMessageBox({
     [sortedMessages.length]
   );
 
-  // التمرير للأسفل عند فتح النافذة مرة واحدة فقط
+  // تثبيت الفتح: اضبط عداد الطول وركّز الإدخال دون تمرير متكرر
   useEffect(() => {
     if (!isOpen) return;
-    prevMessagesLenRef.current = sortedMessages.length;
-    const t1 = setTimeout(() => scrollToBottom('auto'), 100);
-    const t2 = setTimeout(() => inputRef.current?.focus(), 150);
-    return () => { clearTimeout(t1); clearTimeout(t2); };
-  }, [isOpen, scrollToBottom, sortedMessages.length]);
+    // ابدأ من الصفر كي يتكفل تأثير الرسائل الأولى بالتمرير عند وصول البيانات
+    prevMessagesLenRef.current = 0;
+    const t = setTimeout(() => inputRef.current?.focus(), 150);
+    return () => { clearTimeout(t); };
+  }, [isOpen]);
 
   // تحديث آخر وقت فتح للمحادثة لاحتساب غير المقروء
   useEffect(() => {
@@ -249,15 +249,20 @@ export default function PrivateMessageBox({
     }
   }, [isOpen, currentUser?.id, user?.id]);
 
-  // تحديث مؤشّر القراءة في الخادم عند فتح المحادثة أو وصول رسائل
+  // تحديث مؤشّر القراءة (مخفّض الاستدعاءات): اربطه بتغير آخر رسالة فقط أثناء الفتح
+  const lastMessageDeps = React.useMemo(() => {
+    const last: any = sortedMessages[sortedMessages.length - 1];
+    return last ? (last.id ?? String(last.timestamp)) : null;
+  }, [sortedMessages.length]);
+
   useEffect(() => {
     if (!isOpen || !currentUser?.id || !user?.id) return;
     try {
-      const last = sortedMessages[sortedMessages.length - 1];
+      const last: any = sortedMessages[sortedMessages.length - 1];
       const payload: any = {
         otherUserId: user.id,
         lastReadAt: last ? String(last.timestamp) : new Date().toISOString(),
-        lastReadMessageId: last ? (last as any).id : undefined,
+        lastReadMessageId: last ? last.id : undefined,
       };
       fetch('/api/private-messages/reads', {
         method: 'PUT',
@@ -266,47 +271,36 @@ export default function PrivateMessageBox({
         body: JSON.stringify(payload),
       }).catch(() => {});
     } catch {}
-  }, [isOpen, user?.id, currentUser?.id, sortedMessages.length]);
+  }, [isOpen, user?.id, currentUser?.id, lastMessageDeps]);
 
   // تمرير ذكي عند وصول رسائل جديدة في الخاص
-  // - في التحميل الأول (prevLen === 0) مرّر للأسفل دائماً بعد وصول البيانات
-  // - عند رسائل جديدة: دع Virtuoso يتبع تلقائياً عندما نكون في الأسفل (followOutput)
-  //   ومرّر يدوياً فقط إذا كانت الرسالة الأخيرة مني (حتى لو لست في الأسفل)
+  // - في التحميل الأول: مرّر للأسفل مرة واحدة
+  // - عند رسائل جديدة لاحقاً: مرّر فقط إذا كنا أسفل أو كانت الرسالة مني
   useEffect(() => {
     if (!isOpen || isLoadingOlder) return;
     const prevLen = prevMessagesLenRef.current;
     const currLen = sortedMessages.length;
 
-    // التحميل الأول للمحادثة بعد فتح النافذة
+    if (currLen === 0) return;
+
     if (prevLen === 0 && currLen > 0) {
       scrollToBottom('auto');
       prevMessagesLenRef.current = currLen;
       return;
     }
 
-    if (currLen <= prevLen || currLen === 0) return;
+    if (currLen <= prevLen) return;
 
-    const last = sortedMessages[currLen - 1];
-    const sentByMe = !!(currentUser && (last as any)?.senderId === currentUser.id);
-
-    // مرّر للأسفل عند وصول رسائل جديدة (مني أو من الآخرين)
-    scrollToBottom('smooth');
+    const last: any = sortedMessages[currLen - 1];
+    const sentByMe = !!(currentUser && last?.senderId === currentUser.id);
+    if (isAtBottomPrivate || sentByMe) {
+      scrollToBottom('smooth');
+    }
 
     prevMessagesLenRef.current = currLen;
-  }, [sortedMessages.length, isOpen, isLoadingOlder, scrollToBottom, currentUser?.id]);
+  }, [sortedMessages.length, isOpen, isLoadingOlder, scrollToBottom, isAtBottomPrivate, currentUser?.id]);
 
-  // عند تركيز حقل الإدخال، مرّر للأسفل مرة واحدة فقط
-  useEffect(() => {
-    const el = inputRef.current;
-    if (!el) return;
-    const onFocus = () => {
-      if (isAtBottomPrivate) {
-        setTimeout(() => scrollToBottom('smooth'), 100);
-      }
-    };
-    el.addEventListener('focus', onFocus);
-    return () => { try { el.removeEventListener('focus', onFocus); } catch {} };
-  }, [scrollToBottom, isAtBottomPrivate]);
+  // أزلنا التمرير عند تركيز الإدخال لتجنب التنازع مع Virtuoso
 
   // مُحسن: دالة مراقبة التمرير مع منع التحديثات غير الضرورية
   const handleAtBottomChange = useCallback((atBottom: boolean) => {
@@ -374,8 +368,7 @@ export default function PrivateMessageBox({
           // لا نعرض toast للرسائل العادية لتجنب الإزعاج
         }
       }
-      // التمرير سيحدث تلقائياً بفضل followOutput
-      setTimeout(() => scrollToBottom('smooth'), 50);
+      // لا حاجة لاستدعاء التمرير هنا؛ Virtuoso و/أو تأثير الرسائل سيتكفلان
     } catch (error) {
       console.error('خطأ في إرسال الرسالة:', error);
       const errorMessage = error instanceof Error ? error.message : 'فشل إرسال الرسالة';
@@ -461,13 +454,11 @@ export default function PrivateMessageBox({
     >
       <DialogContent className="p-0 bg-transparent border-none shadow-none">
         <motion.div
-          drag
-          dragMomentum={false}
           initial={{ scale: 0.95, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.95, opacity: 0 }}
           transition={{ duration: 0.4, ease: "easeOut" }}
-          className="relative z-[12000] w-[95vw] max-w-lg max-h-[85vh] bg-background text-foreground border border-border shadow-2xl rounded-xl overflow-hidden cursor-grab active:cursor-grabbing"
+          className="relative z-[12000] w-[95vw] max-w-lg max-h-[85vh] bg-background text-foreground border border-border shadow-2xl rounded-xl overflow-hidden"
         >
           <DialogHeader className="relative border-b border-border px-3 py-2 modern-nav">
             <DialogTitle className="sr-only">محادثة خاصة مع {user?.username || 'مستخدم'}</DialogTitle>
@@ -564,7 +555,7 @@ export default function PrivateMessageBox({
                 ref={virtuosoRef}
                 data={sortedMessages}
                 className="!h-full"
-                followOutput={'auto'}
+                followOutput={'smooth'}
                 atBottomThreshold={20}
                 atBottomStateChange={handleAtBottomChange}
                 increaseViewportBy={{ top: 300, bottom: 300 }}
