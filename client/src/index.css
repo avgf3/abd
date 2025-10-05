@@ -2760,7 +2760,101 @@ li::before {
   align-items: start;
 }
 
-/* ===== Direct Messages: Facebook-like bubbles ===== */
+/* ===== Direct Messages: WhatsApp/Telegram-like bubbles ===== */
+/* Message container styles for perfect RTL layout */
+.private-message-container {
+  direction: rtl;
+  width: 100%;
+  padding: 0 16px;
+}
+
+/* Message bubble base styles */
+.message-bubble {
+  position: relative;
+  display: inline-block;
+  max-width: 75%;
+  padding: 8px 12px;
+  border-radius: 18px;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  line-height: 1.4;
+  font-size: 14px;
+  font-weight: 400;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* Sent messages (right side in RTL) */
+.message-bubble--sent {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-bottom-right-radius: 4px;
+}
+
+/* Received messages (left side in RTL) */
+.message-bubble--received {
+  background: #2d3748;
+  color: white;
+  border-bottom-left-radius: 4px;
+}
+
+/* Message grouping styles */
+.message-bubble--group-start.message-bubble--sent {
+  border-top-right-radius: 4px;
+}
+
+.message-bubble--group-start.message-bubble--received {
+  border-top-left-radius: 4px;
+}
+
+.message-bubble--group-middle.message-bubble--sent {
+  border-top-right-radius: 4px;
+  border-bottom-right-radius: 4px;
+}
+
+.message-bubble--group-middle.message-bubble--received {
+  border-top-left-radius: 4px;
+  border-bottom-left-radius: 4px;
+}
+
+/* Avatar positioning for RTL */
+.message-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+/* Timestamp styles */
+.message-timestamp {
+  font-size: 11px;
+  color: #6b7280;
+  margin-top: 2px;
+  direction: rtl;
+}
+
+/* Read receipt styles */
+.message-read-receipt {
+  width: 16px;
+  height: 16px;
+  color: #3b82f6;
+}
+
+/* Message content spacing */
+.message-content {
+  line-height: 1.4;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+/* Ensure proper RTL text alignment */
+.message-text-rtl {
+  direction: rtl;
+  text-align: right;
+  unicode-bidi: embed;
+}
+
+/* Legacy bubble styles for compatibility */
 .pm-bubble {
   position: relative;
   display: inline-flex;
@@ -2777,63 +2871,17 @@ li::before {
 }
 
 .pm-bubble--me {
-  background: #0084ff; /* Messenger blue */
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: #fff;
   align-items: flex-end;
 }
 
 .pm-bubble--other {
-  /* Dark incoming bubble to match provided screenshot */
-  background: #111827; /* near-black slate */
-  color: #ffffff; /* white text */
+  background: #2d3748;
+  color: #ffffff;
 }
 
-/* Rounded corners per group position */
-/* Group rounding (me = right side in LTR visual) */
-.pm-bubble--start.pm-bubble--me { border-top-right-radius: 6px; }
-.pm-bubble--end.pm-bubble--me { border-bottom-right-radius: 18px; }
-.pm-bubble--start.pm-bubble--other { border-top-left-radius: 6px; }
-.pm-bubble--end.pm-bubble--other { border-bottom-left-radius: 18px; }
-
-/* Middle items keep tighter corner on the joined side */
-.pm-bubble--me:not(.pm-bubble--start):not(.pm-bubble--end) {
-  border-top-right-radius: 6px;
-  border-bottom-right-radius: 6px;
-}
-.pm-bubble--other:not(.pm-bubble--start):not(.pm-bubble--end) {
-  border-top-left-radius: 6px;
-  border-bottom-left-radius: 6px;
-}
-
-/* Optional subtle tails (simple pseudo-elements) */
-.pm-bubble--me.pm-bubble--start::after {
-  content: '';
-  position: absolute;
-  right: -4px;
-  top: 10px;
-  width: 10px;
-  height: 10px;
-  background: #0084ff;
-  transform: rotate(45deg);
-  border-top-right-radius: 2px;
-}
-
-.pm-bubble--other.pm-bubble--start::after {
-  content: '';
-  position: absolute;
-  left: -4px;
-  top: 10px;
-  width: 10px;
-  height: 10px;
-  background: #e4e6eb;
-  transform: rotate(45deg);
-  border-top-left-radius: 2px;
-}
-
-/* Ensure message text retains current typography */
-.pm-bubble .ac-message-text { font-weight: 500; font-size: 14px; }
-
-/* Inline meta (time + ticks) inside bubble for last outgoing */
+/* Inline meta (time + ticks) */
 .pm-meta {
   display: inline-flex;
   align-items: center;
@@ -2843,7 +2891,7 @@ li::before {
   opacity: 0.9;
 }
 .pm-bubble--me .pm-meta { color: rgba(255,255,255,0.85); }
-.pm-bubble--other .pm-meta { color: #606770; }
+.pm-bubble--other .pm-meta { color: #9ca3af; }
 .ch_logs .my_text .cname > .rtl_fright {
   float: none !important;
   white-space: nowrap;

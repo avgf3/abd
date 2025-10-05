@@ -515,7 +515,7 @@ export default function PrivateMessageBox({
             </div>
           </DialogHeader>
 
-          <div className="relative h-[55vh] w-full p-4 pb-4 bg-white">
+          <div className="relative h-[55vh] w-full p-4 pb-4 bg-gray-100">
             {sortedMessages.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
                 <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="text-6xl mb-4">
@@ -565,141 +565,162 @@ export default function PrivateMessageBox({
                   const showAvatar = !isMe && groupEnd;
 
                   return (
-                    <div key={key} className={`w-full flex ${alignClass} mb-1`}>
-                      <div className={`max-w-[78%] flex items-end gap-2 ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
-                        {/* Avatar at end of other-user group */}
-                        {showAvatar ? (
-                          <ProfileImage
-                            user={(m.sender as ChatUser) || user}
-                            size="small"
-                            className="w-8 h-8"
-                          />
-                        ) : (
-                          <div className="w-8 h-8" />
+                    <div key={key} className="w-full mb-2" dir="rtl">
+                      <div className={`flex ${isMe ? 'justify-end' : 'justify-start'} items-end gap-2`}>
+                        {/* Avatar for received messages - positioned on the right in RTL */}
+                        {!isMe && showAvatar && (
+                          <div className="flex-shrink-0 order-1">
+                            <ProfileImage
+                              user={(m.sender as ChatUser) || user}
+                              size="small"
+                              className="w-8 h-8 rounded-full"
+                            />
+                          </div>
                         )}
-
-                        <motion.div
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ duration: 0.2, ease: 'easeOut' }}
-                          className={`pm-bubble pm-bubble--${bubbleSide} ${groupStart ? 'pm-bubble--start' : ''} ${groupEnd ? 'pm-bubble--end' : ''}`}
-                        >
-                          {hasStoryContext && (
-                            <div className="mb-2">
-                              <div className="flex items-center gap-3 p-2 rounded-lg border bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200">
-                                <motion.div
-                                  layoutId={`story-${storyAttachment?.storyId}`}
-                                  className="w-14 h-20 rounded-md overflow-hidden bg-black/5 border border-purple-200 relative"
-                                >
-                                  <img
-                                    src={
-                                      storyAttachment?.storyMediaType === 'video'
-                                        ? (storyAttachment?.storyThumbnailUrl || storyAttachment?.storyMediaUrl)
-                                        : storyAttachment?.storyMediaUrl
-                                    }
-                                    alt="Story preview"
-                                    className="w-full h-full object-cover"
-                                    loading="lazy"
-                                  />
-                                  {storyAttachment?.storyMediaType === 'video' && (
-                                    <div className="absolute inset-0 grid place-items-center">
-                                      <span className="text-white text-xs bg-black/40 rounded-full w-5 h-5 grid place-items-center">▶</span>
-                                    </div>
-                                  )}
-                                </motion.div>
-                                <div className="flex-1 min-w-0">
-                                  <div className="text-xs text-purple-800 font-medium">
-                                    {storyAttachment?.subtype === 'reaction' ? 'تفاعل على حالتك' : 'رد على حالتك'}
-                                  </div>
-                                  <div className="text-[11px] text-purple-700/80">
-                                    اضغط لعرض الحالة
-                                  </div>
-                                </div>
-                                <button
-                                  onClick={() => {
-                                    try {
-                                      const uid = storyAttachment?.storyUserId || user.id;
-                                      onViewStoryByUser && onViewStoryByUser(uid);
-                                    } catch {}
-                                  }}
-                                  className="text-xs px-2 py-1 rounded-md bg-purple-600 text-white hover:bg-purple-700 transition"
-                                >
-                                  عرض الحالة
-                                </button>
-                              </div>
-                            </div>
-                          )}
-                          {isImage ? (
-                            <button
-                              type="button"
-                              onClick={() => setImageLightbox({ open: true, src: m.content })}
-                              className="p-0 bg-transparent rounded-lg overflow-hidden border border-white/20"
-                              title="عرض الصورة"
-                              aria-label="عرض الصورة"
-                            >
-                              <img
-                                src={m.content}
-                                alt="صورة مرفقة"
-                                className="block max-w-[220px] max-h-[260px] object-cover"
-                                loading="lazy"
-                                decoding="async"
-                              />
-                            </button>
-                          ) : (() => {
-                            const { cleaned, ids } = parseYouTubeFromText(m.content);
-                            if (ids.length > 0) {
-                              const firstId = ids[0];
-                              return (
-                                <span className="text-sm leading-relaxed inline-flex items-center gap-2">
-                                  {cleaned && (
-                                    <span>
-                                      {cleaned}
-                                    </span>
-                                  )}
-                                  <button
-                                    onClick={() => setYoutubeModal({ open: true, videoId: firstId })}
-                                    className="flex items-center justify-center w-8 h-6 rounded bg-red-600 hover:bg-red-700 transition-colors"
-                                    title="فتح فيديو YouTube"
+                        
+                        {/* Avatar for sent messages - positioned on the left in RTL */}
+                        {isMe && groupEnd && (
+                          <div className="flex-shrink-0 order-3">
+                            <ProfileImage
+                              user={currentUser!}
+                              size="small"
+                              className="w-8 h-8 rounded-full"
+                            />
+                          </div>
+                        )}
+                        
+                        {/* Message bubble container */}
+                        <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-[75%] ${!isMe && showAvatar ? 'order-2' : isMe ? 'order-2' : ''}`}>
+                          <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.2, ease: 'easeOut' }}
+                            className={`
+                              relative px-3 py-2 rounded-2xl shadow-sm
+                              ${isMe 
+                                ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white' 
+                                : 'bg-gray-800 text-white'
+                              }
+                              ${groupStart && isMe ? 'rounded-tr-md' : ''}
+                              ${groupEnd && isMe ? 'rounded-br-lg' : ''}
+                              ${groupStart && !isMe ? 'rounded-tl-md' : ''}
+                              ${groupEnd && !isMe ? 'rounded-bl-lg' : ''}
+                            `}
+                          >
+                            {hasStoryContext && (
+                              <div className="mb-2">
+                                <div className="flex items-center gap-3 p-2 rounded-lg border bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200">
+                                  <motion.div
+                                    layoutId={`story-${storyAttachment?.storyId}`}
+                                    className="w-14 h-20 rounded-md overflow-hidden bg-black/5 border border-purple-200 relative"
                                   >
-                                    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-                                      <path fill="#fff" d="M10 15l5.19-3L10 9v6z"></path>
-                                    </svg>
+                                    <img
+                                      src={
+                                        storyAttachment?.storyMediaType === 'video'
+                                          ? (storyAttachment?.storyThumbnailUrl || storyAttachment?.storyMediaUrl)
+                                          : storyAttachment?.storyMediaUrl
+                                      }
+                                      alt="Story preview"
+                                      className="w-full h-full object-cover"
+                                      loading="lazy"
+                                    />
+                                    {storyAttachment?.storyMediaType === 'video' && (
+                                      <div className="absolute inset-0 grid place-items-center">
+                                        <span className="text-white text-xs bg-black/40 rounded-full w-5 h-5 grid place-items-center">▶</span>
+                                      </div>
+                                    )}
+                                  </motion.div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="text-xs text-purple-800 font-medium">
+                                      {storyAttachment?.subtype === 'reaction' ? 'تفاعل على حالتك' : 'رد على حالتك'}
+                                    </div>
+                                    <div className="text-[11px] text-purple-700/80">
+                                      اضغط لعرض الحالة
+                                    </div>
+                                  </div>
+                                  <button
+                                    onClick={() => {
+                                      try {
+                                        const uid = storyAttachment?.storyUserId || user.id;
+                                        onViewStoryByUser && onViewStoryByUser(uid);
+                                      } catch {}
+                                    }}
+                                    className="text-xs px-2 py-1 rounded-md bg-purple-600 text-white hover:bg-purple-700 transition"
+                                  >
+                                    عرض الحالة
                                   </button>
+                                </div>
+                              </div>
+                            )}
+                            
+                            {/* Message content */}
+                            {isImage ? (
+                              <button
+                                type="button"
+                                onClick={() => setImageLightbox({ open: true, src: m.content })}
+                                className="p-0 bg-transparent rounded-lg overflow-hidden"
+                                title="عرض الصورة"
+                                aria-label="عرض الصورة"
+                              >
+                                <img
+                                  src={m.content}
+                                  alt="صورة مرفقة"
+                                  className="block max-w-[220px] max-h-[260px] object-cover rounded-lg"
+                                  loading="lazy"
+                                  decoding="async"
+                                />
+                              </button>
+                            ) : (() => {
+                              const { cleaned, ids } = parseYouTubeFromText(m.content);
+                              if (ids.length > 0) {
+                                const firstId = ids[0];
+                                return (
+                                  <div className="flex items-center gap-2">
+                                    {cleaned && (
+                                      <span className="text-sm leading-relaxed">
+                                        {cleaned}
+                                      </span>
+                                    )}
+                                    <button
+                                      onClick={() => setYoutubeModal({ open: true, videoId: firstId })}
+                                      className="flex items-center justify-center w-8 h-6 rounded bg-red-600 hover:bg-red-700 transition-colors"
+                                      title="فتح فيديو YouTube"
+                                    >
+                                      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                                        <path fill="#fff" d="M10 15l5.19-3L10 9v6z"></path>
+                                      </svg>
+                                    </button>
+                                  </div>
+                                );
+                              }
+                              return (
+                                <span className="text-sm leading-relaxed break-words">
+                                  {m.content}
                                 </span>
                               );
-                            }
-                            return (
-                              <span className="ac-message-text">
-                                {m.content}
-                              </span>
-                            );
-                          })()}
-                          {/* meta moved outside bubble */}
-                        </motion.div>
-                        {(() => {
-                          const metaAlignContainer = isMe ? 'justify-end' : 'justify-start';
-                          const textColor = isMe ? 'text-gray-400' : 'text-gray-400';
-                          const seen = (() => {
-                            try {
-                              if (!isMe || !otherLastReadAt) return false;
-                              const lastReadMs = new Date(otherLastReadAt).getTime();
-                              const thisMsgMs = new Date(m.timestamp as any).getTime();
-                              return Number.isFinite(lastReadMs) && Number.isFinite(thisMsgMs) && lastReadMs >= thisMsgMs;
-                            } catch { return false; }
-                          })();
-                          return (
-                            <div className={`flex items-center gap-1 mt-0.5 ${metaAlignContainer}`}>
-                              <span className={`pm-meta ${textColor}`}>
-                                <span>{formatTimeWithDate(m.timestamp as any)}</span>
-                              </span>
-                              {isMe && (seen ? (
+                            })()}
+                          </motion.div>
+                          
+                          {/* Timestamp and read receipts */}
+                          <div className={`flex items-center gap-1 mt-1 text-xs text-gray-500 ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
+                            <span>{formatTimeWithDate(m.timestamp as any)}</span>
+                            {isMe && (() => {
+                              const seen = (() => {
+                                try {
+                                  if (!otherLastReadAt) return false;
+                                  const lastReadMs = new Date(otherLastReadAt).getTime();
+                                  const thisMsgMs = new Date(m.timestamp as any).getTime();
+                                  return Number.isFinite(lastReadMs) && Number.isFinite(thisMsgMs) && lastReadMs >= thisMsgMs;
+                                } catch { return false; }
+                              })();
+                              return seen ? (
                                 <CheckCheck className="w-4 h-4 text-blue-400" />
                               ) : (
                                 <Check className="w-4 h-4 text-gray-400" />
-                              ))}
-                            </div>
-                          );
-                        })()}
+                              );
+                            })()}
+                          </div>
+                        </div>
                       </div>
                     </div>
                   );
