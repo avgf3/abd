@@ -57,10 +57,8 @@ export default function PrivateMessageBox({
   const [hasMore, setHasMore] = useState(true);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const virtuosoRef = useRef<VirtuosoHandle>(null);
-  const hasScrolledInitiallyRef = useRef<boolean>(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [isAtBottom, setIsAtBottom] = useState(true);
   const { textColor: composerTextColor, bold: composerBold } = useComposerStyle();
   const isDmClosed = (user as any)?.dmPrivacy === 'none';
   const [isOtherTyping, setIsOtherTyping] = useState(false);
@@ -217,42 +215,21 @@ export default function PrivateMessageBox({
     return Math.abs(tb - ta) <= GROUP_TIME_MS;
   }, []);
 
-  // دالة التمرير البسيطة - تستخدم فقط عند الحاجة
-  const scrollToBottom = useCallback(
-    (behavior: 'auto' | 'smooth' = 'auto') => {
-      if (!virtuosoRef.current || sortedMessages.length === 0) return;
-      try {
-        virtuosoRef.current.scrollToIndex({
-          index: sortedMessages.length - 1,
-          align: 'end',
-          behavior,
-        });
-      } catch {}
-    },
-    [sortedMessages.length]
-  );
+  // تم إزالة أي تمرير تلقائي أو دوال مساعدة للتمرير
 
-  // عند فتح الصندوق: إعادة تعيين حالة التمرير وتركيز الإدخال
+  // تمت إزالة إدارة حالة القاع بالكامل لإرجاع السلوك الطبيعي
+
+  // عند فتح الصندوق: تركيز الإدخال فقط (بدون أي تمرير تلقائي)
   useEffect(() => {
-    if (!isOpen) {
-      hasScrolledInitiallyRef.current = false;
-      return;
-    }
+    if (!isOpen) return;
     // تركيز الإدخال فورًا بعد فتح الصندوق
     const t1 = setTimeout(() => {
       inputRef.current?.focus();
     }, 100);
-    // تمرير إضافي للتأكد من الوصول لآخر رسالة
-    const t2 = setTimeout(() => {
-      if (sortedMessages.length > 0) {
-        scrollToBottom('auto');
-      }
-    }, 200);
     return () => {
       clearTimeout(t1);
-      clearTimeout(t2);
     };
-  }, [isOpen, sortedMessages.length, scrollToBottom]);
+  }, [isOpen]);
 
   // تحديث آخر وقت فتح للمحادثة لاحتساب غير المقروء
   useEffect(() => {
@@ -287,28 +264,7 @@ export default function PrivateMessageBox({
     } catch {}
   }, [isOpen, user?.id, currentUser?.id, lastMessageDeps]);
 
-  // التمرير الأولي عند فتح الصندوق وعند وصول رسائل جديدة
-  useEffect(() => {
-    if (!isOpen || isLoadingOlder) return;
-    if (sortedMessages.length === 0) return;
-    
-    // التمرير للأسفل عند فتح الصندوق لأول مرة
-    if (!hasScrolledInitiallyRef.current) {
-      const timer = setTimeout(() => {
-        scrollToBottom('auto');
-        hasScrolledInitiallyRef.current = true;
-      }, 150);
-      return () => clearTimeout(timer);
-    }
-    
-    // التمرير التلقائي عند وصول رسائل جديدة من المستخدم الحالي
-    const lastMessage = sortedMessages[sortedMessages.length - 1];
-    const isSentByMe = currentUser && lastMessage && lastMessage.senderId === currentUser.id;
-    if (isSentByMe || isAtBottom) {
-      // تمرير سلس فوري لإظهار الرسالة المرسلة
-      setTimeout(() => scrollToBottom('smooth'), 50);
-    }
-  }, [isOpen, isLoadingOlder, sortedMessages.length, isAtBottom, currentUser?.id, scrollToBottom]);
+  // تمت إزالة أي تمرير تلقائي عند فتح أو وصول رسائل جديدة
 
 
   // محسن: دالة إرسال مع إعادة المحاولة ومعالجة أخطاء محسنة
@@ -360,8 +316,6 @@ export default function PrivateMessageBox({
         const success = await sendMessageWithRetry(text);
         if (success) {
           setMessageText('');
-          // التمرير للأسفل بعد الإرسال مباشرة
-          setTimeout(() => scrollToBottom('smooth'), 50);
         }
       }
     } catch (error) {
@@ -377,7 +331,7 @@ export default function PrivateMessageBox({
       setIsSending(false);
       setTimeout(() => inputRef.current?.focus(), 50);
     }
-  }, [messageText, imageFile, isSending, sendMessageWithRetry, currentUser?.id, user?.id, scrollToBottom]);
+  }, [messageText, imageFile, isSending, sendMessageWithRetry, currentUser?.id, user?.id]);
 
   // محسن: معالج الضغط على Enter
   const handleKeyDown = useCallback(
@@ -553,9 +507,6 @@ export default function PrivateMessageBox({
                 style={{ overscrollBehavior: 'contain', scrollBehavior: 'auto' }}
                 increaseViewportBy={{ top: 300, bottom: 300 }}
                 defaultItemHeight={56}
-                followOutput={isAtBottom ? 'smooth' : false}
-                atBottomThreshold={64}
-                atBottomStateChange={(at) => setIsAtBottom(!!at)}
                 startReached={handleLoadMore}
                 computeItemKey={(index, m) => (m as any)?.id ?? `${(m as any)?.senderId}-${(m as any)?.timestamp}-${index}`}
                 components={{
