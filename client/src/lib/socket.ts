@@ -90,6 +90,33 @@ function attachCoreListeners(socket: Socket) {
     reauth(true);
   });
 
+  // إشارات حالة إعادة الاتصال لواجهة المستخدم إن لزم
+  try {
+    socket.io.on('reconnect_attempt', (attempt: number) => {
+      window.dispatchEvent(new CustomEvent('socket:reconnect_attempt', { detail: { attempt } }));
+    });
+    socket.io.on('reconnect_error', (err: any) => {
+      window.dispatchEvent(new CustomEvent('socket:reconnect_error', { detail: { error: err?.message || String(err) } }));
+    });
+    socket.io.on('reconnect_failed', () => {
+      window.dispatchEvent(new CustomEvent('socket:reconnect_failed'));
+    });
+  } catch {}
+
+  // تمييز نجاح ترقية WebSocket لتفعيل rememberUpgrade مستقبلاً
+  try {
+    const engine: any = (socket as any)?.io?.engine;
+    if (engine && typeof engine.on === 'function') {
+      engine.on('upgrade', (transport: any) => {
+        try {
+          if (transport && transport.name === 'websocket') {
+            localStorage.setItem('ws_ok', '1');
+          }
+        } catch {}
+      });
+    }
+  } catch {}
+
   // If network goes back online, try to connect
   window.addEventListener('online', () => {
     if (!socket.connected) {
@@ -130,12 +157,16 @@ export function getSocket(): Socket {
   const isProduction = !isDevelopment;
   const sessionForHandshake = getSession();
   
+  const preferWS = (() => {
+    try { return localStorage.getItem('ws_ok') === '1'; } catch { return false; }
+  })();
+
   socketInstance = io(serverUrl, {
     path: '/socket.io',
     // 🔥 ابدأ بـ polling لضمان النجاح ثم حاول الترقية إلى WebSocket
     transports: ['polling', 'websocket'],
     upgrade: true,
-    rememberUpgrade: false, // تجنب محاولة WS مباشرة إذا فشل سابقاً
+    rememberUpgrade: preferWS, // فعّل تفضيل WS إن نجحت سابقاً
     autoConnect: false,
     reconnection: true,
     // 🔥 تحسين إعادة الاتصال - محاولات محدودة مع تدرج ذكي
@@ -151,8 +182,6 @@ export function getSocket(): Socket {
     extraHeaders: { 'x-device-id': deviceId },
     // 🔥 إعدادات محسّنة للاستقرار والأداء
     closeOnBeforeunload: false, // لا تغلق عند إعادة التحميل
-    // 🔥 تحسين إدارة الاتصال
-    multiplex: true, // تمكين multiplexing للأداء الأفضل
     forceBase64: false, // استخدام binary للأداء الأفضل
     // 🔥 إعدادات ping مخصصة (هذه الخيارات للخادم فقط، لكن نتركها للتوثيق)
     // pingTimeout: isProduction ? 60000 : 30000, // مطابق للخادم

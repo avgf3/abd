@@ -511,8 +511,9 @@ export const useChat = () => {
       }
     };
     
-    // تهيئة Service Worker
-    initServiceWorker();
+    // اختر عاملاً واحداً للخلفية: نعتمد Web Worker فقط لتفادي التعارض
+    // (يمكن تمكين Service Worker لاحقاً عند الحاجة)
+    // initServiceWorker();
     
     // 🔥 تهيئة Web Worker للحفاظ على الاتصال في الخلفية
     const initSocketWorker = () => {
@@ -647,13 +648,7 @@ export const useChat = () => {
               data: { interval: 60000 }
             });
           }
-          if (serviceWorkerRef.current) {
-            serviceWorkerRef.current.postMessage({
-              type: 'start-background-ping',
-              data: { interval: 60000 }
-            });
-          }
-          if (!socketWorkerRef.current && !serviceWorkerRef.current) {
+          if (!socketWorkerRef.current) {
             // fallback إلى ping أبطأ إذا لم يتوفر Web Worker أو Service Worker
             backgroundPingIntervalRef.current = startPing(60000);
           }
@@ -672,12 +667,7 @@ export const useChat = () => {
           });
         }
         
-        if (serviceWorkerRef.current) {
-          serviceWorkerRef.current.postMessage({
-            type: 'stop-background-ping',
-            data: {}
-          });
-        }
+        // لا نستخدم Service Worker حالياً للـ ping الخلفي
         
         if (backgroundPingIntervalRef.current) {
           clearInterval(backgroundPingIntervalRef.current);
@@ -749,9 +739,7 @@ export const useChat = () => {
           if (socketWorkerRef.current) {
             socketWorkerRef.current.postMessage({ type: 'start-ping', data: { interval: 60000 } });
           }
-          if (serviceWorkerRef.current) {
-            serviceWorkerRef.current.postMessage({ type: 'start-background-ping', data: { interval: 60000 } });
-          }
+          // لا نستخدم Service Worker حالياً للـ ping الخلفي
         }
         // إرسال keepalive سريع لإعلام الخادم قبل نوم الصفحة
         try {
@@ -794,13 +782,7 @@ export const useChat = () => {
         socketWorkerRef.current = null;
       }
       
-      if (serviceWorkerRef.current) {
-        serviceWorkerRef.current.postMessage({
-          type: 'stop-background-ping',
-          data: {}
-        });
-        serviceWorkerRef.current = null;
-      }
+      // لا نستخدم Service Worker حالياً للـ ping الخلفي
       return originalDisconnect.call(this);
     };
 
@@ -1777,14 +1759,7 @@ export const useChat = () => {
         // إعداد المستمعين
         setupSocketListeners(s);
 
-        // إذا كان متصلاً بالفعل، أرسل المصادقة فقط، والانضمام سيتم بعد التأكيد
-        if (s.connected) {
-          s.emit('auth', {
-            userId: user.id,
-            username: user.username,
-            userType: user.userType,
-          });
-        }
+        // المصادقة تُدار مركزياً في client/src/lib/socket.ts
 
         // إرسال المصادقة عند الاتصال/إعادة الاتصال يتم من خلال الوحدة المشتركة
         s.on('connect', () => {
@@ -1798,14 +1773,7 @@ export const useChat = () => {
             disconnectUiTimerRef.current = null;
           }
 
-          // إعادة إرسال المصادقة فقط، والانضمام للغرفة بعد Event roomJoined
-          try {
-            s.emit('auth', {
-              userId: user.id,
-              username: user.username,
-              userType: user.userType,
-            });
-          } catch {}
+        // المصادقة تُدار مركزياً في client/src/lib/socket.ts
 
           // Prefetch expected data shortly after connection success
           try {
