@@ -60,6 +60,7 @@ export default function PrivateMessageBox({
   const hasScrolledInitiallyRef = useRef<boolean>(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isAtBottom, setIsAtBottom] = useState(true);
   const { textColor: composerTextColor, bold: composerBold } = useComposerStyle();
   const isDmClosed = (user as any)?.dmPrivacy === 'none';
   const [isOtherTyping, setIsOtherTyping] = useState(false);
@@ -359,9 +360,8 @@ export default function PrivateMessageBox({
         const success = await sendMessageWithRetry(text);
         if (success) {
           setMessageText('');
-          // التمرير للأسفل بعد الإرسال مباشرة - مرتين للتأكد
+          // التمرير للأسفل بعد الإرسال مباشرة
           setTimeout(() => scrollToBottom('smooth'), 50);
-          setTimeout(() => scrollToBottom('smooth'), 200);
         }
       }
     } catch (error) {
@@ -449,10 +449,10 @@ export default function PrivateMessageBox({
     >
       <DialogContent className="p-0 bg-transparent border-none shadow-none">
         <motion.div
-          initial={{ scale: 0.95, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          exit={{ scale: 0.95, opacity: 0 }}
-          transition={{ duration: 0.4, ease: "easeOut" }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2, ease: "easeOut" }}
           className="relative z-[12000] w-[95vw] max-w-lg max-h-[85vh] bg-background text-foreground border border-border shadow-2xl rounded-xl overflow-hidden"
         >
           <DialogHeader className="relative border-b border-border px-3 py-2 modern-nav">
@@ -552,6 +552,9 @@ export default function PrivateMessageBox({
                 className="!h-full"
                 increaseViewportBy={{ top: 300, bottom: 300 }}
                 defaultItemHeight={56}
+                followOutput={'smooth'}
+                atBottomThreshold={64}
+                atBottomStateChange={(at) => setIsAtBottom(!!at)}
                 startReached={handleLoadMore}
                 computeItemKey={(index, m) => (m as any)?.id ?? `${(m as any)?.senderId}-${(m as any)?.timestamp}-${index}`}
                 components={{
@@ -613,9 +616,9 @@ export default function PrivateMessageBox({
                         {/* Message bubble container */}
                         <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-[75%] ${!isMe && showAvatar ? 'order-2' : isMe ? 'order-2' : ''}`}>
                           <motion.div
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.2, ease: 'easeOut' }}
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ duration: 0.15, ease: 'easeOut' }}
                             className={`
                               relative px-3 py-2 rounded-2xl shadow-sm
                               ${isMe 
