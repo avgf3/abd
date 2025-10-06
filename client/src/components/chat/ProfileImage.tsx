@@ -11,6 +11,8 @@ interface ProfileImageProps {
   className?: string;
   onClick?: (e: any) => void;
   hideRoleBadgeOverlay?: boolean;
+  // تعطيل عرض إطار الصورة في سياقات معينة (مثل الرسائل)
+  disableFrame?: boolean;
 }
 
 export default function ProfileImage({
@@ -19,6 +21,7 @@ export default function ProfileImage({
   className = '',
   onClick,
   hideRoleBadgeOverlay = false,
+  disableFrame = false,
 }: ProfileImageProps) {
   const sizeClasses = {
     small: 'w-10 h-10',
@@ -65,7 +68,7 @@ export default function ProfileImage({
     return undefined;
   })();
 
-  if (frameName && frameIndex) {
+  if (!disableFrame && frameName && frameIndex) {
     const px = size === 'small' ? 40 : size === 'large' ? 80 : 64;
     return (
       <div className={`relative inline-block ${className || ''}`} onClick={onClick}>
