@@ -386,23 +386,18 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
     setShowNotifications(true);
   }, [currentUserId, queryClient]);
 
-  // Private messages unread total (local + minimal server data)
-  const totalUnreadPrivateMessages = useMemo(() => {
-    if (!currentUserId) return 0;
-    let total = 0;
-    const conversations = chat.privateConversations || {};
-    for (const key of Object.keys(conversations)) {
-      const otherId = parseInt(key, 10);
-      if (!Number.isFinite(otherId)) continue;
-      const lastOpened = getPmLastOpened(currentUserId, otherId);
-      const conv = conversations[otherId] || [];
-      const unread = conv.filter(
-        (m: any) => m && m.senderId === otherId && new Date(m.timestamp).getTime() > lastOpened
-      ).length;
-      total += unread;
-    }
-    return total;
-  }, [chat.privateConversations, currentUserId]);
+  // Private messages unread total - use server-provided count
+  const { data: unreadDmData } = useQuery<{ count: number }>({
+    queryKey: ['/api/private-messages/unread-count', currentUserId],
+    queryFn: async () => {
+      if (!currentUserId) return { count: 0 } as any;
+      return await apiRequest(`/api/private-messages/unread-count/${currentUserId}`);
+    },
+    enabled: !!currentUserId,
+    refetchInterval: false,
+    staleTime: 30000,
+  });
+  const totalUnreadPrivateMessages = unreadDmData?.count || 0;
 
   // Pending moderation reports count (owner/admin only)
   const isOwnerOrAdmin = chat.currentUser && (chat.currentUser.userType === 'owner' || chat.currentUser.userType === 'admin');
@@ -480,14 +475,17 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
     return () => window.removeEventListener('privateMessageReceived', handler);
   }, [chat.currentUser?.id, queryClient]);
 
-  // مزامنة قراءات الخاص بين التبويبات: عند وصول حدث conversationRead صفّر الشارة محلياً
+  // مزامنة قراءات الخاص بين التبويبات: عند وصول حدث conversationRead حدّث عداد الخادم
   useEffect(() => {
     const onConversationRead = (data: any) => {
       try {
         if (!chat.currentUser?.id) return;
-        // تحديث قائمة المحادثات لتحديث unreadCount
+        // تحديث قائمة المحادثات ورقم العدّاد من الخادم
         queryClient.invalidateQueries({
           queryKey: ['/api/private-messages/conversations', chat.currentUser.id],
+        });
+        queryClient.invalidateQueries({
+          queryKey: ['/api/private-messages/unread-count', chat.currentUser.id],
         });
       } catch {}
     };
