@@ -1437,6 +1437,15 @@ li > * > div.effect-crystal {
   /* إزالة التكبير لأن الـ container الآن أكبر */
   transform-origin: center center;
   transform: scale(1);
+  /* اجعل مركز الإطار دائماً فارغاً فوق الصورة الشخصية */
+  -webkit-mask-image: radial-gradient(circle at center,
+    transparent var(--vip-hole-size, 45%),
+    #fff calc(var(--vip-hole-size, 45%) + 0.5px)
+  );
+  mask-image: radial-gradient(circle at center,
+    transparent var(--vip-hole-size, 45%),
+    #fff calc(var(--vip-hole-size, 45%) + 0.5px)
+  );
 }
 
 /* Shared rotating border */
