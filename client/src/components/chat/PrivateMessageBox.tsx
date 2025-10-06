@@ -6,7 +6,6 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, FloatingDialogContent } from '@/components/ui/dialog';
 import ImageLightbox from '@/components/ui/ImageLightbox';
-import ImageAttachmentBadge from '@/components/ui/ImageAttachmentBadge';
 import UserRoleBadge from '@/components/chat/UserRoleBadge';
 import { Input } from '@/components/ui/input';
 import { useComposerStyle } from '@/contexts/ComposerStyleContext';
@@ -47,7 +46,6 @@ export default function PrivateMessageBox({
   const [messageText, setMessageText] = useState('');
   const MAX_CHARS = 192;
   const [isSending, setIsSending] = useState(false);
-  const [sendError, setSendError] = useState<string | null>(null);
   const [isLoadingOlder, setIsLoadingOlder] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -168,7 +166,6 @@ export default function PrivateMessageBox({
     if (!hasText && !hasImage) return;
 
     setIsSending(true);
-    setSendError(null);
     if (timersRef.current.retry) {
       clearTimeout(timersRef.current.retry);
       timersRef.current.retry = null;
@@ -194,11 +191,8 @@ export default function PrivateMessageBox({
       }
     } catch (error) {
       console.error('خطأ في إرسال الرسالة:', error);
-      const errorMessage = error instanceof Error ? error.message : 'فشل إرسال الرسالة';
-      setSendError(null); // Keep hidden for now
-      console.error(errorMessage);
-
-      timersRef.current.retry = window.setTimeout(() => setSendError(null), 5000);
+      // Could show error to user here if needed
+      toast.error('فشل إرسال الرسالة، جاري المحاولة مرة أخرى...');
     } finally {
       setIsSending(false);
       timersRef.current.focus = window.setTimeout(() => inputRef.current?.focus(), 50);
