@@ -166,86 +166,654 @@
       "name": "متحركة",
       "icon": "🎬",
       "emojis": [
-        {"id": "custom_1", "name": "سمايل 1", "url": "/assets/emojis/custom/emoji_1.gif", "code": ":c1:"},
-        {"id": "custom_2", "name": "سمايل 2", "url": "/assets/emojis/custom/emoji_2.gif", "code": ":c2:"},
-        {"id": "custom_3", "name": "سمايل 3", "url": "/assets/emojis/custom/emoji_3.gif", "code": ":c3:"},
-        {"id": "custom_4", "name": "سمايل 4", "url": "/assets/emojis/custom/emoji_4.gif", "code": ":c4:"},
-        {"id": "custom_5", "name": "سمايل 5", "url": "/assets/emojis/custom/emoji_5.gif", "code": ":c5:"},
-        {"id": "custom_6", "name": "سمايل 6", "url": "/assets/emojis/custom/emoji_6.gif", "code": ":c6:"},
-        {"id": "custom_7", "name": "سمايل 7", "url": "/assets/emojis/custom/emoji_7.gif", "code": ":c7:"},
-        {"id": "custom_8", "name": "سمايل 8", "url": "/assets/emojis/custom/emoji_8.gif", "code": ":c8:"},
-        {"id": "custom_9", "name": "سمايل 9", "url": "/assets/emojis/custom/emoji_9.gif", "code": ":c9:"},
-        {"id": "custom_10", "name": "سمايل 10", "url": "/assets/emojis/custom/emoji_10.gif", "code": ":c10:"},
-        {"id": "custom_11", "name": "سمايل 11", "url": "/assets/emojis/custom/emoji_11.gif", "code": ":c11:"},
-        {"id": "custom_12", "name": "سمايل 12", "url": "/assets/emojis/custom/emoji_12.gif", "code": ":c12:"},
-        {"id": "custom_13", "name": "سمايل 13", "url": "/assets/emojis/custom/emoji_13.gif", "code": ":c13:"},
-        {"id": "custom_14", "name": "سمايل 14", "url": "/assets/emojis/custom/emoji_14.gif", "code": ":c14:"},
-        {"id": "custom_15", "name": "سمايل 15", "url": "/assets/emojis/custom/emoji_15.gif", "code": ":c15:"},
-        {"id": "custom_16", "name": "سمايل 16", "url": "/assets/emojis/custom/emoji_16.gif", "code": ":c16:"},
-        {"id": "custom_17", "name": "سمايل 17", "url": "/assets/emojis/custom/emoji_17.gif", "code": ":c17:"},
-        {"id": "custom_18", "name": "سمايل 18", "url": "/assets/emojis/custom/emoji_18.gif", "code": ":c18:"},
-        {"id": "custom_19", "name": "سمايل 19", "url": "/assets/emojis/custom/emoji_19.gif", "code": ":c19:"},
-        {"id": "custom_21", "name": "سمايل 21", "url": "/assets/emojis/custom/emoji_21.gif", "code": ":c21:"},
-        {"id": "custom_22", "name": "سمايل 22", "url": "/assets/emojis/custom/emoji_22.gif", "code": ":c22:"},
-        {"id": "custom_23", "name": "سمايل 23", "url": "/assets/emojis/custom/emoji_23.gif", "code": ":c23:"},
-        {"id": "custom_24", "name": "سمايل 24", "url": "/assets/emojis/custom/emoji_24.gif", "code": ":c24:"},
-        {"id": "custom_26", "name": "سمايل 26", "url": "/assets/emojis/custom/emoji_26.gif", "code": ":c26:"},
-        {"id": "custom_27", "name": "سمايل 27", "url": "/assets/emojis/custom/emoji_27.gif", "code": ":c27:"},
-        {"id": "custom_28", "name": "سمايل 28", "url": "/assets/emojis/custom/emoji_28.gif", "code": ":c28:"},
-        {"id": "custom_40", "name": "سمايل 40", "url": "/assets/emojis/custom/emoji_40.gif", "code": ":c40:"},
-        {"id": "custom_41", "name": "سمايل 41", "url": "/assets/emojis/custom/emoji_41.gif", "code": ":c41:"},
-        {"id": "custom_42", "name": "سمايل 42", "url": "/assets/emojis/custom/emoji_42.gif", "code": ":c42:"},
-        {"id": "custom_44", "name": "سمايل 44", "url": "/assets/emojis/custom/emoji_44.gif", "code": ":c44:"},
-        {"id": "custom_51", "name": "سمايل 51", "url": "/assets/emojis/custom/emoji_51.gif", "code": ":c51:"},
-        {"id": "custom_52", "name": "سمايل 52", "url": "/assets/emojis/custom/emoji_52.gif", "code": ":c52:"},
-        {"id": "custom_53", "name": "سمايل 53", "url": "/assets/emojis/custom/emoji_53.gif", "code": ":c53:"},
-        {"id": "custom_54", "name": "سمايل 54", "url": "/assets/emojis/custom/emoji_54.gif", "code": ":c54:"},
-        {"id": "custom_55", "name": "سمايل 55", "url": "/assets/emojis/custom/emoji_55.gif", "code": ":c55:"},
-        {"id": "custom_58", "name": "سمايل 58", "url": "/assets/emojis/custom/emoji_58.gif", "code": ":c58:"},
-        {"id": "custom_60", "name": "سمايل 60", "url": "/assets/emojis/custom/emoji_60.gif", "code": ":c60:"},
-        {"id": "custom_64", "name": "سمايل 64", "url": "/assets/emojis/custom/emoji_64.gif", "code": ":c64:"},
-        {"id": "custom_66", "name": "سمايل 66", "url": "/assets/emojis/custom/emoji_66.gif", "code": ":c66:"},
-        {"id": "custom_67", "name": "سمايل 67", "url": "/assets/emojis/custom/emoji_67.gif", "code": ":c67:"},
-        {"id": "custom_68", "name": "سمايل 68", "url": "/assets/emojis/custom/emoji_68.gif", "code": ":c68:"},
-        {"id": "custom_69", "name": "سمايل 69", "url": "/assets/emojis/custom/emoji_69.gif", "code": ":c69:"},
-        {"id": "custom_71", "name": "سمايل 71", "url": "/assets/emojis/custom/emoji_71.gif", "code": ":c71:"},
-        {"id": "custom_72", "name": "سمايل 72", "url": "/assets/emojis/custom/emoji_72.gif", "code": ":c72:"},
-        {"id": "custom_73", "name": "سمايل 73", "url": "/assets/emojis/custom/emoji_73.gif", "code": ":c73:"},
-        {"id": "custom_74", "name": "سمايل 74", "url": "/assets/emojis/custom/emoji_74.gif", "code": ":c74:"}
+        {
+          "id": "custom_1",
+          "name": "سمايل 1",
+          "url": "/assets/emojis/custom/emoji_1.gif",
+          "code": ":c1:"
+        },
+        {
+          "id": "custom_2",
+          "name": "سمايل 2",
+          "url": "/assets/emojis/custom/emoji_2.gif",
+          "code": ":c2:"
+        },
+        {
+          "id": "custom_3",
+          "name": "سمايل 3",
+          "url": "/assets/emojis/custom/emoji_3.gif",
+          "code": ":c3:"
+        },
+        {
+          "id": "custom_4",
+          "name": "سمايل 4",
+          "url": "/assets/emojis/custom/emoji_4.gif",
+          "code": ":c4:"
+        },
+        {
+          "id": "custom_5",
+          "name": "سمايل 5",
+          "url": "/assets/emojis/custom/emoji_5.gif",
+          "code": ":c5:"
+        },
+        {
+          "id": "custom_6",
+          "name": "سمايل 6",
+          "url": "/assets/emojis/custom/emoji_6.gif",
+          "code": ":c6:"
+        },
+        {
+          "id": "custom_7",
+          "name": "سمايل 7",
+          "url": "/assets/emojis/custom/emoji_7.gif",
+          "code": ":c7:"
+        },
+        {
+          "id": "custom_8",
+          "name": "سمايل 8",
+          "url": "/assets/emojis/custom/emoji_8.gif",
+          "code": ":c8:"
+        },
+        {
+          "id": "custom_9",
+          "name": "سمايل 9",
+          "url": "/assets/emojis/custom/emoji_9.gif",
+          "code": ":c9:"
+        },
+        {
+          "id": "custom_10",
+          "name": "سمايل 10",
+          "url": "/assets/emojis/custom/emoji_10.gif",
+          "code": ":c10:"
+        },
+        {
+          "id": "custom_11",
+          "name": "سمايل 11",
+          "url": "/assets/emojis/custom/emoji_11.gif",
+          "code": ":c11:"
+        },
+        {
+          "id": "custom_12",
+          "name": "سمايل 12",
+          "url": "/assets/emojis/custom/emoji_12.gif",
+          "code": ":c12:"
+        },
+        {
+          "id": "custom_13",
+          "name": "سمايل 13",
+          "url": "/assets/emojis/custom/emoji_13.gif",
+          "code": ":c13:"
+        },
+        {
+          "id": "custom_14",
+          "name": "سمايل 14",
+          "url": "/assets/emojis/custom/emoji_14.gif",
+          "code": ":c14:"
+        },
+        {
+          "id": "custom_15",
+          "name": "سمايل 15",
+          "url": "/assets/emojis/custom/emoji_15.gif",
+          "code": ":c15:"
+        },
+        {
+          "id": "custom_16",
+          "name": "سمايل 16",
+          "url": "/assets/emojis/custom/emoji_16.gif",
+          "code": ":c16:"
+        },
+        {
+          "id": "custom_17",
+          "name": "سمايل 17",
+          "url": "/assets/emojis/custom/emoji_17.gif",
+          "code": ":c17:"
+        },
+        {
+          "id": "custom_18",
+          "name": "سمايل 18",
+          "url": "/assets/emojis/custom/emoji_18.gif",
+          "code": ":c18:"
+        },
+        {
+          "id": "custom_19",
+          "name": "سمايل 19",
+          "url": "/assets/emojis/custom/emoji_19.gif",
+          "code": ":c19:"
+        },
+        {
+          "id": "custom_21",
+          "name": "سمايل 21",
+          "url": "/assets/emojis/custom/emoji_21.gif",
+          "code": ":c21:"
+        },
+        {
+          "id": "custom_22",
+          "name": "سمايل 22",
+          "url": "/assets/emojis/custom/emoji_22.gif",
+          "code": ":c22:"
+        },
+        {
+          "id": "custom_23",
+          "name": "سمايل 23",
+          "url": "/assets/emojis/custom/emoji_23.gif",
+          "code": ":c23:"
+        },
+        {
+          "id": "custom_24",
+          "name": "سمايل 24",
+          "url": "/assets/emojis/custom/emoji_24.gif",
+          "code": ":c24:"
+        },
+        {
+          "id": "custom_26",
+          "name": "سمايل 26",
+          "url": "/assets/emojis/custom/emoji_26.gif",
+          "code": ":c26:"
+        },
+        {
+          "id": "custom_27",
+          "name": "سمايل 27",
+          "url": "/assets/emojis/custom/emoji_27.gif",
+          "code": ":c27:"
+        },
+        {
+          "id": "custom_28",
+          "name": "سمايل 28",
+          "url": "/assets/emojis/custom/emoji_28.gif",
+          "code": ":c28:"
+        },
+        {
+          "id": "custom_40",
+          "name": "سمايل 40",
+          "url": "/assets/emojis/custom/emoji_40.gif",
+          "code": ":c40:"
+        },
+        {
+          "id": "custom_41",
+          "name": "سمايل 41",
+          "url": "/assets/emojis/custom/emoji_41.gif",
+          "code": ":c41:"
+        },
+        {
+          "id": "custom_42",
+          "name": "سمايل 42",
+          "url": "/assets/emojis/custom/emoji_42.gif",
+          "code": ":c42:"
+        },
+        {
+          "id": "custom_44",
+          "name": "سمايل 44",
+          "url": "/assets/emojis/custom/emoji_44.gif",
+          "code": ":c44:"
+        },
+        {
+          "id": "custom_51",
+          "name": "سمايل 51",
+          "url": "/assets/emojis/custom/emoji_51.gif",
+          "code": ":c51:"
+        },
+        {
+          "id": "custom_52",
+          "name": "سمايل 52",
+          "url": "/assets/emojis/custom/emoji_52.gif",
+          "code": ":c52:"
+        },
+        {
+          "id": "custom_53",
+          "name": "سمايل 53",
+          "url": "/assets/emojis/custom/emoji_53.gif",
+          "code": ":c53:"
+        },
+        {
+          "id": "custom_54",
+          "name": "سمايل 54",
+          "url": "/assets/emojis/custom/emoji_54.gif",
+          "code": ":c54:"
+        },
+        {
+          "id": "custom_55",
+          "name": "سمايل 55",
+          "url": "/assets/emojis/custom/emoji_55.gif",
+          "code": ":c55:"
+        },
+        {
+          "id": "custom_58",
+          "name": "سمايل 58",
+          "url": "/assets/emojis/custom/emoji_58.gif",
+          "code": ":c58:"
+        },
+        {
+          "id": "custom_60",
+          "name": "سمايل 60",
+          "url": "/assets/emojis/custom/emoji_60.gif",
+          "code": ":c60:"
+        },
+        {
+          "id": "custom_64",
+          "name": "سمايل 64",
+          "url": "/assets/emojis/custom/emoji_64.gif",
+          "code": ":c64:"
+        },
+        {
+          "id": "custom_66",
+          "name": "سمايل 66",
+          "url": "/assets/emojis/custom/emoji_66.gif",
+          "code": ":c66:"
+        },
+        {
+          "id": "custom_67",
+          "name": "سمايل 67",
+          "url": "/assets/emojis/custom/emoji_67.gif",
+          "code": ":c67:"
+        },
+        {
+          "id": "custom_68",
+          "name": "سمايل 68",
+          "url": "/assets/emojis/custom/emoji_68.gif",
+          "code": ":c68:"
+        },
+        {
+          "id": "custom_69",
+          "name": "سمايل 69",
+          "url": "/assets/emojis/custom/emoji_69.gif",
+          "code": ":c69:"
+        },
+        {
+          "id": "custom_71",
+          "name": "سمايل 71",
+          "url": "/assets/emojis/custom/emoji_71.gif",
+          "code": ":c71:"
+        },
+        {
+          "id": "custom_72",
+          "name": "سمايل 72",
+          "url": "/assets/emojis/custom/emoji_72.gif",
+          "code": ":c72:"
+        },
+        {
+          "id": "custom_73",
+          "name": "سمايل 73",
+          "url": "/assets/emojis/custom/emoji_73.gif",
+          "code": ":c73:"
+        },
+        {
+          "id": "custom_74",
+          "name": "سمايل 74",
+          "url": "/assets/emojis/custom/emoji_74.gif",
+          "code": ":c74:"
+        }
       ]
     },
     "stickers": {
       "name": "ملصقات",
       "icon": "🎨",
       "emojis": [
-        {"id": "custom_20", "name": "ملصق 1", "url": "/assets/emojis/custom/emoji_20.jpg", "code": ":s20:"},
-        {"id": "custom_25", "name": "ملصق 2", "url": "/assets/emojis/custom/emoji_25.png", "code": ":s25:"},
-        {"id": "custom_29", "name": "ملصق 3", "url": "/assets/emojis/custom/emoji_29.png", "code": ":s29:"},
-        {"id": "custom_30", "name": "ملصق 4", "url": "/assets/emojis/custom/emoji_30.png", "code": ":s30:"},
-        {"id": "custom_31", "name": "ملصق 5", "url": "/assets/emojis/custom/emoji_31.png", "code": ":s31:"},
-        {"id": "custom_32", "name": "ملصق 6", "url": "/assets/emojis/custom/emoji_32.png", "code": ":s32:"},
-        {"id": "custom_33", "name": "ملصق 7", "url": "/assets/emojis/custom/emoji_33.png", "code": ":s33:"},
-        {"id": "custom_34", "name": "ملصق 8", "url": "/assets/emojis/custom/emoji_34.png", "code": ":s34:"},
-        {"id": "custom_35", "name": "ملصق 9", "url": "/assets/emojis/custom/emoji_35.png", "code": ":s35:"},
-        {"id": "custom_36", "name": "ملصق 10", "url": "/assets/emojis/custom/emoji_36.png", "code": ":s36:"},
-        {"id": "custom_37", "name": "ملصق 11", "url": "/assets/emojis/custom/emoji_37.png", "code": ":s37:"},
-        {"id": "custom_38", "name": "ملصق 12", "url": "/assets/emojis/custom/emoji_38.png", "code": ":s38:"},
-        {"id": "custom_39", "name": "ملصق 13", "url": "/assets/emojis/custom/emoji_39.png", "code": ":s39:"},
-        {"id": "custom_43", "name": "ملصق 14", "url": "/assets/emojis/custom/emoji_43.png", "code": ":s43:"},
-        {"id": "custom_45", "name": "ملصق 15", "url": "/assets/emojis/custom/emoji_45.png", "code": ":s45:"},
-        {"id": "custom_46", "name": "ملصق 16", "url": "/assets/emojis/custom/emoji_46.png", "code": ":s46:"},
-        {"id": "custom_47", "name": "ملصق 17", "url": "/assets/emojis/custom/emoji_47.png", "code": ":s47:"},
-        {"id": "custom_48", "name": "ملصق 18", "url": "/assets/emojis/custom/emoji_48.png", "code": ":s48:"},
-        {"id": "custom_49", "name": "ملصق 19", "url": "/assets/emojis/custom/emoji_49.png", "code": ":s49:"},
-        {"id": "custom_50", "name": "ملصق 20", "url": "/assets/emojis/custom/emoji_50.png", "code": ":s50:"},
-        {"id": "custom_56", "name": "ملصق 21", "url": "/assets/emojis/custom/emoji_56.png", "code": ":s56:"},
-        {"id": "custom_57", "name": "ملصق 22", "url": "/assets/emojis/custom/emoji_57.png", "code": ":s57:"},
-        {"id": "custom_59", "name": "ملصق 23", "url": "/assets/emojis/custom/emoji_59.png", "code": ":s59:"},
-        {"id": "custom_61", "name": "ملصق 24", "url": "/assets/emojis/custom/emoji_61.png", "code": ":s61:"},
-        {"id": "custom_62", "name": "ملصق 25", "url": "/assets/emojis/custom/emoji_62.png", "code": ":s62:"},
-        {"id": "custom_63", "name": "ملصق 26", "url": "/assets/emojis/custom/emoji_63.png", "code": ":s63:"},
-        {"id": "custom_65", "name": "ملصق 27", "url": "/assets/emojis/custom/emoji_65.png", "code": ":s65:"},
-        {"id": "custom_70", "name": "ملصق 28", "url": "/assets/emojis/custom/emoji_70.png", "code": ":s70:"}
+        {
+          "id": "sticker_1",
+          "name": "ملصق 1",
+          "url": "/assets/emojis/custom/sticker_1.png",
+          "code": ":s1:"
+        },
+        {
+          "id": "sticker_2",
+          "name": "ملصق 2",
+          "url": "/assets/emojis/custom/sticker_2.png",
+          "code": ":s2:"
+        },
+        {
+          "id": "sticker_3",
+          "name": "ملصق 3",
+          "url": "/assets/emojis/custom/sticker_3.png",
+          "code": ":s3:"
+        },
+        {
+          "id": "sticker_4",
+          "name": "ملصق 4",
+          "url": "/assets/emojis/custom/sticker_4.png",
+          "code": ":s4:"
+        },
+        {
+          "id": "sticker_5",
+          "name": "ملصق 5",
+          "url": "/assets/emojis/custom/sticker_5.png",
+          "code": ":s5:"
+        },
+        {
+          "id": "sticker_6",
+          "name": "ملصق 6",
+          "url": "/assets/emojis/custom/sticker_6.png",
+          "code": ":s6:"
+        },
+        {
+          "id": "sticker_7",
+          "name": "ملصق 7",
+          "url": "/assets/emojis/custom/sticker_7.png",
+          "code": ":s7:"
+        },
+        {
+          "id": "sticker_8",
+          "name": "ملصق 8",
+          "url": "/assets/emojis/custom/sticker_8.png",
+          "code": ":s8:"
+        },
+        {
+          "id": "sticker_9",
+          "name": "ملصق 9",
+          "url": "/assets/emojis/custom/sticker_9.png",
+          "code": ":s9:"
+        },
+        {
+          "id": "sticker_10",
+          "name": "ملصق 10",
+          "url": "/assets/emojis/custom/sticker_10.png",
+          "code": ":s10:"
+        },
+        {
+          "id": "sticker_11",
+          "name": "ملصق 11",
+          "url": "/assets/emojis/custom/sticker_11.png",
+          "code": ":s11:"
+        },
+        {
+          "id": "sticker_12",
+          "name": "ملصق 12",
+          "url": "/assets/emojis/custom/sticker_12.png",
+          "code": ":s12:"
+        },
+        {
+          "id": "sticker_13",
+          "name": "ملصق 13",
+          "url": "/assets/emojis/custom/sticker_13.png",
+          "code": ":s13:"
+        },
+        {
+          "id": "sticker_14",
+          "name": "ملصق 14",
+          "url": "/assets/emojis/custom/sticker_14.png",
+          "code": ":s14:"
+        },
+        {
+          "id": "sticker_15",
+          "name": "ملصق 15",
+          "url": "/assets/emojis/custom/sticker_15.png",
+          "code": ":s15:"
+        },
+        {
+          "id": "sticker_16",
+          "name": "ملصق 16",
+          "url": "/assets/emojis/custom/sticker_16.png",
+          "code": ":s16:"
+        },
+        {
+          "id": "sticker_17",
+          "name": "ملصق 17",
+          "url": "/assets/emojis/custom/sticker_17.png",
+          "code": ":s17:"
+        },
+        {
+          "id": "sticker_18",
+          "name": "ملصق 18",
+          "url": "/assets/emojis/custom/sticker_18.png",
+          "code": ":s18:"
+        },
+        {
+          "id": "sticker_19",
+          "name": "ملصق 19",
+          "url": "/assets/emojis/custom/sticker_19.png",
+          "code": ":s19:"
+        },
+        {
+          "id": "sticker_20",
+          "name": "ملصق 20",
+          "url": "/assets/emojis/custom/sticker_20.png",
+          "code": ":s20:"
+        },
+        {
+          "id": "sticker_21",
+          "name": "ملصق 21",
+          "url": "/assets/emojis/custom/sticker_21.png",
+          "code": ":s21:"
+        },
+        {
+          "id": "sticker_22",
+          "name": "ملصق 22",
+          "url": "/assets/emojis/custom/sticker_22.png",
+          "code": ":s22:"
+        },
+        {
+          "id": "sticker_23",
+          "name": "ملصق 23",
+          "url": "/assets/emojis/custom/sticker_23.png",
+          "code": ":s23:"
+        },
+        {
+          "id": "sticker_24",
+          "name": "ملصق 24",
+          "url": "/assets/emojis/custom/sticker_24.png",
+          "code": ":s24:"
+        },
+        {
+          "id": "sticker_25",
+          "name": "ملصق 25",
+          "url": "/assets/emojis/custom/sticker_25.png",
+          "code": ":s25:"
+        },
+        {
+          "id": "sticker_26",
+          "name": "ملصق 26",
+          "url": "/assets/emojis/custom/sticker_26.png",
+          "code": ":s26:"
+        },
+        {
+          "id": "sticker_27",
+          "name": "ملصق 27",
+          "url": "/assets/emojis/custom/sticker_27.png",
+          "code": ":s27:"
+        },
+        {
+          "id": "sticker_28",
+          "name": "ملصق 28",
+          "url": "/assets/emojis/custom/sticker_28.png",
+          "code": ":s28:"
+        },
+        {
+          "id": "sticker_29",
+          "name": "ملصق 29",
+          "url": "/assets/emojis/custom/sticker_29.png",
+          "code": ":s29:"
+        },
+        {
+          "id": "sticker_30",
+          "name": "ملصق 30",
+          "url": "/assets/emojis/custom/sticker_30.png",
+          "code": ":s30:"
+        },
+        {
+          "id": "sticker_31",
+          "name": "ملصق 31",
+          "url": "/assets/emojis/custom/sticker_31.png",
+          "code": ":s31:"
+        },
+        {
+          "id": "sticker_32",
+          "name": "ملصق 32",
+          "url": "/assets/emojis/custom/sticker_32.png",
+          "code": ":s32:"
+        },
+        {
+          "id": "sticker_33",
+          "name": "ملصق 33",
+          "url": "/assets/emojis/custom/sticker_33.png",
+          "code": ":s33:"
+        },
+        {
+          "id": "sticker_34",
+          "name": "ملصق 34",
+          "url": "/assets/emojis/custom/sticker_34.png",
+          "code": ":s34:"
+        },
+        {
+          "id": "sticker_35",
+          "name": "ملصق 35",
+          "url": "/assets/emojis/custom/sticker_35.png",
+          "code": ":s35:"
+        },
+        {
+          "id": "sticker_36",
+          "name": "ملصق 36",
+          "url": "/assets/emojis/custom/sticker_36.png",
+          "code": ":s36:"
+        },
+        {
+          "id": "sticker_37",
+          "name": "ملصق 37",
+          "url": "/assets/emojis/custom/sticker_37.png",
+          "code": ":s37:"
+        },
+        {
+          "id": "sticker_38",
+          "name": "ملصق 38",
+          "url": "/assets/emojis/custom/sticker_38.png",
+          "code": ":s38:"
+        },
+        {
+          "id": "sticker_39",
+          "name": "ملصق 39",
+          "url": "/assets/emojis/custom/sticker_39.png",
+          "code": ":s39:"
+        },
+        {
+          "id": "sticker_40",
+          "name": "ملصق 40",
+          "url": "/assets/emojis/custom/sticker_40.png",
+          "code": ":s40:"
+        },
+        {
+          "id": "sticker_41",
+          "name": "ملصق 41",
+          "url": "/assets/emojis/custom/sticker_41.png",
+          "code": ":s41:"
+        },
+        {
+          "id": "sticker_42",
+          "name": "ملصق 42",
+          "url": "/assets/emojis/custom/sticker_42.png",
+          "code": ":s42:"
+        },
+        {
+          "id": "sticker_43",
+          "name": "ملصق 43",
+          "url": "/assets/emojis/custom/sticker_43.png",
+          "code": ":s43:"
+        },
+        {
+          "id": "sticker_44",
+          "name": "ملصق 44",
+          "url": "/assets/emojis/custom/sticker_44.png",
+          "code": ":s44:"
+        },
+        {
+          "id": "sticker_45",
+          "name": "ملصق 45",
+          "url": "/assets/emojis/custom/sticker_45.png",
+          "code": ":s45:"
+        },
+        {
+          "id": "sticker_46",
+          "name": "ملصق 46",
+          "url": "/assets/emojis/custom/sticker_46.png",
+          "code": ":s46:"
+        },
+        {
+          "id": "sticker_47",
+          "name": "ملصق 47",
+          "url": "/assets/emojis/custom/sticker_47.png",
+          "code": ":s47:"
+        },
+        {
+          "id": "sticker_48",
+          "name": "ملصق 48",
+          "url": "/assets/emojis/custom/sticker_48.png",
+          "code": ":s48:"
+        },
+        {
+          "id": "sticker_49",
+          "name": "ملصق 49",
+          "url": "/assets/emojis/custom/sticker_49.png",
+          "code": ":s49:"
+        },
+        {
+          "id": "sticker_50",
+          "name": "ملصق 50",
+          "url": "/assets/emojis/custom/sticker_50.png",
+          "code": ":s50:"
+        },
+        {
+          "id": "sticker_51",
+          "name": "ملصق 51",
+          "url": "/assets/emojis/custom/sticker_51.png",
+          "code": ":s51:"
+        },
+        {
+          "id": "sticker_52",
+          "name": "ملصق 52",
+          "url": "/assets/emojis/custom/sticker_52.png",
+          "code": ":s52:"
+        },
+        {
+          "id": "sticker_53",
+          "name": "ملصق 53",
+          "url": "/assets/emojis/custom/sticker_53.png",
+          "code": ":s53:"
+        },
+        {
+          "id": "sticker_54",
+          "name": "ملصق 54",
+          "url": "/assets/emojis/custom/sticker_54.png",
+          "code": ":s54:"
+        },
+        {
+          "id": "sticker_55",
+          "name": "ملصق 55",
+          "url": "/assets/emojis/custom/sticker_55.png",
+          "code": ":s55:"
+        },
+        {
+          "id": "sticker_56",
+          "name": "ملصق 56",
+          "url": "/assets/emojis/custom/sticker_56.png",
+          "code": ":s56:"
+        },
+        {
+          "id": "sticker_57",
+          "name": "ملصق 57",
+          "url": "/assets/emojis/custom/sticker_57.png",
+          "code": ":s57:"
+        },
+        {
+          "id": "sticker_58",
+          "name": "ملصق 58",
+          "url": "/assets/emojis/custom/sticker_58.png",
+          "code": ":s58:"
+        },
+        {
+          "id": "sticker_59",
+          "name": "ملصق 59",
+          "url": "/assets/emojis/custom/sticker_59.png",
+          "code": ":s59:"
+        },
+        {
+          "id": "sticker_60",
+          "name": "ملصق 60",
+          "url": "/assets/emojis/custom/sticker_60.png",
+          "code": ":s60:"
+        },
+        {
+          "id": "sticker_61",
+          "name": "ملصق 61",
+          "url": "/assets/emojis/custom/sticker_61.png",
+          "code": ":s61:"
+        }
       ]
     }
   }
