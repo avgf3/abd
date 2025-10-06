@@ -29,6 +29,22 @@ export default function UserPopup({
   onClose,
 }: UserPopupProps) {
   const { toast } = useToast();
+  const canSetFrame =
+    currentUser && currentUser.userType === 'owner' && currentUser.id !== user.id;
+
+  const handleAddFrame = async (frameIndex: number) => {
+    if (!currentUser || !canSetFrame) return;
+    try {
+      await apiRequest(`/api/users/${user.id}`, {
+        method: 'PUT',
+        body: { profileFrame: `frame${frameIndex}.webp` },
+      });
+      toast({ title: 'تم', description: `تم تعيين إطار ${frameIndex} لـ ${user.username}` });
+      onClose?.();
+    } catch (e) {
+      toast({ title: 'خطأ', description: 'تعذر تعيين الإطار', variant: 'destructive' });
+    }
+  };
 
   const canModerate =
     currentUser &&
@@ -214,6 +230,32 @@ export default function UserPopup({
             >
               🚫 حجب نهائي
             </Button>
+          )}
+
+          {canSetFrame && (
+            <>
+              <div className="border-t border-gray-300 my-1"></div>
+              <div className="px-2 py-1 text-xs text-gray-500">إضافة إطار:</div>
+              <div className="flex gap-1 px-2 pb-1">
+                {[1,2,3,4,5,6].map((i) => (
+                  <button
+                    key={i}
+                    onClick={() => handleAddFrame(i)}
+                    className="px-2 py-1 rounded bg-gray-100 hover:bg-gray-200 text-xs"
+                    title={`إطار ${i}`}
+                  >
+                    {i}
+                  </button>
+                ))}
+                <button
+                  onClick={() => handleAddFrame(0 as any)}
+                  className="px-2 py-1 rounded bg-gray-100 hover:bg-gray-200 text-xs"
+                  title="إزالة الإطار"
+                >
+                  إزالة
+                </button>
+              </div>
+            </>
           )}
         </>
       )}

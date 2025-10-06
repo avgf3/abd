@@ -1417,6 +1417,22 @@ li > * > div.effect-crystal {
   z-index: 2;
 }
 
+/* Image-based overlay for frames (webp imported) */
+.vip-frame.with-image .vip-frame-inner {
+  position: relative;
+}
+.vip-frame-overlay {
+  position: absolute;
+  inset: -2px;
+  width: calc(100% + 4px);
+  height: calc(100% + 4px);
+  object-fit: cover;
+  border-radius: 9999px;
+  pointer-events: none;
+  z-index: 3;
+  animation: vip-rotate var(--vip-spin-duration, 6s) linear infinite;
+}
+
 /* Shared rotating border */
 .vip-frame.base::before {
   content: '';
