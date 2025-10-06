@@ -1411,8 +1411,8 @@ li > * > div.effect-crystal {
   justify-content: center;
 }
 .vip-frame-img {
-  width: 80%;
-  height: 80%;
+  width: 100%;
+  height: 100%;
   border-radius: 9999px;
   object-fit: cover;
   background: #0b1220;
@@ -1430,14 +1430,12 @@ li > * > div.effect-crystal {
   left: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  border-radius: 9999px;
+  object-fit: contain; /* contain بدل cover عشان الإطار ما ينقص */
   pointer-events: none;
   z-index: 3;
   /* تعطيل أي دوران */
   animation: none !important;
-  /* الإطار يملأ الحاوية الكاملة، والصورة أصغر بداخله */
-  transform-origin: center center;
+  /* الإطار overlay فوق الصورة - الصورة تظهر من خلال المنطقة الشفافة في الإطار */
 }
 
 /* Shared rotating border */
