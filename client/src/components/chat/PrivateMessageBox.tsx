@@ -1,7 +1,6 @@
 import { motion } from 'framer-motion';
 import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { Send, Image as ImageIcon, Check, CheckCheck } from 'lucide-react';
-import { Virtuoso, type VirtuosoHandle } from 'react-virtuoso';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -10,7 +9,6 @@ import ImageLightbox from '@/components/ui/ImageLightbox';
 import ImageAttachmentBadge from '@/components/ui/ImageAttachmentBadge';
 import UserRoleBadge from '@/components/chat/UserRoleBadge';
 import { Input } from '@/components/ui/input';
-// Removed ComposerPlusMenu (ready/quick options)
 import { useComposerStyle } from '@/contexts/ComposerStyleContext';
 import type { ChatMessage, ChatUser } from '@/types/chat';
 import ProfileImage from '@/components/chat/ProfileImage';
@@ -21,7 +19,6 @@ import {
 import { getFinalUsernameColor, getUserNameplateStyles } from '@/utils/themeUtils';
 import { getSocket } from '@/lib/socket';
 import { formatTimeWithDate } from '@/utils/timeUtils';
-// إزالة استخدام fallback الذي يُظهر "مستخدم #id" لتفادي ظهور اسم افتراضي خاطئ في الخاص
 import { api } from '@/lib/queryClient';
 
 interface PrivateMessageBoxProps {
@@ -31,7 +28,7 @@ interface PrivateMessageBoxProps {
   messages: ChatMessage[];
   onSendMessage: (content: string) => void;
   onClose: () => void;
-  onLoadMore?: () => Promise<{ addedCount: number; hasMore: boolean }>; // تحميل رسائل أقدم
+  onLoadMore?: () => Promise<{ addedCount: number; hasMore: boolean }>;
   onViewProfile?: (user: ChatUser) => void;
   onViewStoryByUser?: (userId: number) => void;
 }
@@ -49,30 +46,91 @@ export default function PrivateMessageBox({
 }: PrivateMessageBoxProps) {
   const [messageText, setMessageText] = useState('');
   const MAX_CHARS = 192;
-  const clampToMaxChars = useCallback((text: string) => (text.length > MAX_CHARS ? text.slice(0, MAX_CHARS) : text), [MAX_CHARS]);
   const [isSending, setIsSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
-  const retryTimeoutRef = useRef<NodeJS.Timeout>();
   const [isLoadingOlder, setIsLoadingOlder] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [imageFile, setImageFile] = useState<File | null>(null);
-  const virtuosoRef = useRef<VirtuosoHandle>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const { textColor: composerTextColor, bold: composerBold } = useComposerStyle();
-  const isDmClosed = (user as any)?.dmPrivacy === 'none';
   const [isOtherTyping, setIsOtherTyping] = useState(false);
-  const otherTypingTimerRef = useRef<number | null>(null);
-  const lastTypingEmitRef = useRef<number>(0);
-  // Read receipts: last read timestamp received from other user via socket
   const [otherLastReadAt, setOtherLastReadAt] = useState<string | null>(null);
 
-  // ترتيب الرسائل
+  // Refs
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Unified timers object
+  const timersRef = useRef<{
+    typing: number | null;
+    retry: number | null;
+    focus: number | null;
+  }>({
+    typing: null,
+    retry: null,
+    focus: null,
+  });
+
+  const lastTypingEmitRef = useRef<number>(0);
+  const { textColor: composerTextColor, bold: composerBold } = useComposerStyle();
+  const isDmClosed = (user as any)?.dmPrivacy === 'none';
+
+  // Sort messages
   const sortedMessages = useMemo(() => sortMessagesAscending(messages || []), [messages]);
 
-  // تمت إزالة دوال التمرير اليدوي غير الضرورية للحفاظ على بساطة واستقرار الصندوق
+  // Simple message grouping (no useCallback needed)
+  const isGrouped = (current: any, previous: any) => {
+    if (!previous || !current) return false;
+    const timeDiff = new Date(current.timestamp as any).getTime() - new Date(previous.timestamp as any).getTime();
+    return current.senderId === previous.senderId && Math.abs(timeDiff) <= 300000; // 5 minutes
+  };
 
-  // Emit private typing (throttled ~3s)
+  // Simple clamp function (no useCallback needed)
+  const clampToMaxChars = (text: string) => text.length > MAX_CHARS ? text.slice(0, MAX_CHARS) : text;
+
+  // Scroll to bottom function
+  const scrollToBottom = (smooth = true) => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ 
+        behavior: smooth ? 'smooth' : 'auto',
+        block: 'end'
+      });
+    }
+  };
+
+  // Handle scroll for loading more messages
+  const handleScroll = () => {
+    const container = messagesContainerRef.current;
+    if (!container || isLoadingOlder || !hasMore || !onLoadMore) return;
+    
+    if (container.scrollTop === 0) {
+      handleLoadMore();
+    }
+  };
+
+  // Load more messages (keep useCallback - it's complex)
+  const handleLoadMore = useCallback(async () => {
+    if (isLoadingOlder || !hasMore || !onLoadMore) return;
+    
+    const container = messagesContainerRef.current;
+    const scrollHeight = container?.scrollHeight || 0;
+    
+    setIsLoadingOlder(true);
+    try {
+      const res = await onLoadMore();
+      setHasMore(res.hasMore);
+      
+      // Maintain scroll position after loading older messages
+      if (res.addedCount > 0 && container) {
+        const newScrollHeight = container.scrollHeight;
+        container.scrollTop = newScrollHeight - scrollHeight;
+      }
+    } finally {
+      setIsLoadingOlder(false);
+    }
+  }, [isLoadingOlder, hasMore, onLoadMore]);
+
+  // Emit typing (keep useCallback - has throttling logic)
   const emitPrivateTyping = useCallback(() => {
     try {
       const now = Date.now();
@@ -84,14 +142,77 @@ export default function PrivateMessageBox({
     } catch {}
   }, [currentUser?.id, user?.id]);
 
-  // Listen for privateTyping from the other user + conversationRead sync
+  // Send message with retry (keep useCallback - complex logic)
+  const sendMessageWithRetry = useCallback(
+    async (content: string, retries = 3): Promise<boolean> => {
+      for (let i = 0; i < retries; i++) {
+        try {
+          await onSendMessage(content);
+          return true;
+        } catch (error) {
+          if (i === retries - 1) throw error;
+          await new Promise((resolve) => setTimeout(resolve, 1000 * (i + 1)));
+        }
+      }
+      return false;
+    },
+    [onSendMessage]
+  );
+
+  // Handle send (keep useCallback - complex logic)
+  const handleSend = useCallback(async () => {
+    if (isSending) return;
+    const text = clampToMaxChars(messageText).trim();
+    const hasText = !!text;
+    const hasImage = !!imageFile;
+    if (!hasText && !hasImage) return;
+
+    setIsSending(true);
+    setSendError(null);
+    if (timersRef.current.retry) {
+      clearTimeout(timersRef.current.retry);
+      timersRef.current.retry = null;
+    }
+
+    try {
+      if (hasImage) {
+        if (!currentUser?.id || !user?.id) throw new Error('بيانات المرسل أو المستلم غير متوفرة');
+        const form = new FormData();
+        form.append('image', imageFile!);
+        form.append('senderId', String(currentUser.id));
+        form.append('receiverId', String(user.id));
+        await api.upload('/api/upload/message-image', form, { timeout: 60000 });
+        setImageFile(null);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+        toast.success('تم إرسال الصورة');
+      }
+      if (hasText) {
+        const success = await sendMessageWithRetry(text);
+        if (success) {
+          setMessageText('');
+        }
+      }
+    } catch (error) {
+      console.error('خطأ في إرسال الرسالة:', error);
+      const errorMessage = error instanceof Error ? error.message : 'فشل إرسال الرسالة';
+      setSendError(null); // Keep hidden for now
+      console.error(errorMessage);
+
+      timersRef.current.retry = window.setTimeout(() => setSendError(null), 5000);
+    } finally {
+      setIsSending(false);
+      timersRef.current.focus = window.setTimeout(() => inputRef.current?.focus(), 50);
+    }
+  }, [messageText, imageFile, isSending, sendMessageWithRetry, currentUser?.id, user?.id]);
+
+  // Socket listener for typing and read receipts
   useEffect(() => {
     const s = getSocket();
-    // حافظ على مرجع مستقر للمعالج لمنع إضافة/إزالة متعددة بلا داعٍ
     const onMessage = (payload: any) => {
       try {
         const envelope = (payload && payload.envelope) ? payload.envelope : payload;
         if (!envelope || typeof envelope !== 'object') return;
+        
         // Typing indicator
         if (envelope?.type === 'privateTyping') {
           const fromId = envelope?.fromUserId;
@@ -99,19 +220,17 @@ export default function PrivateMessageBox({
           if (!fromId || fromId !== user?.id) return;
           if (isTyping) {
             setIsOtherTyping(true);
-            if (otherTypingTimerRef.current) {
-              clearTimeout(otherTypingTimerRef.current);
+            if (timersRef.current.typing) {
+              clearTimeout(timersRef.current.typing);
             }
-            otherTypingTimerRef.current = window.setTimeout(() => {
+            timersRef.current.typing = window.setTimeout(() => {
               setIsOtherTyping(false);
-              if (otherTypingTimerRef.current) {
-                clearTimeout(otherTypingTimerRef.current);
-                otherTypingTimerRef.current = null;
-              }
+              timersRef.current.typing = null;
             }, 3000);
           }
         }
-        // Conversation read sync (update seen only when the OTHER user is the reader)
+        
+        // Read receipts
         if (envelope?.type === 'conversationRead') {
           const readerId = (envelope as any)?.readerUserId ?? (envelope as any)?.readerId;
           if (readerId && readerId === user?.id && typeof (envelope as any)?.lastReadAt === 'string') {
@@ -120,26 +239,109 @@ export default function PrivateMessageBox({
         }
       } catch {}
     };
+
     try { s.on('message', onMessage); } catch {}
     return () => {
       try { s.off('message', onMessage); } catch {}
-      if (otherTypingTimerRef.current) {
-        clearTimeout(otherTypingTimerRef.current);
-        otherTypingTimerRef.current = null;
-      }
+      // Clear all timers on cleanup
+      Object.values(timersRef.current).forEach(timer => {
+        if (timer) clearTimeout(timer);
+      });
+      timersRef.current = { typing: null, retry: null, focus: null };
     };
   }, [user?.id]);
 
-  const handleViewProfileClick = useCallback(() => {
+  // Focus input and scroll when opened
+  useEffect(() => {
+    if (!isOpen) return;
+    
+    timersRef.current.focus = window.setTimeout(() => {
+      inputRef.current?.focus();
+      scrollToBottom(false); // Immediate scroll on open
+    }, 150);
+    
+    return () => {
+      if (timersRef.current.focus) {
+        clearTimeout(timersRef.current.focus);
+        timersRef.current.focus = null;
+      }
+    };
+  }, [isOpen]);
+
+  // Update last opened time
+  useEffect(() => {
+    if (isOpen && currentUser?.id && user?.id) {
+      try {
+        setPmLastOpened(currentUser.id, user.id);
+      } catch {}
+    }
+  }, [isOpen, currentUser?.id, user?.id]);
+
+  // Update read receipts
+  useEffect(() => {
+    if (!isOpen || !currentUser?.id || !user?.id || sortedMessages.length === 0) return;
+    
     try {
-      onViewProfile && onViewProfile(user);
+      const last: any = sortedMessages[sortedMessages.length - 1];
+      const payload: any = {
+        otherUserId: user.id,
+        lastReadAt: last ? String(last.timestamp) : new Date().toISOString(),
+        lastReadMessageId: last ? last.id : undefined,
+      };
+      fetch('/api/private-messages/reads', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(payload),
+      }).catch(() => {});
     } catch {}
-  }, [onViewProfile, user]);
+  }, [isOpen, user?.id, currentUser?.id, sortedMessages.length]);
+
+  // Auto scroll on new messages
+  useEffect(() => {
+    if (isOpen && sortedMessages.length > 0) {
+      scrollToBottom();
+    }
+  }, [sortedMessages.length, isOpen]);
+
+  // Handle input changes
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setMessageText(clampToMaxChars(e.target.value));
+    emitPrivateTyping();
+  };
+
+  // Handle key press
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
+
+  // Handle paste
+  const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    try {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        if (item.type.startsWith('image/')) {
+          const file = item.getAsFile();
+          if (file) {
+            setImageFile(file);
+            e.preventDefault();
+            break;
+          }
+        }
+      }
+    } catch {}
+  };
 
   // YouTube modal state
-  const [youtubeModal, setYoutubeModal] = useState<{ open: boolean; videoId: string | null }>(
-    { open: false, videoId: null }
-  );
+  const [youtubeModal, setYoutubeModal] = useState<{ open: boolean; videoId: string | null }>({
+    open: false,
+    videoId: null,
+  });
 
   // Image lightbox state
   const [imageLightbox, setImageLightbox] = useState<{ open: boolean; src: string | null }>({
@@ -147,7 +349,8 @@ export default function PrivateMessageBox({
     src: null,
   });
 
-  const isAllowedYouTubeHost = useCallback((host: string) => {
+  // YouTube helper functions (simplified, no useCallback)
+  const isAllowedYouTubeHost = (host: string) => {
     const h = host.toLowerCase();
     return (
       h === 'youtube.com' ||
@@ -158,9 +361,9 @@ export default function PrivateMessageBox({
       h === 'youtube-nocookie.com' ||
       h === 'www.youtube-nocookie.com'
     );
-  }, []);
+  };
 
-  const extractYouTubeId = useCallback((rawUrl: string): string | null => {
+  const extractYouTubeId = (rawUrl: string): string | null => {
     try {
       let u = rawUrl.trim();
       if (!/^https?:\/\//i.test(u)) u = 'https://' + u;
@@ -185,9 +388,9 @@ export default function PrivateMessageBox({
     } catch {
       return null;
     }
-  }, [isAllowedYouTubeHost]);
+  };
 
-  const parseYouTubeFromText = useCallback((text: string): { cleaned: string; ids: string[] } => {
+  const parseYouTubeFromText = (text: string): { cleaned: string; ids: string[] } => {
     if (!text) return { cleaned: '', ids: [] };
     const urlRegex = /(https?:\/\/[^\s]+|www\.[^\s]+)/gi;
     const matches = text.match(urlRegex) || [];
@@ -203,189 +406,13 @@ export default function PrivateMessageBox({
       }
     }
     return { cleaned, ids };
-  }, [extractYouTubeId]);
-  // تجميع الرسائل المتتالية لنفس المرسل ضمن نافذة زمنية قصيرة (مثل Messenger)
-  const GROUP_TIME_MS = 5 * 60 * 1000; // 5 دقائق
-  const getIsMe = useCallback((m: any) => !!(currentUser && m && m.senderId === currentUser.id), [currentUser]);
-  const isSameSender = useCallback((a: any, b: any) => !!a && !!b && a.senderId === b.senderId, []);
-  const isWithinWindow = useCallback((a: any, b: any) => {
-    if (!a || !b) return false;
-    const ta = new Date(a.timestamp as any).getTime();
-    const tb = new Date(b.timestamp as any).getTime();
-    if (!Number.isFinite(ta) || !Number.isFinite(tb)) return false;
-    return Math.abs(tb - ta) <= GROUP_TIME_MS;
-  }, []);
+  };
 
-  // عند فتح الصندوق: تركيز الإدخال فقط (التمرير الابتدائي يتم عبر initialTopMostItemIndex)
-  useEffect(() => {
-    if (!isOpen) return;
-    const timer = setTimeout(() => {
-      inputRef.current?.focus();
-    }, 150);
-    return () => clearTimeout(timer);
-  }, [isOpen]);
-
-  // تحديث آخر وقت فتح للمحادثة لاحتساب غير المقروء
-  useEffect(() => {
-    if (isOpen && currentUser?.id && user?.id) {
-      try {
-        setPmLastOpened(currentUser.id, user.id);
-      } catch {}
-    }
-  }, [isOpen, currentUser?.id, user?.id]);
-
-  // تحديث مؤشّر القراءة (مخفّض الاستدعاءات): اربطه بتغير آخر رسالة فقط أثناء الفتح
-  const lastMessageDeps = React.useMemo(() => {
-    const last: any = sortedMessages[sortedMessages.length - 1];
-    return last ? (last.id ?? String(last.timestamp)) : null;
-  }, [sortedMessages.length]);
-
-  useEffect(() => {
-    if (!isOpen || !currentUser?.id || !user?.id) return;
+  const handleViewProfileClick = () => {
     try {
-      const last: any = sortedMessages[sortedMessages.length - 1];
-      const payload: any = {
-        otherUserId: user.id,
-        lastReadAt: last ? String(last.timestamp) : new Date().toISOString(),
-        lastReadMessageId: last ? last.id : undefined,
-      };
-      fetch('/api/private-messages/reads', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(payload),
-      }).catch(() => {});
+      onViewProfile && onViewProfile(user);
     } catch {}
-  }, [isOpen, user?.id, currentUser?.id, lastMessageDeps]);
-
-  // تمت إزالة التمرير التلقائي على تغيّر الرسائل؛ Virtuoso مع followOutput="auto" يتكفّل بالسلوك الطبيعي
-
-
-  // محسن: دالة إرسال مع إعادة المحاولة ومعالجة أخطاء محسنة
-  const sendMessageWithRetry = useCallback(
-    async (content: string, retries = 3): Promise<boolean> => {
-      for (let i = 0; i < retries; i++) {
-        try {
-          await onSendMessage(content);
-          return true;
-        } catch (error) {
-          if (i === retries - 1) {
-            throw error;
-          }
-          // انتظر قبل إعادة المحاولة (زيادة تدريجية)
-          await new Promise((resolve) => setTimeout(resolve, 1000 * (i + 1)));
-        }
-      }
-      return false;
-    },
-    [onSendMessage]
-  );
-
-  const handleSend = useCallback(async () => {
-    if (isSending) return;
-    const text = clampToMaxChars(messageText).trim();
-    const hasText = !!text;
-    const hasImage = !!imageFile;
-    if (!hasText && !hasImage) return;
-
-    // لا نحجب الواجهة أثناء الإرسال لتحسين الشعور بالاستجابة
-    setIsSending(true);
-    setSendError(null);
-    clearTimeout(retryTimeoutRef.current);
-
-    try {
-      if (hasImage) {
-        // إرسال الصورة عبر مسار الرفع الموحّد وتمرير receiverId للخاص
-        if (!currentUser?.id || !user?.id) throw new Error('بيانات المرسل أو المستلم غير متوفرة');
-        const form = new FormData();
-        form.append('image', imageFile!);
-        form.append('senderId', String(currentUser.id));
-        form.append('receiverId', String(user.id));
-        await api.upload('/api/upload/message-image', form, { timeout: 60000 });
-        setImageFile(null);
-        if (fileInputRef.current) fileInputRef.current.value = '';
-        toast.success('تم إرسال الصورة');
-      }
-      if (hasText) {
-        const success = await sendMessageWithRetry(text);
-        if (success) {
-          setMessageText('');
-        }
-      }
-    } catch (error) {
-      console.error('خطأ في إرسال الرسالة:', error);
-      const errorMessage = error instanceof Error ? error.message : 'فشل إرسال الرسالة';
-      // إخفاء رسائل الأخطاء من الواجهة الخاصة بناءً على رغبتك
-      setSendError(null);
-      console.error(errorMessage);
-
-      // إعادة تعيين حالة الخطأ بعد 5 ثوان
-      retryTimeoutRef.current = setTimeout(() => setSendError(null), 5000);
-    } finally {
-      setIsSending(false);
-      setTimeout(() => inputRef.current?.focus(), 50);
-    }
-  }, [messageText, imageFile, isSending, sendMessageWithRetry, currentUser?.id, user?.id]);
-
-  // محسن: معالج الضغط على Enter
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        handleSend();
-      }
-    },
-    [handleSend]
-  );
-
-  // When user types, emit typing (throttled)
-  const handleChangeWithTyping = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      setMessageText(clampToMaxChars(e.target.value));
-      emitPrivateTyping();
-    },
-    [clampToMaxChars, emitPrivateTyping]
-  );
-
-
-  // دعم لصق الصور مباشرة في صندوق الإدخال
-  const handlePaste = useCallback((e: React.ClipboardEvent<HTMLInputElement>) => {
-    try {
-      const items = e.clipboardData?.items;
-      if (!items) return;
-      for (let i = 0; i < items.length; i++) {
-        const it = items[i];
-        if (it.type.startsWith('image/')) {
-          const file = it.getAsFile();
-          if (file) {
-            setImageFile(file);
-            e.preventDefault();
-            break;
-          }
-        }
-      }
-    } catch {}
-  }, []);
-
-  // تحميل المزيد عند الوصول للأعلى
-  const handleLoadMore = useCallback(async () => {
-    if (isLoadingOlder || !hasMore || !onLoadMore) return;
-    setIsLoadingOlder(true);
-    try {
-      const res = await onLoadMore();
-      setHasMore(res.hasMore);
-      if (res.addedCount > 0) {
-        // حافظ على موضع التمرير ثابت بعد إدراج عناصر في الأعلى
-        try {
-          (virtuosoRef.current as any)?.adjustForPrependedItems?.(res.addedCount);
-        } catch {}
-      }
-    } finally {
-      setIsLoadingOlder(false);
-    }
-  }, [isLoadingOlder, hasMore, onLoadMore]);
-
-  // لون الحد والقص باستخدام دوال موحدة
+  };
 
   if (!isOpen) return null;
 
@@ -412,7 +439,7 @@ export default function PrivateMessageBox({
                 user={user}
                 size="small"
                 className="w-10 h-10 cursor-pointer hover:opacity-90 transition"
-                onClick={() => handleViewProfileClick()}
+                onClick={handleViewProfileClick}
               />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between gap-2">
@@ -471,7 +498,6 @@ export default function PrivateMessageBox({
                     })()}
                     <UserRoleBadge user={user} size={20} />
                   </div>
-                  {/* زر الإغلاق يسار بنفس نمط الأثرياء/الإعدادات */}
                   <button
                     onClick={onClose}
                     className="absolute left-2 top-2 px-2 py-1 hover:bg-red-100 text-red-600 text-sm font-medium rounded"
@@ -495,30 +521,26 @@ export default function PrivateMessageBox({
                 <p className="text-sm opacity-70 mt-2">لا توجد رسائل سابقة</p>
               </div>
             ) : (
-              <Virtuoso
-                ref={virtuosoRef}
-                data={sortedMessages}
-                className="!h-full"
-                style={{ overscrollBehavior: 'contain', scrollBehavior: 'auto' }}
-                initialTopMostItemIndex={Math.max(0, sortedMessages.length - 1)}
-                increaseViewportBy={{ top: 300, bottom: 300 }}
-                defaultItemHeight={56}
-                startReached={handleLoadMore}
-                followOutput="auto"
-                computeItemKey={(index, m) => (m as any)?.id ?? `${(m as any)?.senderId}-${(m as any)?.timestamp}-${index}`}
-                components={{
-                  Header: () =>
-                    isLoadingOlder ? (
-                      <div className="flex justify-center py-2">
-                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-300 border-t-transparent"></div>
-                      </div>
-                    ) : hasMore ? (
-                      <div className="text-center py-1 text-xs text-gray-400">
-                        اسحب للأعلى لتحميل المزيد
-                      </div>
-                    ) : null,
-                }}
-                itemContent={(index, m) => {
+              <div
+                ref={messagesContainerRef}
+                className="h-full overflow-y-auto scroll-smooth"
+                onScroll={handleScroll}
+                style={{ overscrollBehavior: 'contain' }}
+              >
+                {/* Loading indicator */}
+                {isLoadingOlder && (
+                  <div className="flex justify-center py-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-300 border-t-transparent"></div>
+                  </div>
+                )}
+                {hasMore && !isLoadingOlder && (
+                  <div className="text-center py-1 text-xs text-gray-400">
+                    اسحب للأعلى لتحميل المزيد
+                  </div>
+                )}
+
+                {/* Messages */}
+                {sortedMessages.map((m, index) => {
                   const isMe = !!(currentUser && m.senderId === currentUser.id);
                   const key = m.id ?? `${m.senderId}-${m.timestamp}-${index}`;
                   const isImage =
@@ -531,16 +553,14 @@ export default function PrivateMessageBox({
 
                   const prev = index > 0 ? sortedMessages[index - 1] : null;
                   const next = index + 1 < sortedMessages.length ? sortedMessages[index + 1] : null;
-                  const groupStart = !prev || !isSameSender(prev, m) || !isWithinWindow(prev, m);
-                  const groupEnd = !next || !isSameSender(next, m) || !isWithinWindow(next, m);
-                  const alignClass = isMe ? 'justify-end' : 'justify-start';
-                  const bubbleSide = isMe ? 'me' : 'other';
+                  const groupStart = !isGrouped(m, prev);
+                  const groupEnd = !isGrouped(next, m);
                   const showAvatar = !isMe;
 
                   return (
                     <div key={key} className="w-full mb-2" dir="rtl">
                       <div className={`flex ${isMe ? 'justify-end' : 'justify-start'} items-start gap-2`}>
-                        {/* Avatar for received messages - positioned on the right in RTL */}
+                        {/* Avatar for received messages */}
                         {!isMe && showAvatar && (
                           <div className="flex-shrink-0 order-1 self-start">
                             <ProfileImage
@@ -551,7 +571,7 @@ export default function PrivateMessageBox({
                           </div>
                         )}
                         
-                        {/* Avatar for sent messages - positioned on the left in RTL */}
+                        {/* Avatar for sent messages */}
                         {isMe && (
                           <div className="flex-shrink-0 order-3 self-start">
                             <ProfileImage
@@ -697,8 +717,11 @@ export default function PrivateMessageBox({
                       </div>
                     </div>
                   );
-                }}
-              />
+                })}
+                
+                {/* Scroll anchor */}
+                <div ref={messagesEndRef} />
+              </div>
             )}
           </div>
 
@@ -715,7 +738,6 @@ export default function PrivateMessageBox({
             ) : (
               <>
                 <div className="flex gap-3 items-end">
-                  {/* زر اختيار الصورة */}
                   <input
                     ref={fileInputRef}
                     type="file"
@@ -737,7 +759,7 @@ export default function PrivateMessageBox({
                   <Input
                     ref={inputRef}
                     value={messageText}
-                    onChange={handleChangeWithTyping}
+                    onChange={handleInputChange}
                     onKeyDown={handleKeyDown}
                     onPaste={handlePaste}
                     placeholder="اكتب رسالتك هنا..."
@@ -746,7 +768,6 @@ export default function PrivateMessageBox({
                     style={{ color: composerTextColor, fontWeight: composerBold ? 700 : undefined }}
                     maxLength={MAX_CHARS}
                   />
-                  {/* زر الإرسال بشكل أيقونة مثل غرف الدردشة */}
                   <Button
                     onClick={handleSend}
                     disabled={!messageText.trim() && !imageFile}
@@ -774,6 +795,7 @@ export default function PrivateMessageBox({
           </div>
         </motion.div>
       </DialogContent>
+      
       {/* YouTube Modal */}
       <Dialog
         open={youtubeModal.open}
