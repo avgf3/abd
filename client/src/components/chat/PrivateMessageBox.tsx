@@ -211,14 +211,22 @@ export default function PrivateMessageBox({
     return Math.abs(tb - ta) <= GROUP_TIME_MS;
   }, []);
 
-  // عند فتح الصندوق: تركيز الإدخال
+  // عند فتح الصندوق: تركيز الإدخال والتمرير للأسفل
   useEffect(() => {
     if (!isOpen) return;
     const t = setTimeout(() => {
       inputRef.current?.focus();
+      // تمرير للأسفل عند الفتح
+      if (virtuosoRef.current && sortedMessages.length > 0) {
+        virtuosoRef.current.scrollToIndex({
+          index: sortedMessages.length - 1,
+          align: 'end',
+          behavior: 'auto',
+        });
+      }
     }, 100);
     return () => clearTimeout(t);
-  }, [isOpen]);
+  }, [isOpen, sortedMessages.length]);
 
   // تحديث آخر وقت فتح للمحادثة لاحتساب غير المقروء
   useEffect(() => {
@@ -228,6 +236,31 @@ export default function PrivateMessageBox({
       } catch {}
     }
   }, [isOpen, currentUser?.id, user?.id]);
+
+  // التمرير التلقائي للأسفل عند استلام رسالة جديدة
+  const prevMessageCountRef = useRef(0);
+  useEffect(() => {
+    if (!isOpen) return;
+    
+    const currentCount = sortedMessages.length;
+    const prevCount = prevMessageCountRef.current;
+    
+    // إذا كانت هناك رسائل جديدة
+    if (currentCount > prevCount && currentCount > 0) {
+      // تأخير بسيط للسماح بعرض الرسالة أولاً
+      setTimeout(() => {
+        if (virtuosoRef.current) {
+          virtuosoRef.current.scrollToIndex({
+            index: currentCount - 1,
+            align: 'end',
+            behavior: 'smooth',
+          });
+        }
+      }, 100);
+    }
+    
+    prevMessageCountRef.current = currentCount;
+  }, [isOpen, sortedMessages.length]);
 
   // تحديث مؤشّر القراءة (مخفّض الاستدعاءات): اربطه بتغير آخر رسالة فقط أثناء الفتح
   const lastMessageDeps = React.useMemo(() => {
@@ -476,7 +509,7 @@ export default function PrivateMessageBox({
                 increaseViewportBy={{ top: 300, bottom: 300 }}
                 defaultItemHeight={80}
                 startReached={handleLoadMore}
-                followOutput={false}
+                followOutput="smooth"
                 initialTopMostItemIndex={sortedMessages.length - 1}
                 computeItemKey={(index, m) => (m as any)?.id ?? `${(m as any)?.senderId}-${(m as any)?.timestamp}-${index}`}
                 components={{
@@ -511,15 +544,14 @@ export default function PrivateMessageBox({
                   return (
                     <div key={key} className="w-full mb-2" dir="rtl">
                       <div className={`flex ${isMe ? 'justify-end' : 'justify-start'} items-end gap-2`}>
-                        {/* صورة المستقبل على اليمين */}
-                        {!isMe && showAvatar && (
+                        {/* صورة المستقبل على اليمين - تظهر في كل رسالة */}
+                        {!isMe && (
                           <ProfileImage
                             user={(m.sender as ChatUser) || user}
                             size="small"
                             className="w-8 h-8 rounded-full flex-shrink-0"
                           />
                         )}
-                        {!isMe && !showAvatar && <div className="w-8 h-8 flex-shrink-0" />}
                         
                         {/* محتوى الرسالة */}
                         <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-[75%]`}>
@@ -656,15 +688,14 @@ export default function PrivateMessageBox({
                           )}
                         </div>
 
-                        {/* صورة المرسل على اليسار */}
-                        {isMe && showAvatar && (
+                        {/* صورة المرسل على اليسار - تظهر في كل رسالة */}
+                        {isMe && (
                           <ProfileImage
                             user={currentUser!}
                             size="small"
                             className="w-8 h-8 rounded-full flex-shrink-0"
                           />
                         )}
-                        {isMe && !showAvatar && <div className="w-8 h-8 flex-shrink-0" />}
                       </div>
                     </div>
                   );
