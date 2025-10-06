@@ -67,6 +67,9 @@ export default function PrivateMessageBox({
   // Read receipts: last read timestamp received from other user via socket
   const [otherLastReadAt, setOtherLastReadAt] = useState<string | null>(null);
 
+  // محسن: ترتيب الرسائل مع تحسين الأداء
+  const sortedMessages = useMemo(() => sortMessagesAscending(messages || []), [messages]);
+
   // Scroll management for DM: track bottom and enable followOutput
   const [isAtBottom, setIsAtBottom] = useState(true);
   const prevMessagesLenRef = useRef<number>(0);
@@ -215,10 +218,6 @@ export default function PrivateMessageBox({
     }
     return { cleaned, ids };
   }, [extractYouTubeId]);
-
-  // محسن: ترتيب الرسائل مع تحسين الأداء
-  const sortedMessages = useMemo(() => sortMessagesAscending(messages || []), [messages]);
-
   // تجميع الرسائل المتتالية لنفس المرسل ضمن نافذة زمنية قصيرة (مثل Messenger)
   const GROUP_TIME_MS = 5 * 60 * 1000; // 5 دقائق
   const getIsMe = useCallback((m: any) => !!(currentUser && m && m.senderId === currentUser.id), [currentUser]);
