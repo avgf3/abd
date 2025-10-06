@@ -15,11 +15,8 @@ export default function VipAvatar({
   frame = 1,
   className = '',
 }: VipAvatarProps) {
-  // مدة الحركة الأصلية (سرعة مختلفة لكل إطار)
-  const duration = useMemo(() => {
-    const speeds = [6, 7, 5.5, 7.5, 6.5, 5.8, 6.8, 7.2, 6.2, 5.6];
-    return `${speeds[(frame - 1) % speeds.length]}s`;
-  }, [frame]);
+  // تعطيل الحركة نهائياً (المطلوب نسخة ثابتة)
+  const duration = useMemo(() => '0s', []);
 
   const containerStyle: React.CSSProperties & { ['--vip-spin-duration']?: string } = {
     width: size,

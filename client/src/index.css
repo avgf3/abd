@@ -1432,10 +1432,8 @@ li > * > div.effect-crystal {
   border-radius: 9999px;
   pointer-events: none;
   z-index: 3;
-  /* إعادة تفعيل الحركة الأصلية */
-  animation: vip-rotate var(--vip-spin-duration, 6s) linear infinite;
-  transform-origin: 50% 50%;
-  will-change: transform;
+  /* تعطيل أي دوران */
+  animation: none !important;
 }
 
 /* Shared rotating border */
@@ -1451,16 +1449,12 @@ li > * > div.effect-crystal {
     linear-gradient(#000 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
-  /* إعادة تفعيل الحركة الأصلية */
-  animation: vip-rotate var(--vip-spin-duration, 6s) linear infinite;
+  /* تعطيل أي دوران */
+  animation: none !important;
 }
 
 
-/* حركة الدوران الأصلية */
-@keyframes vip-rotate {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
+/* تم تعطيل الدوران؛ الإبقاء على keyframes غير ضروري */
 
 /* عند استخدام صورة إطار جاهزة، أخفِ الإطار الشعاعي */
 .vip-frame.with-image::before { display: none !important; }
@@ -1508,12 +1502,8 @@ li > * > div.effect-crystal {
 }
 
 /* Optional subtle pulsation */
-/* نبض خفيف كما في النسخة الأصلية */
-.vip-frame.base { animation: vip-pulse 3.6s ease-in-out infinite; }
-@keyframes vip-pulse {
-  0%, 100% { filter: brightness(1); }
-  50% { filter: brightness(1.1); }
-}
+/* تعطيل أي نبض/حركة */
+.vip-frame.base { animation: none !important; }
 
 /* ===== تحسينات الاهتزاز الخفيف للرسائل ===== */
 
