@@ -361,6 +361,8 @@ export async function buildOnlineUsersForRoom(roomId: string) {
         }
         next.lastSeen = dbUser?.lastSeen || (u as any).createdAt || new Date();
         next.currentRoom = dbUser?.currentRoom || u.currentRoom || 'general';
+        // تأكيد تمرير إطار البروفايل من قاعدة البيانات دائماً
+        (next as any).profileFrame = (dbUser as any)?.profileFrame ?? (u as any)?.profileFrame;
       } catch (error) {
         next.lastSeen = (u as any).lastSeen || (u as any).createdAt || new Date();
         next.currentRoom = u.currentRoom || 'general';
@@ -447,7 +449,7 @@ export async function emitOnlineUsersForRoom(roomId: string): Promise<void> {
   try {
     if (!roomId) return;
     if (!ioInstance) return;
-    const users = await buildOnlineUsersForRoom(roomId);
+      const users = await buildOnlineUsersForRoom(roomId);
     ioInstance.to(`room_${roomId}`).emit('message', {
       type: 'onlineUsers',
       users,

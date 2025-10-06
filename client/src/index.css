@@ -1399,6 +1399,14 @@ li > * > div.effect-crystal {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  border-radius: 9999px;
+  /* Cross-browser gradient ring without masks using double backgrounds */
+  border: var(--vip-border, 3px) solid transparent;
+  background:
+    radial-gradient(closest-side, #0b1220 99%, transparent) padding-box,
+    var(--vip-conic, conic-gradient(from 0deg, #ffcc33, #ff6633, #ffcc33)) border-box;
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
 }
 .vip-frame-inner {
   position: relative;
@@ -1446,20 +1454,9 @@ li > * > div.effect-crystal {
 
 /* Shared rotating border */
 .vip-frame.base::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: 9999px;
-  z-index: 1;
-  /* Thickness of the visible frame border; adjustable per-size via --vip-border */
-  padding: var(--vip-border, 3px);
-  box-sizing: border-box;
-  -webkit-mask:
-    linear-gradient(#000 0 0) content-box,
-    linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  animation: none !important;
+  /* Deprecated mask-based ring — disabled in favor of cross-browser background ring */
+  content: none;
+  display: none;
 }
 
 @keyframes vip-rotate {
@@ -1472,45 +1469,22 @@ li > * > div.effect-crystal {
 }
 
 /* 10 distinct gradient frames matching modern VIP look */
-.vip-frame-1::before {
-  background: conic-gradient(from 0deg, #ffcc33, #ff6633, #ffcc33);
-  box-shadow: 0 0 12px rgba(255, 204, 51, 0.5);
-}
-.vip-frame-2::before {
-  background: conic-gradient(from 0deg, #66e0ff, #4488ff, #66e0ff);
-  box-shadow: 0 0 12px rgba(68, 136, 255, 0.45);
-}
-.vip-frame-3::before {
-  background: conic-gradient(from 0deg, #444, #999, #444);
-  box-shadow: 0 0 12px rgba(200, 200, 200, 0.35);
-}
-.vip-frame-4::before {
-  background: conic-gradient(from 0deg, #b45309, #065f46, #b45309);
-  box-shadow: 0 0 12px rgba(6, 95, 70, 0.4);
-}
-.vip-frame-5::before {
-  background: conic-gradient(from 0deg, #ec4899, #8b5cf6, #ec4899);
-  box-shadow: 0 0 14px rgba(236, 72, 153, 0.5);
-}
-.vip-frame-6::before {
-  background: conic-gradient(from 0deg, #7c2d12, #f59e0b, #7c2d12);
-  box-shadow: 0 0 12px rgba(245, 158, 11, 0.4);
-}
-.vip-frame-7::before {
-  background: conic-gradient(from 0deg, #b45309, #d97706, #b45309);
-  box-shadow: 0 0 12px rgba(217, 119, 6, 0.45);
-}
-.vip-frame-8::before {
-  background: conic-gradient(from 0deg, #000, #0f172a, #000);
-  box-shadow: 0 0 12px rgba(0, 0, 0, 0.5);
-}
-.vip-frame-9::before {
-  background: conic-gradient(from 0deg, #1f2937, #0b1220, #1f2937);
-  box-shadow: 0 0 12px rgba(31, 41, 55, 0.45);
-}
-.vip-frame-10::before {
-  background: conic-gradient(from 0deg, #0b1220, #000, #0b1220);
-  box-shadow: 0 0 12px rgba(0, 0, 0, 0.6);
+/* Per-frame conic gradients via CSS variable for cross-browser ring */
+.vip-frame-1 { --vip-conic: conic-gradient(from 0deg, #ffcc33, #ff6633, #ffcc33); }
+.vip-frame-2 { --vip-conic: conic-gradient(from 0deg, #66e0ff, #4488ff, #66e0ff); }
+.vip-frame-3 { --vip-conic: conic-gradient(from 0deg, #444, #999, #444); }
+.vip-frame-4 { --vip-conic: conic-gradient(from 0deg, #b45309, #065f46, #b45309); }
+.vip-frame-5 { --vip-conic: conic-gradient(from 0deg, #ec4899, #8b5cf6, #ec4899); }
+.vip-frame-6 { --vip-conic: conic-gradient(from 0deg, #7c2d12, #f59e0b, #7c2d12); }
+.vip-frame-7 { --vip-conic: conic-gradient(from 0deg, #b45309, #d97706, #b45309); }
+.vip-frame-8 { --vip-conic: conic-gradient(from 0deg, #000, #0f172a, #000); }
+.vip-frame-9 { --vip-conic: conic-gradient(from 0deg, #1f2937, #0b1220, #1f2937); }
+.vip-frame-10 { --vip-conic: conic-gradient(from 0deg, #0b1220, #000, #0b1220); }
+
+/* When using image overlay (frames 1..6 in profile), hide gradient ring */
+.vip-frame.with-image.base {
+  background:
+    radial-gradient(closest-side, #0b1220 99%, transparent) padding-box;
 }
 
 /* Optional subtle pulsation */

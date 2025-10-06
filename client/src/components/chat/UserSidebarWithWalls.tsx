@@ -574,7 +574,7 @@ export default function UnifiedSidebar({
                     size="small"
                     className=""
                     hideRoleBadgeOverlay={true}
-                    // في قائمة المستخدمين: إزالة الإطار الذهبي، إبقاء الإطار المتحرك وحلقة الجنس
+                    // في قائمة المستخدمين: إيقاف طبقة الصورة الذهبية وعرض الإطار الأصلي
                     useImageOverlay={false}
                     showGenderRing={true}
                     vipSizePx={46}
