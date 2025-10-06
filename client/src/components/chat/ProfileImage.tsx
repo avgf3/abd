@@ -71,7 +71,7 @@ export default function ProfileImage({
     const match = String(frameName).match(/(\d+)/);
     if (match) {
       const n = parseInt(match[1]);
-      if (Number.isFinite(n)) return (Math.max(1, Math.min(10, n)) as any);
+      if (Number.isFinite(n)) return (Math.max(1, Math.min(6, n)) as any);
     }
     return undefined;
   })();
@@ -86,6 +86,7 @@ export default function ProfileImage({
           size={px}
           frame={frameIndex as any}
           gender={user.gender}
+          // Stop rotation for profile contexts regardless of global setting
           useImageOverlay={useImageOverlay}
           showGenderRing={showGenderRing}
         />
@@ -98,7 +99,7 @@ export default function ProfileImage({
       <img
         src={imageSrc}
         alt={`صورة ${user.username}`}
-        className={`${sizeClasses[size]} rounded-full ring-2 ${borderColor} shadow-sm object-cover ${className}`}
+        className={`${sizeClasses[size]} ${user.profileFrame ? 'rounded-full ring-2 ' + borderColor : 'rounded-[12px]'} shadow-sm object-cover ${className}`}
         style={{
           transition: 'none',
           backfaceVisibility: 'hidden',

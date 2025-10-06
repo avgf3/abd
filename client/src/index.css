@@ -1423,30 +1423,31 @@ li > * > div.effect-crystal {
 }
 .vip-frame-overlay {
   position: absolute;
-  inset: -2px;
-  width: calc(100% + 4px);
-  height: calc(100% + 4px);
+  inset: 0;
+  width: 100%;
+  height: 100%;
   object-fit: cover;
   border-radius: 9999px;
   pointer-events: none;
   z-index: 3;
-  animation: vip-rotate var(--vip-spin-duration, 6s) linear infinite;
+  /* rotation disabled globally; can be enabled per-context if needed */
+  animation: none !important;
 }
 
 /* Shared rotating border */
 .vip-frame.base::before {
   content: '';
   position: absolute;
-  inset: -2px;
+  inset: 0;
   border-radius: 9999px;
   z-index: 1;
-  padding: 2px; /* frame thickness */
+  padding: 0; /* align overlay edge-to-edge */
   -webkit-mask:
     linear-gradient(#000 0 0) content-box,
     linear-gradient(#000 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
-  animation: vip-rotate var(--vip-spin-duration, 6s) linear infinite;
+  animation: none !important;
 }
 
 @keyframes vip-rotate {
@@ -1502,7 +1503,8 @@ li > * > div.effect-crystal {
 
 /* Optional subtle pulsation */
 .vip-frame.base {
-  animation: vip-pulse 3.6s ease-in-out infinite;
+  /* disable subtle pulsation for static look */
+  animation: none !important;
 }
 @keyframes vip-pulse {
   0%,
@@ -1537,6 +1539,23 @@ li > * > div.effect-crystal {
   50% {
     transform: translateY(-0.5px);
     border-color: rgba(59, 130, 246, 0.3);
+  }
+}
+
+/* Default avatar gentle motion (replaces wobble) */
+.default-avatar-gentle {
+  animation: default-avatar-breathe 6s ease-in-out infinite;
+  transform-origin: center center;
+  will-change: transform, filter;
+}
+@keyframes default-avatar-breathe {
+  0%, 100% {
+    transform: translateY(0) scale(1);
+    filter: none;
+  }
+  50% {
+    transform: translateY(-1px) scale(1.01);
+    filter: brightness(1.03);
   }
 }
 
@@ -2461,12 +2480,8 @@ li::before {
 }
 
 /* Disable VIP frame rotation specifically in the online users list */
-.users-list-reset .vip-frame-overlay {
-  animation: none !important;
-}
-.users-list-reset .vip-frame.base::before {
-  animation: none !important;
-}
+.users-list-reset .vip-frame-overlay { animation: none !important; }
+.users-list-reset .vip-frame.base::before { animation: none !important; }
 
 /* ===== Arabic.chat-like typography ===== */
 /* Username in user list: bold, slightly larger, Cairo */
