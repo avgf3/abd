@@ -71,13 +71,15 @@ export default function ProfileImage({
     const match = String(frameName).match(/(\d+)/);
     if (match) {
       const n = parseInt(match[1]);
-      if (Number.isFinite(n)) return (Math.max(1, Math.min(6, n)) as any);
+      // دعم حتى 10 إطارات (1..10): 1-6 تستخدم صورة overlay، 7-10 تدرجات
+      if (Number.isFinite(n)) return (Math.max(1, Math.min(10, n)) as any);
     }
     return undefined;
   })();
 
   if (!disableFrame && frameName && frameIndex) {
-    const px = vipSizePx ?? (size === 'small' ? 40 : size === 'large' ? 80 : size === 'xlarge' ? 128 : 64);
+    // Harmonize sizes: small 40, medium 64, large 80, xlarge 130 (profile modal)
+    const px = vipSizePx ?? (size === 'small' ? 40 : size === 'large' ? 80 : size === 'xlarge' ? 130 : 64);
     return (
       <div className={`relative inline-block ${className || ''}`} onClick={onClick}>
         <VipAvatar

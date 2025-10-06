@@ -507,7 +507,7 @@ img, video, canvas, iframe {
 }
 
 .user-img:hover {
-  transform: scale(1.1) rotate(5deg);
+  transform: scale(1.03);
   box-shadow: 
     0 8px 25px rgba(0, 0, 0, 0.3),
     0 0 50px rgba(100, 200, 255, 0.2);
@@ -1421,6 +1421,7 @@ li > * > div.effect-crystal {
 .vip-frame.with-image .vip-frame-inner {
   position: relative;
 }
+.vip-frame.with-image.base::before { display: none; }
 .vip-frame-overlay {
   position: absolute;
   inset: 0;
@@ -1434,6 +1435,15 @@ li > * > div.effect-crystal {
   animation: none !important;
 }
 
+/* Ensure list contexts never animate the frame and keep sizes stable */
+.users-list-reset .vip-frame-inner,
+.users-list-reset .vip-frame-img,
+.users-list-reset .vip-frame-overlay,
+.users-list-reset .vip-frame.base::before {
+  animation: none !important;
+  transition: none !important;
+}
+
 /* Shared rotating border */
 .vip-frame.base::before {
   content: '';
@@ -1441,7 +1451,9 @@ li > * > div.effect-crystal {
   inset: 0;
   border-radius: 9999px;
   z-index: 1;
-  padding: 0; /* align overlay edge-to-edge */
+  /* Thickness of the visible frame border; adjustable per-size via --vip-border */
+  padding: var(--vip-border, 3px);
+  box-sizing: border-box;
   -webkit-mask:
     linear-gradient(#000 0 0) content-box,
     linear-gradient(#000 0 0);

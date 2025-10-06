@@ -2259,12 +2259,18 @@ export default function ProfileModal({
           transform: scale(1.05);
         }
 
-        .profile-avatar .profile-main-image img {
+        /* الصور بدون إطار (الصورة المباشرة فقط) تبقى بزوايا مدورة خفيفة */
+        .profile-avatar .profile-main-image > img {
           width: 100%;
           height: 100%;
           object-fit: cover;
           display: block;
           border-radius: 16px !important; /* مربع بزوايا مدورة للصور بدون إطار */
+        }
+
+        /* عند وجود إطار VIP: اجعل الصورة دائرية تماماً دون أي تداخل */
+        .profile-avatar .profile-main-image .vip-frame-img {
+          border-radius: 9999px !important;
         }
 
         /* الصور مع إطار تبقى دائرية ومطابقة لحجم الصورة */

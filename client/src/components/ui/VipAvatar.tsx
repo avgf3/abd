@@ -32,11 +32,18 @@ export default function VipAvatar({
     return `${speeds[(frame - 1) % speeds.length]}s`;
   }, [frame]);
 
-  const containerStyle: React.CSSProperties & { ['--vip-spin-duration']?: string } = {
+  // Dynamic border thickness scaled by avatar size
+  const borderThickness = useMemo(() => {
+    return Math.max(2, Math.round(size * 0.06));
+  }, [size]);
+
+  const containerStyle: React.CSSProperties & { ['--vip-spin-duration']?: string; ['--vip-border']?: string } = {
     width: size,
     height: size,
     // تمرير مدة الدوران عبر متغير CSS
     ['--vip-spin-duration']: duration,
+    // تمرير سمك الإطار عبر متغير CSS (يقرأه ::before)
+    ['--vip-border']: `${borderThickness}px`,
   };
 
   const isFemale = gender === 'female' || gender === 'أنثى';
@@ -48,11 +55,11 @@ export default function VipAvatar({
 
   // Inner image fills the container; outer overlay aligns exactly
   const baseInnerSize = size;
-  // If showing a Tailwind ring, subtract its outward thickness to avoid overlap with the animated frame
+  // If showing a Tailwind ring, subtract its outward thickness to avoid overlap with the frame
   const ringCompensation = showGenderRing ? ringWidth * 2 : 0;
   const imgStyle: React.CSSProperties = {
-    width: baseInnerSize - ringCompensation,
-    height: baseInnerSize - ringCompensation,
+    width: Math.max(0, baseInnerSize - ringCompensation - borderThickness * 2),
+    height: Math.max(0, baseInnerSize - ringCompensation - borderThickness * 2),
   };
 
   // Use image-based overlay for frames 1..6 only
