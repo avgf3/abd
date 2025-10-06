@@ -82,28 +82,52 @@ export default function ProfileImage({
   }
 
   return (
-    <div className="relative inline-block" onClick={onClick} style={{ width: pixelSize ? pixelSize : undefined, height: pixelSize ? pixelSize : undefined }}>
-      <img
-        src={imageSrc}
-        alt={`صورة ${user.username}`}
-        className={`${sizeClasses[size]} rounded-full ring-2 ${borderColor} shadow-sm object-cover ${className}`}
-        style={{
-          width: pixelSize ? pixelSize : undefined,
-          height: pixelSize ? pixelSize : undefined,
-          transition: 'none',
-          backfaceVisibility: 'hidden',
-          transform: 'translateZ(0)',
-          display: 'block',
-        }}
-        loading="lazy"
-        decoding="async"
-        sizes={size === 'small' ? '40px' : size === 'large' ? '80px' : '64px'}
-        onError={(e: any) => {
-          if (e?.currentTarget && e.currentTarget.src !== '/default_avatar.svg') {
-            e.currentTarget.src = '/default_avatar.svg';
-          }
-        }}
-      />
+    <div
+      className={`relative inline-block ${className || ''}`}
+      onClick={onClick}
+      style={{ width: pixelSize ? pixelSize : undefined, height: pixelSize ? pixelSize : undefined }}
+    >
+      <span
+        className="inline-block align-middle rounded-full"
+        style={{ position: 'relative', display: 'inline-block' }}
+      >
+        <span
+          className="block rounded-full overflow-hidden"
+          style={{ width: pixelSize || undefined, height: pixelSize || undefined }}
+        >
+          <img
+            src={imageSrc}
+            alt={`صورة ${user.username}`}
+            className={`${sizeClasses[size]} rounded-full object-cover`}
+            style={{
+              width: pixelSize ? pixelSize : undefined,
+              height: pixelSize ? pixelSize : undefined,
+              transition: 'none',
+              backfaceVisibility: 'hidden',
+              transform: 'translateZ(0)',
+              display: 'block',
+            }}
+            loading="lazy"
+            decoding="async"
+            sizes={size === 'small' ? '40px' : size === 'large' ? '80px' : '64px'}
+            onError={(e: any) => {
+              if (e?.currentTarget && e.currentTarget.src !== '/default_avatar.svg') {
+                e.currentTarget.src = '/default_avatar.svg';
+              }
+            }}
+          />
+        </span>
+        <span
+          aria-hidden="true"
+          className={`absolute inset-0 rounded-full pointer-events-none`}
+          style={{
+            outline: '2px solid',
+            outlineColor: isFemale ? '#f472b6' : '#60a5fa',
+            outlineOffset: '2px',
+            borderRadius: '9999px',
+          }}
+        />
+      </span>
     </div>
   );
 }

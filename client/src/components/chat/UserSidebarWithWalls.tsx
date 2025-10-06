@@ -563,7 +563,7 @@ export default function UnifiedSidebar({
               showModerationActions={isModerator}
             >
               <div
-                className={`flex items-center gap-2 py-1.5 px-1 rounded-none border-b border-border transition-colors duration-200 cursor-pointer w-full ${getUserListItemClasses(user)} hover:bg-accent/10 ${user.profileFrame ? 'translate-y-[-2px]' : ''}`}
+                className={`flex items-center gap-2 py-1.5 px-1 rounded-none border-b border-border transition-colors duration-200 cursor-pointer w-full ${getUserListItemClasses(user)} hover:bg-accent/10 ${user.profileFrame ? 'translate-y-[-2px]' : ''} item-ring`}
                 style={getUserListItemStyles(user)}
                 onClick={(e) => handleUserClick(e as any, user)}
               >

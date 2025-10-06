@@ -1400,6 +1400,23 @@ li > * > div.effect-crystal {
   align-items: center;
   justify-content: center;
 }
+.avatar-ring {
+  position: relative;
+  display: inline-block;
+  border-radius: 9999px;
+}
+.avatar-ring::after {
+  content: '';
+  position: absolute;
+  inset: -2px; /* حلقة خارجية حقيقية */
+  border-radius: inherit;
+  border: 2px solid currentColor;
+  pointer-events: none;
+}
+.item-ring {
+  outline: 1px solid rgba(255,255,255,0.12);
+  outline-offset: 2px;
+}
 .vip-frame-inner {
   position: relative;
   width: 100%;
@@ -1436,7 +1453,7 @@ li > * > div.effect-crystal {
   animation: none !important;
   /* كبّر الإطار قليلاً ليجلس على حافة الصورة تماماً */
   transform-origin: center center;
-  transform: scale(var(--vip-overlay-scale, 1.06));
+  transform: scale(var(--vip-overlay-scale, 1.0));
 }
 
 /* Shared rotating border */
@@ -1731,6 +1748,8 @@ li > * > div.effect-crystal {
   position: relative;
   overflow: hidden;
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  outline: 0px solid transparent; /* تمهيد للحلقة الخارجية عند التفاعل */
+  outline-offset: 0;
 }
 
 .modern-card::before {
@@ -2068,6 +2087,8 @@ li > * > div.effect-crystal {
   );
   border: 1px solid var(--nav-border, rgba(255, 255, 255, 0.08));
   color: inherit;
+  outline: 1px solid var(--nav-border, rgba(255, 255, 255, 0.08));
+  outline-offset: 2px;
 }
 
 .themed-nav:hover {
@@ -2093,6 +2114,8 @@ li > * > div.effect-crystal {
     var(--nav-tint-end, transparent) 100%
   );
   border: 1px solid var(--nav-border, rgba(255, 255, 255, 0.08));
+  outline: 1px solid var(--nav-border, rgba(255, 255, 255, 0.08));
+  outline-offset: 2px;
 }
 
 .themed-tab {
@@ -2300,12 +2323,15 @@ li > * > div.effect-crystal {
   transition: all 0.3s ease;
   cursor: pointer;
   position: relative;
+  outline: 0px solid rgba(255,255,255,0.12);
+  outline-offset: 2px;
 }
 
 .user-list-item:hover {
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
   transform: translateX(-4px);
   padding-right: 20px;
+  outline-width: 1px;
 }
 
 /* Modern Status Indicators */
