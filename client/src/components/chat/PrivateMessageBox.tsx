@@ -237,8 +237,10 @@ export default function PrivateMessageBox({
     }
   }, [isOpen, currentUser?.id, user?.id]);
 
-  // التمرير التلقائي للأسفل عند استلام رسالة جديدة
+  // التمرير التلقائي للأسفل عند استلام رسالة جديدة - محسّن
   const prevMessageCountRef = useRef(0);
+  const autoScrollTimeoutRef = useRef<NodeJS.Timeout>();
+  
   useEffect(() => {
     if (!isOpen) return;
     
@@ -247,19 +249,35 @@ export default function PrivateMessageBox({
     
     // إذا كانت هناك رسائل جديدة
     if (currentCount > prevCount && currentCount > 0) {
-      // تأخير بسيط للسماح بعرض الرسالة أولاً
-      setTimeout(() => {
+      // مسح أي timeout سابق
+      if (autoScrollTimeoutRef.current) {
+        clearTimeout(autoScrollTimeoutRef.current);
+      }
+      
+      // تأخير أطول للسماح بعرض الرسالة بالكامل (خاصة الصور)
+      autoScrollTimeoutRef.current = setTimeout(() => {
         if (virtuosoRef.current) {
-          virtuosoRef.current.scrollToIndex({
-            index: currentCount - 1,
-            align: 'end',
-            behavior: 'smooth',
+          // استخدام requestAnimationFrame لضمان العرض الكامل
+          requestAnimationFrame(() => {
+            if (virtuosoRef.current) {
+              virtuosoRef.current.scrollToIndex({
+                index: currentCount - 1,
+                align: 'end',
+                behavior: 'auto', // تغيير من smooth إلى auto للظهور الفوري والاحترافي
+              });
+            }
           });
         }
-      }, 100);
+      }, 150); // زيادة التأخير من 100 إلى 150ms
     }
     
     prevMessageCountRef.current = currentCount;
+    
+    return () => {
+      if (autoScrollTimeoutRef.current) {
+        clearTimeout(autoScrollTimeoutRef.current);
+      }
+    };
   }, [isOpen, sortedMessages.length]);
 
   // تحديث مؤشّر القراءة (مخفّض الاستدعاءات): اربطه بتغير آخر رسالة فقط أثناء الفتح
@@ -549,7 +567,7 @@ export default function PrivateMessageBox({
                           <ProfileImage
                             user={(m.sender as ChatUser) || user}
                             size="small"
-                            className="w-8 h-8 rounded-full flex-shrink-0"
+                            className="w-8 h-8 rounded-full flex-shrink-0 self-end"
                           />
                         )}
                         
@@ -622,16 +640,17 @@ export default function PrivateMessageBox({
                               <button
                                 type="button"
                                 onClick={() => setImageLightbox({ open: true, src: m.content })}
-                                className="p-0 bg-transparent rounded-lg overflow-hidden"
+                                className="p-0 bg-transparent rounded-lg overflow-hidden flex items-center justify-center"
                                 title="عرض الصورة"
                                 aria-label="عرض الصورة"
                               >
                                 <img
                                   src={m.content}
                                   alt="صورة مرفقة"
-                                  className="block max-w-[220px] max-h-[260px] object-cover rounded-lg"
+                                  className="max-w-[220px] max-h-[260px] object-cover rounded-lg align-middle"
                                   loading="lazy"
                                   decoding="async"
+                                  style={{ display: 'inline-block', verticalAlign: 'middle' }}
                                 />
                               </button>
                             ) : (() => {
@@ -693,7 +712,7 @@ export default function PrivateMessageBox({
                           <ProfileImage
                             user={currentUser!}
                             size="small"
-                            className="w-8 h-8 rounded-full flex-shrink-0"
+                            className="w-8 h-8 rounded-full flex-shrink-0 self-end"
                           />
                         )}
                       </div>
