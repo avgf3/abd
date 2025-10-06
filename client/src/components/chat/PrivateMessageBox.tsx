@@ -70,15 +70,7 @@ export default function PrivateMessageBox({
   // ترتيب الرسائل
   const sortedMessages = useMemo(() => sortMessagesAscending(messages || []), [messages]);
 
-  // دالة بسيطة للتمرير للأسفل
-  const scrollToBottom = React.useCallback(() => {
-    if (!virtuosoRef.current || sortedMessages.length === 0) return;
-    virtuosoRef.current.scrollToIndex({
-      index: sortedMessages.length - 1,
-      align: 'end',
-      behavior: 'auto',
-    });
-  }, [sortedMessages.length]);
+  // تمت إزالة دوال التمرير اليدوي غير الضرورية للحفاظ على بساطة واستقرار الصندوق
 
   // Emit private typing (throttled ~3s)
   const emitPrivateTyping = useCallback(() => {
@@ -224,15 +216,14 @@ export default function PrivateMessageBox({
     return Math.abs(tb - ta) <= GROUP_TIME_MS;
   }, []);
 
-  // عند فتح الصندوق: التمرير للأسفل وتركيز الإدخال
+  // عند فتح الصندوق: تركيز الإدخال فقط (التمرير الابتدائي يتم عبر initialTopMostItemIndex)
   useEffect(() => {
     if (!isOpen) return;
     const timer = setTimeout(() => {
-      scrollToBottom();
       inputRef.current?.focus();
     }, 150);
     return () => clearTimeout(timer);
-  }, [isOpen, scrollToBottom]);
+  }, [isOpen]);
 
   // تحديث آخر وقت فتح للمحادثة لاحتساب غير المقروء
   useEffect(() => {
@@ -267,12 +258,7 @@ export default function PrivateMessageBox({
     } catch {}
   }, [isOpen, user?.id, currentUser?.id, lastMessageDeps]);
 
-  // التمرير التلقائي عند وصول رسائل جديدة
-  useEffect(() => {
-    if (!isOpen || sortedMessages.length === 0) return;
-    const timer = setTimeout(() => scrollToBottom(), 100);
-    return () => clearTimeout(timer);
-  }, [sortedMessages.length, isOpen, scrollToBottom]);
+  // تمت إزالة التمرير التلقائي على تغيّر الرسائل؛ Virtuoso مع followOutput="auto" يتكفّل بالسلوك الطبيعي
 
 
   // محسن: دالة إرسال مع إعادة المحاولة ومعالجة أخطاء محسنة
@@ -513,7 +499,8 @@ export default function PrivateMessageBox({
                 ref={virtuosoRef}
                 data={sortedMessages}
                 className="!h-full"
-                style={{ overscrollBehavior: 'contain', scrollBehavior: 'smooth' }}
+                style={{ overscrollBehavior: 'contain', scrollBehavior: 'auto' }}
+                initialTopMostItemIndex={Math.max(0, sortedMessages.length - 1)}
                 increaseViewportBy={{ top: 300, bottom: 300 }}
                 defaultItemHeight={56}
                 startReached={handleLoadMore}
