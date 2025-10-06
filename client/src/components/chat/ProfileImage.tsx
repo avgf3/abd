@@ -3,6 +3,7 @@ import { useMemo } from 'react';
 import { getUserLevelIcon } from '@/components/chat/UserRoleBadge';
 import type { ChatUser } from '@/types/chat';
 import { getImageSrc } from '@/utils/imageUtils';
+import VipAvatar from '@/components/ui/VipAvatar';
 
 interface ProfileImageProps {
   user: ChatUser;
@@ -10,6 +11,8 @@ interface ProfileImageProps {
   className?: string;
   onClick?: (e: any) => void;
   hideRoleBadgeOverlay?: boolean;
+  // تعطيل عرض إطار الصورة في سياقات معينة (مثل الرسائل)
+  disableFrame?: boolean;
 }
 
 export default function ProfileImage({
@@ -18,6 +21,7 @@ export default function ProfileImage({
   className = '',
   onClick,
   hideRoleBadgeOverlay = false,
+  disableFrame = false,
 }: ProfileImageProps) {
   const sizeClasses = {
     small: 'w-10 h-10',
@@ -53,9 +57,28 @@ export default function ProfileImage({
     return base;
   }, [user.profileImage, (user as any)?.avatarHash, (user as any)?.avatarVersion]);
 
+  const frameName = (user as any)?.profileFrame as string | undefined;
+  const frameIndex = (() => {
+    if (!frameName) return undefined;
+    const match = String(frameName).match(/(\d+)/);
+    if (match) {
+      const n = parseInt(match[1]);
+      if (Number.isFinite(n)) return (Math.max(1, Math.min(10, n)) as any);
+    }
+    return undefined;
+  })();
+
+  if (!disableFrame && frameName && frameIndex) {
+    const px = size === 'small' ? 40 : size === 'large' ? 80 : 64;
+    return (
+      <div className={`relative inline-block ${className || ''}`} onClick={onClick}>
+        <VipAvatar src={imageSrc} alt={`صورة ${user.username}`} size={px} frame={frameIndex as any} />
+      </div>
+    );
+  }
+
   return (
     <div className="relative inline-block" onClick={onClick}>
-      {/* الصورة الأساسية */}
       <img
         src={imageSrc}
         alt={`صورة ${user.username}`}
@@ -75,8 +98,6 @@ export default function ProfileImage({
           }
         }}
       />
-
-      {/* تم إزالة الشعار داخل الصورة بناءً على طلب المستخدم */}
     </div>
   );
 }

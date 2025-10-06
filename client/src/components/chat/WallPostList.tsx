@@ -67,18 +67,16 @@ export default function WallPostList({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="relative">
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center ring-2 ring-primary/10">
-                    {post.userProfileImage ? (
-                      <img
-                        src={getImageSrc(post.userProfileImage)}
-                        alt={post.username}
-                        className="w-12 h-12 rounded-full object-cover"
-                      />
-                    ) : (
-                      <span className="text-lg font-bold text-primary">
-                        {post.username.charAt(0)}
-                      </span>
-                    )}
+                  <div className="w-12 h-12">
+                    <ProfileImage user={{
+                      id: post.userId,
+                      username: post.username,
+                      role: (post.userRole as any) || 'member',
+                      userType: post.userRole as any,
+                      isOnline: true,
+                      profileImage: post.userProfileImage,
+                      usernameColor: post.usernameColor,
+                    } as any} size="small" className="w-12 h-12" hideRoleBadgeOverlay={true} />
                   </div>
                 </div>
                 <div>

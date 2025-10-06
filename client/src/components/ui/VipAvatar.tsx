@@ -33,10 +33,17 @@ export default function VipAvatar({
     height: size - 4,
   };
 
+  // Use image-based overlay for frames 1..6 if available
+  const frameImage = frame >= 1 && frame <= 10 ? `/frames/frame${frame}.webp` : undefined;
+  const hasImageOverlay = Boolean(frameImage);
+
   return (
-    <div className={`vip-frame base ${`vip-frame-${frame}`} ${className}`} style={containerStyle}>
+    <div className={`vip-frame base ${hasImageOverlay ? 'with-image' : ''} ${`vip-frame-${frame}`} ${className}`} style={containerStyle}>
       <div className="vip-frame-inner">
         <img src={src} alt={alt} className="vip-frame-img" style={imgStyle} />
+        {hasImageOverlay && (
+          <img src={frameImage} alt="frame" className="vip-frame-overlay" />
+        )}
       </div>
     </div>
   );

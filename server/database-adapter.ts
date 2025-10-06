@@ -494,6 +494,19 @@ export async function ensureRoomsColumns(): Promise<void> {
   }
 }
 
+// Ensure profile_frame column exists for avatar frames
+export async function ensureUserProfileFrameColumn(): Promise<void> {
+  try {
+    if (!dbAdapter.client) return;
+    await dbAdapter.client.unsafe(`
+      ALTER TABLE IF EXISTS users
+        ADD COLUMN IF NOT EXISTS profile_frame TEXT;
+    `);
+  } catch (e) {
+    console.warn('⚠️ تعذر ضمان عمود profile_frame:', (e as any)?.message || e);
+  }
+}
+
 // Ensure message text styling columns exist on messages table
 export async function ensureMessageTextStylingColumns(): Promise<void> {
   try {

@@ -45,6 +45,8 @@ export const users = pgTable('users', {
   ignoredUsers: text('ignored_users').default('[]'), // قائمة المستخدمين المتجاهلين - JSON string للتوافق مع SQLite
   usernameColor: text('username_color').default('#4A90E2'), // لون اسم المستخدم (افتراضي أزرق)
   profileEffect: text('profile_effect').default('none'), // تأثير البروفايل
+  // إطار صورة البروفايل (مسار ثابت داخل public/frames أو اسم معرف إطار)
+  profileFrame: text('profile_frame'),
   points: integer('points').default(0), // نقاط المستخدم الحالية
   level: integer('level').default(1), // مستوى المستخدم
   totalPoints: integer('total_points').default(0), // إجمالي النقاط التي كسبها المستخدم

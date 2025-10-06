@@ -3311,7 +3311,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      const user = await storage.updateUser(idNum, normalizedUpdates);
+      // امنع تمرير قيم غير مسموحة: نبيح حقول معينة فقط
+      const allowed = [
+        'username',
+        'status',
+        'gender',
+        'age',
+        'country',
+        'relation',
+        'bio',
+        'usernameColor',
+        'profileBackgroundColor',
+        'profileEffect',
+        'profileFrame',
+        'dmPrivacy',
+        'profileMusicTitle',
+        'profileMusicEnabled',
+        'profileMusicVolume',
+      ];
+      const sanitized: any = {};
+      for (const k of Object.keys(normalizedUpdates)) {
+        if (allowed.includes(k)) sanitized[k] = (normalizedUpdates as any)[k];
+      }
+
+      const user = await storage.updateUser(idNum, sanitized);
       if (!user) {
         return res.status(404).json({ error: 'User not found' });
       }

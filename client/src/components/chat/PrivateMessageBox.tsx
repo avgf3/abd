@@ -433,6 +433,7 @@ export default function PrivateMessageBox({
                 user={user}
                 size="small"
                 className="w-10 h-10 cursor-pointer hover:opacity-90 transition"
+                disableFrame
                 onClick={handleViewProfileClick}
               />
               <div className="flex-1 min-w-0">
@@ -561,6 +562,7 @@ export default function PrivateMessageBox({
                               user={(m.sender as ChatUser) || user}
                               size="small"
                               className="w-8 h-8 rounded-full"
+                              disableFrame
                             />
                           </div>
                         )}
@@ -571,7 +573,8 @@ export default function PrivateMessageBox({
                             <ProfileImage
                               user={currentUser!}
                               size="small"
-                              className="w-8 h-8 rounded-full"
+                              className="w-8 h-8 rounded_full"
+                              disableFrame
                             />
                           </div>
                         )}

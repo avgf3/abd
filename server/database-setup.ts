@@ -26,6 +26,7 @@ import { ensureChatLockColumns } from './database-adapter';
 import { ensureUserPreferencesColumns } from './database-adapter';
 import { ensureUsernameColorDefaultBlue } from './database-adapter';
 import { ensureMessageTextStylingColumns } from './database-adapter';
+import { ensureUserProfileFrameColumn } from './database-adapter';
 import { optimizeDatabaseIndexes } from './utils/database-optimization';
 
 // إعادة تصدير دالة التهيئة من المحول
@@ -268,6 +269,13 @@ export async function initializeSystem(): Promise<boolean> {
       await ensureConversationReadsTable();
     } catch (e) {
       console.warn('⚠️ تعذر ضمان جدول conversation_reads:', (e as any)?.message || e);
+    }
+
+    // ضمان عمود إطار الصورة
+    try {
+      await ensureUserProfileFrameColumn();
+    } catch (e) {
+      console.warn('⚠️ تعذر ضمان عمود profile_frame:', (e as any)?.message || e);
     }
 
     // ضمان وجود أعمدة chat_lock في جدول الغرف
