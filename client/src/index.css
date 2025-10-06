@@ -2460,6 +2460,14 @@ li::before {
   display: none !important;
 }
 
+/* Disable VIP frame rotation specifically in the online users list */
+.users-list-reset .vip-frame-overlay {
+  animation: none !important;
+}
+.users-list-reset .vip-frame.base::before {
+  animation: none !important;
+}
+
 /* ===== Arabic.chat-like typography ===== */
 /* Username in user list: bold, slightly larger, Cairo */
 .ac-user-name {
