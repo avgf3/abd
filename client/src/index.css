@@ -1434,6 +1434,8 @@ li > * > div.effect-crystal {
   z-index: 3;
   /* إعادة تفعيل الحركة الأصلية */
   animation: vip-rotate var(--vip-spin-duration, 6s) linear infinite;
+  transform-origin: 50% 50%;
+  will-change: transform;
 }
 
 /* Shared rotating border */
@@ -1978,6 +1980,15 @@ li > * > div.effect-crystal {
   .richest-modal .mobile-stable::before,
   .richest-modal .mobile-stable::after {
     animation: none !important;
+  }
+
+  /* استثناء إطارات VIP: إبقاء حركة الإطار فعّالة داخل richest حتى مع mobile-stable */
+  .richest-modal .mobile-stable .vip-frame-overlay,
+  .richest-modal .mobile-stable .vip-frame.base::before {
+    animation: vip-rotate var(--vip-spin-duration, 6s) linear infinite !important;
+  }
+  .richest-modal .mobile-stable .vip-frame.base {
+    animation: vip-pulse 3.6s ease-in-out infinite !important;
   }
 
   /* منع تأثيرات التحويم من إحداث حركة في الجوال داخل نافذة الأثرياء */
