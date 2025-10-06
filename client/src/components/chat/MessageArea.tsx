@@ -1,6 +1,6 @@
 import { Send, Smile, ChevronDown, Sparkles, Flag, Lock, UserX, MoreVertical } from 'lucide-react';
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { Virtuoso, type VirtuosoHandle } from 'react-virtuoso';
+// Removed react-virtuoso to simplify scrolling behavior
 
 const EmojiPicker = React.lazy(() => import('./EmojiPicker'));
 const AnimatedEmojiPicker = React.lazy(() => import('./AnimatedEmojiPicker'));
@@ -83,15 +83,13 @@ export default function MessageArea({
 
 
   // Refs
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
   const lastTypingTime = useRef<number>(0);
   const inputRef = useRef<HTMLInputElement>(null);
-  const virtuosoRef = useRef<VirtuosoHandle>(null);
   const prevMessagesLenRef = useRef<number>(0);
-  // مقدار إزاحة الكيبورد أسفل الشاشة (iOS) لترك مساحة أسفل قائمة الرسائل
-  const [keyboardInset, setKeyboardInset] = useState<number>(0);
+  // Removed keyboard inset logic for simplicity
 
   // State for improved scroll behavior
   const [isAtBottom, setIsAtBottom] = useState(true);
@@ -253,56 +251,30 @@ export default function MessageArea({
 
   const showScrollToBottom = false; // إخفاء الزر السفلي بشكل دائم بناءً على الطلب
 
-  // Scroll to bottom function - optimized via Virtuoso
+  // Scroll to bottom function - simple native scroll
   type ScrollBehaviorStrict = 'auto' | 'smooth';
   const scrollToBottom = useCallback(
     (behavior: ScrollBehaviorStrict = 'smooth') => {
-      if (!virtuosoRef.current || validMessages.length === 0) return;
-      virtuosoRef.current.scrollToIndex({
-        index: validMessages.length - 1,
-        align: 'end',
-        behavior,
-      });
+      const el = listRef.current;
+      if (!el) return;
+      el.scrollTo({ top: el.scrollHeight, behavior });
     },
-    [validMessages.length]
+    []
   );
 
   // Track bottom state from Virtuoso
-  const handleAtBottomChange = useCallback((atBottom: boolean) => {
+  const handleScroll = useCallback(() => {
+    const el = listRef.current;
+    if (!el) return;
+    const threshold = 64;
+    const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight <= threshold;
     setIsAtBottom(atBottom);
     if (atBottom) setUnreadCount(0);
   }, []);
 
-  const handleScrollDownClick = useCallback(() => {
-    scrollToBottom('smooth');
-    setUnreadCount(0);
-  }, [scrollToBottom]);
+  // Removed explicit scroll-down button logic
 
-  // عند ظهور الكيبورد على iOS: احسب الإزاحة السفلية وزِد مسافة أسفل قائمة الرسائل واذهب للقاع
-  useEffect(() => {
-    if (!isMobile) return;
-    const vv = (window as any).visualViewport as VisualViewport | undefined;
-    const recompute = () => {
-      try {
-        const height = vv?.height ?? window.innerHeight;
-        const offsetTop = vv?.offsetTop ?? 0;
-        const inset = Math.max(0, window.innerHeight - height - offsetTop);
-        setKeyboardInset(inset);
-        if (inset > 0) {
-          // امنح المتصفح فرصة لإعادة التخطيط ثم مرّر للأسفل
-          setTimeout(() => scrollToBottom('auto'), 50);
-          setTimeout(() => scrollToBottom('auto'), 250);
-        }
-      } catch {}
-    };
-    recompute();
-    vv?.addEventListener('resize', recompute);
-    window.addEventListener('orientationchange', recompute);
-    return () => {
-      try { vv?.removeEventListener('resize', recompute); } catch {}
-      try { window.removeEventListener('orientationchange', recompute); } catch {}
-    };
-  }, [isMobile, scrollToBottom]);
+  // Removed iOS keyboard inset handling for simplicity
 
   // عند تركيز حقل الإدخال أثناء الكتابة، مرّر آخر رسالة إلى الواجهة
   useEffect(() => {
@@ -690,27 +662,18 @@ export default function MessageArea({
         </div>
       )}
 
-      {/* Messages Container - Virtualized */}
-      <div
-        className={`relative flex-1 p-2 bg-gradient-to-b from-gray-50 to-white`}
-      >
+      {/* Messages Container - Native scrolling */}
+      <div className={`relative flex-1 p-2 bg-gradient-to-b from-gray-50 to-white`}>
         {validMessages.length === 0 ? (
           <div className="h-full"></div>
         ) : (
-          <Virtuoso
-            ref={virtuosoRef}
-            data={validMessages}
-            className="!h-full"
-            style={{
-              paddingBottom: `${24 + (isMobile ? keyboardInset : 0)}px`,
-              overscrollBehavior: 'contain',
-              scrollBehavior: 'auto',
-            }}
-            followOutput={isAtBottom ? 'smooth' : false}
-            atBottomThreshold={64}
-            atBottomStateChange={handleAtBottomChange}
-            increaseViewportBy={{ top: 400, bottom: 400 }}
-            itemContent={(index, message) => (
+          <div
+            ref={listRef}
+            onScroll={handleScroll}
+            className="!h-full overflow-y-auto"
+            style={{ scrollBehavior: 'auto' }}
+          >
+            {validMessages.map((message, index) => (
               <div
                 key={message.id}
                 className={`ac-message-row flex items-start gap-2 py-1 px-2 transition-all duration-300 ${index % 2 ? 'log2' : ''}`}
@@ -1008,8 +971,8 @@ export default function MessageArea({
                   </>
                 )}
               </div>
-            )}
-          />
+            ))}
+          </div>
         )}
         {/* تم حذف زر الانتقال السفلي المركزي */}
       </div>
