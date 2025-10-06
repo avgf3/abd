@@ -61,7 +61,7 @@ export default function WallPostList({
       {posts.map((post) => (
         <Card
           key={post.id}
-          className="hover:shadow-lg transition-all duration-300 border-0 wall-post-card backdrop-blur-sm group"
+          className="hover:shadow-lg transition-all duration-300 border-0 wall-post-card backdrop-blur-sm group item-ring"
         >
           <CardHeader className="pb-4">
             <div className="flex items-center justify-between">

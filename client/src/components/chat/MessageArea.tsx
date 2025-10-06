@@ -713,7 +713,7 @@ export default function MessageArea({
             itemContent={(index, message) => (
               <div
                 key={message.id}
-                className={`ac-message-row flex items-start gap-2 py-1 px-2 transition-all duration-300 ${index % 2 ? 'log2' : ''}`}
+                className={`ac-message-row flex items-start gap-2 py-1 px-2 transition-all duration-300 ${index % 2 ? 'log2' : ''} item-ring`}
                 style={{ borderRightColor: getDynamicBorderColor(message.sender), direction: 'rtl' }}
                 data-message-type={message.messageType || 'normal'}
               >
