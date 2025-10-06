@@ -1399,8 +1399,7 @@ li > * > div.effect-crystal {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  overflow: visible;
-  padding: 8%; /* مساحة للإطار حول الصورة */
+  /* لا يوجد padding - كل شيء ضمن نفس المساحة */
 }
 .vip-frame-inner {
   position: relative;
