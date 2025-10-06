@@ -37,7 +37,17 @@ export default function VipAvatar({
   return (
     <div className={`vip-frame base ${hasImageOverlay ? 'with-image' : ''} ${`vip-frame-${frame}`} ${className}`} style={containerStyle}>
       <div className="vip-frame-inner">
-        <img src={src} alt={alt} className="vip-frame-img" style={imgStyle} />
+        <img 
+          src={src} 
+          alt={alt} 
+          className="vip-frame-img" 
+          style={imgStyle}
+          onError={(e: any) => {
+            if (e?.currentTarget && e.currentTarget.src !== '/default_avatar.svg') {
+              e.currentTarget.src = '/default_avatar.svg';
+            }
+          }}
+        />
         {hasImageOverlay && (
           <img src={frameImage} alt="frame" className="vip-frame-overlay" />
         )}
