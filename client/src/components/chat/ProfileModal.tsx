@@ -2245,13 +2245,13 @@ export default function ProfileModal({
         .profile-avatar {
           width: 130px;
           height: 130px;
-          border-radius: 16px;
+          border-radius: 9999px; /* دائري بالكامل */
           overflow: hidden;
           position: absolute;
           top: calc(100% - 130px);
           right: 20px;
-          background-color: rgba(0,0,0,0.5);
-          box-shadow: 0 6px 20px rgba(0,0,0,0.6);
+          background-color: transparent;
+          box-shadow: 0 6px 20px rgba(0,0,0,0.3);
           z-index: 2;
           transition: transform 0.3s ease;
         }
@@ -2265,7 +2265,7 @@ export default function ProfileModal({
           height: 100%;
           object-fit: cover;
           display: block;
-          border-radius: 0; /* إزالة أي استدارة للصورة */
+          border-radius: 9999px; /* الصورة دائرية */
         }
 
         .change-avatar-btn {
@@ -3166,20 +3166,39 @@ export default function ProfileModal({
             )}
 
             <div className="profile-avatar">
-              {/* عرض الصورة مباشرة بدون استخدام ProfileImage للحصول على شكل مربع */}
-              <img
-                src={getProfileImageSrcLocal()}
-                alt="الصورة الشخصية"
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover',
-                  display: 'block',
-                  transition: 'none',
-                  backfaceVisibility: 'hidden',
-                  transform: 'translateZ(0)',
-                }}
-              />
+              {/* إن كان لدى المستخدم إطار مفعّل، اعرض VipAvatar لضمان التوافق التام */}
+              {localUser?.profileFrame ? (
+                <div style={{ width: '100%', height: '100%', position: 'relative' }}>
+                  {/* نستخدم نفس المكوّن لضبط المقاسات والإطار */}
+                  <img
+                    src={getProfileImageSrcLocal()}
+                    alt="الصورة الشخصية"
+                    style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '9999px' }}
+                  />
+                  {/* طبقة الإطار بصورة جاهزة فوقها */}
+                  <img
+                    src={`/frames/frame${String(localUser.profileFrame).match(/\d+/)?.[0] || '1'}.webp`}
+                    alt="frame"
+                    className="vip-frame-overlay"
+                    style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', borderRadius: '9999px', pointerEvents: 'none' }}
+                  />
+                </div>
+              ) : (
+                <img
+                  src={getProfileImageSrcLocal()}
+                  alt="الصورة الشخصية"
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    display: 'block',
+                    transition: 'none',
+                    backfaceVisibility: 'hidden',
+                    transform: 'translateZ(0)',
+                    borderRadius: '9999px',
+                  }}
+                />
+              )}
             </div>
 
             {localUser?.id === currentUser?.id && 
