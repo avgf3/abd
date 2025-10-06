@@ -574,8 +574,8 @@ export default function UnifiedSidebar({
                     size="small"
                     className=""
                     hideRoleBadgeOverlay={true}
-                    // في قائمة المستخدمين: تفعيل طبقة الصورة الذهبية للإطارات 1..6 لضمان التوافق عبر المتصفحات
-                    useImageOverlay={true}
+                    // في قائمة المستخدمين: إيقاف طبقة الصورة الذهبية وعرض الإطار الأصلي
+                    useImageOverlay={false}
                     showGenderRing={true}
                     vipSizePx={46}
                   />

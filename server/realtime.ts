@@ -361,6 +361,8 @@ export async function buildOnlineUsersForRoom(roomId: string) {
         }
         next.lastSeen = dbUser?.lastSeen || (u as any).createdAt || new Date();
         next.currentRoom = dbUser?.currentRoom || u.currentRoom || 'general';
+        // تأكيد تمرير إطار البروفايل من قاعدة البيانات دائماً
+        (next as any).profileFrame = (dbUser as any)?.profileFrame ?? (u as any)?.profileFrame;
       } catch (error) {
         next.lastSeen = (u as any).lastSeen || (u as any).createdAt || new Date();
         next.currentRoom = u.currentRoom || 'general';
