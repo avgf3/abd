@@ -563,12 +563,12 @@ export default function UnifiedSidebar({
               showModerationActions={isModerator}
             >
               <div
-                className={`flex items-center gap-2 py-1.5 px-1 rounded-none border-b border-border transition-colors duration-200 cursor-pointer w-full ${getUserListItemClasses(user)} hover:bg-accent/10 ${user.profileFrame ? 'translate-y-[-2px]' : ''}`}
+                className={`flex items-center gap-2 py-2 px-1 rounded-none border-b border-border transition-colors duration-200 cursor-pointer w-full ${getUserListItemClasses(user)} hover:bg-accent/10`}
                 style={getUserListItemStyles(user)}
                 onClick={(e) => handleUserClick(e as any, user)}
               >
-                {/* مساحة صغيرة لضمان عدم قص الإطار */}
-                <div style={{ marginLeft: 4, minWidth: 46, minHeight: 46 }}>
+                {/* مساحة مناسبة لضمان عدم قص الإطار */}
+                <div style={{ marginLeft: 2, minWidth: 52, minHeight: 52, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <ProfileImage
                     user={user}
                     size="small"

@@ -2469,6 +2469,12 @@ li::before {
 .users-list-reset .vip-frame-overlay { animation: none !important; }
 .users-list-reset .vip-frame.base::before { animation: none !important; }
 
+/* Ensure proper spacing for frames in users list */
+.users-list-reset .vip-frame {
+  margin: 2px;
+  flex-shrink: 0;
+}
+
 /* ===== Arabic.chat-like typography ===== */
 /* Username in user list: bold, slightly larger, Cairo */
 .ac-user-name {

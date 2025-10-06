@@ -31,7 +31,7 @@ export default function ProfileImage({
   vipSizePx,
 }: ProfileImageProps) {
   const sizeClasses = {
-    small: 'w-10 h-10',
+    small: 'w-12 h-12',
     medium: 'w-16 h-16',
     large: 'w-20 h-20',
     xlarge: 'w-32 h-32',
@@ -78,8 +78,8 @@ export default function ProfileImage({
   })();
 
   if (!disableFrame && frameName && frameIndex) {
-    // Harmonize sizes: small 40, medium 64, large 80, xlarge 130 (profile modal)
-    const px = vipSizePx ?? (size === 'small' ? 40 : size === 'large' ? 80 : size === 'xlarge' ? 130 : 64);
+    // Harmonize sizes: small 48, medium 64, large 80, xlarge 130 (profile modal)
+    const px = vipSizePx ?? (size === 'small' ? 48 : size === 'large' ? 80 : size === 'xlarge' ? 130 : 64);
     return (
       <div className={`relative inline-block ${className || ''}`} onClick={onClick}>
         <VipAvatar
@@ -110,7 +110,7 @@ export default function ProfileImage({
         }}
         loading="lazy"
         decoding="async"
-        sizes={size === 'small' ? '40px' : size === 'large' ? '80px' : '64px'}
+        sizes={size === 'small' ? '48px' : size === 'large' ? '80px' : '64px'}
         onError={(e: any) => {
           if (e?.currentTarget && e.currentTarget.src !== '/default_avatar.svg') {
             e.currentTarget.src = '/default_avatar.svg';

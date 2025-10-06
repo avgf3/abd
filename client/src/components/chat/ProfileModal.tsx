@@ -2277,6 +2277,7 @@ export default function ProfileModal({
         .profile-avatar .profile-main-image .vip-frame {
           width: 130px !important;
           height: 130px !important;
+          margin: 0 !important;
         }
         .profile-avatar .profile-main-image .vip-frame .vip-frame-overlay,
         .profile-avatar .profile-main-image .vip-frame::before {
