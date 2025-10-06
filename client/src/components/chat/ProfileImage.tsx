@@ -82,14 +82,16 @@ export default function ProfileImage({
   }
 
   return (
-    <div className="relative inline-block" onClick={onClick} style={{ width: pixelSize ? pixelSize : undefined, height: pixelSize ? pixelSize : undefined }}>
+    <div
+      className={`relative inline-block rounded-full ring-2 border-2 ${borderColor} ${sizeClasses[size]} ${className}`}
+      onClick={onClick}
+      style={{ width: pixelSize ? pixelSize : undefined, height: pixelSize ? pixelSize : undefined }}
+   >
       <img
         src={imageSrc}
         alt={`صورة ${user.username}`}
-        className={`${sizeClasses[size]} rounded-full ring-2 ${borderColor} shadow-sm object-cover ${className}`}
+        className={`w-full h-full rounded-full shadow-sm object-cover`}
         style={{
-          width: pixelSize ? pixelSize : undefined,
-          height: pixelSize ? pixelSize : undefined,
           transition: 'none',
           backfaceVisibility: 'hidden',
           transform: 'translateZ(0)',
