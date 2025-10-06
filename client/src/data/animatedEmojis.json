@@ -813,6 +813,12 @@
           "name": "ملصق 61",
           "url": "/assets/emojis/custom/sticker_61.png",
           "code": ":s61:"
+        },
+        {
+          "id": "sticker_62",
+          "name": "ملصق 62",
+          "url": "/assets/emojis/custom/sticker_62.png",
+          "code": ":s62:"
         }
       ]
     }
