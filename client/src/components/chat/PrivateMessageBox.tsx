@@ -568,9 +568,13 @@ export default function PrivateMessageBox({
                   // Normalize bottom state changes to keep followOutput accurate
                   setIsAtBottom(!!atBottom);
                 }}
-                // Start with the latest item at bottom on initial mount
-                initialTopMostItemIndex={Math.max(0, sortedMessages.length - 1)}
-                computeItemKey={(index, m) => (m as any)?.id ?? `${(m as any)?.senderId}-${(m as any)?.timestamp}-${index}`}
+                // إصلاح: فهرسة محسنة للرسائل
+                initialTopMostItemIndex={sortedMessages.length > 0 ? sortedMessages.length - 1 : 0}
+                computeItemKey={(index, m) => {
+                  // مفتاح مستقر للرسائل
+                  if (m?.id) return `msg-${m.id}`;
+                  return `temp-${m?.senderId || 0}-${m?.timestamp || Date.now()}-${index}`;
+                }}
                 components={{
                   Header: () =>
                     isLoadingOlder ? (
