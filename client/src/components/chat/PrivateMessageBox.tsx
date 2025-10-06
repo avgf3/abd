@@ -239,21 +239,37 @@ export default function PrivateMessageBox({
     return () => clearTimeout(t);
   }, [isOpen]);
 
-  // Ensure we start at the latest message when opening (and when messages first load)
+  // إصلاح: التمرير المحسن لآخر رسالة
   useEffect(() => {
     if (!isOpen) {
       didInitialScrollRef.current = false;
+      setIsAtBottom(true);
       return;
     }
-    if (didInitialScrollRef.current) return;
+    
+    // انتظار تحميل الرسائل أولاً
     if (sortedMessages.length === 0) return;
-    const t = setTimeout(() => {
-      scrollToLatest();
-      didInitialScrollRef.current = true;
-      setIsAtBottom(true);
-    }, 60);
-    return () => clearTimeout(t);
-  }, [isOpen, sortedMessages.length, scrollToLatest]);
+    
+    // تمرير فوري للرسائل الموجودة
+    if (!didInitialScrollRef.current) {
+      const t = setTimeout(() => {
+        try {
+          if (virtuosoRef.current && sortedMessages.length > 0) {
+            virtuosoRef.current.scrollToIndex({ 
+              index: sortedMessages.length - 1, 
+              align: 'end', 
+              behavior: 'auto' 
+            });
+            didInitialScrollRef.current = true;
+            setIsAtBottom(true);
+          }
+        } catch (error) {
+          console.warn('خطأ في التمرير الأولي:', error);
+        }
+      }, 100); // زيادة الوقت قليلاً للتأكد من الرندر
+      return () => clearTimeout(t);
+    }
+  }, [isOpen, sortedMessages.length]);
 
   // تحديث آخر وقت فتح للمحادثة لاحتساب غير المقروء
   useEffect(() => {
