@@ -234,23 +234,16 @@ export default function PrivateMessageBox({
 
   // تمت إزالة إدارة حالة القاع بالكامل لإرجاع السلوك الطبيعي
 
-  // عند فتح الصندوق: تركيز الإدخال فقط (بدون أي تمرير تلقائي)
+  // عند فتح الصندوق: تركيز الإدخال وتمرير لمرة واحدة فقط
   useEffect(() => {
     if (!isOpen) return;
-    // تركيز الإدخال فورًا بعد فتح الصندوق
-    const t1 = setTimeout(() => {
+    const t = setTimeout(() => {
       inputRef.current?.focus();
-    }, 100);
-    // تمرير للأسفل بعد فتح الصندوق ليظهر آخر الرسائل مباشرة
-    const t2 = setTimeout(() => {
       scrollToBottom('auto');
       setIsAtBottom(true);
       prevMessagesLenRef.current = sortedMessages.length;
-    }, 120);
-    return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
-    };
+    }, 80);
+    return () => clearTimeout(t);
   }, [isOpen, scrollToBottom, sortedMessages.length]);
 
   // تحديث آخر وقت فتح للمحادثة لاحتساب غير المقروء
@@ -387,19 +380,7 @@ export default function PrivateMessageBox({
     [clampToMaxChars, emitPrivateTyping]
   );
 
-  // عند تركيز حقل الإدخال: مرّر للأسفل لضمان ظهور آخر الرسائل
-  useEffect(() => {
-    const el = inputRef.current;
-    if (!el) return;
-    const onFocus = () => {
-      setTimeout(() => scrollToBottom('auto'), 50);
-      setTimeout(() => scrollToBottom('auto'), 200);
-    };
-    el.addEventListener('focus', onFocus);
-    return () => {
-      try { el.removeEventListener('focus', onFocus); } catch {}
-    };
-  }, [scrollToBottom]);
+  // تبسيط: لا حاجة ل-scroll إضافي على focus لتفادي قفزات
 
   // دعم لصق الصور مباشرة في صندوق الإدخال
   const handlePaste = useCallback((e: React.ClipboardEvent<HTMLInputElement>) => {

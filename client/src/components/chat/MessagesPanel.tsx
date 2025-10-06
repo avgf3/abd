@@ -12,7 +12,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
 import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser } from '@/types/chat';
-import { formatMessagePreview, getPmLastOpened, setPmLastOpened } from '@/utils/messageUtils';
+import { formatMessagePreview, getPmLastOpened } from '@/utils/messageUtils';
 import { formatTime } from '@/utils/timeUtils';
 import { getFinalUsernameColor, getUserListItemStyles, getUserListItemClasses } from '@/utils/themeUtils';
 import { userCache, getCachedUserWithMerge, setCachedUser } from '@/utils/userCacheManager';
@@ -357,20 +357,6 @@ export default function MessagesPanel({
                         onClick={() => {
                           try {
                             onClose();
-                            if (currentUser?.id) {
-                              setPmLastOpened(currentUser.id, user.id);
-                            }
-                            // تحديث مؤشّر القراءة في الخادم لتصفير الشارة على كل الأجهزة
-                            try {
-                              const lastTs = lastMessage.timestamp;
-                              const lastId = undefined;
-                              fetch('/api/private-messages/reads', {
-                                method: 'PUT',
-                                headers: { 'Content-Type': 'application/json' },
-                                credentials: 'include',
-                                body: JSON.stringify({ otherUserId: user.id, lastReadAt: lastTs, lastReadMessageId: lastId }),
-                              }).catch(() => {});
-                            } catch {}
                             setTimeout(() => onStartPrivateChat(user), 0);
                           } catch (error) {
                             console.error('خطأ في فتح المحادثة:', error);

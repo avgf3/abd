@@ -1534,25 +1534,7 @@ export const useChat = () => {
               window.dispatchEvent(new CustomEvent('privateMessageReceived', { detail }));
             } catch {}
 
-            // إذا كانت الرسالة واردة والمحادثة المفتوحة مع نفس المستخدم، حدّث مؤشّر القراءة على الخادم
-            try {
-              const meId = currentUserRef.current?.id;
-              const isIncoming = meId && message.receiverId === meId && message.senderId === conversationId;
-              const isOpenSame = (selectedPrivateUserRef as any)?.current?.id === conversationId;
-              if (isIncoming && isOpenSame) {
-                const body: any = {
-                  otherUserId: conversationId,
-                  lastReadMessageId: (message as any).id,
-                  lastReadAt: (message as any).timestamp,
-                };
-                fetch('/api/private-messages/reads', {
-                  method: 'PUT',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify(body),
-                  credentials: 'include',
-                }).catch(() => {});
-              }
-            } catch {}
+            // تم نقل تحديث القراءة إلى PrivateMessageBox فقط لتجنب التكرار
           }
         }
       } catch (error) {
