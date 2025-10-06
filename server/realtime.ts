@@ -447,7 +447,7 @@ export async function emitOnlineUsersForRoom(roomId: string): Promise<void> {
   try {
     if (!roomId) return;
     if (!ioInstance) return;
-    const users = await buildOnlineUsersForRoom(roomId);
+      const users = await buildOnlineUsersForRoom(roomId);
     ioInstance.to(`room_${roomId}`).emit('message', {
       type: 'onlineUsers',
       users,

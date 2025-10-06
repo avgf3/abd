@@ -2083,6 +2083,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         currentRoom: (user as any).currentRoom,
         profileBackgroundColor: user.profileBackgroundColor,
         profileEffect: user.profileEffect,
+        // include profileFrame so lists can render frames reliably
+        profileFrame: (user as any)?.profileFrame,
         isHidden: user.isHidden,
       }));
 
@@ -2114,6 +2116,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         currentRoom: (user as any).currentRoom,
         profileBackgroundColor: user.profileBackgroundColor,
         profileEffect: user.profileEffect,
+        profileFrame: (user as any)?.profileFrame,
         isHidden: user.isHidden,
       }));
 
@@ -2127,7 +2130,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/users/online', async (req, res) => {
     try {
       const users = await storage.getOnlineUsers();
-      const safeUsers = sanitizeUsersArray(users);
+      const safeUsers = sanitizeUsersArray(users).map((u: any) => ({
+        ...u,
+        // propagate profileFrame for online list as well
+        profileFrame: (u as any)?.profileFrame,
+      }));
       res.json({ users: safeUsers });
     } catch (error) {
       res.status(500).json({ error: 'خطأ في الخادم' });
@@ -4830,6 +4837,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       usernameColor: sanitized.usernameColor,
       profileBackgroundColor: sanitized.profileBackgroundColor,
       profileEffect: sanitized.profileEffect,
+      // Ensure profile frame is always propagated to clients
+      profileFrame: (sanitized as any)?.profileFrame,
       isOnline: sanitized.isOnline,
       lastSeen: sanitized.lastSeen,
       currentRoom: sanitized.currentRoom,
