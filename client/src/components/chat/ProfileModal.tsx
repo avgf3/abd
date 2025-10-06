@@ -2246,12 +2246,11 @@ export default function ProfileModal({
           width: 130px;
           height: 130px;
           border-radius: 16px;
-          overflow: hidden;
+          overflow: visible;
           position: absolute;
           top: calc(100% - 130px);
           right: 20px;
-          background-color: rgba(0,0,0,0.5);
-          box-shadow: 0 6px 20px rgba(0,0,0,0.6);
+          background-color: transparent;
           z-index: 2;
           transition: transform 0.3s ease;
         }
@@ -2268,10 +2267,14 @@ export default function ProfileModal({
           border-radius: 16px !important; /* مربع بزوايا مدورة للصور بدون إطار */
         }
 
-        /* الصور مع إطار تبقى دائرية كما هي */
+        /* الصور مع إطار تبقى دائرية ومطابقة لحجم الصورة */
         .profile-avatar .profile-main-image .vip-frame {
           width: 130px !important;
           height: 130px !important;
+        }
+        .profile-avatar .profile-main-image .vip-frame .vip-frame-overlay,
+        .profile-avatar .profile-main-image .vip-frame::before {
+          animation: none !important; /* إيقاف دوران الإطار داخل الملف الشخصي */
         }
 
         .change-avatar-btn {

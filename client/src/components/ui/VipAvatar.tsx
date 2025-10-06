@@ -46,8 +46,8 @@ export default function VipAvatar({
       : 'ring-2 ring-blue-200'
     : '';
 
-  // Base inner area accounts for the animated frame thickness (2px each side)
-  const baseInnerSize = size - 4;
+  // Inner image fills the container; outer overlay aligns exactly
+  const baseInnerSize = size;
   // If showing a Tailwind ring, subtract its outward thickness to avoid overlap with the animated frame
   const ringCompensation = showGenderRing ? ringWidth * 2 : 0;
   const imgStyle: React.CSSProperties = {
@@ -55,8 +55,8 @@ export default function VipAvatar({
     height: baseInnerSize - ringCompensation,
   };
 
-  // Use image-based overlay for frames 1..6 if available
-  const frameImage = frame >= 1 && frame <= 10 ? `/frames/frame${frame}.webp` : undefined;
+  // Use image-based overlay for frames 1..6 only
+  const frameImage = frame >= 1 && frame <= 6 ? `/frames/frame${frame}.webp` : undefined;
   const hasImageOverlay = Boolean(useImageOverlay && frameImage);
 
   return (
