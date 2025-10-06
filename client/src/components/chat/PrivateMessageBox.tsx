@@ -64,6 +64,8 @@ export default function PrivateMessageBox({
   const [isOtherTyping, setIsOtherTyping] = useState(false);
   const otherTypingTimerRef = useRef<number | null>(null);
   const lastTypingEmitRef = useRef<number>(0);
+  // Track one-time initial bottom alignment when opening the box
+  const didInitialScrollRef = useRef(false);
   // Read receipts: last read timestamp received from other user via socket
   const [otherLastReadAt, setOtherLastReadAt] = useState<string | null>(null);
 
@@ -236,6 +238,22 @@ export default function PrivateMessageBox({
     }, 80);
     return () => clearTimeout(t);
   }, [isOpen]);
+
+  // Ensure we start at the latest message when opening (and when messages first load)
+  useEffect(() => {
+    if (!isOpen) {
+      didInitialScrollRef.current = false;
+      return;
+    }
+    if (didInitialScrollRef.current) return;
+    if (sortedMessages.length === 0) return;
+    const t = setTimeout(() => {
+      scrollToLatest();
+      didInitialScrollRef.current = true;
+      setIsAtBottom(true);
+    }, 60);
+    return () => clearTimeout(t);
+  }, [isOpen, sortedMessages.length, scrollToLatest]);
 
   // تحديث آخر وقت فتح للمحادثة لاحتساب غير المقروء
   useEffect(() => {
@@ -527,9 +545,15 @@ export default function PrivateMessageBox({
                 increaseViewportBy={{ top: 200, bottom: 320 }}
                 defaultItemHeight={60}
                 startReached={handleLoadMore}
-                followOutput={false}
+                // Follow new output only when user is at bottom (prevents inverted thumb movement)
+                followOutput={isAtBottom ? 'smooth' : false}
                 atBottomThreshold={48}
-                atBottomStateChange={(atBottom) => setIsAtBottom(atBottom)}
+                atBottomStateChange={(atBottom) => {
+                  // Normalize bottom state changes to keep followOutput accurate
+                  setIsAtBottom(!!atBottom);
+                }}
+                // Start with the latest item at bottom on initial mount
+                initialTopMostItemIndex={Math.max(0, sortedMessages.length - 1)}
                 computeItemKey={(index, m) => (m as any)?.id ?? `${(m as any)?.senderId}-${(m as any)?.timestamp}-${index}`}
                 components={{
                   Header: () =>
