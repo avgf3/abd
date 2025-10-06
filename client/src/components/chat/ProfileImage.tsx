@@ -7,7 +7,7 @@ import VipAvatar from '@/components/ui/VipAvatar';
 
 interface ProfileImageProps {
   user: ChatUser;
-  size?: 'small' | 'medium' | 'large';
+  size?: 'small' | 'medium' | 'large' | 'xlarge';
   className?: string;
   onClick?: (e: any) => void;
   hideRoleBadgeOverlay?: boolean;
@@ -27,6 +27,7 @@ export default function ProfileImage({
     small: 'w-10 h-10',
     medium: 'w-16 h-16',
     large: 'w-20 h-20',
+    xlarge: 'w-32 h-32',
   };
 
   // تحديد لون الإطار حسب الجنس - كما كان سابقاً (ring + border color)
@@ -69,7 +70,7 @@ export default function ProfileImage({
   })();
 
   if (!disableFrame && frameName && frameIndex) {
-    const px = size === 'small' ? 40 : size === 'large' ? 80 : 64;
+    const px = size === 'small' ? 40 : size === 'large' ? 80 : size === 'xlarge' ? 128 : 64;
     return (
       <div className={`relative inline-block ${className || ''}`} onClick={onClick}>
         <VipAvatar src={imageSrc} alt={`صورة ${user.username}`} size={px} frame={frameIndex as any} />
