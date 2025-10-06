@@ -1399,6 +1399,7 @@ li > * > div.effect-crystal {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  overflow: visible; /* السماح للإطار بالظهور خارج الحدود */
 }
 .vip-frame-inner {
   position: relative;
