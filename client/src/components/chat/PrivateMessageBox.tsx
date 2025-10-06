@@ -67,24 +67,18 @@ export default function PrivateMessageBox({
   // Read receipts: last read timestamp received from other user via socket
   const [otherLastReadAt, setOtherLastReadAt] = useState<string | null>(null);
 
-  // محسن: ترتيب الرسائل مع تحسين الأداء
+  // ترتيب الرسائل
   const sortedMessages = useMemo(() => sortMessagesAscending(messages || []), [messages]);
 
-  // Scroll management for DM: track bottom and enable followOutput
-  const [isAtBottom, setIsAtBottom] = useState(true);
-  const prevMessagesLenRef = useRef<number>(0);
-  type ScrollBehaviorStrict = 'auto' | 'smooth';
-  const scrollToBottom = React.useCallback(
-    (behavior: ScrollBehaviorStrict = 'smooth') => {
-      if (!virtuosoRef.current || sortedMessages.length === 0) return;
-      virtuosoRef.current.scrollToIndex({
-        index: sortedMessages.length - 1,
-        align: 'end',
-        behavior,
-      });
-    },
-    [sortedMessages.length]
-  );
+  // دالة بسيطة للتمرير للأسفل
+  const scrollToBottom = React.useCallback(() => {
+    if (!virtuosoRef.current || sortedMessages.length === 0) return;
+    virtuosoRef.current.scrollToIndex({
+      index: sortedMessages.length - 1,
+      align: 'end',
+      behavior: 'auto',
+    });
+  }, [sortedMessages.length]);
 
   // Emit private typing (throttled ~3s)
   const emitPrivateTyping = useCallback(() => {
@@ -230,28 +224,15 @@ export default function PrivateMessageBox({
     return Math.abs(tb - ta) <= GROUP_TIME_MS;
   }, []);
 
-  // تم إزالة أي تمرير تلقائي أو دوال مساعدة للتمرير
-
-  // تمت إزالة إدارة حالة القاع بالكامل لإرجاع السلوك الطبيعي
-
-  // عند فتح الصندوق: تركيز الإدخال فقط (بدون أي تمرير تلقائي)
+  // عند فتح الصندوق: التمرير للأسفل وتركيز الإدخال
   useEffect(() => {
     if (!isOpen) return;
-    // تركيز الإدخال فورًا بعد فتح الصندوق
-    const t1 = setTimeout(() => {
+    const timer = setTimeout(() => {
+      scrollToBottom();
       inputRef.current?.focus();
-    }, 100);
-    // تمرير للأسفل بعد فتح الصندوق ليظهر آخر الرسائل مباشرة
-    const t2 = setTimeout(() => {
-      scrollToBottom('auto');
-      setIsAtBottom(true);
-      prevMessagesLenRef.current = sortedMessages.length;
-    }, 120);
-    return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
-    };
-  }, [isOpen, scrollToBottom, sortedMessages.length]);
+    }, 150);
+    return () => clearTimeout(timer);
+  }, [isOpen, scrollToBottom]);
 
   // تحديث آخر وقت فتح للمحادثة لاحتساب غير المقروء
   useEffect(() => {
@@ -286,19 +267,12 @@ export default function PrivateMessageBox({
     } catch {}
   }, [isOpen, user?.id, currentUser?.id, lastMessageDeps]);
 
-  // تمرير تلقائي عند وصول رسائل جديدة: إذا كنت في الأسفل أو الرسالة مني
+  // التمرير التلقائي عند وصول رسائل جديدة
   useEffect(() => {
-    const prevLen = prevMessagesLenRef.current;
-    const currLen = sortedMessages.length;
-    if (currLen <= prevLen) return;
-
-    const last = sortedMessages[currLen - 1];
-    const sentByMe = !!(currentUser && last?.senderId === currentUser.id);
-    if (isOpen && (isAtBottom || sentByMe)) {
-      scrollToBottom('smooth');
-    }
-    prevMessagesLenRef.current = currLen;
-  }, [sortedMessages.length, isAtBottom, currentUser, isOpen, scrollToBottom]);
+    if (!isOpen || sortedMessages.length === 0) return;
+    const timer = setTimeout(() => scrollToBottom(), 100);
+    return () => clearTimeout(timer);
+  }, [sortedMessages.length, isOpen, scrollToBottom]);
 
 
   // محسن: دالة إرسال مع إعادة المحاولة ومعالجة أخطاء محسنة
@@ -387,19 +361,6 @@ export default function PrivateMessageBox({
     [clampToMaxChars, emitPrivateTyping]
   );
 
-  // عند تركيز حقل الإدخال: مرّر للأسفل لضمان ظهور آخر الرسائل
-  useEffect(() => {
-    const el = inputRef.current;
-    if (!el) return;
-    const onFocus = () => {
-      setTimeout(() => scrollToBottom('auto'), 50);
-      setTimeout(() => scrollToBottom('auto'), 200);
-    };
-    el.addEventListener('focus', onFocus);
-    return () => {
-      try { el.removeEventListener('focus', onFocus); } catch {}
-    };
-  }, [scrollToBottom]);
 
   // دعم لصق الصور مباشرة في صندوق الإدخال
   const handlePaste = useCallback((e: React.ClipboardEvent<HTMLInputElement>) => {
@@ -552,13 +513,11 @@ export default function PrivateMessageBox({
                 ref={virtuosoRef}
                 data={sortedMessages}
                 className="!h-full"
-                style={{ overscrollBehavior: 'contain', scrollBehavior: 'auto' }}
+                style={{ overscrollBehavior: 'contain', scrollBehavior: 'smooth' }}
                 increaseViewportBy={{ top: 300, bottom: 300 }}
                 defaultItemHeight={56}
                 startReached={handleLoadMore}
-                followOutput={isAtBottom ? 'smooth' : false}
-                atBottomThreshold={64}
-                atBottomStateChange={(atBottom) => setIsAtBottom(atBottom)}
+                followOutput="auto"
                 computeItemKey={(index, m) => (m as any)?.id ?? `${(m as any)?.senderId}-${(m as any)?.timestamp}-${index}`}
                 components={{
                   Header: () =>
@@ -754,8 +713,6 @@ export default function PrivateMessageBox({
                 }}
               />
             )}
-
-            {/* تم إخفاء زر "الانتقال لأسفل" */}
           </div>
 
           <div className="p-4 border-t border-border modern-nav">
