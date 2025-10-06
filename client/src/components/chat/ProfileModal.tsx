@@ -2260,12 +2260,18 @@ export default function ProfileModal({
           transform: scale(1.05);
         }
 
-        .profile-avatar img {
+        .profile-avatar .profile-main-image img {
           width: 100%;
           height: 100%;
           object-fit: cover;
           display: block;
-          border-radius: 0; /* إزالة أي استدارة للصورة */
+          border-radius: 16px !important; /* مربع بزوايا مدورة للصور بدون إطار */
+        }
+
+        /* الصور مع إطار تبقى دائرية كما هي */
+        .profile-avatar .profile-main-image .vip-frame {
+          width: 130px !important;
+          height: 130px !important;
         }
 
         .change-avatar-btn {
@@ -3166,19 +3172,11 @@ export default function ProfileModal({
             )}
 
             <div className="profile-avatar">
-              {/* عرض الصورة مباشرة بدون استخدام ProfileImage للحصول على شكل مربع */}
-              <img
-                src={getProfileImageSrcLocal()}
-                alt="الصورة الشخصية"
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover',
-                  display: 'block',
-                  transition: 'none',
-                  backfaceVisibility: 'hidden',
-                  transform: 'translateZ(0)',
-                }}
+              {/* استخدام ProfileImage مع حجم xlarge - يطبق الإطار تلقائياً إذا موجود */}
+              <ProfileImage
+                user={localUser || user}
+                size="xlarge"
+                className="profile-main-image"
               />
             </div>
 
