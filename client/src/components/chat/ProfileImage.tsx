@@ -13,6 +13,10 @@ interface ProfileImageProps {
   hideRoleBadgeOverlay?: boolean;
   // تعطيل عرض إطار الصورة في سياقات معينة (مثل الرسائل)
   disableFrame?: boolean;
+  // تحكم بسلوك إطار الصورة المتحرك في سياقات مختلفة
+  useImageOverlay?: boolean; // تمكين/تعطيل طبقة صورة الإطار (الذهبي)
+  showGenderRing?: boolean;  // إظهار حلقة اللون حسب الجنس داخل الإطار المتحرك
+  vipSizePx?: number;        // ضبط الحجم الفعلي للصورة عند وجود إطار VIP
 }
 
 export default function ProfileImage({
@@ -22,6 +26,9 @@ export default function ProfileImage({
   onClick,
   hideRoleBadgeOverlay = false,
   disableFrame = false,
+  useImageOverlay = true,
+  showGenderRing = true,
+  vipSizePx,
 }: ProfileImageProps) {
   const sizeClasses = {
     small: 'w-10 h-10',
@@ -70,10 +77,18 @@ export default function ProfileImage({
   })();
 
   if (!disableFrame && frameName && frameIndex) {
-    const px = size === 'small' ? 40 : size === 'large' ? 80 : size === 'xlarge' ? 128 : 64;
+    const px = vipSizePx ?? (size === 'small' ? 40 : size === 'large' ? 80 : size === 'xlarge' ? 128 : 64);
     return (
       <div className={`relative inline-block ${className || ''}`} onClick={onClick}>
-        <VipAvatar src={imageSrc} alt={`صورة ${user.username}`} size={px} frame={frameIndex as any} />
+        <VipAvatar
+          src={imageSrc}
+          alt={`صورة ${user.username}`}
+          size={px}
+          frame={frameIndex as any}
+          gender={user.gender}
+          useImageOverlay={useImageOverlay}
+          showGenderRing={showGenderRing}
+        />
       </div>
     );
   }

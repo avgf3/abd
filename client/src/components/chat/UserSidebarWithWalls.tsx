@@ -569,7 +569,16 @@ export default function UnifiedSidebar({
               >
                 {/* ازاحة الصورة قليلاً لليسار لإظهار الإطار بالكامل */}
                 <div style={{ marginLeft: 4 }}>
-                  <ProfileImage user={user} size="small" className="" hideRoleBadgeOverlay={true} />
+                  <ProfileImage
+                    user={user}
+                    size="small"
+                    className=""
+                    hideRoleBadgeOverlay={true}
+                    // في قائمة المستخدمين: إزالة الإطار الذهبي، إبقاء الإطار المتحرك وحلقة الجنس
+                    useImageOverlay={false}
+                    showGenderRing={true}
+                    vipSizePx={46}
+                  />
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center justify-between gap-2">

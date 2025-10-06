@@ -6,6 +6,13 @@ interface VipAvatarProps {
   size?: number; // pixels
   frame?: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
   className?: string;
+  // Optional UI refinements
+  gender?: string;
+  showGenderRing?: boolean;
+  // Whether to render the decorative image overlay frame (gold-like webp). Defaults to true for non-list contexts.
+  useImageOverlay?: boolean;
+  // Tailwind ring width in px when showGenderRing is true (default 2)
+  ringWidth?: number;
 }
 
 export default function VipAvatar({
@@ -14,6 +21,10 @@ export default function VipAvatar({
   size = 48,
   frame = 1,
   className = '',
+  gender,
+  showGenderRing = false,
+  useImageOverlay = true,
+  ringWidth = 2,
 }: VipAvatarProps) {
   const duration = useMemo(() => {
     // منح كل إطار سرعة مختلفة قليلاً
@@ -28,21 +39,32 @@ export default function VipAvatar({
     ['--vip-spin-duration']: duration,
   };
 
+  const isFemale = gender === 'female' || gender === 'أنثى';
+  const genderRingClass = showGenderRing
+    ? isFemale
+      ? 'ring-2 ring-pink-200'
+      : 'ring-2 ring-blue-200'
+    : '';
+
+  // Base inner area accounts for the animated frame thickness (2px each side)
+  const baseInnerSize = size - 4;
+  // If showing a Tailwind ring, subtract its outward thickness to avoid overlap with the animated frame
+  const ringCompensation = showGenderRing ? ringWidth * 2 : 0;
   const imgStyle: React.CSSProperties = {
-    width: size - 4,
-    height: size - 4,
+    width: baseInnerSize - ringCompensation,
+    height: baseInnerSize - ringCompensation,
   };
 
   // Use image-based overlay for frames 1..6 if available
   const frameImage = frame >= 1 && frame <= 10 ? `/frames/frame${frame}.webp` : undefined;
-  const hasImageOverlay = Boolean(frameImage);
+  const hasImageOverlay = Boolean(useImageOverlay && frameImage);
 
   return (
     <div className={`vip-frame base ${hasImageOverlay ? 'with-image' : ''} ${`vip-frame-${frame}`} ${className}`} style={containerStyle}>
       <div className="vip-frame-inner">
-        <img src={src} alt={alt} className="vip-frame-img" style={imgStyle} />
+        <img src={src} alt={alt} className={`vip-frame-img ${genderRingClass}`} style={imgStyle} />
         {hasImageOverlay && (
-          <img src={frameImage} alt="frame" className="vip-frame-overlay" />
+          <img src={frameImage} alt="frame" className="vip-frame-overlay" aria-hidden="true" />
         )}
       </div>
     </div>
