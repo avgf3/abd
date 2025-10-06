@@ -567,8 +567,8 @@ export default function UnifiedSidebar({
                 style={getUserListItemStyles(user)}
                 onClick={(e) => handleUserClick(e as any, user)}
               >
-                {/* ازاحة الصورة قليلاً لليسار لإظهار الإطار بالكامل */}
-                <div style={{ marginLeft: 4 }}>
+                {/* مساحة صغيرة لضمان عدم قص الإطار */}
+                <div style={{ marginLeft: 4, minWidth: 46, minHeight: 46 }}>
                   <ProfileImage
                     user={user}
                     size="small"
