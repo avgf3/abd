@@ -8,6 +8,8 @@ import VipAvatar from '@/components/ui/VipAvatar';
 interface ProfileImageProps {
   user: ChatUser;
   size?: 'small' | 'medium' | 'large';
+  // حجم بكسلات مخصص لتوحيد المقاس بدقة أينما لزم
+  pixelSize?: number;
   className?: string;
   onClick?: (e: any) => void;
   hideRoleBadgeOverlay?: boolean;
@@ -18,6 +20,7 @@ interface ProfileImageProps {
 export default function ProfileImage({
   user,
   size = 'medium',
+  pixelSize,
   className = '',
   onClick,
   hideRoleBadgeOverlay = false,
@@ -70,7 +73,7 @@ export default function ProfileImage({
 
   if (!disableFrame && frameName && frameIndex) {
     // مقاسات دقيقة لتطابق الموقع الآخر
-    const px = size === 'small' ? 40 : size === 'large' ? 80 : 64;
+    const px = pixelSize ?? (size === 'small' ? 40 : size === 'large' ? 80 : 64);
     return (
       <div className={`relative inline-block ${className || ''}`} onClick={onClick} style={{ width: px, height: px }}>
         <VipAvatar src={imageSrc} alt={`صورة ${user.username}`} size={px} frame={frameIndex as any} />
@@ -79,12 +82,14 @@ export default function ProfileImage({
   }
 
   return (
-    <div className="relative inline-block" onClick={onClick}>
+    <div className="relative inline-block" onClick={onClick} style={{ width: pixelSize ? pixelSize : undefined, height: pixelSize ? pixelSize : undefined }}>
       <img
         src={imageSrc}
         alt={`صورة ${user.username}`}
         className={`${sizeClasses[size]} rounded-full ring-2 ${borderColor} shadow-sm object-cover ${className}`}
         style={{
+          width: pixelSize ? pixelSize : undefined,
+          height: pixelSize ? pixelSize : undefined,
           transition: 'none',
           backfaceVisibility: 'hidden',
           transform: 'translateZ(0)',

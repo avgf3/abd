@@ -284,7 +284,7 @@ export default function RichestModal({ isOpen, onClose, currentUser, onUserClick
                       </span>
                     )}
                     <div style={{ width: 40, height: 40 }}>
-                      <ProfileImage user={u} size="small" className="" hideRoleBadgeOverlay={true} />
+                      <ProfileImage user={u} size="small" pixelSize={40} className="" hideRoleBadgeOverlay={true} />
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center justify-between gap-2">

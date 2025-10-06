@@ -569,7 +569,7 @@ export default function UnifiedSidebar({
               >
                 {/* ازاحة الصورة قليلاً لليسار لإظهار الإطار بالكامل */}
                 <div style={{ marginLeft: 4, width: 40, height: 40 }}>
-                  <ProfileImage user={user} size="small" className="" hideRoleBadgeOverlay={true} />
+                  <ProfileImage user={user} size="small" pixelSize={40} className="" hideRoleBadgeOverlay={true} />
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center justify-between gap-2">
