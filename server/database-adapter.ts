@@ -95,9 +95,13 @@ export async function initializeDatabase(): Promise<boolean> {
       /pgbouncer=1|pgbouncer=true/i.test(connectionString) ||
       String(process.env.USE_PGBOUNCER || '').toLowerCase() === 'true';
 
-    // إعدادات المجمع والقيم الافتراضية القوية (الافتراضي 8000 كما طُلب)
-    const poolMax = Number(process.env.DB_POOL_MAX || process.env.POOL_MAX || 8000);
-    const poolMin = Number(process.env.DB_POOL_MIN || 20);
+    // إعدادات المجمع والقيم الافتراضية الآمنة
+    // ملاحظة: القيم الكبيرة تؤدي لاستنزاف اتصالات القاعدة عند استخدام Cluster/PM2
+    // - عند وجود PgBouncer: اجعل max صغيراً لكل عملية (مثلاً 10-20)
+    // - بدون PgBouncer: اجعل max أقل (مثلاً 5-10)
+    const defaultMax = isPgBouncer ? 20 : 5;
+    const poolMax = Number(process.env.DB_POOL_MAX || process.env.POOL_MAX || defaultMax);
+    const poolMin = Number(process.env.DB_POOL_MIN || 0);
     const idleTimeout = Number(process.env.DB_IDLE_TIMEOUT || 60); // ثوانٍ
     const maxLifetime = Number(process.env.DB_MAX_LIFETIME || 60 * 30); // ثوانٍ
     const connectTimeout = Number(process.env.DB_CONNECT_TIMEOUT || 30); // ثوانٍ
@@ -118,8 +122,8 @@ export async function initializeDatabase(): Promise<boolean> {
       max_lifetime: maxLifetime,
       connect_timeout: connectTimeout,
       // حدود المجمع - مرفوعة لدعم 8000 عميل عبر PgBouncer
-      max: poolMax,
-      min: poolMin,
+      max: Math.max(1, poolMax),
+      min: Math.max(0, Math.min(poolMin, poolMax)),
       // إعدادات إعادة المحاولة
       retry_delay: retryDelayMs,
       max_attempts: maxAttempts,
@@ -151,6 +155,13 @@ export async function initializeDatabase(): Promise<boolean> {
     dbAdapter.client = client as any;
     dbAdapter.db = drizzleDb as any;
     db = drizzleDb as any;
+
+    try {
+      console.warn(
+        `🗄️ Database pool configured - max=${poolMax}, min=${poolMin}, ` +
+        `ssl=${sslRequired ? 'require' : 'disabled'}, pgbouncer=${isPgBouncer}`
+      );
+    } catch {}
 
     return true;
   } catch (error: any) {

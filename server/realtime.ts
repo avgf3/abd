@@ -1063,8 +1063,17 @@ export function setupRealtime(httpServer: HttpServer): IOServer<ClientToServerEv
           const bearerOrCookieToken = getTokenFromHeaders() || (payload as any)?.token || null;
           const verified = bearerOrCookieToken ? verifyAuthToken(bearerOrCookieToken) : null;
           if (!verified?.userId) {
+            // لا تقطع الاتصال فوراً لتجنب حلقة إعادة الاتصال المستمرة في الواجهة
+            // أعد خطأ واضحاً واترك الاتصال مفتوحاً لفترة سماحية قصيرة ليتمكن العميل من إعادة المحاولة
             socket.emit('error', { message: 'المصادقة مطلوبة', action: 'unauthorized' });
-            socket.disconnect(true);
+            try {
+              setTimeout(() => {
+                if (!socket.isAuthenticated) {
+                  // إذا لم تتم المصادقة خلال المهلة، اقطع الاتصال بهدوء
+                  socket.disconnect(true);
+                }
+              }, 5000); // 5 ثواني سماحية
+            } catch {}
             return;
           }
 
