@@ -568,7 +568,7 @@ export default function UnifiedSidebar({
                 onClick={(e) => handleUserClick(e as any, user)}
               >
                 {/* ازاحة الصورة قليلاً لليسار لإظهار الإطار بالكامل */}
-                <div style={{ marginLeft: 4 }}>
+                <div style={{ marginLeft: 4, width: 40, height: 40 }}>
                   <ProfileImage user={user} size="small" className="" hideRoleBadgeOverlay={true} />
                 </div>
                 <div className="flex-1">

@@ -69,9 +69,10 @@ export default function ProfileImage({
   })();
 
   if (!disableFrame && frameName && frameIndex) {
+    // مقاسات دقيقة لتطابق الموقع الآخر
     const px = size === 'small' ? 40 : size === 'large' ? 80 : 64;
     return (
-      <div className={`relative inline-block ${className || ''}`} onClick={onClick}>
+      <div className={`relative inline-block ${className || ''}`} onClick={onClick} style={{ width: px, height: px }}>
         <VipAvatar src={imageSrc} alt={`صورة ${user.username}`} size={px} frame={frameIndex as any} />
       </div>
     );

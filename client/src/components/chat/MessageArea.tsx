@@ -729,13 +729,15 @@ export default function MessageArea({
                   <>
                     {message.sender && (
                       <div className="flex-shrink-0">
-                        <ProfileImage
-                          user={message.sender}
-                          size="small"
-                          className="w-7 h-7 cursor-pointer hover:scale-110 transition-transform duration-200"
-                          disableFrame
-                          onClick={(e) => onUserClick && onUserClick(e, message.sender!)}
-                        />
+                        <div style={{ width: 28, height: 28 }}>
+                          <ProfileImage
+                            user={message.sender}
+                            size="small"
+                            className="w-7 h-7 cursor-pointer hover:scale-110 transition-transform duration-200"
+                            disableFrame
+                            onClick={(e) => onUserClick && onUserClick(e, message.sender!)}
+                          />
+                        </div>
                       </div>
                     )}
                     <div className="flex-1 min-w-0">
@@ -846,13 +848,15 @@ export default function MessageArea({
                     {/* Profile Image */}
                     {message.sender && (
                       <div className="flex-shrink-0">
-                        <ProfileImage
-                          user={message.sender}
-                          size="small"
-                          className="w-7 h-7 cursor-pointer hover:scale-110 transition-transform duration-200"
-                          disableFrame
-                          onClick={(e) => onUserClick && onUserClick(e, message.sender!)}
-                        />
+                        <div style={{ width: 28, height: 28 }}>
+                          <ProfileImage
+                            user={message.sender}
+                            size="small"
+                            className="w-7 h-7 cursor-pointer hover:scale-110 transition-transform duration-200"
+                            disableFrame
+                            onClick={(e) => onUserClick && onUserClick(e, message.sender!)}
+                          />
+                        </div>
                       </div>
                     )}
 

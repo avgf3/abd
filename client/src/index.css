@@ -1410,6 +1410,8 @@ li > * > div.effect-crystal {
   justify-content: center;
 }
 .vip-frame-img {
+  width: 100%;
+  height: 100%;
   border-radius: 9999px;
   object-fit: cover;
   background: #0b1220;
@@ -1423,14 +1425,15 @@ li > * > div.effect-crystal {
 }
 .vip-frame-overlay {
   position: absolute;
-  inset: -2px;
-  width: calc(100% + 4px);
-  height: calc(100% + 4px);
+  inset: 0; /* اجعل الإطار يطابق حجم الصورة تماماً */
+  width: 100%;
+  height: 100%;
   object-fit: cover;
   border-radius: 9999px;
   pointer-events: none;
   z-index: 3;
-  animation: vip-rotate var(--vip-spin-duration, 6s) linear infinite;
+  /* إيقاف أي دوران */
+  animation: none !important;
 }
 
 /* Shared rotating border */
@@ -1446,17 +1449,16 @@ li > * > div.effect-crystal {
     linear-gradient(#000 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
-  animation: vip-rotate var(--vip-spin-duration, 6s) linear infinite;
+  /* إيقاف أي دوران */
+  animation: none !important;
 }
 
-@keyframes vip-rotate {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+/* عند استخدام إطار بصورة جاهزة، أخفِ الإطار الشعاعي تماماً */
+.vip-frame.with-image::before {
+  display: none !important;
 }
+
+/* تم إيقاف أنيميشن الدوران كلياً */
 
 /* 10 distinct gradient frames matching modern VIP look */
 .vip-frame-1::before {
@@ -1501,18 +1503,9 @@ li > * > div.effect-crystal {
 }
 
 /* Optional subtle pulsation */
-.vip-frame.base {
-  animation: vip-pulse 3.6s ease-in-out infinite;
-}
-@keyframes vip-pulse {
-  0%,
-  100% {
-    filter: brightness(1);
-  }
-  50% {
-    filter: brightness(1.1);
-  }
-}
+/* إيقاف أي نبض/حركة على الإطار */
+.vip-frame.base { animation: none !important; }
+/* تم تعطيل vip-pulse للحفاظ على ثبات الإطار */
 
 /* ===== تحسينات الاهتزاز الخفيف للرسائل ===== */
 
