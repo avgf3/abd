@@ -1434,9 +1434,9 @@ li > * > div.effect-crystal {
   z-index: 3;
   /* تعطيل أي دوران */
   animation: none !important;
-  /* كبّر الإطار قليلاً ليجلس على حافة الصورة تماماً */
+  /* إزالة التكبير لأن الـ container الآن أكبر */
   transform-origin: center center;
-  transform: scale(var(--vip-overlay-scale, 1.06));
+  transform: scale(1);
 }
 
 /* Shared rotating border */
