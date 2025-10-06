@@ -10,7 +10,6 @@ import ImageLightbox from '@/components/ui/ImageLightbox';
 import ImageAttachmentBadge from '@/components/ui/ImageAttachmentBadge';
 import UserRoleBadge from '@/components/chat/UserRoleBadge';
 import { Input } from '@/components/ui/input';
-// Removed ComposerPlusMenu (ready/quick options)
 import { useComposerStyle } from '@/contexts/ComposerStyleContext';
 import type { ChatMessage, ChatUser } from '@/types/chat';
 import ProfileImage from '@/components/chat/ProfileImage';
@@ -21,7 +20,6 @@ import {
 import { getFinalUsernameColor, getUserNameplateStyles } from '@/utils/themeUtils';
 import { getSocket } from '@/lib/socket';
 import { formatTimeWithDate } from '@/utils/timeUtils';
-// إزالة استخدام fallback الذي يُظهر "مستخدم #id" لتفادي ظهور اسم افتراضي خاطئ في الخاص
 import { api } from '@/lib/queryClient';
 
 interface PrivateMessageBoxProps {
@@ -31,7 +29,7 @@ interface PrivateMessageBoxProps {
   messages: ChatMessage[];
   onSendMessage: (content: string) => void;
   onClose: () => void;
-  onLoadMore?: () => Promise<{ addedCount: number; hasMore: boolean }>; // تحميل رسائل أقدم
+  onLoadMore?: () => Promise<{ addedCount: number; hasMore: boolean }>;
   onViewProfile?: (user: ChatUser) => void;
   onViewStoryByUser?: (userId: number) => void;
 }
@@ -64,23 +62,10 @@ export default function PrivateMessageBox({
   const [isOtherTyping, setIsOtherTyping] = useState(false);
   const otherTypingTimerRef = useRef<number | null>(null);
   const lastTypingEmitRef = useRef<number>(0);
-  // Track one-time initial bottom alignment when opening the box
-  const didInitialScrollRef = useRef(false);
-  // Read receipts: last read timestamp received from other user via socket
   const [otherLastReadAt, setOtherLastReadAt] = useState<string | null>(null);
 
-  // محسن: ترتيب الرسائل مع تحسين الأداء
+  // ترتيب الرسائل
   const sortedMessages = useMemo(() => sortMessagesAscending(messages || []), [messages]);
-
-  // تتبع حالة القاع لتفعيل سلوك طبيعي فقط عندما تكون عند القاع
-  const [isAtBottom, setIsAtBottom] = useState(true);
-  // دالة مساعدة للانتقال لآخر رسالة عند الحاجة (بدون أنيميشن مزعج)
-  const scrollToLatest = useCallback(() => {
-    try {
-      if (!virtuosoRef.current || sortedMessages.length === 0) return;
-      virtuosoRef.current.scrollToIndex({ index: sortedMessages.length - 1, align: 'end', behavior: 'auto' as any });
-    } catch {}
-  }, [sortedMessages.length]);
 
   // Emit private typing (throttled ~3s)
   const emitPrivateTyping = useCallback(() => {
@@ -97,7 +82,6 @@ export default function PrivateMessageBox({
   // Listen for privateTyping from the other user + conversationRead sync
   useEffect(() => {
     const s = getSocket();
-    // حافظ على مرجع مستقر للمعالج لمنع إضافة/إزالة متعددة بلا داعٍ
     const onMessage = (payload: any) => {
       try {
         const envelope = (payload && payload.envelope) ? payload.envelope : payload;
@@ -214,6 +198,7 @@ export default function PrivateMessageBox({
     }
     return { cleaned, ids };
   }, [extractYouTubeId]);
+  
   // تجميع الرسائل المتتالية لنفس المرسل ضمن نافذة زمنية قصيرة (مثل Messenger)
   const GROUP_TIME_MS = 5 * 60 * 1000; // 5 دقائق
   const getIsMe = useCallback((m: any) => !!(currentUser && m && m.senderId === currentUser.id), [currentUser]);
@@ -226,34 +211,14 @@ export default function PrivateMessageBox({
     return Math.abs(tb - ta) <= GROUP_TIME_MS;
   }, []);
 
-  // تم إزالة أي تمرير تلقائي أو دوال مساعدة للتمرير
-
-  // تمت إزالة إدارة حالة القاع بالكامل لإرجاع السلوك الطبيعي
-
-  // عند فتح الصندوق: تركيز الإدخال فقط (لا تمرير تلقائي)
+  // عند فتح الصندوق: تركيز الإدخال
   useEffect(() => {
     if (!isOpen) return;
     const t = setTimeout(() => {
       inputRef.current?.focus();
-    }, 80);
+    }, 100);
     return () => clearTimeout(t);
   }, [isOpen]);
-
-  // Ensure we start at the latest message when opening (and when messages first load)
-  useEffect(() => {
-    if (!isOpen) {
-      didInitialScrollRef.current = false;
-      return;
-    }
-    if (didInitialScrollRef.current) return;
-    if (sortedMessages.length === 0) return;
-    const t = setTimeout(() => {
-      scrollToLatest();
-      didInitialScrollRef.current = true;
-      setIsAtBottom(true);
-    }, 60);
-    return () => clearTimeout(t);
-  }, [isOpen, sortedMessages.length, scrollToLatest]);
 
   // تحديث آخر وقت فتح للمحادثة لاحتساب غير المقروء
   useEffect(() => {
@@ -288,20 +253,6 @@ export default function PrivateMessageBox({
     } catch {}
   }, [isOpen, user?.id, currentUser?.id, lastMessageDeps]);
 
-  // تمرير بسيط عند تركيز الإدخال لضمان ظهور آخر سطر فوق لوحة المفاتيح (مهم للجوال)
-  useEffect(() => {
-    const el = inputRef.current;
-    if (!el) return;
-    const onFocus = () => {
-      setTimeout(() => scrollToLatest(), 60);
-    };
-    el.addEventListener('focus', onFocus);
-    return () => {
-      try { el.removeEventListener('focus', onFocus); } catch {}
-    };
-  }, [scrollToLatest]);
-
-
   // محسن: دالة إرسال مع إعادة المحاولة ومعالجة أخطاء محسنة
   const sendMessageWithRetry = useCallback(
     async (content: string, retries = 3): Promise<boolean> => {
@@ -313,7 +264,6 @@ export default function PrivateMessageBox({
           if (i === retries - 1) {
             throw error;
           }
-          // انتظر قبل إعادة المحاولة (زيادة تدريجية)
           await new Promise((resolve) => setTimeout(resolve, 1000 * (i + 1)));
         }
       }
@@ -329,14 +279,12 @@ export default function PrivateMessageBox({
     const hasImage = !!imageFile;
     if (!hasText && !hasImage) return;
 
-    // لا نحجب الواجهة أثناء الإرسال لتحسين الشعور بالاستجابة
     setIsSending(true);
     setSendError(null);
     clearTimeout(retryTimeoutRef.current);
 
     try {
       if (hasImage) {
-        // إرسال الصورة عبر مسار الرفع الموحّد وتمرير receiverId للخاص
         if (!currentUser?.id || !user?.id) throw new Error('بيانات المرسل أو المستلم غير متوفرة');
         const form = new FormData();
         form.append('image', imageFile!);
@@ -356,11 +304,8 @@ export default function PrivateMessageBox({
     } catch (error) {
       console.error('خطأ في إرسال الرسالة:', error);
       const errorMessage = error instanceof Error ? error.message : 'فشل إرسال الرسالة';
-      // إخفاء رسائل الأخطاء من الواجهة الخاصة بناءً على رغبتك
       setSendError(null);
       console.error(errorMessage);
-
-      // إعادة تعيين حالة الخطأ بعد 5 ثوان
       retryTimeoutRef.current = setTimeout(() => setSendError(null), 5000);
     } finally {
       setIsSending(false);
@@ -368,7 +313,6 @@ export default function PrivateMessageBox({
     }
   }, [messageText, imageFile, isSending, sendMessageWithRetry, currentUser?.id, user?.id]);
 
-  // محسن: معالج الضغط على Enter
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
       if (e.key === 'Enter' && !e.shiftKey) {
@@ -379,7 +323,6 @@ export default function PrivateMessageBox({
     [handleSend]
   );
 
-  // When user types, emit typing (throttled)
   const handleChangeWithTyping = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       setMessageText(clampToMaxChars(e.target.value));
@@ -388,9 +331,6 @@ export default function PrivateMessageBox({
     [clampToMaxChars, emitPrivateTyping]
   );
 
-  // تبسيط: لا حاجة ل-scroll إضافي على focus لتفادي قفزات
-
-  // دعم لصق الصور مباشرة في صندوق الإدخال
   const handlePaste = useCallback((e: React.ClipboardEvent<HTMLInputElement>) => {
     try {
       const items = e.clipboardData?.items;
@@ -416,18 +356,10 @@ export default function PrivateMessageBox({
     try {
       const res = await onLoadMore();
       setHasMore(res.hasMore);
-      if (res.addedCount > 0) {
-        // حافظ على موضع التمرير ثابت بعد إدراج عناصر في الأعلى
-        try {
-          (virtuosoRef.current as any)?.adjustForPrependedItems?.(res.addedCount);
-        } catch {}
-      }
     } finally {
       setIsLoadingOlder(false);
     }
   }, [isLoadingOlder, hasMore, onLoadMore]);
-
-  // لون الحد والقص باستخدام دوال موحدة
 
   if (!isOpen) return null;
 
@@ -513,7 +445,6 @@ export default function PrivateMessageBox({
                     })()}
                     <UserRoleBadge user={user} size={20} />
                   </div>
-                  {/* زر الإغلاق يسار بنفس نمط الأثرياء/الإعدادات */}
                   <button
                     onClick={onClose}
                     className="absolute left-2 top-2 px-2 py-1 hover:bg-red-100 text-red-600 text-sm font-medium rounded"
@@ -541,19 +472,12 @@ export default function PrivateMessageBox({
                 ref={virtuosoRef}
                 data={sortedMessages}
                 className="!h-full"
-                style={{ overscrollBehavior: 'contain', scrollBehavior: 'auto' }}
-                increaseViewportBy={{ top: 200, bottom: 320 }}
-                defaultItemHeight={60}
+                style={{ overscrollBehavior: 'contain' }}
+                increaseViewportBy={{ top: 300, bottom: 300 }}
+                defaultItemHeight={80}
                 startReached={handleLoadMore}
-                // Follow new output only when user is at bottom (prevents inverted thumb movement)
-                followOutput={isAtBottom ? 'smooth' : false}
-                atBottomThreshold={48}
-                atBottomStateChange={(atBottom) => {
-                  // Normalize bottom state changes to keep followOutput accurate
-                  setIsAtBottom(!!atBottom);
-                }}
-                // Start with the latest item at bottom on initial mount
-                initialTopMostItemIndex={Math.max(0, sortedMessages.length - 1)}
+                followOutput={false}
+                initialTopMostItemIndex={sortedMessages.length - 1}
                 computeItemKey={(index, m) => (m as any)?.id ?? `${(m as any)?.senderId}-${(m as any)?.timestamp}-${index}`}
                 components={{
                   Header: () =>
@@ -582,41 +506,27 @@ export default function PrivateMessageBox({
                   const next = index + 1 < sortedMessages.length ? sortedMessages[index + 1] : null;
                   const groupStart = !prev || !isSameSender(prev, m) || !isWithinWindow(prev, m);
                   const groupEnd = !next || !isSameSender(next, m) || !isWithinWindow(next, m);
-                  const alignClass = isMe ? 'justify-end' : 'justify-start';
-                  const bubbleSide = isMe ? 'me' : 'other';
-                  const showAvatar = !isMe;
+                  const showAvatar = groupEnd;
 
                   return (
                     <div key={key} className="w-full mb-2" dir="rtl">
-                      <div className={`flex ${isMe ? 'justify-end' : 'justify-start'} items-start gap-2`}>
-                        {/* Avatar for received messages - positioned on the right in RTL */}
+                      <div className={`flex ${isMe ? 'justify-end' : 'justify-start'} items-end gap-2`}>
+                        {/* صورة المستقبل على اليمين */}
                         {!isMe && showAvatar && (
-                          <div className="flex-shrink-0 order-1 self-start">
-                            <ProfileImage
-                              user={(m.sender as ChatUser) || user}
-                              size="small"
-                              className="w-8 h-8 rounded-full"
-                            />
-                          </div>
+                          <ProfileImage
+                            user={(m.sender as ChatUser) || user}
+                            size="small"
+                            className="w-8 h-8 rounded-full flex-shrink-0"
+                          />
                         )}
+                        {!isMe && !showAvatar && <div className="w-8 h-8 flex-shrink-0" />}
                         
-                        {/* Avatar for sent messages - positioned on the left in RTL */}
-                        {isMe && (
-                          <div className="flex-shrink-0 order-3 self-start">
-                            <ProfileImage
-                              user={currentUser!}
-                              size="small"
-                              className="w-8 h-8 rounded-full"
-                            />
-                          </div>
-                        )}
-                        
-                        {/* Message bubble container */}
-                        <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-[75%] ${!isMe && showAvatar ? 'order-2' : isMe ? 'order-2' : ''}`}>
+                        {/* محتوى الرسالة */}
+                        <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-[75%]`}>
                           <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ duration: 0.15, ease: 'easeOut' }}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.2, ease: 'easeOut' }}
                             className={`
                               relative px-3 py-2 rounded-2xl shadow-sm
                               ${isMe 
@@ -624,9 +534,9 @@ export default function PrivateMessageBox({
                                 : 'bg-gray-800 text-white'
                               }
                               ${groupStart && isMe ? 'rounded-tr-md' : ''}
-                              ${groupEnd && isMe ? 'rounded-br-lg' : ''}
+                              ${groupEnd && isMe ? 'rounded-br-md' : ''}
                               ${groupStart && !isMe ? 'rounded-tl-md' : ''}
-                              ${groupEnd && !isMe ? 'rounded-bl-lg' : ''}
+                              ${groupEnd && !isMe ? 'rounded-bl-md' : ''}
                             `}
                           >
                             {hasStoryContext && (
@@ -724,33 +634,43 @@ export default function PrivateMessageBox({
                           </motion.div>
                           
                           {/* Timestamp and read receipts */}
-                          <div className={`flex items-center gap-1 mt-1 text-xs text-gray-500 ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
-                            <span>{formatTimeWithDate(m.timestamp as any)}</span>
-                            {isMe && (() => {
-                              const seen = (() => {
-                                try {
-                                  if (!otherLastReadAt) return false;
-                                  const lastReadMs = new Date(otherLastReadAt).getTime();
-                                  const thisMsgMs = new Date(m.timestamp as any).getTime();
-                                  return Number.isFinite(lastReadMs) && Number.isFinite(thisMsgMs) && lastReadMs >= thisMsgMs;
-                                } catch { return false; }
-                              })();
-                              return seen ? (
-                                <CheckCheck className="w-4 h-4 text-blue-400" />
-                              ) : (
-                                <Check className="w-4 h-4 text-gray-400" />
-                              );
-                            })()}
-                          </div>
+                          {groupEnd && (
+                            <div className={`flex items-center gap-1 mt-1 text-xs text-gray-500 ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
+                              <span>{formatTimeWithDate(m.timestamp as any)}</span>
+                              {isMe && (() => {
+                                const seen = (() => {
+                                  try {
+                                    if (!otherLastReadAt) return false;
+                                    const lastReadMs = new Date(otherLastReadAt).getTime();
+                                    const thisMsgMs = new Date(m.timestamp as any).getTime();
+                                    return Number.isFinite(lastReadMs) && Number.isFinite(thisMsgMs) && lastReadMs >= thisMsgMs;
+                                  } catch { return false; }
+                                })();
+                                return seen ? (
+                                  <CheckCheck className="w-4 h-4 text-blue-400" />
+                                ) : (
+                                  <Check className="w-4 h-4 text-gray-400" />
+                                );
+                              })()}
+                            </div>
+                          )}
                         </div>
+
+                        {/* صورة المرسل على اليسار */}
+                        {isMe && showAvatar && (
+                          <ProfileImage
+                            user={currentUser!}
+                            size="small"
+                            className="w-8 h-8 rounded-full flex-shrink-0"
+                          />
+                        )}
+                        {isMe && !showAvatar && <div className="w-8 h-8 flex-shrink-0" />}
                       </div>
                     </div>
                   );
                 }}
               />
             )}
-
-            {/* تم إخفاء زر "الانتقال لأسفل" */}
           </div>
 
           <div className="p-4 border-t border-border modern-nav">
@@ -766,7 +686,6 @@ export default function PrivateMessageBox({
             ) : (
               <>
                 <div className="flex gap-3 items-end">
-                  {/* زر اختيار الصورة */}
                   <input
                     ref={fileInputRef}
                     type="file"
@@ -797,7 +716,6 @@ export default function PrivateMessageBox({
                     style={{ color: composerTextColor, fontWeight: composerBold ? 700 : undefined }}
                     maxLength={MAX_CHARS}
                   />
-                  {/* زر الإرسال بشكل أيقونة مثل غرف الدردشة */}
                   <Button
                     onClick={handleSend}
                     disabled={!messageText.trim() && !imageFile}
