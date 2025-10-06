@@ -14,6 +14,7 @@ export interface User {
   profileImage?: string;
   profileBanner?: string;
   profileBackgroundColor: string;
+  profileFrame?: string;
   avatarHash?: string;
   avatarVersion?: number;
   status?: string;
@@ -607,6 +608,7 @@ export class DatabaseService {
             profileImage: schema.users.profileImage,
             profileBackgroundColor: schema.users.profileBackgroundColor,
             profileEffect: schema.users.profileEffect,
+            profileFrame: (schema.users as any).profileFrame,
             usernameColor: schema.users.usernameColor,
             isOnline: schema.users.isOnline,
             lastSeen: schema.users.lastSeen,
@@ -685,6 +687,7 @@ export class DatabaseService {
             profileImage: schema.users.profileImage,
             profileBackgroundColor: schema.users.profileBackgroundColor,
             profileEffect: schema.users.profileEffect,
+            profileFrame: (schema.users as any).profileFrame,
             usernameColor: schema.users.usernameColor,
             isOnline: schema.users.isOnline,
             lastSeen: schema.users.lastSeen,

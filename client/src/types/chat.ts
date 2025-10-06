@@ -12,6 +12,8 @@ export interface ChatUser {
   profileBackgroundColor?: string;
   usernameColor?: string;
   profileEffect?: string;
+  // إطار البروفايل (اسم/مسار ثابت محفوظ)
+  profileFrame?: string;
   status?: string;
   gender?: string; // تغيير: جعل النوع اختيارياً وقابلاً لأي نص لضمان التوافق
   age?: number;
