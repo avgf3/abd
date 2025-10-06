@@ -3195,9 +3195,11 @@ export default function ProfileModal({
                       position: 'absolute', 
                       top: '50%',
                       left: '50%',
+                      right: 'auto',
+                      bottom: 'auto',
                       transform: 'translate(-50%, -50%)',
-                      width: '100%', 
-                      height: '100%', 
+                      width: '130px',
+                      height: '130px',
                       objectFit: 'contain', /* للحفاظ على نسب الإطار */
                       pointerEvents: 'none',
                       zIndex: 2
