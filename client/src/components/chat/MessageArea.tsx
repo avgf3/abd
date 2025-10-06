@@ -734,7 +734,7 @@ export default function MessageArea({
                             user={message.sender}
                             size="small"
                             className="w-7 h-7 cursor-pointer hover:scale-110 transition-transform duration-200"
-                            disableFrame
+                            /* عرض الإطار للمستخدم صاحب الإطار */
                             onClick={(e) => onUserClick && onUserClick(e, message.sender!)}
                           />
                         </div>
@@ -853,7 +853,7 @@ export default function MessageArea({
                             user={message.sender}
                             size="small"
                             className="w-7 h-7 cursor-pointer hover:scale-110 transition-transform duration-200"
-                            disableFrame
+                            /* عرض الإطار للمستخدم صاحب الإطار */
                             onClick={(e) => onUserClick && onUserClick(e, message.sender!)}
                           />
                         </div>

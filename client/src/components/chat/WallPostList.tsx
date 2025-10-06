@@ -67,7 +67,7 @@ export default function WallPostList({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="relative">
-                  <div className="w-12 h-12">
+                  <div className="w-12 h-12" style={{ width: 48, height: 48 }}>
                     <ProfileImage user={{
                       id: post.userId,
                       username: post.username,
