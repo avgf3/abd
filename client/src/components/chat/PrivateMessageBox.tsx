@@ -70,21 +70,15 @@ export default function PrivateMessageBox({
   // محسن: ترتيب الرسائل مع تحسين الأداء
   const sortedMessages = useMemo(() => sortMessagesAscending(messages || []), [messages]);
 
-  // Scroll management for DM: track bottom and enable followOutput
+  // تتبع حالة القاع لتفعيل سلوك طبيعي فقط عندما تكون عند القاع
   const [isAtBottom, setIsAtBottom] = useState(true);
-  const prevMessagesLenRef = useRef<number>(0);
-  type ScrollBehaviorStrict = 'auto' | 'smooth';
-  const scrollToBottom = React.useCallback(
-    (behavior: ScrollBehaviorStrict = 'smooth') => {
+  // دالة مساعدة للانتقال لآخر رسالة عند الحاجة (بدون أنيميشن مزعج)
+  const scrollToLatest = useCallback(() => {
+    try {
       if (!virtuosoRef.current || sortedMessages.length === 0) return;
-      virtuosoRef.current.scrollToIndex({
-        index: sortedMessages.length - 1,
-        align: 'end',
-        behavior,
-      });
-    },
-    [sortedMessages.length]
-  );
+      virtuosoRef.current.scrollToIndex({ index: sortedMessages.length - 1, align: 'end', behavior: 'auto' as any });
+    } catch {}
+  }, [sortedMessages.length]);
 
   // Emit private typing (throttled ~3s)
   const emitPrivateTyping = useCallback(() => {
@@ -234,17 +228,14 @@ export default function PrivateMessageBox({
 
   // تمت إزالة إدارة حالة القاع بالكامل لإرجاع السلوك الطبيعي
 
-  // عند فتح الصندوق: تركيز الإدخال وتمرير لمرة واحدة فقط
+  // عند فتح الصندوق: تركيز الإدخال فقط (لا تمرير تلقائي)
   useEffect(() => {
     if (!isOpen) return;
     const t = setTimeout(() => {
       inputRef.current?.focus();
-      scrollToBottom('auto');
-      setIsAtBottom(true);
-      prevMessagesLenRef.current = sortedMessages.length;
     }, 80);
     return () => clearTimeout(t);
-  }, [isOpen, scrollToBottom, sortedMessages.length]);
+  }, [isOpen]);
 
   // تحديث آخر وقت فتح للمحادثة لاحتساب غير المقروء
   useEffect(() => {
@@ -279,19 +270,18 @@ export default function PrivateMessageBox({
     } catch {}
   }, [isOpen, user?.id, currentUser?.id, lastMessageDeps]);
 
-  // تمرير تلقائي عند وصول رسائل جديدة: إذا كنت في الأسفل أو الرسالة مني
+  // تمرير بسيط عند تركيز الإدخال لضمان ظهور آخر سطر فوق لوحة المفاتيح (مهم للجوال)
   useEffect(() => {
-    const prevLen = prevMessagesLenRef.current;
-    const currLen = sortedMessages.length;
-    if (currLen <= prevLen) return;
-
-    const last = sortedMessages[currLen - 1];
-    const sentByMe = !!(currentUser && last?.senderId === currentUser.id);
-    if (isOpen && (isAtBottom || sentByMe)) {
-      scrollToBottom('smooth');
-    }
-    prevMessagesLenRef.current = currLen;
-  }, [sortedMessages.length, isAtBottom, currentUser, isOpen, scrollToBottom]);
+    const el = inputRef.current;
+    if (!el) return;
+    const onFocus = () => {
+      setTimeout(() => scrollToLatest(), 60);
+    };
+    el.addEventListener('focus', onFocus);
+    return () => {
+      try { el.removeEventListener('focus', onFocus); } catch {}
+    };
+  }, [scrollToLatest]);
 
 
   // محسن: دالة إرسال مع إعادة المحاولة ومعالجة أخطاء محسنة
@@ -534,11 +524,11 @@ export default function PrivateMessageBox({
                 data={sortedMessages}
                 className="!h-full"
                 style={{ overscrollBehavior: 'contain', scrollBehavior: 'auto' }}
-                increaseViewportBy={{ top: 300, bottom: 300 }}
-                defaultItemHeight={56}
+                increaseViewportBy={{ top: 200, bottom: 320 }}
+                defaultItemHeight={60}
                 startReached={handleLoadMore}
-                followOutput={isAtBottom ? 'smooth' : false}
-                atBottomThreshold={64}
+                followOutput={false}
+                atBottomThreshold={48}
                 atBottomStateChange={(atBottom) => setIsAtBottom(atBottom)}
                 computeItemKey={(index, m) => (m as any)?.id ?? `${(m as any)?.senderId}-${(m as any)?.timestamp}-${index}`}
                 components={{
