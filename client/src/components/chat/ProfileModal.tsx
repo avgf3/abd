@@ -2248,8 +2248,8 @@ export default function ProfileModal({
           border-radius: 9999px; /* دائري بالكامل */
           overflow: visible; /* السماح للإطار بالظهور خارج الحدود */
           position: absolute;
-          top: calc(100% - 175px); /* تحريك للأعلى بمقدار 10px */
-          right: 40px; /* تحريك لليمين بمقدار 10px */
+          top: calc(100% - 195px); /* تحريك للأعلى بمقدار 30px */
+          right: 70px; /* تحريك لليمين بمقدار 40px */
           background-color: transparent;
           box-shadow: none; /* إزالة الظل من الـ container */
           z-index: 2;
@@ -2887,8 +2887,8 @@ export default function ProfileModal({
           .profile-avatar {
             width: 160px;
             height: 160px;
-            top: calc(100% - 140px);
-            right: 30px; /* على اليمين للموبايل */
+            top: calc(100% - 160px);
+            right: 55px; /* على اليمين للموبايل */
             border-radius: 12px; /* زوايا مدورة قليلاً للأجهزة المحمولة */
           }
           
