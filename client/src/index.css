@@ -1393,13 +1393,17 @@ li > * > div.effect-crystal {
   z-index: 1;
 }
 
-/* ===== VIP Animated Frames (10 styles) ===== */
-.vip-frame.base {
+/* ===== VIP Modern Frames System - خرافي وحديث ===== */
+
+/* الحاوية الرئيسية للإطار الحديث */
+.vip-frame-modern {
   position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  /* الإطار الخارجي (الحاوية) */
+  border-radius: 50%;
+  overflow: visible;
+  z-index: 1;
 }
 .vip-frame-inner {
   position: relative;
