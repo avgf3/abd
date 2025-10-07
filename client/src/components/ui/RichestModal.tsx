@@ -283,7 +283,14 @@ export default function RichestModal({ isOpen, onClose, currentUser, onUserClick
                         {idx + 1}
                       </span>
                     )}
-                    <div style={{ width: 40, height: 40 }}>
+                    <div style={{ 
+                      width: (u as any)?.profileFrame ? 54 : 40, 
+                      height: (u as any)?.profileFrame ? 54 : 40,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0
+                    }}>
                       <ProfileImage user={u} size="small" pixelSize={40} className="" hideRoleBadgeOverlay={true} />
                     </div>
                     <div className="flex-1">
@@ -328,11 +335,16 @@ export default function RichestModal({ isOpen, onClose, currentUser, onUserClick
               <div className="space-y-2 max-h-32 overflow-y-auto overflow-x-hidden">
                 {candidates.map((c) => (
                 <div key={c.id} className="flex items-center gap-2">
-                    <img
-                    src={getImageSrc(c.profileImage || '/default_avatar.svg')}
-                    alt={c.username}
-                    className="w-6 h-6 rounded-full"
-                    />
+                    <div style={{ 
+                      width: (c as any)?.profileFrame ? 32 : 24, 
+                      height: (c as any)?.profileFrame ? 32 : 24,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0
+                    }}>
+                      <ProfileImage user={c} size="small" pixelSize={24} className="" hideRoleBadgeOverlay={true} />
+                    </div>
                     <div className="flex-1">
                       <span className="ac-user-name" style={{ color: getFinalUsernameColor(c) }} title={c.username}>
                         {c.username}
