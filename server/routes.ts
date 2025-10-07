@@ -4830,7 +4830,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       usernameColor: sanitized.usernameColor,
       profileBackgroundColor: sanitized.profileBackgroundColor,
       profileEffect: sanitized.profileEffect,
-      profileFrame: sanitized.profileFrame,
       isOnline: sanitized.isOnline,
       lastSeen: sanitized.lastSeen,
       currentRoom: sanitized.currentRoom,
