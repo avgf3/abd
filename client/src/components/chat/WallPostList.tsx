@@ -75,6 +75,7 @@ export default function WallPostList({
                       userType: post.userRole as any,
                       isOnline: true,
                       profileImage: post.userProfileImage,
+                      profileFrame: (post as any)?.userProfileFrame,
                       usernameColor: post.usernameColor,
                     } as any} size="small" className="w-12 h-12" hideRoleBadgeOverlay={true} />
                   </div>
