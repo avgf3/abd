@@ -564,53 +564,44 @@ export default function PrivateMessageBox({
                     <div key={key} className="w-full mb-2" dir="rtl">
                       <div className={`flex ${isMe ? 'justify-end' : 'justify-start'} items-start gap-2`}>
                         {/* Avatar for received messages */}
-                        {!isMe && showAvatar && (() => {
-                          const sender = (m.sender as ChatUser) || user;
-                          const hasFrame = !!(sender as any)?.profileFrame;
-                          const containerSize = hasFrame ? 43 : 32;
-                          return (
-                            <div className="flex-shrink-0 order-1 self-start">
-                              <div style={{ 
-                                width: containerSize,
-                                height: containerSize,
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center'
-                              }}>
-                                <ProfileImage
-                                  user={sender}
-                                  size="small"
-                                  pixelSize={32}
-                                  className="rounded-full"
-                                />
-                              </div>
+                        {!isMe && showAvatar && (
+                          <div className="flex-shrink-0 order-1 self-start">
+                            <div style={{ 
+                              width: 32,
+                              height: 32,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center'
+                            }}>
+                              <ProfileImage
+                                user={(m.sender as ChatUser) || user}
+                                size="small"
+                                pixelSize={32}
+                                className="rounded-full"
+                              />
                             </div>
-                          );
-                        })()}
+                          </div>
+                        )}
                         
                         {/* Avatar for sent messages */}
-                        {isMe && (() => {
-                          const hasFrame = !!(currentUser as any)?.profileFrame;
-                          const containerSize = hasFrame ? 43 : 32;
-                          return (
-                            <div className="flex-shrink-0 order-3 self-start">
-                              <div style={{ 
-                                width: containerSize,
-                                height: containerSize,
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center'
-                              }}>
-                                <ProfileImage
-                                  user={currentUser!}
-                                  size="small"
-                                  pixelSize={32}
-                                  className="rounded-full"
-                                />
-                              </div>
+                        {isMe && (
+                          <div className="flex-shrink-0 order-3 self-start">
+                            <div style={{ 
+                              width: 32,
+                              height: 32,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center'
+                            }}>
+                              <ProfileImage
+                                user={currentUser!}
+                                size="small"
+                                pixelSize={32}
+                                className="rounded-full"
+                              />
                             </div>
-                          );
-                        })()}
+                          </div>
+                        )}
                         
                         {/* Message bubble container */}
                         <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-[75%] ${!isMe && showAvatar ? 'order-2' : isMe ? 'order-2' : ''}`}>
