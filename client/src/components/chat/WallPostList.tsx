@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Trash2, Globe } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,8 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import type { WallPost, ChatUser } from '@/types/chat';
 import { getImageSrc } from '@/utils/imageUtils';
 import { formatTimeAgo } from '@/utils/timeUtils';
+import { apiRequest } from '@/lib/queryClient';
+import ProfileImage from '@/components/chat/ProfileImage';
  
 
 interface WallPostListProps {
@@ -31,6 +33,36 @@ export default function WallPostList({
   canDelete,
   onUserClick,
 }: WallPostListProps) {
+  const [usersData, setUsersData] = useState<{[key: number]: ChatUser}>({});
+
+  // جلب بيانات المستخدمين لكل منشور
+  useEffect(() => {
+    const fetchUsersData = async () => {
+      const userIds = [...new Set(posts.map(post => post.userId))];
+      const newUsersData: {[key: number]: ChatUser} = {};
+      
+      for (const userId of userIds) {
+        if (!usersData[userId]) {
+          try {
+            const userData = await apiRequest(`/api/users/${userId}`);
+            if (userData) {
+              newUsersData[userId] = userData;
+            }
+          } catch (error) {
+            console.error(`Failed to fetch user ${userId}:`, error);
+          }
+        }
+      }
+      
+      if (Object.keys(newUsersData).length > 0) {
+        setUsersData(prev => ({...prev, ...newUsersData}));
+      }
+    };
+
+    if (posts.length > 0) {
+      fetchUsersData();
+    }
+  }, [posts]);
   if (loading) {
     return (
       <div className="text-center py-12">
@@ -68,15 +100,20 @@ export default function WallPostList({
               <div className="flex items-center gap-3">
                 <div className="relative">
                   <div className="w-12 h-12" style={{ width: 48, height: 48 }}>
-                    <ProfileImage user={{
-                      id: post.userId,
-                      username: post.username,
-                      role: (post.userRole as any) || 'member',
-                      userType: post.userRole as any,
-                      isOnline: true,
-                      profileImage: post.userProfileImage,
-                      usernameColor: post.usernameColor,
-                    } as any} size="small" className="w-12 h-12" hideRoleBadgeOverlay={true} />
+                    <ProfileImage 
+                      user={usersData[post.userId] || {
+                        id: post.userId,
+                        username: post.username,
+                        role: (post.userRole as any) || 'member',
+                        userType: post.userRole as any,
+                        isOnline: true,
+                        profileImage: post.userProfileImage,
+                        usernameColor: post.usernameColor,
+                      } as ChatUser} 
+                      size="small" 
+                      className="w-12 h-12" 
+                      hideRoleBadgeOverlay={true} 
+                    />
                   </div>
                 </div>
                 <div>
@@ -86,7 +123,7 @@ export default function WallPostList({
                       style={{ color: getFinalUsernameColor({ userType: post.userRole, usernameColor: post.usernameColor }) }}
                       onClick={(e) => {
                         if (!onUserClick) return;
-                        const targetUser: ChatUser = {
+                        const targetUser = usersData[post.userId] || {
                           id: post.userId,
                           username: post.username,
                           role: (post.userRole as any) || 'member',
