@@ -713,7 +713,7 @@ export default function MessageArea({
             itemContent={(index, message) => (
               <div
                 key={message.id}
-                className={`ac-message-row flex items-start gap-2 py-1 px-2 transition-all duration-300 ${index % 2 ? 'log2' : ''}`}
+                className={`ac-message-row flex items-start gap-2 px-2 transition-all duration-300 ${index % 2 ? 'log2' : ''} ${message.sender?.profileFrame ? 'py-2' : 'py-1'}`}
                 style={{ borderRightColor: getDynamicBorderColor(message.sender), direction: 'rtl' }}
                 data-message-type={message.messageType || 'normal'}
               >
@@ -729,12 +729,19 @@ export default function MessageArea({
                   <>
                     {message.sender && (
                       <div className="flex-shrink-0">
-                        <div style={{ width: 28, height: 28 }}>
+                        <div style={{ 
+                          width: 38,
+                          height: 38,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexShrink: 0
+                        }}>
                           <ProfileImage
                             user={message.sender}
                             size="small"
                             pixelSize={28}
-                            className="w-7 h-7 cursor-pointer hover:scale-110 transition-transform duration-200"
+                            className="cursor-pointer hover:scale-110 transition-transform duration-200"
                             /* عرض الإطار للمستخدم صاحب الإطار */
                             onClick={(e) => onUserClick && onUserClick(e, message.sender!)}
                           />
@@ -849,12 +856,19 @@ export default function MessageArea({
                     {/* Profile Image */}
                     {message.sender && (
                       <div className="flex-shrink-0">
-                        <div style={{ width: 28, height: 28 }}>
+                        <div style={{ 
+                          width: 38,
+                          height: 38,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexShrink: 0
+                        }}>
                           <ProfileImage
                             user={message.sender}
                             size="small"
                             pixelSize={28}
-                            className="w-7 h-7 cursor-pointer hover:scale-110 transition-transform duration-200"
+                            className="cursor-pointer hover:scale-110 transition-transform duration-200"
                             /* عرض الإطار للمستخدم صاحب الإطار */
                             onClick={(e) => onUserClick && onUserClick(e, message.sender!)}
                           />

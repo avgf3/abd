@@ -563,26 +563,27 @@ export default function UnifiedSidebar({
               showModerationActions={isModerator}
             >
               <div
-                className={`flex items-center gap-2 py-1.5 px-1 rounded-none border-b border-border transition-colors duration-200 cursor-pointer w-full ${getUserListItemClasses(user)} hover:bg-accent/10 ${user.profileFrame ? 'translate-y-[-2px]' : ''}`}
+                className={`flex items-center gap-2 py-1.5 px-1 rounded-none border-b border-border transition-colors duration-200 cursor-pointer w-full ${getUserListItemClasses(user)} hover:bg-accent/10`}
                 style={getUserListItemStyles(user)}
                 onClick={(e) => handleUserClick(e as any, user)}
               >
-                {/* حاوية الصورة - نزيد الحجم إذا كان هناك إطار */}
+                {/* حاوية الصورة - حجم ثابت مع محاذاة مركزية */}
                 <div style={{ 
                   marginLeft: 4, 
-                  width: user.profileFrame ? 54 : 40,  // 40 * 1.35 = 54 للإطار
-                  height: user.profileFrame ? 54 : 40,
+                  width: 54,  // حجم ثابت لجميع الحالات
+                  height: 54,
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center'
+                  justifyContent: 'center',
+                  flexShrink: 0
                 }}>
                   <ProfileImage user={user} size="small" pixelSize={40} className="" hideRoleBadgeOverlay={true} />
                 </div>
-                <div className="flex-1">
+                <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
                       <span
-                        className="ac-user-name transition-colors duration-300"
+                        className="ac-user-name transition-colors duration-300 truncate"
                         style={{
                           color: getFinalUsernameColor(user),
                         }}
@@ -590,7 +591,7 @@ export default function UnifiedSidebar({
                       >
                         {user.username}
                       </span>
-                      {user.isMuted && <span className="text-yellow-400 text-xs">🔇</span>}
+                      {user.isMuted && <span className="text-yellow-400 text-xs flex-shrink-0">🔇</span>}
                     </div>
                     <div className="flex items-center gap-1">
                       {renderUserBadge(user)}
