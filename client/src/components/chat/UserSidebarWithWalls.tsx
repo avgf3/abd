@@ -555,6 +555,10 @@ export default function UnifiedSidebar({
     () =>
       React.memo(({ user }: { user: ChatUser }) => {
         if (!user?.username || !user?.userType) return null;
+        
+        // التحقق من وجود إطار للمستخدم
+        const hasFrame = !!(user as any)?.profileFrame;
+        
         return (
           <div key={user.id} className="relative" role="listitem">
             <SimpleUserMenu
@@ -563,15 +567,15 @@ export default function UnifiedSidebar({
               showModerationActions={isModerator}
             >
               <div
-                className={`flex items-center gap-2 py-1.5 px-1 rounded-none border-b border-border transition-colors duration-200 cursor-pointer w-full ${getUserListItemClasses(user)} hover:bg-accent/10`}
+                className={`flex items-center gap-2 ${hasFrame ? 'py-1.5' : 'py-0.5'} px-1 rounded-none border-b border-border transition-colors duration-200 cursor-pointer w-full ${getUserListItemClasses(user)} hover:bg-accent/10`}
                 style={getUserListItemStyles(user)}
                 onClick={(e) => handleUserClick(e as any, user)}
               >
                 {/* حاوية الصورة - حجم ثابت مع محاذاة مركزية */}
                 <div style={{ 
                   marginLeft: 4, 
-                  width: 54,  // حجم ثابت لجميع الحالات
-                  height: 54,
+                  width: hasFrame ? 54 : 46,  // تقليل العرض للمستخدمين بدون إطار
+                  height: hasFrame ? 54 : 46, // تقليل الارتفاع للمستخدمين بدون إطار
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
