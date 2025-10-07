@@ -378,7 +378,13 @@ export default function MessagesPanel({
                           }
                         }}
                       >
-                        <div className="flex-shrink-0" style={{ width: 40, height: 40 }}>
+                        <div className="flex-shrink-0" style={{ 
+                          width: (user as any)?.profileFrame ? 54 : 40, 
+                          height: (user as any)?.profileFrame ? 54 : 40,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center'
+                        }}>
                           <ProfileImage user={user} size="small" pixelSize={40} hideRoleBadgeOverlay={true} />
                         </div>
                         <div className="flex-1 min-w-0 flex flex-col justify-center">
