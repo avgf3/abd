@@ -3168,7 +3168,17 @@ export default function ProfileModal({
             )}
 
             <div className="profile-avatar">
-              {localUser?.profileFrame ? (
+              {(() => {
+                // استخدام نفس منطق ProfileImage للتحقق من صحة الإطار
+                const frameName = localUser?.profileFrame as string | undefined;
+                if (!frameName) return false;
+                const match = String(frameName).match(/(\d+)/);
+                if (match) {
+                  const n = parseInt(match[1]);
+                  return Number.isFinite(n) && n >= 1 && n <= 10;
+                }
+                return false;
+              })() ? (
                 <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <ProfileImage 
                     user={localUser} 
