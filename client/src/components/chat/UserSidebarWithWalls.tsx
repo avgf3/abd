@@ -790,16 +790,26 @@ export default function UnifiedSidebar({
                     <Card key={post.id} className="border border-border wall-post-card">
                       <CardHeader className="pb-3">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full overflow-hidden bg-muted/20 flex items-center justify-center">
-                            {post.userProfileImage ? (
-                              <img
-                                src={getImageSrc(post.userProfileImage)}
-                                alt={post.username}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <span className="text-xs">{post.username.charAt(0)}</span>
-                            )}
+                          <div style={{ 
+                            width: (post as any)?.userProfileFrame ? 43 : 32, 
+                            height: (post as any)?.userProfileFrame ? 43 : 32,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexShrink: 0
+                          }}>
+                            <ProfileImage 
+                              user={{
+                                id: post.userId,
+                                username: post.username,
+                                userType: post.userRole || 'member',
+                                profileImage: post.userProfileImage,
+                                profileFrame: (post as any)?.userProfileFrame,
+                              } as ChatUser}
+                              size="small"
+                              pixelSize={32}
+                              hideRoleBadgeOverlay={true}
+                            />
                           </div>
                           <div className="flex-1">
                             <div className="flex items-center gap-2">
@@ -923,16 +933,26 @@ export default function UnifiedSidebar({
                     <Card key={post.id} className="border border-border wall-post-card">
                       <CardHeader className="pb-3">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full overflow-hidden bg-muted/20 flex items-center justify-center">
-                            {post.userProfileImage ? (
-                              <img
-                                src={getImageSrc(post.userProfileImage)}
-                                alt={post.username}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <span className="text-xs">{post.username.charAt(0)}</span>
-                            )}
+                          <div style={{ 
+                            width: (post as any)?.userProfileFrame ? 43 : 32, 
+                            height: (post as any)?.userProfileFrame ? 43 : 32,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexShrink: 0
+                          }}>
+                            <ProfileImage 
+                              user={{
+                                id: post.userId,
+                                username: post.username,
+                                userType: post.userRole || 'member',
+                                profileImage: post.userProfileImage,
+                                profileFrame: (post as any)?.userProfileFrame,
+                              } as ChatUser}
+                              size="small"
+                              pixelSize={32}
+                              hideRoleBadgeOverlay={true}
+                            />
                           </div>
                           <div className="flex-1">
                             <div className="flex items-center gap-2">
