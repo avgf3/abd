@@ -1399,7 +1399,7 @@ li > * > div.effect-crystal {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  /* الإطار الخارجي (الحاوية) */
+  /* الإطار والصورة بنفس الحجم تماماً */
 }
 .vip-frame-inner {
   position: relative;
@@ -1411,7 +1411,7 @@ li > * > div.effect-crystal {
   justify-content: center;
 }
 .vip-frame-img {
-  /* الصورة أصغر من الحاوية - يتم التحكم بها من VipAvatar.tsx */
+  /* الصورة والإطار بنفس الحجم تماماً - يتم التحكم بها من VipAvatar.tsx */
   border-radius: 9999px;
   object-fit: cover;
   background: #0b1220;
@@ -1437,7 +1437,7 @@ li > * > div.effect-crystal {
   z-index: 3;
   /* تعطيل أي دوران */
   animation: none !important;
-  /* الإطار يحيط بالصورة من الخارج */
+  /* الإطار بنفس حجم الصورة تماماً (مطابق) */
   transform-origin: center center;
   transform: scale(1);
 }

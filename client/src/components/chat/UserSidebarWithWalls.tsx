@@ -778,16 +778,23 @@ export default function UnifiedSidebar({
                     <Card key={post.id} className="border border-border wall-post-card">
                       <CardHeader className="pb-3">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full overflow-hidden bg-muted/20 flex items-center justify-center">
-                            {post.userProfileImage ? (
-                              <img
-                                src={getImageSrc(post.userProfileImage)}
-                                alt={post.username}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <span className="text-xs">{post.username.charAt(0)}</span>
-                            )}
+                          <div style={{ width: 32, height: 32 }}>
+                            <ProfileImage
+                              user={{
+                                id: post.userId,
+                                username: post.username,
+                                role: (post.userRole as any) || 'member',
+                                userType: post.userRole || 'member',
+                                isOnline: true,
+                                profileImage: post.userProfileImage,
+                                usernameColor: post.usernameColor,
+                                profileFrame: (post as any).userProfileFrame,
+                              } as ChatUser}
+                              size="small"
+                              pixelSize={32}
+                              className=""
+                              hideRoleBadgeOverlay={true}
+                            />
                           </div>
                           <div className="flex-1">
                             <div className="flex items-center gap-2">
@@ -911,16 +918,23 @@ export default function UnifiedSidebar({
                     <Card key={post.id} className="border border-border wall-post-card">
                       <CardHeader className="pb-3">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full overflow-hidden bg-muted/20 flex items-center justify-center">
-                            {post.userProfileImage ? (
-                              <img
-                                src={getImageSrc(post.userProfileImage)}
-                                alt={post.username}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <span className="text-xs">{post.username.charAt(0)}</span>
-                            )}
+                          <div style={{ width: 32, height: 32 }}>
+                            <ProfileImage
+                              user={{
+                                id: post.userId,
+                                username: post.username,
+                                role: (post.userRole as any) || 'member',
+                                userType: post.userRole || 'member',
+                                isOnline: true,
+                                profileImage: post.userProfileImage,
+                                usernameColor: post.usernameColor,
+                                profileFrame: (post as any).userProfileFrame,
+                              } as ChatUser}
+                              size="small"
+                              pixelSize={32}
+                              className=""
+                              hideRoleBadgeOverlay={true}
+                            />
                           </div>
                           <div className="flex-1">
                             <div className="flex items-center gap-2">
