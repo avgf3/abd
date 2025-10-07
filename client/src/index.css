@@ -1426,7 +1426,7 @@ li > * > div.effect-crystal {
 .vip-frame-overlay {
   position: absolute;
   top: 0;
-  left: 0; /* توسيط الإطار */
+  right: -50px; /* تحريك الإطار لليمين ليغطي الصورة اليمنى */
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -1445,7 +1445,7 @@ li > * > div.effect-crystal {
   content: '';
   position: absolute;
   top: 0;
-  left: 0; /* توسيط الإطار */
+  right: -50px; /* تحريك الإطار لليمين ليغطي الصورة اليمنى */
   width: 100%;
   height: 100%;
   border-radius: 9999px;
