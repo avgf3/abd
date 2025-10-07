@@ -4330,6 +4330,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         type: type || 'public',
         timestamp: new Date(),
         userProfileImage: user.profileImage,
+        userProfileFrame: user.profileFrame, // إضافة إطار البروفايل
         usernameColor: user.usernameColor,
       };
 
