@@ -27,9 +27,9 @@ export default function ProfileImage({
   disableFrame = false,
 }: ProfileImageProps) {
   const sizeClasses = {
-    small: 'w-10 h-10',
-    medium: 'w-16 h-16',
-    large: 'w-20 h-20',
+    small: 'w-9 h-9',
+    medium: 'w-14 h-14',
+    large: 'w-18 h-18',
   };
 
   // تحديد لون الإطار حسب الجنس - كما كان سابقاً (ring + border color)
@@ -72,8 +72,8 @@ export default function ProfileImage({
   })();
 
   if (!disableFrame && frameName && frameIndex) {
-    // مقاسات دقيقة لتطابق الموقع الآخر
-    const px = pixelSize ?? (size === 'small' ? 40 : size === 'large' ? 80 : 64);
+    // مقاسات دقيقة لتطابق الموقع الآخر - مُصغرة بحوالي 10%
+    const px = pixelSize ?? (size === 'small' ? 36 : size === 'large' ? 72 : 56);
     // الحاوية يجب أن تكون أكبر لاستيعاب الإطار (نفس النسبة المستخدمة في VipAvatar)
     const containerSize = px * 1.35;
     return (
@@ -99,7 +99,7 @@ export default function ProfileImage({
         }}
         loading="lazy"
         decoding="async"
-        sizes={size === 'small' ? '40px' : size === 'large' ? '80px' : '64px'}
+        sizes={size === 'small' ? '36px' : size === 'large' ? '72px' : '56px'}
         onError={(e: any) => {
           if (e?.currentTarget && e.currentTarget.src !== '/default_avatar.svg') {
             e.currentTarget.src = '/default_avatar.svg';

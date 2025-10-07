@@ -3182,7 +3182,7 @@ export default function ProfileModal({
                 <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <ProfileImage 
                     user={localUser} 
-                    pixelSize={150}
+                    pixelSize={135}
                     hideRoleBadgeOverlay={true}
                     disableFrame={false}
                   />
