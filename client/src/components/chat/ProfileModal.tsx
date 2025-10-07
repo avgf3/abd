@@ -2249,7 +2249,7 @@ export default function ProfileModal({
           overflow: visible; /* السماح للإطار بالظهور خارج الحدود */
           position: absolute;
           top: calc(100% - 165px); /* تعديل الموضع ليتناسب مع الحجم الجديد */
-          right: -15px; /* تعديل لتوسيط الإطار مع الصورة */
+          right: 30px; /* على اليمين فوق صورة الغلاف */
           background-color: transparent;
           box-shadow: none; /* إزالة الظل من الـ container */
           z-index: 2;
@@ -2888,7 +2888,7 @@ export default function ProfileModal({
             width: 160px;
             height: 160px;
             top: calc(100% - 130px);
-            right: -14px;
+            right: 20px; /* على اليمين للموبايل */
             border-radius: 12px; /* زوايا مدورة قليلاً للأجهزة المحمولة */
           }
           
@@ -3166,42 +3166,13 @@ export default function ProfileModal({
             )}
 
             <div className="profile-avatar">
-              {/* إن كان لدى المستخدم إطار مفعّل، اعرض VipAvatar لضمان التوافق التام */}
               {localUser?.profileFrame ? (
-                <div style={{ width: '100%', height: '100%', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  {/* الصورة في المنتصف بحجمها الأصلي */}
-                  <img
-                    src={getProfileImageSrcLocal()}
-                    alt="الصورة الشخصية"
-                    style={{ 
-                      width: '130px', 
-                      height: '130px', 
-                      objectFit: 'cover', 
-                      borderRadius: '9999px',
-                      position: 'absolute',
-                      top: '50%',
-                      left: '50%',
-                      transform: 'translate(-50%, -50%)',
-                      zIndex: 1,
-                      boxShadow: '0 6px 20px rgba(0,0,0,0.3)' /* نقل الظل للصورة */
-                    }}
-                  />
-                  {/* الإطار يغطي المساحة الكاملة مع التمركز على الصورة */}
-                  <img
-                    src={`/frames/frame${String(localUser.profileFrame).match(/\d+/)?.[0] || '1'}.webp`}
-                    alt="frame"
-                    className="vip-frame-overlay"
-                    style={{ 
-                      position: 'absolute', 
-                      top: '50%',
-                      left: '50%',
-                      transform: 'translate(-50%, -50%)',
-                      width: '100%', 
-                      height: '100%', 
-                      objectFit: 'contain', /* للحفاظ على نسب الإطار */
-                      pointerEvents: 'none',
-                      zIndex: 2
-                    }}
+                <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <ProfileImage 
+                    user={localUser} 
+                    pixelSize={150}
+                    hideRoleBadgeOverlay={true}
+                    disableFrame={false}
                   />
                 </div>
               ) : (
