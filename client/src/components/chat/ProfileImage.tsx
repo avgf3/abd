@@ -72,7 +72,7 @@ export default function ProfileImage({
   })();
 
   if (!disableFrame && frameName && frameIndex) {
-    // مقاسات دقيقة لتطابق الموقع الآخر
+    // مقاسات محسنة - الحاوية أكبر قليلاً لإظهار الإطار بالكامل
     const px = pixelSize ?? (size === 'small' ? 40 : size === 'large' ? 80 : 64);
     return (
       <div className={`relative inline-block ${className || ''}`} onClick={onClick} style={{ width: px, height: px }}>

@@ -1411,7 +1411,7 @@ li > * > div.effect-crystal {
   justify-content: center;
 }
 .vip-frame-img {
-  /* الصورة أصغر من الحاوية - يتم التحكم بها من VipAvatar.tsx */
+  /* الصورة بحجم مناسب مع الإطار - يتم التحكم بها من VipAvatar.tsx */
   border-radius: 9999px;
   object-fit: cover;
   background: #0b1220;

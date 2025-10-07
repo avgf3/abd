@@ -18,10 +18,10 @@ export default function VipAvatar({
   // تعطيل الحركة نهائياً (المطلوب نسخة ثابتة)
   const duration = useMemo(() => '0s', []);
 
-  // الإطار أكبر من الصورة بـ 18% ليحيط بها من الخارج
-  const frameSize = size * 1.18;
-  // الصورة الداخلية أصغر بـ 15% من الإطار
-  const imageSize = size * 0.85;
+  // الإطار بنفس حجم الحاوية
+  const frameSize = size;
+  // الصورة الداخلية بنفس حجم الإطار (لا تصغير)
+  const imageSize = size * 0.95;
 
   const containerStyle: React.CSSProperties & { ['--vip-spin-duration']?: string } = {
     width: frameSize,
