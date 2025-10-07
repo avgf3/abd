@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار الإطارات في قائمة المستخدمين</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            margin: 20px;
+            direction: rtl;
+        }
+        
+        .users-list {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            max-width: 400px;
+            margin: 0 auto;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .user-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .user-item:hover {
+            background: #f8f8f8;
+        }
+        
+        /* حاوية الصورة - تتكيف حسب وجود الإطار */
+        .avatar-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        
+        .avatar-container.no-frame {
+            width: 40px;
+            height: 40px;
+        }
+        
+        .avatar-container.with-frame {
+            width: 54px; /* 40 * 1.35 */
+            height: 54px;
+        }
+        
+        /* حاوية الإطار */
+        .vip-frame {
+            width: 54px;
+            height: 54px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* الصورة داخل الإطار */
+        .vip-frame img.avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            z-index: 1;
+        }
+        
+        /* الإطار نفسه */
+        .vip-frame img.frame-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: 2;
+            pointer-events: none;
+        }
+        
+        /* صورة عادية بدون إطار */
+        .regular-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #ddd;
+        }
+        
+        .username {
+            font-weight: bold;
+            flex: 1;
+        }
+        
+        .test-info {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .measurements {
+            background: #fff3cd;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 20px;
+            font-size: 14px;
+        }
+        
+        .measurements code {
+            background: #f8f9fa;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="users-list">
+        <h2>قائمة المستخدمين - اختبار الإطارات</h2>
+        
+        <div class="test-info">
+            <p>الصورة دائماً <strong>40×40</strong> بكسل</p>
+            <p>الإطار <strong>54×54</strong> بكسل (أكبر بـ 35%)</p>
+        </div>
+        
+        <!-- مستخدم بدون إطار -->
+        <div class="user-item">
+            <div class="avatar-container no-frame">
+                <img src="https://via.placeholder.com/150/3498db/ffffff?text=User1" 
+                     alt="مستخدم 1" 
+                     class="regular-avatar">
+            </div>
+            <div class="username">أحمد محمد (بدون إطار)</div>
+        </div>
+        
+        <!-- مستخدم مع إطار -->
+        <div class="user-item">
+            <div class="avatar-container with-frame">
+                <div class="vip-frame">
+                    <img src="https://via.placeholder.com/150/e74c3c/ffffff?text=User2" 
+                         alt="مستخدم 2" 
+                         class="avatar">
+                    <!-- صورة الإطار (محاكاة) -->
+                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='48' fill='none' stroke='gold' stroke-width='4' stroke-dasharray='5,5'/%3E%3C/svg%3E" 
+                         alt="إطار" 
+                         class="frame-overlay">
+                </div>
+            </div>
+            <div class="username">فاطمة أحمد (مع إطار ذهبي)</div>
+        </div>
+        
+        <!-- مستخدم مع إطار آخر -->
+        <div class="user-item">
+            <div class="avatar-container with-frame">
+                <div class="vip-frame">
+                    <img src="https://via.placeholder.com/150/2ecc71/ffffff?text=User3" 
+                         alt="مستخدم 3" 
+                         class="avatar">
+                    <!-- صورة الإطار (محاكاة) -->
+                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='48' fill='none' stroke='%2366e0ff' stroke-width='4'/%3E%3C/svg%3E" 
+                         alt="إطار" 
+                         class="frame-overlay">
+                </div>
+            </div>
+            <div class="username">محمد علي (مع إطار أزرق)</div>
+        </div>
+        
+        <!-- مستخدم بدون إطار -->
+        <div class="user-item">
+            <div class="avatar-container no-frame">
+                <img src="https://via.placeholder.com/150/9b59b6/ffffff?text=User4" 
+                     alt="مستخدم 4" 
+                     class="regular-avatar">
+            </div>
+            <div class="username">سارة خالد (بدون إطار)</div>
+        </div>
+        
+        <div class="measurements">
+            <h4>القياسات:</h4>
+            <ul>
+                <li>حجم الصورة الأصلي: <code>40×40px</code> (ثابت)</li>
+                <li>حجم الحاوية بدون إطار: <code>40×40px</code></li>
+                <li>حجم الحاوية مع الإطار: <code>54×54px</code></li>
+                <li>حجم الإطار: <code>54×54px</code> (يغطي الحاوية بالكامل)</li>
+                <li>النسبة: <code>1.35×</code> (زيادة 35%)</li>
+            </ul>
+        </div>
+    </div>
+    
+    <script>
+        // إضافة تأثير عند النقر لإظهار القياسات
+        document.querySelectorAll('.user-item').forEach(item => {
+            item.addEventListener('click', function() {
+                const container = this.querySelector('.avatar-container');
+                const hasFrame = container.classList.contains('with-frame');
+                
+                alert(`المستخدم: ${this.querySelector('.username').textContent}\n` +
+                      `نوع: ${hasFrame ? 'مع إطار' : 'بدون إطار'}\n` +
+                      `حجم الحاوية: ${hasFrame ? '54×54' : '40×40'} بكسل\n` +
+                      `حجم الصورة: 40×40 بكسل (ثابت)`);
+            });
+        });
+    </script>
+</body>
+</html>
