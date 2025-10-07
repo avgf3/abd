@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <title>اختبار موضع الإطار</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 30px;
+      background: #1a1a2e;
+      color: white;
+      direction: rtl;
+    }
+    
+    .test-section {
+      margin: 40px 0;
+      padding: 30px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 15px;
+    }
+    
+    h2 {
+      color: #ffd700;
+      margin-bottom: 20px;
+    }
+    
+    .comparison {
+      display: flex;
+      gap: 50px;
+      align-items: flex-start;
+      flex-wrap: wrap;
+    }
+    
+    .item {
+      flex: 1;
+      min-width: 300px;
+    }
+    
+    .label {
+      font-size: 16px;
+      font-weight: bold;
+      margin-bottom: 15px;
+      padding: 10px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 8px;
+    }
+    
+    /* === الإطار القديم (خطأ - الإطار نفس حجم الصورة) === */
+    .old-container {
+      position: relative;
+      width: 150px;
+      height: 150px;
+      margin: 20px auto;
+    }
+    
+    .old-container img.photo {
+      width: 150px;
+      height: 150px;
+      border-radius: 50%;
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 1;
+    }
+    
+    .old-container img.frame {
+      position: absolute;
+      width: 150px;
+      height: 150px;
+      top: 0;
+      left: 0;
+      z-index: 2;
+    }
+    
+    /* === الإطار الجديد (صحيح - VipAvatar) === */
+    .new-container {
+      position: relative;
+      width: 177px; /* 150 * 1.18 */
+      height: 177px;
+      margin: 20px auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .new-container img.photo {
+      width: 127.5px; /* 150 * 0.85 */
+      height: 127.5px;
+      border-radius: 50%;
+      position: relative;
+      z-index: 1;
+    }
+    
+    .new-container img.frame {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      object-fit: contain;
+      z-index: 2;
+    }
+    
+    .status {
+      margin-top: 15px;
+      padding: 10px;
+      border-radius: 8px;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    
+    .error { 
+      background: rgba(255, 68, 68, 0.2);
+      border: 2px solid #ff4444;
+      color: #ff8888;
+    }
+    
+    .success { 
+      background: rgba(68, 255, 68, 0.2);
+      border: 2px solid #44ff44;
+      color: #88ff88;
+    }
+    
+    .code-box {
+      background: rgba(0,0,0,0.5);
+      padding: 15px;
+      border-radius: 8px;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      margin-top: 15px;
+      white-space: pre-wrap;
+      direction: ltr;
+      text-align: left;
+    }
+  </style>
+</head>
+<body>
+  <h1>🔧 اختبار إصلاح موضع الإطار</h1>
+  
+  <div class="test-section">
+    <h2>المقارنة</h2>
+    
+    <div class="comparison">
+      <!-- القديم -->
+      <div class="item">
+        <div class="label">❌ القديم (خطأ)</div>
+        <div class="old-container">
+          <img class="photo" src="https://ui-avatars.com/api/?name=User&background=4299e1&color=fff&size=150" alt="photo">
+          <img class="frame" src="/frames/frame1.webp" alt="frame">
+        </div>
+        <div class="status error">
+          <strong>المشكلة:</strong><br>
+          • الإطار = 150px<br>
+          • الصورة = 150px<br>
+          • نفس الحجم!<br>
+          ❌ الإطار يغطي الصورة
+        </div>
+        <div class="code-box">
+Container: 150x150
+Image: 150x150  
+Frame: 150x150
+        </div>
+      </div>
+      
+      <!-- الجديد -->
+      <div class="item">
+        <div class="label">✅ الجديد (صحيح - VipAvatar)</div>
+        <div class="new-container">
+          <img class="photo" src="https://ui-avatars.com/api/?name=User&background=4299e1&color=fff&size=150" alt="photo">
+          <img class="frame" src="/frames/frame1.webp" alt="frame">
+        </div>
+        <div class="status success">
+          <strong>الحل:</strong><br>
+          • الإطار = 177px (150 * 1.18)<br>
+          • الصورة = 127.5px (150 * 0.85)<br>
+          • الإطار أكبر بـ 18%<br>
+          ✅ الإطار يلتف حول الصورة
+        </div>
+        <div class="code-box">
+Container: 177x177 (size * 1.18)
+Image: 127.5x127.5 (size * 0.85)
+Frame: 177x177 (fills container)
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="test-section">
+    <h2>✅ التغييرات المطبقة</h2>
+    <ul style="font-size: 16px; line-height: 2;">
+      <li>✅ استخدام <code>ProfileImage</code> component بدلاً من كود يدوي</li>
+      <li>✅ <code>ProfileImage</code> يستخدم <code>VipAvatar</code> تلقائياً</li>
+      <li>✅ <code>VipAvatar</code> لديه الحسابات الصحيحة (1.18x و 0.85x)</li>
+      <li>✅ الإطار يلتف حول الصورة مثل الموقع الآخر تماماً</li>
+      <li>✅ موضع الإطار: <code>right: 30px</code> (على اليمين فوق الغلاف)</li>
+      <li>✅ CSS: <code>left: 0</code> بدلاً من <code>right: 0</code> للتوسيط</li>
+    </ul>
+  </div>
+  
+  <div class="test-section">
+    <h2>📝 الكود المطبق في ProfileModal.tsx</h2>
+    <div class="code-box">
+{localUser?.profileFrame ? (
+  &lt;div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}&gt;
+    &lt;ProfileImage 
+      user={localUser} 
+      pixelSize={150}
+      hideRoleBadgeOverlay={true}
+      disableFrame={false}
+    /&gt;
+  &lt;/div&gt;
+) : (
+  /* صورة عادية بدون إطار */
+)}
+    </div>
+  </div>
+</body>
+</html>
