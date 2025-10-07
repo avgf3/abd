@@ -429,12 +429,21 @@ export default function PrivateMessageBox({
             <DialogTitle className="sr-only">محادثة خاصة مع {user?.username || 'مستخدم'}</DialogTitle>
             <DialogDescription className="sr-only">نافذة الرسائل الخاصة</DialogDescription>
             <div className="flex items-center gap-3">
-              <ProfileImage
-                user={user}
-                size="small"
-                className="w-10 h-10 cursor-pointer hover:opacity-90 transition"
-                onClick={handleViewProfileClick}
-              />
+              <div style={{ 
+                width: 40,
+                height: 40,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                <ProfileImage
+                  user={user}
+                  size="small"
+                  pixelSize={40}
+                  className="cursor-pointer hover:opacity-90 transition"
+                  onClick={handleViewProfileClick}
+                />
+              </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2 min-w-0">
@@ -557,22 +566,40 @@ export default function PrivateMessageBox({
                         {/* Avatar for received messages */}
                         {!isMe && showAvatar && (
                           <div className="flex-shrink-0 order-1 self-start">
-                            <ProfileImage
-                              user={(m.sender as ChatUser) || user}
-                              size="small"
-                              className="w-8 h-8 rounded-full"
-                            />
+                            <div style={{ 
+                              width: 32,
+                              height: 32,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center'
+                            }}>
+                              <ProfileImage
+                                user={(m.sender as ChatUser) || user}
+                                size="small"
+                                pixelSize={32}
+                                className="rounded-full"
+                              />
+                            </div>
                           </div>
                         )}
                         
                         {/* Avatar for sent messages */}
                         {isMe && (
                           <div className="flex-shrink-0 order-3 self-start">
-                            <ProfileImage
-                              user={currentUser!}
-                              size="small"
-                              className="w-8 h-8 rounded_full"
-                            />
+                            <div style={{ 
+                              width: 32,
+                              height: 32,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center'
+                            }}>
+                              <ProfileImage
+                                user={currentUser!}
+                                size="small"
+                                pixelSize={32}
+                                className="rounded-full"
+                              />
+                            </div>
                           </div>
                         )}
                         
