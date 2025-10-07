@@ -232,7 +232,7 @@ export default function RichestModal({ isOpen, onClose, currentUser, onUserClick
         </div>
 
         <div 
-          className="max-h-[70vh] overflow-y-auto overflow-x-hidden bg-background"
+          className="max-h-[55vh] overflow-y-auto overflow-x-hidden bg-background"
           style={{ touchAction: 'pan-y' }}
         >
           {loading && vipUsers.length === 0 && <ListLoader items={8} itemHeight="h-12" className="p-3" />}
@@ -284,8 +284,8 @@ export default function RichestModal({ isOpen, onClose, currentUser, onUserClick
                       </span>
                     )}
                     <div style={{ 
-                      width: (u as any)?.profileFrame ? 54 : 40, 
-                      height: (u as any)?.profileFrame ? 54 : 40,
+                      width: 44, 
+                      height: 44,
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -336,8 +336,8 @@ export default function RichestModal({ isOpen, onClose, currentUser, onUserClick
                 {candidates.map((c) => (
                 <div key={c.id} className="flex items-center gap-2">
                     <div style={{ 
-                      width: (c as any)?.profileFrame ? 32 : 24, 
-                      height: (c as any)?.profileFrame ? 32 : 24,
+                      width: 32, 
+                      height: 32,
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
