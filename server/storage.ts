@@ -327,7 +327,6 @@ export async function createWallPost(postData: any): Promise<any> {
           type: postData.type ?? 'public',
           timestamp: postData.timestamp ?? new Date(),
           userProfileImage: postData.userProfileImage ?? null,
-          userProfileFrame: postData.userProfileFrame ?? null, // إضافة إطار البروفايل
           usernameColor: postData.usernameColor ?? null,
         })
         .returning();

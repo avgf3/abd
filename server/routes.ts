@@ -4330,7 +4330,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         type: type || 'public',
         timestamp: new Date(),
         userProfileImage: user.profileImage,
-        userProfileFrame: user.profileFrame, // إضافة إطار البروفايل
         usernameColor: user.usernameColor,
       };
 
@@ -4831,6 +4830,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       usernameColor: sanitized.usernameColor,
       profileBackgroundColor: sanitized.profileBackgroundColor,
       profileEffect: sanitized.profileEffect,
+      profileFrame: sanitized.profileFrame, // إضافة إطار البروفايل
       isOnline: sanitized.isOnline,
       lastSeen: sanitized.lastSeen,
       currentRoom: sanitized.currentRoom,
