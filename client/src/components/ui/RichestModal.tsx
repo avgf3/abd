@@ -291,7 +291,7 @@ export default function RichestModal({ isOpen, onClose, currentUser, onUserClick
                       justifyContent: 'center',
                       flexShrink: 0
                     }}>
-                      <ProfileImage user={u} size="small" pixelSize={40} className="" hideRoleBadgeOverlay={true} />
+                      <ProfileImage user={u} size="small" pixelSize={36} className="" hideRoleBadgeOverlay={true} />
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center justify-between gap-2">
@@ -343,7 +343,7 @@ export default function RichestModal({ isOpen, onClose, currentUser, onUserClick
                       justifyContent: 'center',
                       flexShrink: 0
                     }}>
-                      <ProfileImage user={c} size="small" pixelSize={24} className="" hideRoleBadgeOverlay={true} />
+                      <ProfileImage user={c} size="small" pixelSize={22} className="" hideRoleBadgeOverlay={true} />
                     </div>
                     <div className="flex-1">
                       <span className="ac-user-name" style={{ color: getFinalUsernameColor(c) }} title={c.username}>

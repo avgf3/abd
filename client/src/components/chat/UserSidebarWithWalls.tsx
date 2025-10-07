@@ -581,7 +581,7 @@ export default function UnifiedSidebar({
                   justifyContent: 'center',
                   flexShrink: 0
                 }}>
-                  <ProfileImage user={user} size="small" pixelSize={40} className="" hideRoleBadgeOverlay={true} />
+                  <ProfileImage user={user} size="small" pixelSize={36} className="" hideRoleBadgeOverlay={true} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2">
@@ -807,7 +807,7 @@ export default function UnifiedSidebar({
                                 <ProfileImage 
                                   user={effectiveUser}
                                   size="small"
-                                  pixelSize={32}
+                                  pixelSize={29}
                                   hideRoleBadgeOverlay={true}
                                 />
                               </div>
@@ -952,7 +952,7 @@ export default function UnifiedSidebar({
                                 <ProfileImage 
                                   user={effectiveUser}
                                   size="small"
-                                  pixelSize={32}
+                                  pixelSize={29}
                                   hideRoleBadgeOverlay={true}
                                 />
                               </div>
