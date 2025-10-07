@@ -2326,10 +2326,357 @@ li > * > div.effect-crystal {
 /* تطبيق التأثيرات على الإطارات */
 .vip-frame.base {
   animation: vip-breathe 4s ease-in-out infinite;
+  position: relative;
 }
 
 .vip-frame.base::before {
   animation: vip-glow-pulse 3s ease-in-out infinite;
+}
+
+/* ===== تأثيرات خرافية للإطارات ===== */
+
+/* تأثير توهج خرافي للإطار 1 */
+.vip-frame-1.base {
+  animation: epic-glow-frame 3s ease-in-out infinite;
+  filter: drop-shadow(0 0 15px rgba(255, 215, 0, 0.6));
+}
+
+.vip-frame-1.base::after {
+  content: '';
+  position: absolute;
+  top: -5px;
+  left: -5px;
+  right: -5px;
+  bottom: -5px;
+  background: radial-gradient(circle, rgba(255, 215, 0, 0.3) 0%, transparent 70%);
+  border-radius: 50%;
+  z-index: -1;
+  animation: golden-pulse 2s ease-in-out infinite;
+}
+
+@keyframes epic-glow-frame {
+  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 15px rgba(255, 215, 0, 0.6)); }
+  50% { transform: scale(1.02); filter: drop-shadow(0 0 25px rgba(255, 215, 0, 0.9)); }
+}
+
+@keyframes golden-pulse {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.1); }
+}
+
+/* تأثير بلازما للإطار 2 */
+.vip-frame-2.base {
+  animation: plasma-frame 2s ease-in-out infinite;
+  filter: drop-shadow(0 0 20px rgba(138, 43, 226, 0.7));
+}
+
+.vip-frame-2.base::after {
+  content: '';
+  position: absolute;
+  top: -8px;
+  left: -8px;
+  right: -8px;
+  bottom: -8px;
+  background: conic-gradient(from 0deg, rgba(138, 43, 226, 0.4), rgba(75, 0, 130, 0.3), rgba(138, 43, 226, 0.4));
+  border-radius: 50%;
+  z-index: -1;
+  animation: plasma-rotate 4s linear infinite;
+}
+
+@keyframes plasma-frame {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+@keyframes plasma-rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* تأثير كوني للإطار 3 */
+.vip-frame-3.base {
+  animation: cosmic-frame 5s ease-in-out infinite;
+  filter: drop-shadow(0 0 18px rgba(0, 191, 255, 0.6));
+}
+
+.vip-frame-3.base::after {
+  content: '';
+  position: absolute;
+  top: -6px;
+  left: -6px;
+  right: -6px;
+  bottom: -6px;
+  background: conic-gradient(from 0deg, 
+    rgba(0, 191, 255, 0.4), 
+    rgba(138, 43, 226, 0.4), 
+    rgba(255, 20, 147, 0.4), 
+    rgba(0, 191, 255, 0.4)
+  );
+  border-radius: 50%;
+  z-index: -1;
+  animation: cosmic-spin 6s linear infinite;
+}
+
+@keyframes cosmic-frame {
+  0%, 100% { transform: scale(1) rotate(0deg); }
+  50% { transform: scale(1.03) rotate(2deg); }
+}
+
+@keyframes cosmic-spin {
+  from { transform: rotate(0deg) scale(1); }
+  to { transform: rotate(360deg) scale(1.05); }
+}
+
+/* تأثير ناري للإطار 4 */
+.vip-frame-4.base {
+  animation: fire-frame 1.5s ease-in-out infinite alternate;
+  filter: drop-shadow(0 0 20px rgba(255, 69, 0, 0.8));
+}
+
+.vip-frame-4.base::after {
+  content: '';
+  position: absolute;
+  top: -7px;
+  left: -7px;
+  right: -7px;
+  bottom: -7px;
+  background: radial-gradient(circle, 
+    rgba(255, 69, 0, 0.5) 0%, 
+    rgba(255, 140, 0, 0.4) 50%, 
+    transparent 80%
+  );
+  border-radius: 50%;
+  z-index: -1;
+  animation: fire-flicker 2s ease-in-out infinite;
+}
+
+@keyframes fire-frame {
+  0% { transform: scale(1) skew(0deg); }
+  100% { transform: scale(1.04) skew(1deg); }
+}
+
+@keyframes fire-flicker {
+  0%, 100% { opacity: 0.8; filter: brightness(1); }
+  25% { opacity: 1; filter: brightness(1.2); }
+  50% { opacity: 0.9; filter: brightness(0.9); }
+  75% { opacity: 1; filter: brightness(1.3); }
+}
+
+/* تأثير جليدي للإطار 5 */
+.vip-frame-5.base {
+  animation: ice-frame 4s ease-in-out infinite;
+  filter: drop-shadow(0 0 15px rgba(173, 216, 230, 0.7));
+}
+
+.vip-frame-5.base::after {
+  content: '';
+  position: absolute;
+  top: -5px;
+  left: -5px;
+  right: -5px;
+  bottom: -5px;
+  background: radial-gradient(circle, 
+    rgba(173, 216, 230, 0.4) 0%, 
+    rgba(135, 206, 235, 0.3) 60%, 
+    transparent 80%
+  );
+  border-radius: 50%;
+  z-index: -1;
+  animation: ice-shimmer 3s ease-in-out infinite;
+}
+
+@keyframes ice-frame {
+  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 15px rgba(173, 216, 230, 0.7)) brightness(1); }
+  50% { transform: scale(1.02); filter: drop-shadow(0 0 25px rgba(173, 216, 230, 1)) brightness(1.2); }
+}
+
+@keyframes ice-shimmer {
+  0%, 100% { opacity: 0.7; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.08); }
+}
+
+/* تأثير كهربائي للإطار 6 */
+.vip-frame-6.base {
+  animation: electric-frame 1s ease-in-out infinite alternate;
+  filter: drop-shadow(0 0 18px rgba(0, 191, 255, 0.8));
+}
+
+.vip-frame-6.base::after {
+  content: '';
+  position: absolute;
+  top: -6px;
+  left: -6px;
+  right: -6px;
+  bottom: -6px;
+  background: radial-gradient(circle, 
+    rgba(0, 191, 255, 0.4) 0%, 
+    rgba(30, 144, 255, 0.3) 60%, 
+    transparent 80%
+  );
+  border-radius: 50%;
+  z-index: -1;
+  animation: electric-storm 2s ease-in-out infinite;
+}
+
+@keyframes electric-frame {
+  0% { transform: scale(1); }
+  100% { transform: scale(1.06); }
+}
+
+@keyframes electric-storm {
+  0%, 100% { opacity: 0.8; filter: brightness(1); }
+  25% { opacity: 1; filter: brightness(1.4); }
+  50% { opacity: 0.7; filter: brightness(0.8); }
+  75% { opacity: 1; filter: brightness(1.2); }
+}
+
+/* تأثير ظلال للإطار 7 */
+.vip-frame-7.base {
+  animation: shadow-frame 4s ease-in-out infinite;
+  filter: drop-shadow(0 0 20px rgba(75, 0, 130, 0.7));
+}
+
+.vip-frame-7.base::after {
+  content: '';
+  position: absolute;
+  top: -8px;
+  left: -8px;
+  right: -8px;
+  bottom: -8px;
+  background: radial-gradient(circle, 
+    rgba(75, 0, 130, 0.5) 0%, 
+    rgba(25, 25, 112, 0.4) 50%, 
+    rgba(0, 0, 0, 0.3) 70%,
+    transparent 90%
+  );
+  border-radius: 50%;
+  z-index: -1;
+  animation: void-pulse 3s ease-in-out infinite;
+}
+
+@keyframes shadow-frame {
+  0%, 100% { transform: scale(1); opacity: 0.9; }
+  50% { transform: scale(1.05); opacity: 0.7; }
+}
+
+@keyframes void-pulse {
+  0%, 100% { opacity: 0.8; transform: scale(1); filter: blur(0px); }
+  50% { opacity: 1; transform: scale(1.1); filter: blur(1px); }
+}
+
+/* تأثير قوس قزح للإطار 8 */
+.vip-frame-8.base {
+  animation: rainbow-frame 3s ease-in-out infinite;
+  filter: drop-shadow(0 0 16px rgba(255, 255, 255, 0.6));
+}
+
+.vip-frame-8.base::after {
+  content: '';
+  position: absolute;
+  top: -7px;
+  left: -7px;
+  right: -7px;
+  bottom: -7px;
+  background: conic-gradient(from 0deg,
+    rgba(255, 0, 0, 0.3),
+    rgba(255, 165, 0, 0.3),
+    rgba(255, 255, 0, 0.3),
+    rgba(0, 128, 0, 0.3),
+    rgba(0, 0, 255, 0.3),
+    rgba(75, 0, 130, 0.3),
+    rgba(238, 130, 238, 0.3),
+    rgba(255, 0, 0, 0.3)
+  );
+  border-radius: 50%;
+  z-index: -1;
+  animation: rainbow-spin 5s linear infinite;
+}
+
+@keyframes rainbow-frame {
+  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 16px rgba(255, 255, 255, 0.6)) hue-rotate(0deg); }
+  50% { transform: scale(1.03); filter: drop-shadow(0 0 24px rgba(255, 255, 255, 0.9)) hue-rotate(180deg); }
+}
+
+@keyframes rainbow-spin {
+  from { transform: rotate(0deg); filter: hue-rotate(0deg); }
+  to { transform: rotate(360deg); filter: hue-rotate(360deg); }
+}
+
+/* تأثير كمي للإطار 9 */
+.vip-frame-9.base {
+  animation: quantum-frame 2.5s ease-in-out infinite;
+  filter: drop-shadow(0 0 18px rgba(0, 255, 127, 0.7));
+}
+
+.vip-frame-9.base::after {
+  content: '';
+  position: absolute;
+  top: -6px;
+  left: -6px;
+  right: -6px;
+  bottom: -6px;
+  background: radial-gradient(circle, 
+    rgba(0, 255, 127, 0.4) 0%, 
+    rgba(64, 224, 208, 0.3) 60%, 
+    transparent 80%
+  );
+  border-radius: 50%;
+  z-index: -1;
+  animation: quantum-fluctuation 4s ease-in-out infinite;
+}
+
+@keyframes quantum-frame {
+  0%, 100% { transform: scale(1); }
+  25% { transform: scale(1.03); }
+  50% { transform: scale(0.98); }
+  75% { transform: scale(1.05); }
+}
+
+@keyframes quantum-fluctuation {
+  0%, 100% { opacity: 0.8; transform: scale(1); filter: brightness(1); }
+  50% { opacity: 1; transform: scale(1.1); filter: brightness(1.3); }
+}
+
+/* تأثير نجمي للإطار 10 */
+.vip-frame-10.base {
+  animation: stellar-frame 3s ease-in-out infinite;
+  filter: drop-shadow(0 0 22px rgba(255, 255, 255, 0.8));
+}
+
+.vip-frame-10.base::after {
+  content: '';
+  position: absolute;
+  top: -8px;
+  left: -8px;
+  right: -8px;
+  bottom: -8px;
+  background: radial-gradient(circle, 
+    rgba(255, 255, 255, 0.6) 0%, 
+    rgba(255, 215, 0, 0.5) 30%, 
+    rgba(255, 69, 0, 0.4) 60%, 
+    transparent 80%
+  );
+  border-radius: 50%;
+  z-index: -1;
+  animation: nova-explosion 2s ease-in-out infinite;
+}
+
+@keyframes stellar-frame {
+  0%, 100% { transform: scale(1); opacity: 0.9; }
+  50% { transform: scale(1.08); opacity: 1; }
+}
+
+@keyframes nova-explosion {
+  0%, 100% { 
+    opacity: 0.8; 
+    transform: scale(1);
+    filter: brightness(1);
+  }
+  50% { 
+    opacity: 1; 
+    transform: scale(1.15);
+    filter: brightness(1.4);
+  }
 }
 
 /* تأثير إضافي للإطارات الجديدة (7-21) - دوران بطيء للألوان */

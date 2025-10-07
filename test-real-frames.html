@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎬 اختبار الإطارات الحقيقية</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="client/src/index.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 40px;
+        }
+        
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 30px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .frame-test {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .frame-title {
+            color: #fff;
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+        
+        .avatar-demo {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 10px;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: bold;
+            background: linear-gradient(45deg, #FFD700, #FF6B6B, #4ECDC4);
+            background-size: 400% 400%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: gradientShift 3s ease-in-out infinite;
+        }
+        
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🎬 اختبار الإطارات الحقيقية</h1>
+        <p style="color: #ccc;">التأثيرات الخرافية الجديدة على النظام الأصلي</p>
+    </div>
+
+    <div class="test-grid">
+        <!-- الإطار 1: توهج ذهبي -->
+        <div class="frame-test">
+            <div class="frame-title">الإطار 1 - توهج ذهبي</div>
+            <div class="avatar-demo">
+                <div class="vip-frame base vip-frame-1 with-image" style="width: 67.5px; height: 67.5px;">
+                    <div class="vip-frame-inner">
+                        <img src="https://via.placeholder.com/50x50/FFD700/000000?text=1" 
+                             class="vip-frame-img" 
+                             style="width: 50px; height: 50px;" />
+                        <img src="client/public/frames/frame1.webp" 
+                             alt="frame" 
+                             class="vip-frame-overlay" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- الإطار 2: بلازما -->
+        <div class="frame-test">
+            <div class="frame-title">الإطار 2 - بلازما</div>
+            <div class="avatar-demo">
+                <div class="vip-frame base vip-frame-2 with-image" style="width: 67.5px; height: 67.5px;">
+                    <div class="vip-frame-inner">
+                        <img src="https://via.placeholder.com/50x50/8A2BE2/ffffff?text=2" 
+                             class="vip-frame-img" 
+                             style="width: 50px; height: 50px;" />
+                        <img src="client/public/frames/frame2.webp" 
+                             alt="frame" 
+                             class="vip-frame-overlay" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- الإطار 3: كوني -->
+        <div class="frame-test">
+            <div class="frame-title">الإطار 3 - كوني</div>
+            <div class="avatar-demo">
+                <div class="vip-frame base vip-frame-3 with-image" style="width: 67.5px; height: 67.5px;">
+                    <div class="vip-frame-inner">
+                        <img src="https://via.placeholder.com/50x50/00BFFF/ffffff?text=3" 
+                             class="vip-frame-img" 
+                             style="width: 50px; height: 50px;" />
+                        <img src="client/public/frames/frame3.webp" 
+                             alt="frame" 
+                             class="vip-frame-overlay" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- الإطار 4: ناري -->
+        <div class="frame-test">
+            <div class="frame-title">الإطار 4 - ناري</div>
+            <div class="avatar-demo">
+                <div class="vip-frame base vip-frame-4 with-image" style="width: 67.5px; height: 67.5px;">
+                    <div class="vip-frame-inner">
+                        <img src="https://via.placeholder.com/50x50/FF4500/ffffff?text=4" 
+                             class="vip-frame-img" 
+                             style="width: 50px; height: 50px;" />
+                        <img src="client/public/frames/frame4.webp" 
+                             alt="frame" 
+                             class="vip-frame-overlay" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- الإطار 5: جليدي -->
+        <div class="frame-test">
+            <div class="frame-title">الإطار 5 - جليدي</div>
+            <div class="avatar-demo">
+                <div class="vip-frame base vip-frame-5 with-image" style="width: 67.5px; height: 67.5px;">
+                    <div class="vip-frame-inner">
+                        <img src="https://via.placeholder.com/50x50/87CEEB/000000?text=5" 
+                             class="vip-frame-img" 
+                             style="width: 50px; height: 50px;" />
+                        <img src="client/public/frames/frame5.webp" 
+                             alt="frame" 
+                             class="vip-frame-overlay" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- الإطار 6: كهربائي -->
+        <div class="frame-test">
+            <div class="frame-title">الإطار 6 - كهربائي</div>
+            <div class="avatar-demo">
+                <div class="vip-frame base vip-frame-6 with-image" style="width: 67.5px; height: 67.5px;">
+                    <div class="vip-frame-inner">
+                        <img src="https://via.placeholder.com/50x50/00BFFF/ffffff?text=6" 
+                             class="vip-frame-img" 
+                             style="width: 50px; height: 50px;" />
+                        <img src="client/public/frames/frame6.webp" 
+                             alt="frame" 
+                             class="vip-frame-overlay" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- الإطار 7: ظلال -->
+        <div class="frame-test">
+            <div class="frame-title">الإطار 7 - ظلال</div>
+            <div class="avatar-demo">
+                <div class="vip-frame base vip-frame-7 with-image" style="width: 67.5px; height: 67.5px;">
+                    <div class="vip-frame-inner">
+                        <img src="https://via.placeholder.com/50x50/4B0082/ffffff?text=7" 
+                             class="vip-frame-img" 
+                             style="width: 50px; height: 50px;" />
+                        <img src="client/public/frames/frame7.webp" 
+                             alt="frame" 
+                             class="vip-frame-overlay" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- الإطار 8: قوس قزح -->
+        <div class="frame-test">
+            <div class="frame-title">الإطار 8 - قوس قزح</div>
+            <div class="avatar-demo">
+                <div class="vip-frame base vip-frame-8 with-image" style="width: 67.5px; height: 67.5px;">
+                    <div class="vip-frame-inner">
+                        <img src="https://via.placeholder.com/50x50/FF69B4/ffffff?text=8" 
+                             class="vip-frame-img" 
+                             style="width: 50px; height: 50px;" />
+                        <img src="client/public/frames/frame8.webp" 
+                             alt="frame" 
+                             class="vip-frame-overlay" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- الإطار 9: كمي -->
+        <div class="frame-test">
+            <div class="frame-title">الإطار 9 - كمي</div>
+            <div class="avatar-demo">
+                <div class="vip-frame base vip-frame-9 with-image" style="width: 67.5px; height: 67.5px;">
+                    <div class="vip-frame-inner">
+                        <img src="https://via.placeholder.com/50x50/00FF7F/000000?text=9" 
+                             class="vip-frame-img" 
+                             style="width: 50px; height: 50px;" />
+                        <img src="client/public/frames/frame9.webp" 
+                             alt="frame" 
+                             class="vip-frame-overlay" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- الإطار 10: نجمي -->
+        <div class="frame-test">
+            <div class="frame-title">الإطار 10 - نجمي</div>
+            <div class="avatar-demo">
+                <div class="vip-frame base vip-frame-10 with-image" style="width: 67.5px; height: 67.5px;">
+                    <div class="vip-frame-inner">
+                        <img src="https://via.placeholder.com/50x50/FFFFFF/000000?text=10" 
+                             class="vip-frame-img" 
+                             style="width: 50px; height: 50px;" />
+                        <img src="client/public/frames/frame10.webp" 
+                             alt="frame" 
+                             class="vip-frame-overlay" />
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div style="text-align: center; margin-top: 40px; color: #ccc;">
+        <p>🎉 التأثيرات الخرافية الجديدة تعمل على النظام الأصلي!</p>
+        <p>✨ كل إطار له تأثير مختلف ومذهل</p>
+    </div>
+</body>
+</html>
