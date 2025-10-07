@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>معرض الإطارات - 21 إطاراً</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #1e3a8a 0%, #7c3aed 100%);
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .header {
+      text-align: center;
+      color: white;
+      margin-bottom: 50px;
+    }
+
+    .header h1 {
+      font-size: 3rem;
+      margin-bottom: 10px;
+      text-shadow: 3px 3px 6px rgba(0,0,0,0.3);
+    }
+
+    .header p {
+      font-size: 1.2rem;
+      opacity: 0.9;
+    }
+
+    .stats {
+      background: rgba(255,255,255,0.95);
+      border-radius: 20px;
+      padding: 30px;
+      margin-bottom: 40px;
+      box-shadow: 0 15px 40px rgba(0,0,0,0.2);
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      text-align: center;
+    }
+
+    .stat-item {
+      padding: 20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 15px;
+      color: white;
+    }
+
+    .stat-number {
+      font-size: 2.5rem;
+      font-weight: bold;
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    .stat-label {
+      font-size: 0.9rem;
+      opacity: 0.9;
+    }
+
+    .frames-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 30px;
+      margin-bottom: 40px;
+    }
+
+    .frame-card {
+      background: white;
+      border-radius: 20px;
+      padding: 25px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .frame-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 5px;
+      background: var(--frame-gradient);
+    }
+
+    .frame-card:hover {
+      transform: translateY(-10px) scale(1.02);
+      box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+    }
+
+    .frame-number {
+      font-size: 1.5rem;
+      font-weight: bold;
+      margin-bottom: 15px;
+      color: #1e293b;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .frame-badge {
+      background: var(--frame-gradient);
+      color: white;
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: normal;
+    }
+
+    .frame-preview {
+      width: 180px;
+      height: 180px;
+      margin: 15px auto;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .frame-image {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      border-radius: 50%;
+      transition: transform 0.3s ease;
+    }
+
+    .frame-card:hover .frame-image {
+      transform: scale(1.1) rotate(5deg);
+    }
+
+    .frame-color {
+      text-align: center;
+      font-size: 0.85rem;
+      color: #64748b;
+      margin-top: 10px;
+      font-weight: 500;
+    }
+
+    .footer {
+      text-align: center;
+      color: white;
+      margin-top: 40px;
+      padding: 30px;
+      background: rgba(0,0,0,0.2);
+      border-radius: 15px;
+    }
+
+    .footer h3 {
+      margin-bottom: 15px;
+      font-size: 1.5rem;
+    }
+
+    .footer ul {
+      list-style: none;
+      padding: 0;
+      text-align: right;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .footer li {
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .footer li:last-child {
+      border-bottom: none;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .frame-card {
+      animation: fadeIn 0.5s ease forwards;
+    }
+
+    .frame-card:nth-child(n) {
+      animation-delay: calc(0.05s * var(--index));
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🎨 معرض الإطارات المتطورة</h1>
+      <p>21 إطاراً فريداً بتصاميم احترافية</p>
+    </div>
+
+    <div class="stats">
+      <div class="stats-grid">
+        <div class="stat-item">
+          <span class="stat-number">21</span>
+          <span class="stat-label">إطار متاح</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-number">212×236</span>
+          <span class="stat-label">الحجم بالبكسل</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-number">WebP</span>
+          <span class="stat-label">صيغة الملف</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-number">95%</span>
+          <span class="stat-label">جودة الصورة</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="frames-grid" id="framesGrid"></div>
+
+    <div class="footer">
+      <h3>✨ المميزات</h3>
+      <ul>
+        <li>✅ جميع الإطارات بنفس الحجم والجودة</li>
+        <li>✅ تأثيرات CSS متقدمة مع تدرجات لونية</li>
+        <li>✅ دعم الشفافية (RGBA) للدمج السلس</li>
+        <li>✅ تحسين الأداء باستخدام WebP</li>
+        <li>✅ متوافق مع جميع المتصفحات الحديثة</li>
+      </ul>
+    </div>
+  </div>
+
+  <script>
+    const frames = [
+      { id: 1, name: 'ذهبي برتقالي', gradient: 'linear-gradient(45deg, #ffcc33, #ff6633)' },
+      { id: 2, name: 'أزرق سماوي', gradient: 'linear-gradient(45deg, #66e0ff, #4488ff)' },
+      { id: 3, name: 'رمادي فضي', gradient: 'linear-gradient(45deg, #444, #999)' },
+      { id: 4, name: 'بني أخضر', gradient: 'linear-gradient(45deg, #b45309, #065f46)' },
+      { id: 5, name: 'وردي بنفسجي', gradient: 'linear-gradient(45deg, #ec4899, #8b5cf6)' },
+      { id: 6, name: 'برتقالي داكن', gradient: 'linear-gradient(45deg, #7c2d12, #f59e0b)' },
+      { id: 7, name: 'بني ذهبي', gradient: 'linear-gradient(45deg, #b45309, #d97706)' },
+      { id: 8, name: 'أسود رمادي', gradient: 'linear-gradient(45deg, #000, #0f172a)' },
+      { id: 9, name: 'رمادي داكن', gradient: 'linear-gradient(45deg, #1f2937, #0b1220)' },
+      { id: 10, name: 'أسود نقي', gradient: 'linear-gradient(45deg, #0b1220, #000)' },
+      { id: 11, name: 'أخضر زمردي', gradient: 'linear-gradient(45deg, #10b981, #34d399)' },
+      { id: 12, name: 'عنبري ذهبي', gradient: 'linear-gradient(45deg, #f59e0b, #fbbf24)' },
+      { id: 13, name: 'نيلي بنفسجي', gradient: 'linear-gradient(45deg, #6366f1, #8b5cf6)' },
+      { id: 14, name: 'أحمر ناري', gradient: 'linear-gradient(45deg, #ef4444, #f87171)' },
+      { id: 15, name: 'تركواز مائي', gradient: 'linear-gradient(45deg, #14b8a6, #2dd4bf)' },
+      { id: 16, name: 'بنفسجي ملكي', gradient: 'linear-gradient(45deg, #a855f7, #c084fc)' },
+      { id: 17, name: 'سماوي فاتح', gradient: 'linear-gradient(45deg, #0ea5e9, #38bdf8)' },
+      { id: 18, name: 'وردي ضارب للحمرة', gradient: 'linear-gradient(45deg, #f43f5e, #fb7185)' },
+      { id: 19, name: 'ليموني ربيعي', gradient: 'linear-gradient(45deg, #84cc16, #a3e635)' },
+      { id: 20, name: 'فوشيا ساطع', gradient: 'linear-gradient(45deg, #d946ef, #e879f9)' },
+      { id: 21, name: 'برتقالي مشمشي', gradient: 'linear-gradient(45deg, #fb923c, #fdba74)' },
+    ];
+
+    const grid = document.getElementById('framesGrid');
+
+    frames.forEach((frame, index) => {
+      const card = document.createElement('div');
+      card.className = 'frame-card';
+      card.style.setProperty('--index', index);
+      card.style.setProperty('--frame-gradient', frame.gradient);
+
+      const badge = frame.id > 6 ? '<span class="frame-badge">جديد</span>' : '';
+
+      card.innerHTML = `
+        <div class="frame-number">
+          إطار ${frame.id}
+          ${badge}
+        </div>
+        <div class="frame-preview">
+          <img 
+            src="/client/public/frames/frame${frame.id}.webp" 
+            alt="إطار ${frame.id}"
+            class="frame-image"
+            loading="lazy"
+          >
+        </div>
+        <div class="frame-color">${frame.name}</div>
+      `;
+
+      grid.appendChild(card);
+    });
+  </script>
+</body>
+</html>

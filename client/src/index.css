@@ -1509,6 +1509,50 @@ li > * > div.effect-crystal {
   background: conic-gradient(from 0deg, #0b1220, #000, #0b1220);
   box-shadow: 0 0 12px rgba(0, 0, 0, 0.6);
 }
+.vip-frame-11::before {
+  background: conic-gradient(from 0deg, #10b981, #34d399, #10b981);
+  box-shadow: 0 0 14px rgba(16, 185, 129, 0.5);
+}
+.vip-frame-12::before {
+  background: conic-gradient(from 0deg, #f59e0b, #fbbf24, #f59e0b);
+  box-shadow: 0 0 14px rgba(245, 158, 11, 0.5);
+}
+.vip-frame-13::before {
+  background: conic-gradient(from 0deg, #6366f1, #8b5cf6, #6366f1);
+  box-shadow: 0 0 14px rgba(99, 102, 241, 0.5);
+}
+.vip-frame-14::before {
+  background: conic-gradient(from 0deg, #ef4444, #f87171, #ef4444);
+  box-shadow: 0 0 14px rgba(239, 68, 68, 0.5);
+}
+.vip-frame-15::before {
+  background: conic-gradient(from 0deg, #14b8a6, #2dd4bf, #14b8a6);
+  box-shadow: 0 0 14px rgba(20, 184, 166, 0.5);
+}
+.vip-frame-16::before {
+  background: conic-gradient(from 0deg, #a855f7, #c084fc, #a855f7);
+  box-shadow: 0 0 14px rgba(168, 85, 247, 0.5);
+}
+.vip-frame-17::before {
+  background: conic-gradient(from 0deg, #0ea5e9, #38bdf8, #0ea5e9);
+  box-shadow: 0 0 14px rgba(14, 165, 233, 0.5);
+}
+.vip-frame-18::before {
+  background: conic-gradient(from 0deg, #f43f5e, #fb7185, #f43f5e);
+  box-shadow: 0 0 14px rgba(244, 63, 94, 0.5);
+}
+.vip-frame-19::before {
+  background: conic-gradient(from 0deg, #84cc16, #a3e635, #84cc16);
+  box-shadow: 0 0 14px rgba(132, 204, 22, 0.5);
+}
+.vip-frame-20::before {
+  background: conic-gradient(from 0deg, #d946ef, #e879f9, #d946ef);
+  box-shadow: 0 0 14px rgba(217, 70, 239, 0.5);
+}
+.vip-frame-21::before {
+  background: conic-gradient(from 0deg, #fb923c, #fdba74, #fb923c);
+  box-shadow: 0 0 14px rgba(251, 146, 60, 0.5);
+}
 
 /* Optional subtle pulsation */
 /* تعطيل أي نبض/حركة */
