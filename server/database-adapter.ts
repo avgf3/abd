@@ -523,7 +523,7 @@ export async function ensureWallPostsUserProfileFrameColumn(): Promise<void> {
   try {
     if (!dbAdapter.client) return;
     await dbAdapter.client.unsafe(`
-      ALTER TABLE IF NOT EXISTS wall_posts
+      ALTER TABLE wall_posts
         ADD COLUMN IF NOT EXISTS user_profile_frame TEXT;
     `);
   } catch (e) {
