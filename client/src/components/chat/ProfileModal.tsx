@@ -3166,10 +3166,10 @@ export default function ProfileModal({
             )}
 
             <div className="profile-avatar">
-              {/* إن كان لدى المستخدم إطار مفعّل، اعرض VipAvatar لضمان التوافق التام */}
+              {/* إن كان لدى المستخدم إطار مفعّل، اعرض الصورة بإطار مطابق تماماً لمقاسها دون قص */}
               {localUser?.profileFrame ? (
                 <div style={{ width: '100%', height: '100%', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  {/* الصورة في المنتصف بحجمها الأصلي */}
+                  {/* الصورة في المنتصف */}
                   <img
                     src={getProfileImageSrcLocal()}
                     alt="الصورة الشخصية"
@@ -3183,24 +3183,25 @@ export default function ProfileModal({
                       left: '50%',
                       transform: 'translate(-50%, -50%)',
                       zIndex: 1,
-                      boxShadow: '0 6px 20px rgba(0,0,0,0.3)' /* نقل الظل للصورة */
+                      boxShadow: '0 6px 20px rgba(0,0,0,0.3)'
                     }}
                   />
-                  {/* الإطار يغطي المساحة الكاملة مع التمركز على الصورة */}
+                  {/* الإطار يطابق مقاس الصورة تماماً ويتمركز فوقها */}
                   <img
                     src={`/frames/frame${String(localUser.profileFrame).match(/\d+/)?.[0] || '1'}.webp`}
                     alt="frame"
-                    className="vip-frame-overlay"
+                    /* عمداً بدون className لتجنب تضارب خصائص inset */
                     style={{ 
                       position: 'absolute', 
                       top: '50%',
                       left: '50%',
                       transform: 'translate(-50%, -50%)',
-                      width: '100%', 
-                      height: '100%', 
-                      objectFit: 'contain', /* للحفاظ على نسب الإطار */
+                      width: '130px',
+                      height: '130px',
+                      objectFit: 'contain',
                       pointerEvents: 'none',
-                      zIndex: 2
+                      zIndex: 2,
+                      borderRadius: '9999px'
                     }}
                   />
                 </div>
