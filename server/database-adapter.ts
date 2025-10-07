@@ -518,6 +518,22 @@ export async function ensureUserProfileFrameColumn(): Promise<void> {
   }
 }
 
+// Ensure wall_posts has user_profile_frame column used by feeds
+export async function ensureWallPostsUserProfileFrameColumn(): Promise<void> {
+  try {
+    if (!dbAdapter.client) return;
+    await dbAdapter.client.unsafe(`
+      ALTER TABLE IF NOT EXISTS wall_posts
+        ADD COLUMN IF NOT EXISTS user_profile_frame TEXT;
+    `);
+  } catch (e) {
+    console.warn(
+      '⚠️ تعذر ضمان عمود user_profile_frame في wall_posts:',
+      (e as any)?.message || e
+    );
+  }
+}
+
 // Ensure message text styling columns exist on messages table
 export async function ensureMessageTextStylingColumns(): Promise<void> {
   try {

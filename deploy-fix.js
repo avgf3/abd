@@ -134,13 +134,13 @@ async function applyDeploymentFixes() {
     await sql`ALTER TABLE IF EXISTS users ALTER COLUMN show_system_messages SET NOT NULL`;
     await sql`ALTER TABLE IF EXISTS users ALTER COLUMN global_sound_enabled SET NOT NULL`;
     
-    // Ensure wall_posts has user_gender and user_level
-    console.log('🔍 التحقق من أعمدة wall_posts للجنس والمستوى...');
+    // Ensure wall_posts has user_gender, user_level, and user_profile_frame
+    console.log('🔍 التحقق من أعمدة wall_posts...');
     const wallCols = await sql`
       SELECT column_name 
       FROM information_schema.columns 
       WHERE table_name = 'wall_posts' 
-      AND column_name IN ('user_gender', 'user_level')
+      AND column_name IN ('user_gender', 'user_level', 'user_profile_frame')
     `;
     const wallExisting = wallCols.map(r => r.column_name);
 
@@ -154,8 +154,13 @@ async function applyDeploymentFixes() {
       await sql`ALTER TABLE "wall_posts" ADD COLUMN IF NOT EXISTS "user_level" INTEGER DEFAULT 1`;
     }
 
+    if (!wallExisting.includes('user_profile_frame')) {
+      console.log('➕ إضافة عمود user_profile_frame إلى wall_posts...');
+      await sql`ALTER TABLE "wall_posts" ADD COLUMN IF NOT EXISTS "user_profile_frame" TEXT`;
+    }
+
     // Backfill values from users table
-    console.log('🔄 تحديث قيم user_gender و user_level من users...');
+    console.log('🔄 تحديث قيم user_gender و user_level و user_profile_frame من users...');
     await sql`
       UPDATE "wall_posts" AS wp
       SET "user_gender" = u.gender
@@ -167,6 +172,12 @@ async function applyDeploymentFixes() {
       SET "user_level" = COALESCE(u.level, 1)
       FROM "users" AS u
       WHERE wp.user_id = u.id AND (wp.user_level IS NULL OR wp.user_level = 0)
+    `;
+    await sql`
+      UPDATE "wall_posts" AS wp
+      SET "user_profile_frame" = u.profile_frame
+      FROM "users" AS u
+      WHERE wp.user_id = u.id AND (wp.user_profile_frame IS NULL OR wp.user_profile_frame = '')
     `;
 
     // Verify the fix worked
@@ -191,7 +202,7 @@ async function applyDeploymentFixes() {
       SELECT column_name 
       FROM information_schema.columns 
       WHERE table_name = 'wall_posts' 
-      AND column_name IN ('user_gender', 'user_level')
+      AND column_name IN ('user_gender', 'user_level', 'user_profile_frame')
     `;
     console.log('🧱 أعمدة wall_posts:', wpFinal.map(r => r.column_name));
 
