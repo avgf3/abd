@@ -1425,13 +1425,11 @@ li > * > div.effect-crystal {
 }
 .vip-frame-overlay {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover; /* تغيير من contain إلى cover ليملأ الحاوية بالكامل */
+  top: -10%;
+  left: -10%;
+  width: 120%;
+  height: 120%;
+  object-fit: contain; /* استخدام contain للحفاظ على نسب الإطار */
   border-radius: 9999px;
   pointer-events: none;
   z-index: 3;
@@ -1476,6 +1474,7 @@ li > * > div.effect-crystal {
 .vip-frame-2::before {
   background: conic-gradient(from 0deg, #66e0ff, #4488ff, #66e0ff);
   box-shadow: 0 0 12px rgba(68, 136, 255, 0.45);
+  padding: 3px; /* زيادة سماكة الإطار الأزرق */
 }
 .vip-frame-3::before {
   background: conic-gradient(from 0deg, #444, #999, #444);
