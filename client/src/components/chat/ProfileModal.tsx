@@ -2249,7 +2249,7 @@ export default function ProfileModal({
           overflow: visible; /* السماح للإطار بالظهور خارج الحدود */
           position: absolute;
           top: calc(100% - 165px); /* تعديل الموضع ليتناسب مع الحجم الجديد */
-          right: -15px; /* تعديل لتوسيط الإطار مع الصورة */
+          right: 30px; /* على اليمين فوق صورة الغلاف */
           background-color: transparent;
           box-shadow: none; /* إزالة الظل من الـ container */
           z-index: 2;
@@ -2888,7 +2888,7 @@ export default function ProfileModal({
             width: 160px;
             height: 160px;
             top: calc(100% - 130px);
-            right: -14px;
+            right: 20px; /* على اليمين للموبايل */
             border-radius: 12px; /* زوايا مدورة قليلاً للأجهزة المحمولة */
           }
           
