@@ -1425,7 +1425,7 @@ li > * > div.effect-crystal {
 }
 .vip-frame-overlay {
   position: absolute;
-  inset: 0; /* اجعل الإطار يطابق حجم الصورة تماماً */
+  inset: 0; /* الإطار داخل الصورة الشخصية تماماً */
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -1434,18 +1434,18 @@ li > * > div.effect-crystal {
   z-index: 3;
   /* تعطيل أي دوران */
   animation: none !important;
-  /* إزالة التكبير لأن الـ container الآن أكبر */
+  /* الإطار داخل الصورة بدون تكبير */
   transform-origin: center center;
   transform: scale(1);
 }
 
-/* Shared rotating border */
+/* Shared rotating border - داخل الصورة الشخصية */
 .vip-frame.base::before {
   content: '';
   position: absolute;
-  inset: -2px;
+  inset: 0; /* الإطار داخل الصورة بدلاً من خارجها */
   border-radius: 9999px;
-  z-index: 1;
+  z-index: 3;
   padding: 2px; /* frame thickness */
   -webkit-mask:
     linear-gradient(#000 0 0) content-box,
