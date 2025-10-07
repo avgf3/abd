@@ -2249,7 +2249,7 @@ export default function ProfileModal({
           overflow: visible; /* السماح للإطار بالظهور خارج الحدود */
           position: absolute;
           top: calc(100% - 180px); /* تحريك للأعلى بمقدار 45px لمحاذاة منتصف الزر */
-          right: 50px; /* نقل الصورة الشخصية إلى اليمين أكثر */
+          right: 10px; /* نقل الصورة الشخصية إلى أقصى اليمين */
           background-color: transparent;
           box-shadow: none; /* إزالة الظل من الـ container */
           z-index: 2;
@@ -2271,7 +2271,7 @@ export default function ProfileModal({
         .change-avatar-btn {
           position: absolute;
           top: calc(100% - 55px); /* رفع الزر للأعلى بمقدار 15px */
-          right: 90px; /* تعديل الموضع ليتناسب مع الـ container الجديد */
+          right: 50px; /* محاذاة الزر مع الصورة الشخصية في أقصى اليمين */
           background: rgba(0,0,0,0.8);
           border-radius: 50%;
           width: 30px;
@@ -2888,13 +2888,13 @@ export default function ProfileModal({
             width: 160px;
             height: 160px;
             top: calc(100% - 160px);
-            right: 15px; /* نقل الصورة الشخصية إلى اليمين للموبايل */
+            right: 10px; /* نقل الصورة الشخصية إلى أقصى اليمين للموبايل */
             border-radius: 12px; /* زوايا مدورة قليلاً للأجهزة المحمولة */
           }
           
           .change-avatar-btn {
             top: calc(100% - 35px);
-            right: 52px; /* تعديل للموبايل */
+            right: 47px; /* محاذاة الزر مع الصورة الشخصية في أقصى اليمين */
             width: 25px;
             height: 25px;
             line-height: 25px;
