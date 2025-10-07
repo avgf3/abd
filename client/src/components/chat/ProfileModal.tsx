@@ -2249,7 +2249,7 @@ export default function ProfileModal({
           overflow: visible; /* السماح للإطار بالظهور خارج الحدود */
           position: absolute;
           top: calc(100% - 195px); /* تحريك للأعلى بمقدار 30px */
-          right: 70px; /* تحريك لليمين بمقدار 40px */
+          right: 20px; /* نقل الصورة الشخصية إلى اليمين */
           background-color: transparent;
           box-shadow: none; /* إزالة الظل من الـ container */
           z-index: 2;
@@ -2888,7 +2888,7 @@ export default function ProfileModal({
             width: 160px;
             height: 160px;
             top: calc(100% - 160px);
-            right: 55px; /* على اليمين للموبايل */
+            right: 15px; /* نقل الصورة الشخصية إلى اليمين للموبايل */
             border-radius: 12px; /* زوايا مدورة قليلاً للأجهزة المحمولة */
           }
           
