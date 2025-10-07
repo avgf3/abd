@@ -890,9 +890,9 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
     >
       {/* Modern Header */}
       <header
-        className={`fixed top-0 left-0 right-0 z-50 modern-nav app-header safe-area-top h-14 px-2 sm:px-4 flex justify-start items-center ${isMobile ? 'mobile-header' : ''}`}
+        className={`fixed top-0 left-0 right-0 z-50 modern-nav app-header safe-area-top h-14 px-2 sm:px-4 flex justify-between items-center ${isMobile ? 'mobile-header' : ''}`}
       >
-        <div className={`flex gap-1 sm:gap-2 overflow-x-hidden max-w-full ${isMobile ? 'justify-evenly w-full' : ''}`}>
+        <div className={`flex gap-1 sm:gap-2 overflow-x-hidden ${isMobile ? 'justify-evenly flex-1' : ''}`}>
           <Button
             className={`glass-effect rounded-lg hover:bg-accent transition-all duration-200 flex items-center ${
               isMobile ? 'flex-1 px-2 py-2 text-xs gap-1.5' : 'px-3 py-2 gap-2'
@@ -1077,6 +1077,26 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             )}
           </Button>
         </div>
+        
+        {/* صورة الملف الشخصي للمستخدم في أقصى اليمين */}
+        {chat.currentUser && (
+          <div 
+            className="cursor-pointer hover:opacity-80 transition-opacity"
+            onClick={() => {
+              if (chat.currentUser) {
+                setProfileUser(chat.currentUser);
+                setShowProfile(true);
+              }
+            }}
+            style={{ marginLeft: isMobile ? '8px' : '16px' }}
+          >
+            <ProfileImage 
+              user={chat.currentUser} 
+              size={isMobile ? "small" : "medium"}
+              pixelSize={isMobile ? 36 : 44}
+            />
+          </div>
+        )}
       </header>
 
       {/* Main Content - تحسين التخطيط للجوال */}
