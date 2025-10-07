@@ -613,7 +613,7 @@ export default function UnifiedSidebar({
 
   return (
     <aside
-      className={`w-full bg-sidebar text-sidebar-foreground text-sm overflow-hidden border-l border-sidebar-border shadow-lg flex flex-col h-full max-h-full ${isMobile ? 'sidebar mobile-scroll' : ''}`}
+      className={`w-full bg-sidebar text-sidebar-foreground text-sm overflow-hidden border-l border-sidebar-border shadow-lg flex flex-col h-full max-h-screen ${isMobile ? 'sidebar mobile-scroll' : ''}`}
       style={{ overscrollBehaviorX: 'none' }}
     >
       {/* Top toggle buttons removed; bottom bar is the sole navigation */}
