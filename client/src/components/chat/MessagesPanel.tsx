@@ -317,7 +317,7 @@ export default function MessagesPanel({
         if (!open) onClose();
       }}
     >
-      <DialogContent className="max-w-md max-h-[560px] bg-gradient-to-br from-secondary to-accent border-2 border-accent shadow-2xl overflow-hidden">
+      <DialogContent className="max-w-md max-h-[520px] bg-gradient-to-br from-secondary to-accent border-2 border-accent shadow-2xl overflow-hidden">
         <DialogHeader className="border-b border-accent pb-3">
           <div className="flex items-center justify-center">
             <DialogTitle className="text-xl font-bold text-primary-foreground text-center w-full">
@@ -334,7 +334,7 @@ export default function MessagesPanel({
           </div>
         </DialogHeader>
 
-        <ScrollArea className="h-[460px] w-full">
+        <ScrollArea className="h-[420px] w-full">
           <div className="space-y-4 p-4">
             <section>
               {isLoading ? (
@@ -352,7 +352,7 @@ export default function MessagesPanel({
                   {conversations.map(({ user, lastMessage, unreadCount }) => (
                     <div key={user.id} className="relative -mx-4">
                       <div
-                        className={`flex items-center gap-3 p-3 px-4 rounded-none border-b border-gray-200 transition-all duration-200 cursor-pointer w-full ${getUserListItemClasses(user) || 'hover:bg-gray-50'}`}
+                        className={`flex items-center gap-3 px-4 ${(user as any)?.profileFrame ? 'py-1.5' : 'py-2.5'} rounded-none border-b border-gray-200 transition-all duration-200 cursor-pointer w-full ${getUserListItemClasses(user) || 'hover:bg-gray-50'}`}
                         style={getUserListItemStyles(user)}
                         onClick={() => {
                           try {
