@@ -2888,15 +2888,17 @@ export default function ProfileModal({
             width: 160px;
             height: 160px;
             top: calc(100% - 160px);
-            right: 45px; /* نقل الصورة الشخصية إلى اليمين للموبايل */
+            right: 5px; /* نقل الصورة الشخصية إلى اليمين للموبايل */
             border-radius: 12px; /* زوايا مدورة قليلاً للأجهزة المحمولة */
+            z-index: 10; /* جعل الصورة تتعدى الزر */
           }
           
           .change-avatar-btn {
             top: calc(100% - 35px);
-            right: 82px; /* تعديل للموبايل */
+            right: 42px; /* تعديل للموبايل */
             width: 25px;
             height: 25px;
+            z-index: 5; /* جعل الزر تحت الصورة */
             line-height: 25px;
             font-size: 12px;
           }
