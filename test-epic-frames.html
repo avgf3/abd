@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎬 اختبار الإطارات الخرافية الجديدة</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/workspace/client/src/index.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .test-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 30px;
+            padding: 40px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .frame-demo {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: transform 0.3s ease;
+        }
+        
+        .frame-demo:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.08);
+        }
+        
+        .frame-title {
+            color: #fff;
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+        
+        .frame-subtitle {
+            color: #ccc;
+            font-size: 12px;
+            margin-bottom: 20px;
+        }
+        
+        .avatar-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 15px;
+        }
+        
+        .header {
+            text-align: center;
+            padding: 40px 20px;
+            color: white;
+        }
+        
+        .header h1 {
+            font-size: 3rem;
+            font-weight: bold;
+            background: linear-gradient(45deg, #FFD700, #FF6B6B, #4ECDC4, #45B7D1);
+            background-size: 400% 400%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: gradientShift 3s ease-in-out infinite;
+            margin-bottom: 10px;
+        }
+        
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🎬 الإطارات الخرافية الجديدة</h1>
+        <p style="color: #ccc; font-size: 18px;">21 إطار بتأثيرات خرافية وحديثة - بدون خلفيات!</p>
+    </div>
+
+    <div class="test-container">
+        <!-- الإطار 1: توهج ذهبي خرافي -->
+        <div class="frame-demo">
+            <div class="frame-title">الإطار 1</div>
+            <div class="frame-subtitle">توهج ذهبي خرافي</div>
+            <div class="avatar-container">
+                <div class="vip-frame-modern epic-glow" style="--frame-size: 80px; --image-size: 60px;">
+                    <div class="frame-effects-bg"></div>
+                    <div class="frame-particles">
+                        <div class="particle particle-1"></div>
+                        <div class="particle particle-2"></div>
+                        <div class="particle particle-3"></div>
+                        <div class="particle particle-4"></div>
+                    </div>
+                    <div class="vip-frame-inner">
+                        <img src="https://via.placeholder.com/60x60/4ECDC4/ffffff?text=U1" class="vip-frame-img" style="width: 60px; height: 60px;" />
+                        <img src="/workspace/client/public/frames/frame1.webp" class="vip-frame-overlay" />
+                        <div class="frame-glow-overlay"></div>
+                    </div>
+                    <div class="frame-outer-rings">
+                        <div class="outer-ring ring-1"></div>
+                        <div class="outer-ring ring-2"></div>
+                        <div class="outer-ring ring-3"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- الإطار 2: نبض بلازما -->
+        <div class="frame-demo">
+            <div class="frame-title">الإطار 2</div>
+            <div class="frame-subtitle">نبض بلازما</div>
+            <div class="avatar-container">
+                <div class="vip-frame-modern plasma-pulse" style="--frame-size: 80px; --image-size: 60px;">
+                    <div class="frame-effects-bg"></div>
+                    <div class="frame-particles">
+                        <div class="particle particle-1"></div>
+                        <div class="particle particle-2"></div>
+                        <div class="particle particle-3"></div>
+                        <div class="particle particle-4"></div>
+                    </div>
+                    <div class="vip-frame-inner">
+                        <img src="https://via.placeholder.com/60x60/FF6B6B/ffffff?text=U2" class="vip-frame-img" style="width: 60px; height: 60px;" />
+                        <img src="/workspace/client/public/frames/frame2.webp" class="vip-frame-overlay" />
+                        <div class="frame-glow-overlay"></div>
+                    </div>
+                    <div class="frame-outer-rings">
+                        <div class="outer-ring ring-1"></div>
+                        <div class="outer-ring ring-2"></div>
+                        <div class="outer-ring ring-3"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- الإطار 3: حلقة كونية -->
+        <div class="frame-demo">
+            <div class="frame-title">الإطار 3</div>
+            <div class="frame-subtitle">حلقة كونية</div>
+            <div class="avatar-container">
+                <div class="vip-frame-modern cosmic-ring" style="--frame-size: 80px; --image-size: 60px;">
+                    <div class="frame-effects-bg"></div>
+                    <div class="frame-particles">
+                        <div class="particle particle-1"></div>
+                        <div class="particle particle-2"></div>
+                        <div class="particle particle-3"></div>
+                        <div class="particle particle-4"></div>
+                    </div>
+                    <div class="vip-frame-inner">
+                        <img src="https://via.placeholder.com/60x60/45B7D1/ffffff?text=U3" class="vip-frame-img" style="width: 60px; height: 60px;" />
+                        <img src="/workspace/client/public/frames/frame3.webp" class="vip-frame-overlay" />
+                        <div class="frame-glow-overlay"></div>
+                    </div>
+                    <div class="frame-outer-rings">
+                        <div class="outer-ring ring-1"></div>
+                        <div class="outer-ring ring-2"></div>
+                        <div class="outer-ring ring-3"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- الإطار 4: هالة نارية -->
+        <div class="frame-demo">
+            <div class="frame-title">الإطار 4</div>
+            <div class="frame-subtitle">هالة نارية</div>
+            <div class="avatar-container">
+                <div class="vip-frame-modern fire-aura" style="--frame-size: 80px; --image-size: 60px;">
+                    <div class="frame-effects-bg"></div>
+                    <div class="frame-particles">
+                        <div class="particle particle-1"></div>
+                        <div class="particle particle-2"></div>
+                        <div class="particle particle-3"></div>
+                        <div class="particle particle-4"></div>
+                    </div>
+                    <div class="vip-frame-inner">
+                        <img src="https://via.placeholder.com/60x60/FF4500/ffffff?text=U4" class="vip-frame-img" style="width: 60px; height: 60px;" />
+                        <img src="/workspace/client/public/frames/frame4.webp" class="vip-frame-overlay" />
+                        <div class="frame-glow-overlay"></div>
+                    </div>
+                    <div class="frame-outer-rings">
+                        <div class="outer-ring ring-1"></div>
+                        <div class="outer-ring ring-2"></div>
+                        <div class="outer-ring ring-3"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- الإطار 5: بلورة جليدية -->
+        <div class="frame-demo">
+            <div class="frame-title">الإطار 5</div>
+            <div class="frame-subtitle">بلورة جليدية</div>
+            <div class="avatar-container">
+                <div class="vip-frame-modern ice-crystal" style="--frame-size: 80px; --image-size: 60px;">
+                    <div class="frame-effects-bg"></div>
+                    <div class="frame-particles">
+                        <div class="particle particle-1"></div>
+                        <div class="particle particle-2"></div>
+                        <div class="particle particle-3"></div>
+                        <div class="particle particle-4"></div>
+                    </div>
+                    <div class="vip-frame-inner">
+                        <img src="https://via.placeholder.com/60x60/87CEEB/ffffff?text=U5" class="vip-frame-img" style="width: 60px; height: 60px;" />
+                        <img src="/workspace/client/public/frames/frame5.webp" class="vip-frame-overlay" />
+                        <div class="frame-glow-overlay"></div>
+                    </div>
+                    <div class="frame-outer-rings">
+                        <div class="outer-ring ring-1"></div>
+                        <div class="outer-ring ring-2"></div>
+                        <div class="outer-ring ring-3"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- الإطار 6: عاصفة كهربائية -->
+        <div class="frame-demo">
+            <div class="frame-title">الإطار 6</div>
+            <div class="frame-subtitle">عاصفة كهربائية</div>
+            <div class="avatar-container">
+                <div class="vip-frame-modern electric-storm" style="--frame-size: 80px; --image-size: 60px;">
+                    <div class="frame-effects-bg"></div>
+                    <div class="frame-particles">
+                        <div class="particle particle-1"></div>
+                        <div class="particle particle-2"></div>
+                        <div class="particle particle-3"></div>
+                        <div class="particle particle-4"></div>
+                    </div>
+                    <div class="vip-frame-inner">
+                        <img src="https://via.placeholder.com/60x60/00BFFF/ffffff?text=U6" class="vip-frame-img" style="width: 60px; height: 60px;" />
+                        <img src="/workspace/client/public/frames/frame6.webp" class="vip-frame-overlay" />
+                        <div class="frame-glow-overlay"></div>
+                    </div>
+                    <div class="frame-outer-rings">
+                        <div class="outer-ring ring-1"></div>
+                        <div class="outer-ring ring-2"></div>
+                        <div class="outer-ring ring-3"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- باقي الإطارات 7-21 -->
+        <div class="frame-demo">
+            <div class="frame-title">الإطار 7</div>
+            <div class="frame-subtitle">فراغ الظلال</div>
+            <div class="avatar-container">
+                <div class="vip-frame-modern shadow-void" style="--frame-size: 80px; --image-size: 60px;">
+                    <div class="frame-effects-bg"></div>
+                    <div class="vip-frame-inner">
+                        <img src="https://via.placeholder.com/60x60/4B0082/ffffff?text=U7" class="vip-frame-img" style="width: 60px; height: 60px;" />
+                        <img src="/workspace/client/public/frames/frame7.webp" class="vip-frame-overlay" />
+                        <div class="frame-glow-overlay"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="frame-demo">
+            <div class="frame-title">الإطار 8</div>
+            <div class="frame-subtitle">منشور قوس قزح</div>
+            <div class="avatar-container">
+                <div class="vip-frame-modern rainbow-prism" style="--frame-size: 80px; --image-size: 60px;">
+                    <div class="frame-effects-bg"></div>
+                    <div class="vip-frame-inner">
+                        <img src="https://via.placeholder.com/60x60/FF69B4/ffffff?text=U8" class="vip-frame-img" style="width: 60px; height: 60px;" />
+                        <img src="/workspace/client/public/frames/frame8.webp" class="vip-frame-overlay" />
+                        <div class="frame-glow-overlay"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="frame-demo">
+            <div class="frame-title">الإطار 9</div>
+            <div class="frame-subtitle">حقل كمي</div>
+            <div class="avatar-container">
+                <div class="vip-frame-modern quantum-field" style="--frame-size: 80px; --image-size: 60px;">
+                    <div class="frame-effects-bg"></div>
+                    <div class="vip-frame-inner">
+                        <img src="https://via.placeholder.com/60x60/00FF7F/ffffff?text=U9" class="vip-frame-img" style="width: 60px; height: 60px;" />
+                        <img src="/workspace/client/public/frames/frame9.webp" class="vip-frame-overlay" />
+                        <div class="frame-glow-overlay"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="frame-demo">
+            <div class="frame-title">الإطار 10</div>
+            <div class="frame-subtitle">نجم متفجر</div>
+            <div class="avatar-container">
+                <div class="vip-frame-modern stellar-nova" style="--frame-size: 80px; --image-size: 60px;">
+                    <div class="frame-effects-bg"></div>
+                    <div class="vip-frame-inner">
+                        <img src="https://via.placeholder.com/60x60/FFD700/000000?text=U10" class="vip-frame-img" style="width: 60px; height: 60px;" />
+                        <img src="/workspace/client/public/frames/frame10.webp" class="vip-frame-overlay" />
+                        <div class="frame-glow-overlay"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div style="text-align: center; padding: 40px; color: #ccc;">
+        <p>🎉 تم إنشاء 21 إطار خرافي بتأثيرات حديثة!</p>
+        <p>✨ جميع الإطارات بدون خلفيات وبتأثيرات توهج مذهلة</p>
+    </div>
+</body>
+</html>
