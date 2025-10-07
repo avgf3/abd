@@ -317,7 +317,7 @@ export default function MessagesPanel({
         if (!open) onClose();
       }}
     >
-      <DialogContent className="max-w-md max-h-[560px] bg-gradient-to-br from-secondary to-accent border-2 border-accent shadow-2xl overflow-hidden">
+      <DialogContent className="max-w-md max-h-[520px] bg-gradient-to-br from-secondary to-accent border-2 border-accent shadow-2xl overflow-hidden">
         <DialogHeader className="border-b border-accent pb-3">
           <div className="flex items-center justify-center">
             <DialogTitle className="text-xl font-bold text-primary-foreground text-center w-full">
@@ -334,7 +334,7 @@ export default function MessagesPanel({
           </div>
         </DialogHeader>
 
-        <ScrollArea className="h-[460px] w-full">
+        <ScrollArea className="h-[420px] w-full">
           <div className="space-y-4 p-4">
             <section>
               {isLoading ? (
