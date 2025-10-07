@@ -2248,8 +2248,8 @@ export default function ProfileModal({
           border-radius: 9999px; /* دائري بالكامل */
           overflow: visible; /* السماح للإطار بالظهور خارج الحدود */
           position: absolute;
-          top: calc(100% - 180px); /* تحريك للأعلى بمقدار 45px لمحاذاة منتصف الزر */
-          right: 1cm; /* اجعل المسافة من حافة الغلاف 1cm */
+          top: calc(100% - 195px); /* رفع الصورة للأعلى قليلاً */
+          right: 1.5cm; /* نقل الصورة لليمين أكثر */
           background-color: transparent;
           box-shadow: none; /* إزالة الظل من الـ container */
           z-index: 2;
@@ -2270,8 +2270,8 @@ export default function ProfileModal({
 
         .change-avatar-btn {
           position: absolute;
-          top: calc(100% - 55px); /* رفع الزر للأعلى بمقدار 15px */
-          right: calc(1cm + 40px); /* أبقِ الزر بمحاذاة الإطار مع فارق 40px */
+          top: calc(100% - 70px); /* رفع الزر ليتناسب مع الصورة الجديدة */
+          right: calc(1.5cm + 40px); /* نقل الزر لليمين مع الإطار */
           background: rgba(0,0,0,0.8);
           border-radius: 50%;
           width: 30px;
@@ -2887,15 +2887,15 @@ export default function ProfileModal({
           .profile-avatar {
             width: 160px;
             height: 160px;
-            top: calc(100% - 160px);
-            right: 1cm; /* مسافة ثابتة قدرها 1cm على الجوال أيضاً */
+            top: calc(100% - 175px); /* رفع الصورة للأعلى قليلاً على الجوال */
+            right: 1.3cm; /* نقل الصورة لليمين أكثر على الجوال */
             border-radius: 12px; /* زوايا مدورة قليلاً للأجهزة المحمولة */
             z-index: 10; /* جعل الصورة تتعدى الزر */
           }
           
           .change-avatar-btn {
-            top: calc(100% - 35px);
-            right: calc(1cm + 37px); /* حافظ على الفارق السابق تقريباً */
+            top: calc(100% - 50px); /* رفع الزر ليتناسب مع الصورة على الجوال */
+            right: calc(1.3cm + 37px); /* نقل الزر لليمين مع الإطار */
             width: 25px;
             height: 25px;
             z-index: 5; /* جعل الزر تحت الصورة */
