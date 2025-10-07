@@ -567,8 +567,15 @@ export default function UnifiedSidebar({
                 style={getUserListItemStyles(user)}
                 onClick={(e) => handleUserClick(e as any, user)}
               >
-                {/* ازاحة الصورة قليلاً لليسار لإظهار الإطار بالكامل */}
-                <div style={{ marginLeft: 4, width: 40, height: 40 }}>
+                {/* حاوية الصورة - نزيد الحجم إذا كان هناك إطار */}
+                <div style={{ 
+                  marginLeft: 4, 
+                  width: user.profileFrame ? 54 : 40,  // 40 * 1.35 = 54 للإطار
+                  height: user.profileFrame ? 54 : 40,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
                   <ProfileImage user={user} size="small" pixelSize={40} className="" hideRoleBadgeOverlay={true} />
                 </div>
                 <div className="flex-1">

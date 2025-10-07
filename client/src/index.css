@@ -1431,7 +1431,7 @@ li > * > div.effect-crystal {
   bottom: 0;
   width: 100%;
   height: 100%;
-  object-fit: contain; /* الإطار يملأ الحاوية بالكامل */
+  object-fit: cover; /* تغيير من contain إلى cover ليملأ الحاوية بالكامل */
   border-radius: 9999px;
   pointer-events: none;
   z-index: 3;
