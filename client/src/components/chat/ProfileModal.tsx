@@ -2214,7 +2214,7 @@ export default function ProfileModal({
           position: relative;
           height: 268px; /* زيادة طفيفة لارتفاع الغلاف */
           background-size: cover;
-          background-position: center;
+          background-position: right center;
           background-repeat: no-repeat;
         }
 
@@ -2249,7 +2249,7 @@ export default function ProfileModal({
           overflow: visible; /* السماح للإطار بالظهور خارج الحدود */
           position: absolute;
           top: calc(100% - 195px); /* رفع الصورة للأعلى قليلاً */
-          right: 1.5cm; /* نقل الصورة لليمين أكثر */
+          right: 10px; /* نقل الصورة لأقصى اليمين */
           background-color: transparent;
           box-shadow: none; /* إزالة الظل من الـ container */
           z-index: 2;
@@ -2888,7 +2888,7 @@ export default function ProfileModal({
             width: 160px;
             height: 160px;
             top: calc(100% - 175px); /* رفع الصورة للأعلى قليلاً على الجوال */
-            right: 1.3cm; /* نقل الصورة لليمين أكثر على الجوال */
+            right: 10px; /* نقل الصورة لأقصى اليمين على الجوال */
             border-radius: 12px; /* زوايا مدورة قليلاً للأجهزة المحمولة */
             z-index: 10; /* جعل الصورة تتعدى الزر */
           }
@@ -2950,7 +2950,7 @@ export default function ProfileModal({
                 return src ? `url(${src})` : 'none';
               })(),
               backgroundSize: 'cover',
-              backgroundPosition: 'center',
+              backgroundPosition: 'right center',
               backgroundRepeat: 'no-repeat',
             }}
           >
