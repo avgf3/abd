@@ -2249,7 +2249,7 @@ export default function ProfileModal({
           overflow: visible; /* السماح للإطار بالظهور خارج الحدود */
           position: absolute;
           top: calc(100% - 195px); /* رفع الصورة للأعلى قليلاً */
-          right: 1.5cm; /* نقل الصورة لليمين أكثر */
+          left: 1.5cm; /* نقل الصورة لأقصى اليسار */
           background-color: transparent;
           box-shadow: none; /* إزالة الظل من الـ container */
           z-index: 2;
@@ -2271,7 +2271,7 @@ export default function ProfileModal({
         .change-avatar-btn {
           position: absolute;
           top: calc(100% - 70px); /* رفع الزر ليتناسب مع الصورة الجديدة */
-          right: calc(1.5cm + 40px); /* نقل الزر لليمين مع الإطار */
+          left: calc(1.5cm + 40px); /* نقل الزر لليسار مع الإطار */
           background: rgba(0,0,0,0.8);
           border-radius: 50%;
           width: 30px;
@@ -2888,14 +2888,14 @@ export default function ProfileModal({
             width: 160px;
             height: 160px;
             top: calc(100% - 175px); /* رفع الصورة للأعلى قليلاً على الجوال */
-            right: 1.3cm; /* نقل الصورة لليمين أكثر على الجوال */
+            left: 1.3cm; /* نقل الصورة لليسار على الجوال */
             border-radius: 12px; /* زوايا مدورة قليلاً للأجهزة المحمولة */
             z-index: 10; /* جعل الصورة تتعدى الزر */
           }
           
           .change-avatar-btn {
             top: calc(100% - 50px); /* رفع الزر ليتناسب مع الصورة على الجوال */
-            right: calc(1.3cm + 37px); /* نقل الزر لليمين مع الإطار */
+            left: calc(1.3cm + 37px); /* نقل الزر لليسار مع الإطار */
             width: 25px;
             height: 25px;
             z-index: 5; /* جعل الزر تحت الصورة */
