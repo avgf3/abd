@@ -2248,8 +2248,8 @@ export default function ProfileModal({
           border-radius: 9999px; /* دائري بالكامل */
           overflow: visible; /* السماح للإطار بالظهور خارج الحدود */
           position: absolute;
-          top: calc(100% - 165px); /* تعديل الموضع ليتناسب مع الحجم الجديد */
-          right: 30px; /* على اليمين فوق صورة الغلاف */
+          top: calc(100% - 175px); /* تحريك للأعلى بمقدار 10px */
+          right: 40px; /* تحريك لليمين بمقدار 10px */
           background-color: transparent;
           box-shadow: none; /* إزالة الظل من الـ container */
           z-index: 2;
@@ -2270,8 +2270,8 @@ export default function ProfileModal({
 
         .change-avatar-btn {
           position: absolute;
-          top: calc(100% - 30px);
-          right: 50px; /* تعديل الموضع ليتناسب مع الـ container الجديد */
+          top: calc(100% - 40px);
+          right: 60px; /* تعديل الموضع ليتناسب مع الـ container الجديد */
           background: rgba(0,0,0,0.8);
           border-radius: 50%;
           width: 30px;
@@ -2887,14 +2887,14 @@ export default function ProfileModal({
           .profile-avatar {
             width: 160px;
             height: 160px;
-            top: calc(100% - 130px);
-            right: 20px; /* على اليمين للموبايل */
+            top: calc(100% - 140px);
+            right: 30px; /* على اليمين للموبايل */
             border-radius: 12px; /* زوايا مدورة قليلاً للأجهزة المحمولة */
           }
           
           .change-avatar-btn {
-            top: calc(100% - 25px);
-            right: 42px; /* تعديل للموبايل */
+            top: calc(100% - 35px);
+            right: 52px; /* تعديل للموبايل */
             width: 25px;
             height: 25px;
             line-height: 25px;
