@@ -567,21 +567,21 @@ export default function UnifiedSidebar({
               showModerationActions={isModerator}
             >
               <div
-                className={`flex items-center gap-2 ${hasFrame ? 'py-1.5' : 'py-0.5'} px-1 rounded-none border-b border-border transition-colors duration-200 cursor-pointer w-full ${getUserListItemClasses(user)} hover:bg-accent/10`}
+                className={`flex items-center gap-2 ${hasFrame ? 'py-1' : 'py-0.5'} px-1 rounded-none border-b border-border transition-colors duration-200 cursor-pointer w-full ${getUserListItemClasses(user)} hover:bg-accent/10`}
                 style={getUserListItemStyles(user)}
                 onClick={(e) => handleUserClick(e as any, user)}
               >
                 {/* حاوية الصورة - حجم ثابت مع محاذاة مركزية */}
                 <div style={{ 
                   marginLeft: 4, 
-                  width: hasFrame ? 54 : 46,  // تقليل العرض للمستخدمين بدون إطار
-                  height: hasFrame ? 54 : 46, // تقليل الارتفاع للمستخدمين بدون إطار
+                  width: hasFrame ? 48 : 40,  // تقليل العرض للمستخدمين مع الإطار
+                  height: hasFrame ? 48 : 40, // تقليل الارتفاع للمستخدمين مع الإطار
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   flexShrink: 0
                 }}>
-                  <ProfileImage user={user} size="small" pixelSize={36} className="" hideRoleBadgeOverlay={true} />
+                  <ProfileImage user={user} size="small" pixelSize={32} className="" hideRoleBadgeOverlay={true} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2">
@@ -801,13 +801,13 @@ export default function UnifiedSidebar({
                             } as ChatUser;
                             if (frameFromPost) (effectiveUser as any).profileFrame = frameFromPost;
                             const hasFrame = Boolean((effectiveUser as any)?.profileFrame);
-                            const containerSize = hasFrame ? 43 : 32;
+                            const containerSize = hasFrame ? 38 : 32;
                             return (
                               <div style={{ width: containerSize, height: containerSize, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                                 <ProfileImage 
                                   user={effectiveUser}
                                   size="small"
-                                  pixelSize={29}
+                                  pixelSize={26}
                                   hideRoleBadgeOverlay={true}
                                 />
                               </div>
@@ -946,13 +946,13 @@ export default function UnifiedSidebar({
                             } as ChatUser;
                             if (frameFromPost) (effectiveUser as any).profileFrame = frameFromPost;
                             const hasFrame = Boolean((effectiveUser as any)?.profileFrame);
-                            const containerSize = hasFrame ? 43 : 32;
+                            const containerSize = hasFrame ? 38 : 32;
                             return (
                               <div style={{ width: containerSize, height: containerSize, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                                 <ProfileImage 
                                   user={effectiveUser}
                                   size="small"
-                                  pixelSize={29}
+                                  pixelSize={26}
                                   hideRoleBadgeOverlay={true}
                                 />
                               </div>
