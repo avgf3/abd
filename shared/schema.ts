@@ -283,6 +283,8 @@ export const wallPosts = pgTable('wall_posts', {
   type: text('type').notNull().default('public'), // 'public', 'friends'
   timestamp: timestamp('timestamp').defaultNow(),
   userProfileImage: text('user_profile_image'),
+  // إطار المستخدم وقت إنشاء المنشور لضمان عرضه بدون جلب إضافي
+  userProfileFrame: text('user_profile_frame'),
   usernameColor: text('username_color').default('#4A90E2'),
   totalLikes: integer('total_likes').default(0),
   totalDislikes: integer('total_dislikes').default(0),

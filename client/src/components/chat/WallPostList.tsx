@@ -99,22 +99,37 @@ export default function WallPostList({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="relative">
-                  <div className="w-12 h-12" style={{ width: 48, height: 48 }}>
-                    <ProfileImage 
-                      user={usersData[post.userId] || {
-                        id: post.userId,
-                        username: post.username,
-                        role: (post.userRole as any) || 'member',
-                        userType: post.userRole as any,
-                        isOnline: true,
-                        profileImage: post.userProfileImage,
-                        usernameColor: post.usernameColor,
-                      } as ChatUser} 
-                      size="small" 
-                      className="w-12 h-12" 
-                      hideRoleBadgeOverlay={true} 
-                    />
-                  </div>
+                  {(() => {
+                    const userFromCache = usersData[post.userId];
+                    const frameFromPost = (post as any)?.userProfileFrame as string | undefined;
+                    const effectiveUser: ChatUser = (userFromCache
+                      ? { ...userFromCache }
+                      : {
+                          id: post.userId,
+                          username: post.username,
+                          role: (post.userRole as any) || 'member',
+                          userType: (post.userRole as any) || 'member',
+                          isOnline: true,
+                          profileImage: post.userProfileImage,
+                          usernameColor: post.usernameColor,
+                        }) as ChatUser;
+                    if (!('profileFrame' in (effectiveUser as any)) && frameFromPost) {
+                      (effectiveUser as any).profileFrame = frameFromPost;
+                    }
+                    const hasFrame = Boolean((effectiveUser as any)?.profileFrame);
+                    const containerSize = hasFrame ? 54 : 40; // 40px image, 54px with frame
+                    return (
+                      <div style={{ width: containerSize, height: containerSize, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <ProfileImage
+                          user={effectiveUser}
+                          size="small"
+                          pixelSize={40}
+                          className=""
+                          hideRoleBadgeOverlay={true}
+                        />
+                      </div>
+                    );
+                  })()}
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
