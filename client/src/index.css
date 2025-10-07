@@ -1447,7 +1447,7 @@ li > * > div.effect-crystal {
   content: '';
   position: absolute;
   top: 0;
-  right: 0; /* تحريك الإطار لليمين */
+  left: 0; /* توسيط الإطار */
   width: 100%;
   height: 100%;
   border-radius: 9999px;
