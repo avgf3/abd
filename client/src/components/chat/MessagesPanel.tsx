@@ -352,7 +352,7 @@ export default function MessagesPanel({
                   {conversations.map(({ user, lastMessage, unreadCount }) => (
                     <div key={user.id} className="relative -mx-4">
                       <div
-                        className={`flex items-center gap-2 p-2 px-4 rounded-none border-b border-gray-200 transition-all duration-200 cursor-pointer w-full ${getUserListItemClasses(user) || 'hover:bg-gray-50'}`}
+                        className={`flex items-center gap-3 p-3 px-4 rounded-none border-b border-gray-200 transition-all duration-200 cursor-pointer w-full ${getUserListItemClasses(user) || 'hover:bg-gray-50'}`}
                         style={getUserListItemStyles(user)}
                         onClick={() => {
                           try {
@@ -378,41 +378,39 @@ export default function MessagesPanel({
                           }
                         }}
                       >
-                        <div style={{ width: 40, height: 40 }}>
+                        <div className="flex-shrink-0" style={{ width: 40, height: 40 }}>
                           <ProfileImage user={user} size="small" pixelSize={40} hideRoleBadgeOverlay={true} />
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between gap-2">
-                            <div className="flex items-center gap-2">
-                              <span
-                                className="text-base font-medium transition-all duration-300 truncate"
-                                style={{
-                                  color: getFinalUsernameColor(user),
-                                  textShadow: getFinalUsernameColor(user)
-                                    ? `0 0 10px ${getFinalUsernameColor(user)}40`
-                                    : 'none',
-                                  filter: getFinalUsernameColor(user)
-                                    ? 'drop-shadow(0 0 3px rgba(255,255,255,0.3))'
-                                    : 'none',
-                                }}
-                              >
-                                {user.username}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-2">
+                        <div className="flex-1 min-w-0 flex flex-col justify-center">
+                          <div className="flex items-center justify-between gap-2 w-full">
+                            <span
+                              className="text-base font-medium transition-all duration-300 truncate flex-shrink-0"
+                              style={{
+                                color: getFinalUsernameColor(user),
+                                textShadow: getFinalUsernameColor(user)
+                                  ? `0 0 10px ${getFinalUsernameColor(user)}40`
+                                  : 'none',
+                                filter: getFinalUsernameColor(user)
+                                  ? 'drop-shadow(0 0 3px rgba(255,255,255,0.3))'
+                                  : 'none',
+                              }}
+                            >
+                              {user.username}
+                            </span>
+                            <div className="flex items-center gap-2 flex-shrink-0">
                               <UserRoleBadge user={user} size={20} />
                               <span className="text-xs text-foreground/60 whitespace-nowrap">
                                 {formatTime(lastMessage.timestamp)}
                               </span>
                             </div>
                           </div>
-                          <div className="flex items-center gap-1 mt-0.5 text-xs text-foreground/70 truncate">
+                          <div className="flex items-center gap-1 mt-1 text-xs text-foreground/70 truncate">
                             {lastMessage.isImage && <span className="text-xs">🖼️</span>}
-                            <span>{formatLastMessage(lastMessage.content)}</span>
+                            <span className="truncate">{formatLastMessage(lastMessage.content)}</span>
                           </div>
                         </div>
                         {unreadCount > 0 && (
-                          <span className="ml-2 inline-flex items-center justify-center text-[10px] min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-primary-foreground">
+                          <span className="flex-shrink-0 ml-2 inline-flex items-center justify-center text-[10px] min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-primary-foreground">
                             {unreadCount}
                           </span>
                         )}
