@@ -2249,7 +2249,7 @@ export default function ProfileModal({
           overflow: visible; /* السماح للإطار بالظهور خارج الحدود */
           position: absolute;
           top: calc(100% - 180px); /* تحريك للأعلى بمقدار 45px لمحاذاة منتصف الزر */
-          right: 90px; /* نقل الصورة الشخصية إلى اليمين أكثر */
+          right: 1cm; /* اجعل المسافة من حافة الغلاف 1cm */
           background-color: transparent;
           box-shadow: none; /* إزالة الظل من الـ container */
           z-index: 2;
@@ -2271,7 +2271,7 @@ export default function ProfileModal({
         .change-avatar-btn {
           position: absolute;
           top: calc(100% - 55px); /* رفع الزر للأعلى بمقدار 15px */
-          right: 130px; /* تعديل الموضع ليتناسب مع الـ container الجديد */
+          right: calc(1cm + 40px); /* أبقِ الزر بمحاذاة الإطار مع فارق 40px */
           background: rgba(0,0,0,0.8);
           border-radius: 50%;
           width: 30px;
@@ -2888,14 +2888,14 @@ export default function ProfileModal({
             width: 160px;
             height: 160px;
             top: calc(100% - 160px);
-            right: 5px; /* نقل الصورة الشخصية إلى اليمين للموبايل */
+            right: 1cm; /* مسافة ثابتة قدرها 1cm على الجوال أيضاً */
             border-radius: 12px; /* زوايا مدورة قليلاً للأجهزة المحمولة */
             z-index: 10; /* جعل الصورة تتعدى الزر */
           }
           
           .change-avatar-btn {
             top: calc(100% - 35px);
-            right: 42px; /* تعديل للموبايل */
+            right: calc(1cm + 37px); /* حافظ على الفارق السابق تقريباً */
             width: 25px;
             height: 25px;
             z-index: 5; /* جعل الزر تحت الصورة */
