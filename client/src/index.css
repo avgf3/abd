@@ -1393,13 +1393,741 @@ li > * > div.effect-crystal {
   z-index: 1;
 }
 
-/* ===== VIP Animated Frames (10 styles) ===== */
-.vip-frame.base {
+/* ===== VIP Modern Frames System - خرافي وحديث ===== */
+
+/* الحاوية الرئيسية للإطار الحديث */
+.vip-frame-modern {
   position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  /* الإطار الخارجي (الحاوية) */
+  border-radius: 50%;
+  overflow: visible;
+  z-index: 1;
+}
+
+/* الحاوية الداخلية */
+.vip-frame-modern .vip-frame-inner {
+  position: relative;
+  width: var(--image-size);
+  height: var(--image-size);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+}
+
+/* الصورة الشخصية */
+.vip-frame-modern .vip-frame-img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  position: relative;
+  z-index: 1;
+}
+
+/* إطار الصورة الشفاف */
+.vip-frame-modern .vip-frame-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: var(--frame-size);
+  height: var(--frame-size);
+  pointer-events: none;
+  z-index: 3;
+  mix-blend-mode: normal;
+}
+
+/* طبقة التأثيرات الخلفية */
+.frame-effects-bg {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: var(--frame-size);
+  height: var(--frame-size);
+  border-radius: 50%;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* طبقة التوهج الأمامية */
+.frame-glow-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: calc(var(--frame-size) + 20px);
+  height: calc(var(--frame-size) + 20px);
+  border-radius: 50%;
+  z-index: 4;
+  pointer-events: none;
+}
+
+/* الجسيمات المتحركة */
+.frame-particles {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: var(--frame-size);
+  height: var(--frame-size);
+  z-index: 5;
+  pointer-events: none;
+}
+
+.particle {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.8);
+}
+
+/* مواقع الجسيمات حول الإطار */
+.particle-1 {
+  top: 10%;
+  left: 50%;
+  animation-delay: 0s;
+}
+
+.particle-2 {
+  top: 50%;
+  right: 10%;
+  animation-delay: 0.5s;
+}
+
+.particle-3 {
+  bottom: 10%;
+  left: 50%;
+  animation-delay: 1s;
+}
+
+.particle-4 {
+  top: 50%;
+  left: 10%;
+  animation-delay: 1.5s;
+}
+
+/* الحلقات الخارجية */
+.frame-outer-rings {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: calc(var(--frame-size) + 40px);
+  height: calc(var(--frame-size) + 40px);
+  z-index: 0;
+  pointer-events: none;
+}
+
+.outer-ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.ring-1 {
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.ring-2 {
+  top: 10px;
+  left: 10px;
+  width: calc(100% - 20px);
+  height: calc(100% - 20px);
+}
+
+.ring-3 {
+  top: 20px;
+  left: 20px;
+  width: calc(100% - 40px);
+  height: calc(100% - 40px);
+}
+
+/* ===== التأثيرات الخرافية لكل إطار ===== */
+
+/* 1. توهج ذهبي خرافي */
+.epic-glow .frame-effects-bg {
+  background: radial-gradient(circle, 
+    rgba(255, 215, 0, 0.3) 0%,
+    rgba(255, 165, 0, 0.2) 50%,
+    transparent 70%
+  );
+  animation: epicGlowPulse 3s ease-in-out infinite;
+}
+
+.epic-glow .frame-glow-overlay {
+  box-shadow: 
+    0 0 20px rgba(255, 215, 0, 0.6),
+    0 0 40px rgba(255, 215, 0, 0.4),
+    0 0 60px rgba(255, 215, 0, 0.2);
+  animation: epicGlowRotate 8s linear infinite;
+}
+
+.epic-glow .particle {
+  background: radial-gradient(circle, #FFD700, transparent);
+  animation: epicParticles 4s ease-in-out infinite;
+}
+
+@keyframes epicGlowPulse {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.8; }
+  50% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
+}
+
+@keyframes epicGlowRotate {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+@keyframes epicParticles {
+  0% { transform: scale(0) rotate(0deg); opacity: 0; }
+  50% { transform: scale(1) rotate(180deg); opacity: 1; }
+  100% { transform: scale(0) rotate(360deg); opacity: 0; }
+}
+
+/* 2. نبض بلازما */
+.plasma-pulse .frame-effects-bg {
+  background: radial-gradient(circle,
+    rgba(138, 43, 226, 0.4) 0%,
+    rgba(75, 0, 130, 0.3) 50%,
+    transparent 70%
+  );
+  animation: plasmaPulse 2s ease-in-out infinite;
+}
+
+.plasma-pulse .frame-glow-overlay {
+  box-shadow: 
+    0 0 25px rgba(138, 43, 226, 0.8),
+    0 0 50px rgba(75, 0, 130, 0.6),
+    inset 0 0 20px rgba(138, 43, 226, 0.3);
+  animation: plasmaWave 3s ease-in-out infinite;
+}
+
+@keyframes plasmaPulse {
+  0%, 100% { transform: translate(-50%, -50%) scale(0.9); }
+  50% { transform: translate(-50%, -50%) scale(1.2); }
+}
+
+@keyframes plasmaWave {
+  0%, 100% { 
+    box-shadow: 
+      0 0 25px rgba(138, 43, 226, 0.8),
+      0 0 50px rgba(75, 0, 130, 0.6);
+  }
+  50% { 
+    box-shadow: 
+      0 0 35px rgba(138, 43, 226, 1),
+      0 0 70px rgba(75, 0, 130, 0.8);
+  }
+}
+
+/* 3. حلقة كونية */
+.cosmic-ring .frame-effects-bg {
+  background: conic-gradient(
+    from 0deg,
+    rgba(0, 191, 255, 0.4),
+    rgba(138, 43, 226, 0.4),
+    rgba(255, 20, 147, 0.4),
+    rgba(0, 191, 255, 0.4)
+  );
+  animation: cosmicRotate 6s linear infinite;
+}
+
+.cosmic-ring .outer-ring {
+  border: 2px solid;
+  border-image: conic-gradient(
+    from 0deg,
+    #00BFFF,
+    #8A2BE2,
+    #FF1493,
+    #00BFFF
+  ) 1;
+  animation: cosmicRingRotate 4s linear infinite reverse;
+}
+
+@keyframes cosmicRotate {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+@keyframes cosmicRingRotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* 4. هالة نارية */
+.fire-aura .frame-effects-bg {
+  background: radial-gradient(circle,
+    rgba(255, 69, 0, 0.5) 0%,
+    rgba(255, 140, 0, 0.4) 30%,
+    rgba(255, 215, 0, 0.3) 60%,
+    transparent 80%
+  );
+  animation: fireFlicker 1.5s ease-in-out infinite alternate;
+}
+
+.fire-aura .frame-glow-overlay {
+  box-shadow: 
+    0 0 30px rgba(255, 69, 0, 0.9),
+    0 0 60px rgba(255, 140, 0, 0.7),
+    0 0 90px rgba(255, 215, 0, 0.5);
+  animation: fireGlow 2s ease-in-out infinite;
+}
+
+@keyframes fireFlicker {
+  0% { transform: translate(-50%, -50%) scale(1) rotate(0deg); }
+  100% { transform: translate(-50%, -50%) scale(1.05) rotate(2deg); }
+}
+
+@keyframes fireGlow {
+  0%, 100% { filter: brightness(1) hue-rotate(0deg); }
+  50% { filter: brightness(1.2) hue-rotate(10deg); }
+}
+
+/* 5. بلورة جليدية */
+.ice-crystal .frame-effects-bg {
+  background: radial-gradient(circle,
+    rgba(173, 216, 230, 0.4) 0%,
+    rgba(135, 206, 235, 0.3) 50%,
+    transparent 70%
+  );
+  animation: iceShimmer 4s ease-in-out infinite;
+}
+
+.ice-crystal .frame-glow-overlay {
+  box-shadow: 
+    0 0 20px rgba(173, 216, 230, 0.8),
+    0 0 40px rgba(135, 206, 235, 0.6),
+    inset 0 0 15px rgba(173, 216, 230, 0.4);
+  animation: iceFreeze 3s ease-in-out infinite;
+}
+
+@keyframes iceShimmer {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); filter: brightness(1); }
+  50% { transform: translate(-50%, -50%) scale(1.02); filter: brightness(1.3); }
+}
+
+@keyframes iceFreeze {
+  0%, 100% { 
+    box-shadow: 
+      0 0 20px rgba(173, 216, 230, 0.8),
+      0 0 40px rgba(135, 206, 235, 0.6);
+  }
+  50% { 
+    box-shadow: 
+      0 0 30px rgba(173, 216, 230, 1),
+      0 0 60px rgba(135, 206, 235, 0.8);
+  }
+}
+
+/* 6. عاصفة كهربائية */
+.electric-storm .frame-effects-bg {
+  background: radial-gradient(circle,
+    rgba(0, 191, 255, 0.4) 0%,
+    rgba(30, 144, 255, 0.3) 50%,
+    transparent 70%
+  );
+  animation: electricPulse 1s ease-in-out infinite alternate;
+}
+
+.electric-storm .frame-glow-overlay {
+  box-shadow: 
+    0 0 25px rgba(0, 191, 255, 0.9),
+    0 0 50px rgba(30, 144, 255, 0.7),
+    0 0 75px rgba(0, 191, 255, 0.5);
+  animation: electricStorm 2s ease-in-out infinite;
+}
+
+.electric-storm .particle {
+  background: linear-gradient(45deg, #00BFFF, #1E90FF);
+  animation: electricParticles 1.5s ease-in-out infinite;
+}
+
+@keyframes electricPulse {
+  0% { transform: translate(-50%, -50%) scale(1); }
+  100% { transform: translate(-50%, -50%) scale(1.08); }
+}
+
+@keyframes electricStorm {
+  0%, 100% { filter: brightness(1) saturate(1); }
+  25% { filter: brightness(1.5) saturate(1.5); }
+  50% { filter: brightness(0.8) saturate(0.8); }
+  75% { filter: brightness(1.3) saturate(1.3); }
+}
+
+@keyframes electricParticles {
+  0% { transform: scale(0.5) translateY(0); opacity: 1; }
+  50% { transform: scale(1) translateY(-10px); opacity: 0.7; }
+  100% { transform: scale(0.3) translateY(-20px); opacity: 0; }
+}
+
+/* 7. فراغ الظلال */
+.shadow-void .frame-effects-bg {
+  background: radial-gradient(circle,
+    rgba(75, 0, 130, 0.5) 0%,
+    rgba(25, 25, 112, 0.4) 50%,
+    rgba(0, 0, 0, 0.3) 70%,
+    transparent 90%
+  );
+  animation: voidPulse 4s ease-in-out infinite;
+}
+
+.shadow-void .frame-glow-overlay {
+  box-shadow: 
+    0 0 30px rgba(75, 0, 130, 0.8),
+    0 0 60px rgba(25, 25, 112, 0.6),
+    inset 0 0 25px rgba(0, 0, 0, 0.5);
+  animation: voidDistortion 3s ease-in-out infinite;
+}
+
+@keyframes voidPulse {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.9; }
+  50% { transform: translate(-50%, -50%) scale(1.15); opacity: 0.7; }
+}
+
+@keyframes voidDistortion {
+  0%, 100% { 
+    box-shadow: 
+      0 0 30px rgba(75, 0, 130, 0.8),
+      0 0 60px rgba(25, 25, 112, 0.6);
+    filter: blur(0px);
+  }
+  50% { 
+    box-shadow: 
+      0 0 45px rgba(75, 0, 130, 1),
+      0 0 90px rgba(25, 25, 112, 0.8);
+    filter: blur(1px);
+  }
+}
+
+/* 8. منشور قوس قزح */
+.rainbow-prism .frame-effects-bg {
+  background: conic-gradient(
+    from 0deg,
+    rgba(255, 0, 0, 0.3),
+    rgba(255, 165, 0, 0.3),
+    rgba(255, 255, 0, 0.3),
+    rgba(0, 128, 0, 0.3),
+    rgba(0, 0, 255, 0.3),
+    rgba(75, 0, 130, 0.3),
+    rgba(238, 130, 238, 0.3),
+    rgba(255, 0, 0, 0.3)
+  );
+  animation: rainbowRotate 5s linear infinite;
+}
+
+.rainbow-prism .frame-glow-overlay {
+  box-shadow: 
+    0 0 20px rgba(255, 255, 255, 0.6),
+    0 0 40px rgba(255, 0, 255, 0.4),
+    0 0 60px rgba(0, 255, 255, 0.3);
+  animation: prismShift 3s ease-in-out infinite;
+}
+
+@keyframes rainbowRotate {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+@keyframes prismShift {
+  0%, 100% { filter: hue-rotate(0deg) saturate(1); }
+  33% { filter: hue-rotate(120deg) saturate(1.5); }
+  66% { filter: hue-rotate(240deg) saturate(1.2); }
+}
+
+/* 9. حقل كمي */
+.quantum-field .frame-effects-bg {
+  background: radial-gradient(circle,
+    rgba(0, 255, 127, 0.4) 0%,
+    rgba(64, 224, 208, 0.3) 50%,
+    transparent 70%
+  );
+  animation: quantumFluctuation 2.5s ease-in-out infinite;
+}
+
+.quantum-field .frame-glow-overlay {
+  box-shadow: 
+    0 0 25px rgba(0, 255, 127, 0.8),
+    0 0 50px rgba(64, 224, 208, 0.6),
+    0 0 75px rgba(0, 255, 127, 0.4);
+  animation: quantumPhase 4s ease-in-out infinite;
+}
+
+.quantum-field .particle {
+  background: radial-gradient(circle, #00FF7F, #40E0D0);
+  animation: quantumParticles 3s ease-in-out infinite;
+}
+
+@keyframes quantumFluctuation {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); }
+  25% { transform: translate(-50%, -50%) scale(1.05); }
+  50% { transform: translate(-50%, -50%) scale(0.95); }
+  75% { transform: translate(-50%, -50%) scale(1.08); }
+}
+
+@keyframes quantumPhase {
+  0%, 100% { opacity: 0.8; filter: brightness(1); }
+  50% { opacity: 1; filter: brightness(1.4); }
+}
+
+@keyframes quantumParticles {
+  0% { transform: scale(0) rotate(0deg); opacity: 0; }
+  50% { transform: scale(1.2) rotate(180deg); opacity: 1; }
+  100% { transform: scale(0) rotate(360deg); opacity: 0; }
+}
+
+/* 10. نجم متفجر */
+.stellar-nova .frame-effects-bg {
+  background: radial-gradient(circle,
+    rgba(255, 255, 255, 0.6) 0%,
+    rgba(255, 215, 0, 0.5) 30%,
+    rgba(255, 69, 0, 0.4) 60%,
+    transparent 80%
+  );
+  animation: stellarExplosion 3s ease-in-out infinite;
+}
+
+.stellar-nova .frame-glow-overlay {
+  box-shadow: 
+    0 0 35px rgba(255, 255, 255, 0.9),
+    0 0 70px rgba(255, 215, 0, 0.8),
+    0 0 105px rgba(255, 69, 0, 0.6);
+  animation: novaFlare 2s ease-in-out infinite;
+}
+
+@keyframes stellarExplosion {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.8; }
+  50% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+}
+
+@keyframes novaFlare {
+  0%, 100% { 
+    box-shadow: 
+      0 0 35px rgba(255, 255, 255, 0.9),
+      0 0 70px rgba(255, 215, 0, 0.8);
+  }
+  50% { 
+    box-shadow: 
+      0 0 50px rgba(255, 255, 255, 1),
+      0 0 100px rgba(255, 215, 0, 1),
+      0 0 150px rgba(255, 69, 0, 0.8);
+  }
+}
+
+/* 11-21: تأثيرات خرافية إضافية */
+
+/* 11. رونات سحرية */
+.mystic-runes .frame-effects-bg {
+  background: conic-gradient(
+    from 0deg,
+    rgba(148, 0, 211, 0.4),
+    rgba(75, 0, 130, 0.3),
+    rgba(138, 43, 226, 0.4),
+    rgba(148, 0, 211, 0.4)
+  );
+  animation: runeRotation 8s linear infinite;
+}
+
+.mystic-runes .frame-glow-overlay {
+  box-shadow: 
+    0 0 30px rgba(148, 0, 211, 0.8),
+    0 0 60px rgba(75, 0, 130, 0.6);
+  animation: mysticPulse 4s ease-in-out infinite;
+}
+
+/* 12. نفس التنين */
+.dragon-breath .frame-effects-bg {
+  background: radial-gradient(circle,
+    rgba(220, 20, 60, 0.5) 0%,
+    rgba(255, 69, 0, 0.4) 40%,
+    rgba(255, 140, 0, 0.3) 70%,
+    transparent 90%
+  );
+  animation: dragonFlame 2s ease-in-out infinite alternate;
+}
+
+.dragon-breath .frame-glow-overlay {
+  box-shadow: 
+    0 0 40px rgba(220, 20, 60, 0.9),
+    0 0 80px rgba(255, 69, 0, 0.7);
+  animation: breathEffect 3s ease-in-out infinite;
+}
+
+/* 13. أجنحة الملاك */
+.angel-wings .frame-effects-bg {
+  background: radial-gradient(circle,
+    rgba(255, 255, 255, 0.6) 0%,
+    rgba(255, 248, 220, 0.4) 50%,
+    rgba(240, 248, 255, 0.3) 70%,
+    transparent 90%
+  );
+  animation: angelicGlow 5s ease-in-out infinite;
+}
+
+.angel-wings .frame-glow-overlay {
+  box-shadow: 
+    0 0 25px rgba(255, 255, 255, 0.9),
+    0 0 50px rgba(255, 248, 220, 0.7),
+    0 0 75px rgba(240, 248, 255, 0.5);
+  animation: divineLight 4s ease-in-out infinite;
+}
+
+/* 14. عيون الشيطان */
+.demon-eyes .frame-effects-bg {
+  background: radial-gradient(circle,
+    rgba(139, 0, 0, 0.6) 0%,
+    rgba(128, 0, 0, 0.5) 50%,
+    rgba(0, 0, 0, 0.4) 70%,
+    transparent 90%
+  );
+  animation: demonicPulse 2.5s ease-in-out infinite;
+}
+
+.demon-eyes .frame-glow-overlay {
+  box-shadow: 
+    0 0 35px rgba(139, 0, 0, 0.9),
+    0 0 70px rgba(128, 0, 0, 0.7),
+    inset 0 0 20px rgba(0, 0, 0, 0.6);
+  animation: evilGaze 3s ease-in-out infinite;
+}
+
+/* 15. دوامة المجرة */
+.galaxy-spiral .frame-effects-bg {
+  background: conic-gradient(
+    from 0deg,
+    rgba(72, 61, 139, 0.4),
+    rgba(123, 104, 238, 0.3),
+    rgba(147, 112, 219, 0.4),
+    rgba(72, 61, 139, 0.4)
+  );
+  animation: galaxyRotate 12s linear infinite;
+}
+
+.galaxy-spiral .frame-glow-overlay {
+  box-shadow: 
+    0 0 30px rgba(72, 61, 139, 0.8),
+    0 0 60px rgba(123, 104, 238, 0.6),
+    0 0 90px rgba(147, 112, 219, 0.4);
+  animation: stellarWind 6s ease-in-out infinite;
+}
+
+/* 16-21: تأثيرات متقدمة */
+.phoenix-flame .frame-effects-bg {
+  background: radial-gradient(circle, rgba(255, 69, 0, 0.5), rgba(255, 215, 0, 0.3), transparent);
+  animation: phoenixRise 4s ease-in-out infinite;
+}
+
+.void-portal .frame-effects-bg {
+  background: radial-gradient(circle, rgba(25, 25, 112, 0.6), rgba(0, 0, 0, 0.8), transparent);
+  animation: portalSwirl 6s linear infinite;
+}
+
+.crystal-matrix .frame-effects-bg {
+  background: conic-gradient(from 0deg, rgba(64, 224, 208, 0.4), rgba(0, 255, 255, 0.3), rgba(64, 224, 208, 0.4));
+  animation: matrixShift 5s ease-in-out infinite;
+}
+
+.time-warp .frame-effects-bg {
+  background: radial-gradient(circle, rgba(138, 43, 226, 0.4), rgba(75, 0, 130, 0.3), transparent);
+  animation: timeDistortion 7s ease-in-out infinite;
+}
+
+.soul-energy .frame-effects-bg {
+  background: radial-gradient(circle, rgba(0, 255, 127, 0.5), rgba(50, 205, 50, 0.3), transparent);
+  animation: soulPulse 3.5s ease-in-out infinite;
+}
+
+.divine-light .frame-effects-bg {
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.7), rgba(255, 215, 0, 0.4), transparent);
+  animation: divineRadiance 6s ease-in-out infinite;
+}
+
+/* Keyframes للتأثيرات الجديدة */
+@keyframes runeRotation {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+@keyframes mysticPulse {
+  0%, 100% { opacity: 0.8; filter: brightness(1); }
+  50% { opacity: 1; filter: brightness(1.5); }
+}
+
+@keyframes dragonFlame {
+  0% { transform: translate(-50%, -50%) scale(1) skewX(0deg); }
+  100% { transform: translate(-50%, -50%) scale(1.1) skewX(2deg); }
+}
+
+@keyframes breathEffect {
+  0%, 100% { filter: hue-rotate(0deg) saturate(1); }
+  50% { filter: hue-rotate(15deg) saturate(1.3); }
+}
+
+@keyframes angelicGlow {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.9; }
+  50% { transform: translate(-50%, -50%) scale(1.05); opacity: 1; }
+}
+
+@keyframes divineLight {
+  0%, 100% { filter: brightness(1) blur(0px); }
+  50% { filter: brightness(1.4) blur(1px); }
+}
+
+@keyframes demonicPulse {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); }
+  50% { transform: translate(-50%, -50%) scale(1.08); }
+}
+
+@keyframes evilGaze {
+  0%, 100% { filter: brightness(1) contrast(1); }
+  50% { filter: brightness(1.3) contrast(1.2); }
+}
+
+@keyframes galaxyRotate {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+@keyframes stellarWind {
+  0%, 100% { opacity: 0.8; }
+  50% { opacity: 1; }
+}
+
+@keyframes phoenixRise {
+  0%, 100% { transform: translate(-50%, -50%) scale(1) rotate(0deg); }
+  50% { transform: translate(-50%, -50%) scale(1.1) rotate(5deg); }
+}
+
+@keyframes portalSwirl {
+  from { transform: translate(-50%, -50%) rotate(0deg) scale(1); }
+  to { transform: translate(-50%, -50%) rotate(360deg) scale(1.05); }
+}
+
+@keyframes matrixShift {
+  0%, 100% { filter: hue-rotate(0deg); }
+  50% { filter: hue-rotate(180deg); }
+}
+
+@keyframes timeDistortion {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); filter: blur(0px); }
+  50% { transform: translate(-50%, -50%) scale(1.03); filter: blur(0.5px); }
+}
+
+@keyframes soulPulse {
+  0%, 100% { opacity: 0.9; transform: translate(-50%, -50%) scale(1); }
+  50% { opacity: 1; transform: translate(-50%, -50%) scale(1.06); }
+}
+
+@keyframes divineRadiance {
+  0%, 100% { filter: brightness(1) saturate(1); }
+  50% { filter: brightness(1.5) saturate(1.3); }
 }
 .vip-frame-inner {
   position: relative;
@@ -1435,11 +2163,20 @@ li > * > div.effect-crystal {
   border-radius: 9999px;
   pointer-events: none;
   z-index: 3;
-  /* تعطيل أي دوران */
-  animation: none !important;
+  /* تأثيرات جميلة للإطار */
+  animation: vip-frame-glow 3s ease-in-out infinite;
   /* الإطار يحيط بالصورة من الخارج */
   transform-origin: center center;
-  transform: scale(1);
+}
+
+/* تأثير توهج للصورة الإطار */
+@keyframes vip-frame-glow {
+  0%, 100% {
+    filter: brightness(1) drop-shadow(0 0 10px rgba(255, 255, 255, 0.3));
+  }
+  50% {
+    filter: brightness(1.1) drop-shadow(0 0 20px rgba(255, 255, 255, 0.5));
+  }
 }
 
 /* Shared rotating border - داخل الصورة الشخصية */
@@ -1509,10 +2246,457 @@ li > * > div.effect-crystal {
   background: conic-gradient(from 0deg, #0b1220, #000, #0b1220);
   box-shadow: 0 0 12px rgba(0, 0, 0, 0.6);
 }
+.vip-frame-11::before {
+  background: conic-gradient(from 0deg, #10b981, #34d399, #10b981);
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.6), 0 0 40px rgba(16, 185, 129, 0.3);
+}
+.vip-frame-12::before {
+  background: conic-gradient(from 0deg, #f59e0b, #fbbf24, #f59e0b);
+  box-shadow: 0 0 20px rgba(245, 158, 11, 0.6), 0 0 40px rgba(245, 158, 11, 0.3);
+}
+.vip-frame-13::before {
+  background: conic-gradient(from 0deg, #6366f1, #8b5cf6, #6366f1);
+  box-shadow: 0 0 20px rgba(99, 102, 241, 0.6), 0 0 40px rgba(99, 102, 241, 0.3);
+}
+.vip-frame-14::before {
+  background: conic-gradient(from 0deg, #ef4444, #f87171, #ef4444);
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.6), 0 0 40px rgba(239, 68, 68, 0.3);
+}
+.vip-frame-15::before {
+  background: conic-gradient(from 0deg, #14b8a6, #2dd4bf, #14b8a6);
+  box-shadow: 0 0 20px rgba(20, 184, 166, 0.6), 0 0 40px rgba(20, 184, 166, 0.3);
+}
+.vip-frame-16::before {
+  background: conic-gradient(from 0deg, #a855f7, #c084fc, #a855f7);
+  box-shadow: 0 0 20px rgba(168, 85, 247, 0.6), 0 0 40px rgba(168, 85, 247, 0.3);
+}
+.vip-frame-17::before {
+  background: conic-gradient(from 0deg, #0ea5e9, #38bdf8, #0ea5e9);
+  box-shadow: 0 0 20px rgba(14, 165, 233, 0.6), 0 0 40px rgba(14, 165, 233, 0.3);
+}
+.vip-frame-18::before {
+  background: conic-gradient(from 0deg, #f43f5e, #fb7185, #f43f5e);
+  box-shadow: 0 0 20px rgba(244, 63, 94, 0.6), 0 0 40px rgba(244, 63, 94, 0.3);
+}
+.vip-frame-19::before {
+  background: conic-gradient(from 0deg, #84cc16, #a3e635, #84cc16);
+  box-shadow: 0 0 20px rgba(132, 204, 22, 0.6), 0 0 40px rgba(132, 204, 22, 0.3);
+}
+.vip-frame-20::before {
+  background: conic-gradient(from 0deg, #d946ef, #e879f9, #d946ef);
+  box-shadow: 0 0 20px rgba(217, 70, 239, 0.6), 0 0 40px rgba(217, 70, 239, 0.3);
+}
+.vip-frame-21::before {
+  background: conic-gradient(from 0deg, #fb923c, #fdba74, #fb923c);
+  box-shadow: 0 0 20px rgba(251, 146, 60, 0.6), 0 0 40px rgba(251, 146, 60, 0.3);
+}
 
-/* Optional subtle pulsation */
-/* تعطيل أي نبض/حركة */
-.vip-frame.base { animation: none !important; }
+/* ===== VIP Frame Animations - تأثيرات الإطارات ===== */
+
+/* تأثير نبض التوهج للإطار */
+@keyframes vip-glow-pulse {
+  0%, 100% {
+    filter: brightness(1) drop-shadow(0 0 8px currentColor);
+  }
+  50% {
+    filter: brightness(1.15) drop-shadow(0 0 16px currentColor);
+  }
+}
+
+/* تأثير تنفس خفيف */
+@keyframes vip-breathe {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.03);
+  }
+}
+
+/* تأثير دوران بطيء للتدرج */
+@keyframes vip-gradient-rotate {
+  0% {
+    filter: hue-rotate(0deg);
+  }
+  100% {
+    filter: hue-rotate(360deg);
+  }
+}
+
+/* تطبيق التأثيرات على الإطارات */
+.vip-frame.base {
+  animation: vip-breathe 4s ease-in-out infinite;
+  position: relative;
+}
+
+.vip-frame.base::before {
+  animation: vip-glow-pulse 3s ease-in-out infinite;
+}
+
+/* ===== تأثيرات خرافية للإطارات ===== */
+
+/* تأثير توهج خرافي للإطار 1 */
+.vip-frame-1.base {
+  animation: epic-glow-frame 3s ease-in-out infinite;
+  filter: drop-shadow(0 0 15px rgba(255, 215, 0, 0.6));
+}
+
+.vip-frame-1.base::after {
+  content: '';
+  position: absolute;
+  top: -5px;
+  left: -5px;
+  right: -5px;
+  bottom: -5px;
+  background: radial-gradient(circle, rgba(255, 215, 0, 0.3) 0%, transparent 70%);
+  border-radius: 50%;
+  z-index: -1;
+  animation: golden-pulse 2s ease-in-out infinite;
+}
+
+@keyframes epic-glow-frame {
+  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 15px rgba(255, 215, 0, 0.6)); }
+  50% { transform: scale(1.02); filter: drop-shadow(0 0 25px rgba(255, 215, 0, 0.9)); }
+}
+
+@keyframes golden-pulse {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.1); }
+}
+
+/* تأثير بلازما للإطار 2 */
+.vip-frame-2.base {
+  animation: plasma-frame 2s ease-in-out infinite;
+  filter: drop-shadow(0 0 20px rgba(138, 43, 226, 0.7));
+}
+
+.vip-frame-2.base::after {
+  content: '';
+  position: absolute;
+  top: -8px;
+  left: -8px;
+  right: -8px;
+  bottom: -8px;
+  background: conic-gradient(from 0deg, rgba(138, 43, 226, 0.4), rgba(75, 0, 130, 0.3), rgba(138, 43, 226, 0.4));
+  border-radius: 50%;
+  z-index: -1;
+  animation: plasma-rotate 4s linear infinite;
+}
+
+@keyframes plasma-frame {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+@keyframes plasma-rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* تأثير كوني للإطار 3 */
+.vip-frame-3.base {
+  animation: cosmic-frame 5s ease-in-out infinite;
+  filter: drop-shadow(0 0 18px rgba(0, 191, 255, 0.6));
+}
+
+.vip-frame-3.base::after {
+  content: '';
+  position: absolute;
+  top: -6px;
+  left: -6px;
+  right: -6px;
+  bottom: -6px;
+  background: conic-gradient(from 0deg, 
+    rgba(0, 191, 255, 0.4), 
+    rgba(138, 43, 226, 0.4), 
+    rgba(255, 20, 147, 0.4), 
+    rgba(0, 191, 255, 0.4)
+  );
+  border-radius: 50%;
+  z-index: -1;
+  animation: cosmic-spin 6s linear infinite;
+}
+
+@keyframes cosmic-frame {
+  0%, 100% { transform: scale(1) rotate(0deg); }
+  50% { transform: scale(1.03) rotate(2deg); }
+}
+
+@keyframes cosmic-spin {
+  from { transform: rotate(0deg) scale(1); }
+  to { transform: rotate(360deg) scale(1.05); }
+}
+
+/* تأثير ناري للإطار 4 */
+.vip-frame-4.base {
+  animation: fire-frame 1.5s ease-in-out infinite alternate;
+  filter: drop-shadow(0 0 20px rgba(255, 69, 0, 0.8));
+}
+
+.vip-frame-4.base::after {
+  content: '';
+  position: absolute;
+  top: -7px;
+  left: -7px;
+  right: -7px;
+  bottom: -7px;
+  background: radial-gradient(circle, 
+    rgba(255, 69, 0, 0.5) 0%, 
+    rgba(255, 140, 0, 0.4) 50%, 
+    transparent 80%
+  );
+  border-radius: 50%;
+  z-index: -1;
+  animation: fire-flicker 2s ease-in-out infinite;
+}
+
+@keyframes fire-frame {
+  0% { transform: scale(1) skew(0deg); }
+  100% { transform: scale(1.04) skew(1deg); }
+}
+
+@keyframes fire-flicker {
+  0%, 100% { opacity: 0.8; filter: brightness(1); }
+  25% { opacity: 1; filter: brightness(1.2); }
+  50% { opacity: 0.9; filter: brightness(0.9); }
+  75% { opacity: 1; filter: brightness(1.3); }
+}
+
+/* تأثير جليدي للإطار 5 */
+.vip-frame-5.base {
+  animation: ice-frame 4s ease-in-out infinite;
+  filter: drop-shadow(0 0 15px rgba(173, 216, 230, 0.7));
+}
+
+.vip-frame-5.base::after {
+  content: '';
+  position: absolute;
+  top: -5px;
+  left: -5px;
+  right: -5px;
+  bottom: -5px;
+  background: radial-gradient(circle, 
+    rgba(173, 216, 230, 0.4) 0%, 
+    rgba(135, 206, 235, 0.3) 60%, 
+    transparent 80%
+  );
+  border-radius: 50%;
+  z-index: -1;
+  animation: ice-shimmer 3s ease-in-out infinite;
+}
+
+@keyframes ice-frame {
+  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 15px rgba(173, 216, 230, 0.7)) brightness(1); }
+  50% { transform: scale(1.02); filter: drop-shadow(0 0 25px rgba(173, 216, 230, 1)) brightness(1.2); }
+}
+
+@keyframes ice-shimmer {
+  0%, 100% { opacity: 0.7; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.08); }
+}
+
+/* تأثير كهربائي للإطار 6 */
+.vip-frame-6.base {
+  animation: electric-frame 1s ease-in-out infinite alternate;
+  filter: drop-shadow(0 0 18px rgba(0, 191, 255, 0.8));
+}
+
+.vip-frame-6.base::after {
+  content: '';
+  position: absolute;
+  top: -6px;
+  left: -6px;
+  right: -6px;
+  bottom: -6px;
+  background: radial-gradient(circle, 
+    rgba(0, 191, 255, 0.4) 0%, 
+    rgba(30, 144, 255, 0.3) 60%, 
+    transparent 80%
+  );
+  border-radius: 50%;
+  z-index: -1;
+  animation: electric-storm 2s ease-in-out infinite;
+}
+
+@keyframes electric-frame {
+  0% { transform: scale(1); }
+  100% { transform: scale(1.06); }
+}
+
+@keyframes electric-storm {
+  0%, 100% { opacity: 0.8; filter: brightness(1); }
+  25% { opacity: 1; filter: brightness(1.4); }
+  50% { opacity: 0.7; filter: brightness(0.8); }
+  75% { opacity: 1; filter: brightness(1.2); }
+}
+
+/* تأثير ظلال للإطار 7 */
+.vip-frame-7.base {
+  animation: shadow-frame 4s ease-in-out infinite;
+  filter: drop-shadow(0 0 20px rgba(75, 0, 130, 0.7));
+}
+
+.vip-frame-7.base::after {
+  content: '';
+  position: absolute;
+  top: -8px;
+  left: -8px;
+  right: -8px;
+  bottom: -8px;
+  background: radial-gradient(circle, 
+    rgba(75, 0, 130, 0.5) 0%, 
+    rgba(25, 25, 112, 0.4) 50%, 
+    rgba(0, 0, 0, 0.3) 70%,
+    transparent 90%
+  );
+  border-radius: 50%;
+  z-index: -1;
+  animation: void-pulse 3s ease-in-out infinite;
+}
+
+@keyframes shadow-frame {
+  0%, 100% { transform: scale(1); opacity: 0.9; }
+  50% { transform: scale(1.05); opacity: 0.7; }
+}
+
+@keyframes void-pulse {
+  0%, 100% { opacity: 0.8; transform: scale(1); filter: blur(0px); }
+  50% { opacity: 1; transform: scale(1.1); filter: blur(1px); }
+}
+
+/* تأثير قوس قزح للإطار 8 */
+.vip-frame-8.base {
+  animation: rainbow-frame 3s ease-in-out infinite;
+  filter: drop-shadow(0 0 16px rgba(255, 255, 255, 0.6));
+}
+
+.vip-frame-8.base::after {
+  content: '';
+  position: absolute;
+  top: -7px;
+  left: -7px;
+  right: -7px;
+  bottom: -7px;
+  background: conic-gradient(from 0deg,
+    rgba(255, 0, 0, 0.3),
+    rgba(255, 165, 0, 0.3),
+    rgba(255, 255, 0, 0.3),
+    rgba(0, 128, 0, 0.3),
+    rgba(0, 0, 255, 0.3),
+    rgba(75, 0, 130, 0.3),
+    rgba(238, 130, 238, 0.3),
+    rgba(255, 0, 0, 0.3)
+  );
+  border-radius: 50%;
+  z-index: -1;
+  animation: rainbow-spin 5s linear infinite;
+}
+
+@keyframes rainbow-frame {
+  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 16px rgba(255, 255, 255, 0.6)) hue-rotate(0deg); }
+  50% { transform: scale(1.03); filter: drop-shadow(0 0 24px rgba(255, 255, 255, 0.9)) hue-rotate(180deg); }
+}
+
+@keyframes rainbow-spin {
+  from { transform: rotate(0deg); filter: hue-rotate(0deg); }
+  to { transform: rotate(360deg); filter: hue-rotate(360deg); }
+}
+
+/* تأثير كمي للإطار 9 */
+.vip-frame-9.base {
+  animation: quantum-frame 2.5s ease-in-out infinite;
+  filter: drop-shadow(0 0 18px rgba(0, 255, 127, 0.7));
+}
+
+.vip-frame-9.base::after {
+  content: '';
+  position: absolute;
+  top: -6px;
+  left: -6px;
+  right: -6px;
+  bottom: -6px;
+  background: radial-gradient(circle, 
+    rgba(0, 255, 127, 0.4) 0%, 
+    rgba(64, 224, 208, 0.3) 60%, 
+    transparent 80%
+  );
+  border-radius: 50%;
+  z-index: -1;
+  animation: quantum-fluctuation 4s ease-in-out infinite;
+}
+
+@keyframes quantum-frame {
+  0%, 100% { transform: scale(1); }
+  25% { transform: scale(1.03); }
+  50% { transform: scale(0.98); }
+  75% { transform: scale(1.05); }
+}
+
+@keyframes quantum-fluctuation {
+  0%, 100% { opacity: 0.8; transform: scale(1); filter: brightness(1); }
+  50% { opacity: 1; transform: scale(1.1); filter: brightness(1.3); }
+}
+
+/* تأثير نجمي للإطار 10 */
+.vip-frame-10.base {
+  animation: stellar-frame 3s ease-in-out infinite;
+  filter: drop-shadow(0 0 22px rgba(255, 255, 255, 0.8));
+}
+
+.vip-frame-10.base::after {
+  content: '';
+  position: absolute;
+  top: -8px;
+  left: -8px;
+  right: -8px;
+  bottom: -8px;
+  background: radial-gradient(circle, 
+    rgba(255, 255, 255, 0.6) 0%, 
+    rgba(255, 215, 0, 0.5) 30%, 
+    rgba(255, 69, 0, 0.4) 60%, 
+    transparent 80%
+  );
+  border-radius: 50%;
+  z-index: -1;
+  animation: nova-explosion 2s ease-in-out infinite;
+}
+
+@keyframes stellar-frame {
+  0%, 100% { transform: scale(1); opacity: 0.9; }
+  50% { transform: scale(1.08); opacity: 1; }
+}
+
+@keyframes nova-explosion {
+  0%, 100% { 
+    opacity: 0.8; 
+    transform: scale(1);
+    filter: brightness(1);
+  }
+  50% { 
+    opacity: 1; 
+    transform: scale(1.15);
+    filter: brightness(1.4);
+  }
+}
+
+/* تأثير إضافي للإطارات الجديدة (7-21) - دوران بطيء للألوان */
+.vip-frame-7.base::before,
+.vip-frame-8.base::before,
+.vip-frame-9.base::before,
+.vip-frame-10.base::before,
+.vip-frame-11.base::before,
+.vip-frame-12.base::before,
+.vip-frame-13.base::before,
+.vip-frame-14.base::before,
+.vip-frame-15.base::before,
+.vip-frame-16.base::before,
+.vip-frame-17.base::before,
+.vip-frame-18.base::before,
+.vip-frame-19.base::before,
+.vip-frame-20.base::before,
+.vip-frame-21.base::before {
+  animation: vip-glow-pulse 3s ease-in-out infinite, vip-gradient-rotate 20s linear infinite;
+}
 
 /* ===== تحسينات الاهتزاز الخفيف للرسائل ===== */
 
