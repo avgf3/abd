@@ -2248,8 +2248,8 @@ export default function ProfileModal({
           border-radius: 9999px; /* دائري بالكامل */
           overflow: visible; /* السماح للإطار بالظهور خارج الحدود */
           position: absolute;
-          top: calc(100% - 195px); /* تحريك للأعلى بمقدار 30px */
-          right: 20px; /* نقل الصورة الشخصية إلى اليمين */
+          top: calc(100% - 180px); /* تحريك للأعلى بمقدار 45px لمحاذاة منتصف الزر */
+          right: 50px; /* نقل الصورة الشخصية إلى اليمين أكثر */
           background-color: transparent;
           box-shadow: none; /* إزالة الظل من الـ container */
           z-index: 2;
@@ -2270,8 +2270,8 @@ export default function ProfileModal({
 
         .change-avatar-btn {
           position: absolute;
-          top: calc(100% - 40px);
-          right: 60px; /* تعديل الموضع ليتناسب مع الـ container الجديد */
+          top: calc(100% - 55px); /* رفع الزر للأعلى بمقدار 15px */
+          right: 90px; /* تعديل الموضع ليتناسب مع الـ container الجديد */
           background: rgba(0,0,0,0.8);
           border-radius: 50%;
           width: 30px;
