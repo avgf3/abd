@@ -75,7 +75,7 @@ export default function ProfileImage({
     // مقاسات دقيقة لتطابق الموقع الآخر
     const px = pixelSize ?? (size === 'small' ? 40 : size === 'large' ? 80 : 64);
     // الحاوية يجب أن تكون أكبر لاستيعاب الإطار (نفس النسبة المستخدمة في VipAvatar)
-    const containerSize = px * 1.35;
+    const containerSize = px * 1.25;
     return (
       <div className={`relative inline-block ${className || ''}`} onClick={onClick} style={{ width: containerSize, height: containerSize }}>
         <VipAvatar src={imageSrc} alt={`صورة ${user.username}`} size={px} frame={frameIndex as any} />

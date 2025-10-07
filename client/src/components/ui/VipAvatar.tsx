@@ -20,8 +20,8 @@ export default function VipAvatar({
 
   // الصورة تحتفظ بحجمها الأصلي المطلوب
   const imageSize = size;
-  // الإطار (الحاوية) يتكيف ليكون أكبر من الصورة بنسبة كافية لاستيعاب الإطار بالكامل
-  const frameSize = imageSize * 1.35; // الإطار أكبر بـ 35% لضمان احتواء الإطار بالكامل داخل الحاوية
+  // الإطار (الحاوية) يتكيف ليكون أكبر من الصورة بنسبة معقولة
+  const frameSize = imageSize * 1.25; // تقليل نسبة التكبير إلى 25% فقط
 
   const containerStyle: React.CSSProperties & { ['--vip-spin-duration']?: string } = {
     width: frameSize,
