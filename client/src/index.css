@@ -551,10 +551,7 @@ img, video, canvas, iframe {
   text-shadow: 0 1px 2px rgba(0,0,0,0.25);
 }
 
-.ac-nameplate .ac-mark {
-  font-size: 12px;
-  opacity: 0.95;
-}
+.ac-nameplate .ac-mark { display: none; }
 
 .ac-nameplate .ac-left {
   font-size: 12px;
@@ -1664,9 +1661,11 @@ li > * > div.effect-crystal {
 .runin-container { display: block; width: 100%; }
 
 .runin-name {
-  display: inline;
+  display: inline-flex;
+  align-items: center;
   white-space: nowrap;
-  line-height: 1.4;
+  line-height: 1.6;
+  min-height: 28px; /* stabilize name row height next to avatar */
 }
 
 .runin-name > * {
@@ -1674,7 +1673,22 @@ li > * > div.effect-crystal {
   vertical-align: baseline;
 }
 
-.runin-text { display: inline; text-align: start; word-break: break-word; overflow-wrap: anywhere; white-space: pre-wrap; line-height: 1.4; }
+/* Ensure clickable username aligns perfectly with role badge */
+.runin-name button {
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Force message content to start on a new line under the name on all viewports */
+.runin-text {
+  display: block;
+  text-align: start;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  line-height: 1.6;
+  margin-top: 0;
+}
 
 /* Zebra striping for room messages (mobile and desktop) */
 .ac-message-row.log2 {
@@ -1691,7 +1705,7 @@ li > * > div.effect-crystal {
     align-items: center;
   }
   .ac-message-row .runin-text {
-    display: inline; /* keep name:text on the same line on desktop */
+    display: block; /* text begins on a new line under the name */
     margin-top: 0;
     line-height: 1.6;
   }
@@ -1733,7 +1747,8 @@ li > * > div.effect-crystal {
     position: relative;
   }
   .runin-name {
-    display: inline; /* inline to keep name and text on same line */
+    display: inline-flex; /* keep badge + name centered on the name row */
+    align-items: center;
     line-height: 1.6;
   }
   .runin-name > * {
@@ -1741,7 +1756,7 @@ li > * > div.effect-crystal {
     vertical-align: baseline;
   }
   .runin-text {
-    display: inline; /* keep name and text on the same line */
+    display: block; /* start content on a new line under the name */
     margin-top: 0; /* no extra gap between name and first line */
     text-align: start;
     line-height: 1.6; /* identical to desktop */
