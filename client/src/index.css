@@ -1681,6 +1681,22 @@ li > * > div.effect-crystal {
   background: #f8fafc;
 }
 
+/* Desktop: center-align avatar with name/text for cleaner baseline */
+@media (min-width: 769px) {
+  .ac-message-row {
+    align-items: center; /* avatar, name, and text centered vertically */
+  }
+  .ac-message-row .runin-name {
+    display: inline-flex; /* keep inline flow but center internal items */
+    align-items: center;
+  }
+  .ac-message-row .runin-text {
+    display: inline; /* keep name:text on the same line on desktop */
+    margin-top: 0;
+    line-height: 1.6;
+  }
+}
+
 /* Mobile message rows: keep same structure, remove colored right strip only */
 @media (max-width: 768px) {
   /* Unified renderer: no special mobile container needed */
