@@ -236,8 +236,8 @@ export default function UserPopup({
             <>
               <div className="border-t border-gray-300 my-1"></div>
               <div className="px-2 py-1 text-xs text-gray-500">إضافة إطار:</div>
-              <div className="flex gap-1 px-2 pb-1">
-                {[1,2,3,4,5,6].map((i) => (
+              <div className="flex flex-wrap gap-1 px-2 pb-1">
+                {[1,2,3,4,5,6,7,8,9,10,11,12].map((i) => (
                   <button
                     key={i}
                     onClick={() => handleAddFrame(i)}
