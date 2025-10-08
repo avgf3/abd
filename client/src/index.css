@@ -1721,6 +1721,8 @@ li > * > div.effect-crystal {
   }
 }
 
+/* (removed desktop-only rule; alignment handled in component via Tailwind) */
+
 /* ========== MODERN ADVANCED DESIGN SYSTEM ========== */
 
 /* Modern Glass Cards */
