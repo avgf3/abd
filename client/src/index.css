@@ -1687,6 +1687,7 @@ li > * > div.effect-crystal {
   .ac-message-row {
     border-right: 0 !important; /* remove colored strip on small screens for readability */
     border-radius: inherit !important;
+    align-items: center !important; /* center avatar vertically with name block */
   }
   .ac-message-row .runin-name button {
     font-weight: 700;
@@ -1715,9 +1716,10 @@ li > * > div.effect-crystal {
     vertical-align: baseline;
   }
   .runin-text {
-    display: inline;
+    display: block; /* move message text to next line on mobile */
+    margin-top: 2px; /* small separation under the name */
     text-align: start;
-    line-height: 1.4;
+    line-height: 1.6;
   }
 }
 
