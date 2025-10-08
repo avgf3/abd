@@ -27,7 +27,10 @@ export default function VipAvatar({
 
   // تكبير خاص لإطارات 7 و8 و9 فقط كي تطابق حجم بقية الإطارات
   const overlayScale = useMemo(() => {
-    if (frame === 7 || frame === 8 || frame === 9) return 1.08;
+    // تصغير بسيط لإطارات 1 و4 لضبط بروز الصورة
+    if (frame === 1 || frame === 4) return 0.98;
+    // تكبير إضافي طفيف لإطارات 7 و8 و9 لمطابقة بقية الإطارات
+    if (frame === 7 || frame === 8 || frame === 9) return 1.12;
     return 1;
   }, [frame]);
 
