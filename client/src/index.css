@@ -175,7 +175,9 @@
     overflow-x: hidden;
     font-size: 1rem;
     line-height: 1.7;
-    letter-spacing: 0.02em;
+    /* IMPORTANT: Arabic shaping breaks with positive letter-spacing.
+       Keep it normal to avoid glyph separation/"slanted" look in names/messages. */
+    letter-spacing: normal;
   }
   
   /* Modern Typography System */
@@ -876,6 +878,17 @@ body.ltr {
 
 .ltr .text-align-end {
   text-align: right;
+}
+
+/* Ensure correct glyph shaping for Arabic in chat (names and text) */
+.ac-nameplate,
+.ac-nameplate .ac-name,
+.ac-message-text,
+.runin-name,
+.runin-text,
+.message-content-fix,
+.ch_logs .my_text .cname {
+  letter-spacing: normal !important;
 }
 
 /* تمت إزالة تموضع محول اللغة للجوال */
