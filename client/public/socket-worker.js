@@ -1,3 +1,66 @@
+/*
+ * Lightweight Web Worker for background heartbeat when the page is hidden.
+ * It does NOT open any network connection by itself. Instead, it periodically
+ * posts a message to the main thread requesting a ping, which allows the page
+ * to emit a Socket.IO event (client_ping) if connected.
+ */
+
+let intervalId = null;
+let connected = false;
+let defaultIntervalMs = 60000; // 60s, conservative for background
+
+function clearTimer() {
+  if (intervalId !== null) {
+    try { clearInterval(intervalId); } catch {}
+    intervalId = null;
+  }
+}
+
+function startTimer(intervalMs) {
+  clearTimer();
+  const ms = Number(intervalMs) > 0 ? Number(intervalMs) : defaultIntervalMs;
+  intervalId = setInterval(() => {
+    // Only prompt a ping when the socket is known to be connected
+    if (connected) {
+      try {
+        postMessage({ type: 'send-ping', data: { ts: Date.now() } });
+      } catch {}
+    }
+  }, ms);
+}
+
+self.onmessage = (evt) => {
+  try {
+    const { type, data } = evt.data || {};
+    switch (type) {
+      case 'init':
+        if (data && typeof data.pingInterval === 'number') {
+          defaultIntervalMs = data.pingInterval;
+        }
+        try { postMessage({ type: 'worker-ready' }); } catch {}
+        break;
+      case 'socket-status':
+        connected = !!(data && data.connected);
+        break;
+      case 'start-ping':
+        startTimer((data && data.interval) || defaultIntervalMs);
+        break;
+      case 'stop-ping':
+        clearTimer();
+        break;
+      case 'cleanup':
+        clearTimer();
+        // Best-effort: no explicit terminate from inside the worker
+        break;
+      default:
+        // Unknown message; ignore
+        break;
+    }
+  } catch (error) {
+    try { postMessage({ type: 'worker-error', data: { error: String(error && error.message || error) } }); } catch {}
+  }
+};
+
 /* Lightweight Web Worker to send periodic pings while page is in background */
 let pingIntervalId = null;
 let configuredInterval = 60000; // default 60s

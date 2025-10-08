@@ -448,6 +448,25 @@ export const useChat = () => {
   const disconnectUiTimerRef = useRef<number | null>(null);
   const isIOSRef = useRef<boolean>(false);
   const pendingDisconnectRef = useRef<boolean>(false);
+  // Polling fallback manager (REST) — created lazily and started only when socket is unavailable
+  const pollManagerRef = useRef<ReturnType<typeof createDefaultConnectionManager> | null>(null);
+
+  const startPollingFallback = useCallback(() => {
+    try {
+      const rid = currentRoomIdRef.current || getSession()?.roomId || 'general';
+      const token = getSession()?.token;
+      if (!pollManagerRef.current) {
+        pollManagerRef.current = createDefaultConnectionManager({ roomId: rid, token });
+      }
+      pollManagerRef.current.start();
+    } catch {}
+  }, []);
+
+  const stopPollingFallback = useCallback(() => {
+    try {
+      pollManagerRef.current?.stop();
+    } catch {}
+  }, []);
 
   // كشف iOS (يشمل iPadOS الحديث)
   useEffect(() => {
@@ -852,8 +871,7 @@ export const useChat = () => {
         try {
           const userId = currentUserRef.current?.id;
           if (userId) {
-            const { queryClient } = require('@/lib/queryClient');
-            const qc = queryClient as import('@tanstack/react-query').QueryClient;
+            const qc = queryClient;
             const key = ['/api/notifications/unread-count', userId];
             const old = qc.getQueryData(key) as any;
             const current = typeof old?.count === 'number' ? old.count : 0;
@@ -880,8 +898,7 @@ export const useChat = () => {
           try {
             const userId = currentUserRef.current?.id;
             if (userId) {
-              const { queryClient } = require('@/lib/queryClient');
-              const qc = queryClient as import('@tanstack/react-query').QueryClient;
+              const qc = queryClient;
               qc.invalidateQueries({ queryKey: ['/api/notifications', userId] });
               qc.invalidateQueries({ queryKey: ['/api/notifications/unread-count', userId] });
             }
@@ -1534,25 +1551,7 @@ export const useChat = () => {
               window.dispatchEvent(new CustomEvent('privateMessageReceived', { detail }));
             } catch {}
 
-            // إذا كانت الرسالة واردة والمحادثة المفتوحة مع نفس المستخدم، حدّث مؤشّر القراءة على الخادم
-            try {
-              const meId = currentUserRef.current?.id;
-              const isIncoming = meId && message.receiverId === meId && message.senderId === conversationId;
-              const isOpenSame = (selectedPrivateUserRef as any)?.current?.id === conversationId;
-              if (isIncoming && isOpenSame) {
-                const body: any = {
-                  otherUserId: conversationId,
-                  lastReadMessageId: (message as any).id,
-                  lastReadAt: (message as any).timestamp,
-                };
-                fetch('/api/private-messages/reads', {
-                  method: 'PUT',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify(body),
-                  credentials: 'include',
-                }).catch(() => {});
-              }
-            } catch {}
+            // يمكن لواجهة المستخدم إرسال تحديثات القراءة صراحةً عند فتح المحادثة
           }
         }
       } catch (error) {
@@ -1616,16 +1615,11 @@ export const useChat = () => {
     });
   }, []);
 
-  // === Polling-based connection manager to mimic competitor when WebSocket is unavailable ===
+  // Wire poll data listener once; the manager will be started/stopped dynamically
   useEffect(() => {
-    // Guard: require a room to poll
-    const rid = currentRoomIdRef.current || getSession()?.roomId || 'general';
-    const token = getSession()?.token;
-    const manager = createDefaultConnectionManager({ roomId: rid, token });
-
-    // When poll returns data, inject into state similar to incoming socket messages
     const onPoll = (e: any) => {
       try {
+        const rid = currentRoomIdRef.current || getSession()?.roomId || 'general';
         const items: any[] = Array.isArray(e?.detail?.items) ? e.detail.items : [];
         if (items.length === 0) return;
         const formatted = mapDbMessagesToChatMessages(items, rid);
@@ -1635,7 +1629,6 @@ export const useChat = () => {
         if (toAppend.length > 0) {
           const next = [...existing, ...toAppend];
           dispatch({ type: 'SET_ROOM_MESSAGES', payload: { roomId: rid, messages: next } });
-          // update last meta
           const last = toAppend[toAppend.length - 1];
           if (last?.id) {
             const meta = new Map(lastRoomMessageMetaRef.current);
@@ -1646,11 +1639,10 @@ export const useChat = () => {
       } catch {}
     };
     window.addEventListener('chatPollData', onPoll as EventListener);
-    manager.start();
-
     return () => {
       window.removeEventListener('chatPollData', onPoll as EventListener);
-      manager.stop();
+      try { pollManagerRef.current?.stop(); } catch {}
+      pollManagerRef.current = null;
     };
   }, []);
 
@@ -1811,6 +1803,8 @@ export const useChat = () => {
           dispatch({ type: 'SET_CONNECTION_STATUS', payload: true });
           dispatch({ type: 'SET_CONNECTION_ERROR', payload: null });
           dispatch({ type: 'SET_LOADING', payload: false });
+          // Stop polling fallback once socket is connected
+          stopPollingFallback();
           // إلغاء أي مؤقتات/أعلام انفصال مؤقتة
           pendingDisconnectRef.current = false;
           if (disconnectUiTimerRef.current) {
@@ -1895,6 +1889,8 @@ export const useChat = () => {
               type: 'SET_CONNECTION_ERROR',
               payload: 'فقدان الاتصال. يرجى إعادة تحميل الصفحة.',
             });
+            // Start polling fallback when reconnection ultimately fails
+            startPollingFallback();
           } else {
             pendingDisconnectRef.current = true;
           }
@@ -1908,6 +1904,8 @@ export const useChat = () => {
             // مؤقت احتياطي إن بقيت بالخلفية طويلاً: لا نفعل شيء في الواجهة الآن
           } else {
             dispatch({ type: 'SET_CONNECTION_STATUS', payload: false });
+            // Begin polling fallback while offline
+            startPollingFallback();
           }
           // لا نفقد أي شيء هنا، الاستئناف سيجلب ما فات لاحقاً
         });
@@ -1917,6 +1915,8 @@ export const useChat = () => {
           console.error('❌ خطأ في الاتصال:', error);
           if (!document.hidden) {
             dispatch({ type: 'SET_CONNECTION_ERROR', payload: 'فشل الاتصال بالسيرفر' });
+            // If connection cannot be established, enable polling fallback
+            startPollingFallback();
           } else {
             pendingDisconnectRef.current = true;
           }

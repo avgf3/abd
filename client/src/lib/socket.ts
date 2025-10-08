@@ -132,10 +132,11 @@ export function getSocket(): Socket {
   
   socketInstance = io(serverUrl, {
     path: '/socket.io',
-    // 🔥 ابدأ بـ polling لضمان النجاح ثم حاول الترقية إلى WebSocket
-    transports: ['polling', 'websocket'],
+    // Prefer websocket but allow polling fallback; aligns with server config
+    transports: ['websocket', 'polling'],
     upgrade: true,
-    rememberUpgrade: false, // تجنب محاولة WS مباشرة إذا فشل سابقاً
+    // rememberUpgrade is a client option but can cause sticky WS usage across origins; disable
+    rememberUpgrade: false,
     autoConnect: false,
     reconnection: true,
     // 🔥 تحسين إعادة الاتصال - محاولات محدودة مع تدرج ذكي
@@ -151,9 +152,8 @@ export function getSocket(): Socket {
     extraHeaders: { 'x-device-id': deviceId },
     // 🔥 إعدادات محسّنة للاستقرار والأداء
     closeOnBeforeunload: false, // لا تغلق عند إعادة التحميل
-    // 🔥 تحسين إدارة الاتصال
-    multiplex: true, // تمكين multiplexing للأداء الأفضل
-    forceBase64: false, // استخدام binary للأداء الأفضل
+    // Avoid non-standard client options (keep to safe set)
+    forceBase64: false,
     // 🔥 إعدادات ping مخصصة (هذه الخيارات للخادم فقط، لكن نتركها للتوثيق)
     // pingTimeout: isProduction ? 60000 : 30000, // مطابق للخادم
     // pingInterval: isProduction ? 25000 : 15000, // مطابق للخادم
