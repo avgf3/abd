@@ -729,7 +729,7 @@ export default function MessageArea({
                   <>
                     {message.sender && (
                       <div className="flex-shrink-0">
-                        <div style={{ 
+                        <div className="md:-translate-y-[2px]" style={{ 
                           width: 38,
                           height: 38,
                           display: 'flex',
@@ -856,7 +856,7 @@ export default function MessageArea({
                     {/* Profile Image */}
                     {message.sender && (
                       <div className="flex-shrink-0">
-                        <div style={{ 
+                        <div className="md:-translate-y-[2px]" style={{ 
                           width: 38,
                           height: 38,
                           display: 'flex',
