@@ -16,7 +16,8 @@ export default function VipAvatar({
   className = '',
 }: VipAvatarProps) {
   // تعطيل الحركة نهائياً (المطلوب نسخة ثابتة)
-  const duration = useMemo(() => '0s', []);
+  // استثناء: Frame 7 (الجناح) يحتوي على حركة احترافية مخصصة
+  const duration = useMemo(() => frame === 7 ? '0s' : '0s', [frame]);
 
   // الصورة تحتفظ بحجمها الأصلي المطلوب
   const imageSize = size;
@@ -35,8 +36,11 @@ export default function VipAvatar({
     height: imageSize,
   };
 
-  // Use image-based overlay for frames 1..6 if available
-  const frameImage = frame >= 1 && frame <= 10 ? `/frames/frame${frame}.webp` : undefined;
+  // Use image-based overlay for frames 1..10 if available
+  // Frame 7 uses PNG format (wing design), others use WebP
+  const frameImage = frame >= 1 && frame <= 6 ? `/frames/frame${frame}.webp` : 
+                     frame === 7 ? `/frames/frame7.png` :
+                     frame >= 8 && frame <= 10 ? `/frames/frame${frame}.webp` : undefined;
   const hasImageOverlay = Boolean(frameImage);
 
   return (

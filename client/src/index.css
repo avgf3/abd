@@ -1514,6 +1514,87 @@ li > * > div.effect-crystal {
 /* تعطيل أي نبض/حركة */
 .vip-frame.base { animation: none !important; }
 
+/* ===== Professional Wing Animation for Frame 7 ===== */
+/* تحريك الجناح بشكل احترافي جدا */
+
+@keyframes professional-wing-flutter {
+  0%, 100% {
+    transform: scale(1) rotate(0deg);
+  }
+  25% {
+    transform: scale(1.02) rotate(1deg);
+  }
+  50% {
+    transform: scale(1.05) rotate(0deg);
+  }
+  75% {
+    transform: scale(1.02) rotate(-1deg);
+  }
+}
+
+@keyframes wing-glow-pulse {
+  0%, 100% {
+    filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.4)) 
+            drop-shadow(0 0 15px rgba(255, 215, 0, 0.2));
+  }
+  50% {
+    filter: drop-shadow(0 0 12px rgba(255, 215, 0, 0.6)) 
+            drop-shadow(0 0 20px rgba(255, 215, 0, 0.3));
+  }
+}
+
+@keyframes wing-elegant-float {
+  0%, 100% {
+    transform: translateY(0px) translateX(0px);
+  }
+  33% {
+    transform: translateY(-2px) translateX(1px);
+  }
+  66% {
+    transform: translateY(-1px) translateX(-1px);
+  }
+}
+
+/* Apply animations to frame 7 (wing design) */
+.vip-frame-7 .vip-frame-overlay {
+  animation: professional-wing-flutter 3s ease-in-out infinite,
+             wing-glow-pulse 2s ease-in-out infinite,
+             wing-elegant-float 4s ease-in-out infinite;
+  transform-origin: center center;
+  will-change: transform, filter;
+}
+
+/* Enable smooth animation */
+.vip-frame-7.base {
+  animation: none !important;
+}
+
+/* Add subtle sparkle effect to frame 7 */
+.vip-frame-7 .vip-frame-inner::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 9999px;
+  background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.3) 0%, transparent 60%);
+  animation: wing-sparkle 3s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 10;
+}
+
+@keyframes wing-sparkle {
+  0%, 100% {
+    opacity: 0;
+    transform: scale(0.8) rotate(0deg);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(1.1) rotate(180deg);
+  }
+}
+
 /* ===== تحسينات الاهتزاز الخفيف للرسائل ===== */
 
 /* اهتزاز خفيف للرسائل الخاصة */
