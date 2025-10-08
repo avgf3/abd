@@ -1697,13 +1697,22 @@ li > * > div.effect-crystal {
   }
 }
 
-/* Mobile message rows: keep same structure, remove colored right strip only */
+/* Mobile message rows: mirror desktop run-in layout exactly */
 @media (max-width: 768px) {
   /* Unified renderer: no special mobile container needed */
   .ac-message-row {
-    border-right: 0 !important; /* remove colored strip on small screens for readability */
     border-radius: inherit !important;
     align-items: center !important; /* center avatar vertically with name block */
+  }
+  /* Match desktop inline-flex name alignment on mobile */
+  .ac-message-row .runin-name {
+    display: inline-flex;
+    align-items: center;
+    line-height: 1.6; /* keep same inter-line spacing as desktop */
+  }
+  /* Match desktop text line-height on mobile */
+  .ac-message-row .runin-text {
+    line-height: 1.6;
   }
   .ac-message-row .runin-name button {
     font-weight: 700;
@@ -1718,14 +1727,14 @@ li > * > div.effect-crystal {
   }
 }
 
-/* تطبيق تأثير run-in محسّن للجوال */
+/* تطبيق تأثير run-in محسّن للجوال - مطابق لسطح المكتب */
 @media (max-width: 768px) {
   .runin-container {
     position: relative;
   }
   .runin-name {
-    display: inline;
-    line-height: 1.4;
+    display: inline; /* inline to keep name and text on same line */
+    line-height: 1.6;
   }
   .runin-name > * {
     display: inline;
@@ -1735,7 +1744,7 @@ li > * > div.effect-crystal {
     display: inline; /* keep name and text on the same line */
     margin-top: 0; /* no extra gap between name and first line */
     text-align: start;
-    line-height: 1.4;
+    line-height: 1.6; /* identical to desktop */
   }
 }
 
