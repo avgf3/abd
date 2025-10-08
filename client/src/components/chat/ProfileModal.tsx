@@ -2214,7 +2214,7 @@ export default function ProfileModal({
           position: relative;
           height: 268px; /* زيادة طفيفة لارتفاع الغلاف */
           background-size: cover;
-          background-position: right center;
+          background-position: center center;
           background-repeat: no-repeat;
         }
 
@@ -2950,7 +2950,7 @@ export default function ProfileModal({
                 return src ? `url(${src})` : 'none';
               })(),
               backgroundSize: 'cover',
-              backgroundPosition: 'right center',
+              backgroundPosition: 'center center',
               backgroundRepeat: 'no-repeat',
             }}
           >
