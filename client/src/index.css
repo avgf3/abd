@@ -1514,6 +1514,97 @@ li > * > div.effect-crystal {
 /* تعطيل أي نبض/حركة */
 .vip-frame.base { animation: none !important; }
 
+/* ===== Professional Wing Animation for Frame 7 (SVG) ===== */
+/* تحريك الجناح بشكل احترافي جدا مع SVG محسّن */
+
+@keyframes professional-wing-flutter {
+  0%, 100% {
+    transform: scale(1) rotate(0deg);
+  }
+  25% {
+    transform: scale(1.01) rotate(0.5deg);
+  }
+  50% {
+    transform: scale(1.02) rotate(0deg);
+  }
+  75% {
+    transform: scale(1.01) rotate(-0.5deg);
+  }
+}
+
+@keyframes wing-glow-pulse {
+  0%, 100% {
+    filter: drop-shadow(0 0 6px rgba(255, 215, 0, 0.4)) 
+            drop-shadow(0 0 12px rgba(255, 215, 0, 0.2));
+  }
+  50% {
+    filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.6)) 
+            drop-shadow(0 0 18px rgba(255, 215, 0, 0.3));
+  }
+}
+
+@keyframes wing-elegant-float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-2px);
+  }
+}
+
+@keyframes wing-rotate-gentle {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(2deg);
+  }
+}
+
+/* Apply animations to frame 7 SVG */
+.vip-frame-7 .vip-frame-overlay {
+  animation: professional-wing-flutter 4s ease-in-out infinite,
+             wing-glow-pulse 3s ease-in-out infinite;
+  transform-origin: center center;
+  will-change: transform, filter;
+}
+
+/* Enable smooth animation */
+.vip-frame-7.base {
+  animation: wing-elegant-float 5s ease-in-out infinite;
+}
+
+/* SVG specific styles for smooth rendering */
+.vip-frame-7 .vip-frame-overlay {
+  image-rendering: crisp-edges;
+  image-rendering: -webkit-optimize-contrast;
+}
+
+/* Sparkles animation within SVG */
+@keyframes sparkle-twinkle {
+  0%, 100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* Add subtle glow around the frame */
+.vip-frame-7 .vip-frame-inner::after {
+  content: '';
+  position: absolute;
+  top: -5px;
+  left: -5px;
+  right: -5px;
+  bottom: -5px;
+  border-radius: 9999px;
+  background: radial-gradient(circle at 50% 50%, rgba(255, 215, 0, 0.1) 0%, transparent 70%);
+  animation: wing-glow-pulse 3s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+
 /* ===== تحسينات الاهتزاز الخفيف للرسائل ===== */
 
 /* اهتزاز خفيف للرسائل الخاصة */

@@ -1,0 +1,150 @@
+<svg width="204" height="238" viewBox="0 0 204 238" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Gradient for golden wings -->
+    <radialGradient id="wingGoldRadial" cx="50%" cy="50%">
+      <stop offset="0%" style="stop-color:#FFE55C;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#FFD700;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#FFA500;stop-opacity:0.9" />
+    </radialGradient>
+    
+    <linearGradient id="wingGoldLinear" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFD700;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#FFC700;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#FFD700;stop-opacity:1" />
+    </linearGradient>
+    
+    <!-- Glow filter for wings -->
+    <filter id="wingGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="2.5" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    
+    <!-- Soft shadow -->
+    <filter id="softShadow">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="1.5"/>
+      <feOffset dx="0" dy="1" result="offsetblur"/>
+      <feFlood flood-color="#000000" flood-opacity="0.3"/>
+      <feComposite in2="offsetblur" operator="in"/>
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Main circular border (matching other frames) -->
+  <circle cx="102" cy="119" r="88" fill="none" stroke="url(#wingGoldLinear)" stroke-width="2.5" opacity="0.4"/>
+  <circle cx="102" cy="119" r="85" fill="none" stroke="url(#wingGoldLinear)" stroke-width="1.5"/>
+  
+  <!-- Left Wing -->
+  <g filter="url(#wingGlow)" class="wing left-wing">
+    <!-- Main wing shape -->
+    <path d="M 45 119 
+             Q 35 110, 28 95 
+             Q 22 80, 20 65 
+             Q 19 55, 22 48 
+             Q 25 42, 30 40
+             Q 35 39, 38 42
+             Q 40 45, 42 52
+             Q 44 65, 46 85
+             Q 47 105, 45 119 Z" 
+          fill="url(#wingGoldRadial)" 
+          opacity="0.9"
+          filter="url(#softShadow)"/>
+    
+    <!-- Wing feathers (outer) -->
+    <path d="M 32 50 Q 24 46, 20 44 Q 18 43, 19 41 Q 20 39, 23 40 Q 29 43, 32 50 Z" 
+          fill="#FFD700" opacity="0.85"/>
+    <path d="M 29 68 Q 20 62, 16 59 Q 14 58, 15 56 Q 16 54, 19 55 Q 26 60, 29 68 Z" 
+          fill="#FFD700" opacity="0.8"/>
+    <path d="M 27 88 Q 18 80, 13 76 Q 11 75, 12 73 Q 13 71, 16 72 Q 24 78, 27 88 Z" 
+          fill="#FFD700" opacity="0.75"/>
+    
+    <!-- Inner feather details -->
+    <path d="M 40 52 Q 38 70, 36 90" 
+          stroke="#FFE55C" stroke-width="1.2" opacity="0.6" fill="none" stroke-linecap="round"/>
+    <path d="M 37 58 Q 35 75, 33 95" 
+          stroke="#FFE55C" stroke-width="0.9" opacity="0.5" fill="none" stroke-linecap="round"/>
+  </g>
+  
+  <!-- Right Wing (mirrored) -->
+  <g filter="url(#wingGlow)" class="wing right-wing">
+    <!-- Main wing shape -->
+    <path d="M 159 119 
+             Q 169 110, 176 95 
+             Q 182 80, 184 65 
+             Q 185 55, 182 48 
+             Q 179 42, 174 40
+             Q 169 39, 166 42
+             Q 164 45, 162 52
+             Q 160 65, 158 85
+             Q 157 105, 159 119 Z" 
+          fill="url(#wingGoldRadial)" 
+          opacity="0.9"
+          filter="url(#softShadow)"/>
+    
+    <!-- Wing feathers (outer) -->
+    <path d="M 172 50 Q 180 46, 184 44 Q 186 43, 185 41 Q 184 39, 181 40 Q 175 43, 172 50 Z" 
+          fill="#FFD700" opacity="0.85"/>
+    <path d="M 175 68 Q 184 62, 188 59 Q 190 58, 189 56 Q 188 54, 185 55 Q 178 60, 175 68 Z" 
+          fill="#FFD700" opacity="0.8"/>
+    <path d="M 177 88 Q 186 80, 191 76 Q 193 75, 192 73 Q 191 71, 188 72 Q 180 78, 177 88 Z" 
+          fill="#FFD700" opacity="0.75"/>
+    
+    <!-- Inner feather details -->
+    <path d="M 164 52 Q 166 70, 168 90" 
+          stroke="#FFE55C" stroke-width="1.2" opacity="0.6" fill="none" stroke-linecap="round"/>
+    <path d="M 167 58 Q 169 75, 171 95" 
+          stroke="#FFE55C" stroke-width="0.9" opacity="0.5" fill="none" stroke-linecap="round"/>
+  </g>
+  
+  <!-- Top crown decoration -->
+  <g opacity="0.95">
+    <!-- Center crown point -->
+    <path d="M 102 28 L 97 38 L 102 35 L 107 38 Z" fill="url(#wingGoldLinear)" filter="url(#wingGlow)"/>
+    <circle cx="102" cy="28" r="3.5" fill="#FFD700"/>
+    <circle cx="102" cy="28" r="2" fill="#FFE55C"/>
+    
+    <!-- Side crown points -->
+    <circle cx="88" cy="35" r="2.5" fill="#FFD700" opacity="0.8"/>
+    <circle cx="116" cy="35" r="2.5" fill="#FFD700" opacity="0.8"/>
+    <circle cx="88" cy="35" r="1.2" fill="#FFE55C"/>
+    <circle cx="116" cy="35" r="1.2" fill="#FFE55C"/>
+  </g>
+  
+  <!-- Bottom decoration -->
+  <g opacity="0.7">
+    <path d="M 82 208 Q 102 213, 122 208" 
+          stroke="url(#wingGoldLinear)" 
+          stroke-width="2.5" 
+          fill="none" 
+          stroke-linecap="round"/>
+    <circle cx="82" cy="208" r="2.5" fill="#FFD700"/>
+    <circle cx="122" cy="208" r="2.5" fill="#FFD700"/>
+    <circle cx="102" cy="213" r="3" fill="#FFD700"/>
+    <circle cx="102" cy="213" r="1.5" fill="#FFE55C"/>
+  </g>
+  
+  <!-- Decorative sparkles around frame -->
+  <g opacity="0.85" class="sparkles">
+    <circle cx="48" cy="55" r="1.5" fill="#FFE55C" class="sparkle-1"/>
+    <circle cx="156" cy="55" r="1.5" fill="#FFE55C" class="sparkle-2"/>
+    <circle cx="52" cy="90" r="1.8" fill="#FFD700" class="sparkle-3"/>
+    <circle cx="152" cy="90" r="1.8" fill="#FFD700" class="sparkle-4"/>
+    <circle cx="55" cy="135" r="1.5" fill="#FFE55C" class="sparkle-5"/>
+    <circle cx="149" cy="135" r="1.5" fill="#FFE55C" class="sparkle-6"/>
+    <circle cx="65" cy="175" r="1.2" fill="#FFD700" class="sparkle-7"/>
+    <circle cx="139" cy="175" r="1.2" fill="#FFD700" class="sparkle-8"/>
+  </g>
+  
+  <!-- Corner accent points -->
+  <g opacity="0.7">
+    <circle cx="35" cy="42" r="1.8" fill="#FFD700"/>
+    <circle cx="169" cy="42" r="1.8" fill="#FFD700"/>
+    <circle cx="42" cy="195" r="1.5" fill="#FFD700"/>
+    <circle cx="162" cy="195" r="1.5" fill="#FFD700"/>
+  </g>
+</svg>
