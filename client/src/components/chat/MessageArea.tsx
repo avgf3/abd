@@ -785,7 +785,7 @@ export default function MessageArea({
                                   </button>
                                 );
                               })()}
-                              <span className="text-red-400 mx-1">:</span>
+                              <span className="text-red-400 mx-0.5">:</span>
                             </div>
                             {(() => {
                               const forceSingleLine = isJoinLeaveSystemContent(message.content);
@@ -914,7 +914,7 @@ export default function MessageArea({
                                   </button>
                                 );
                               })()}
-                              <span className="text-gray-400 mx-1">:</span>
+                              <span className="text-gray-400 mx-0.5">:</span>
                             </div>
                             <div className="runin-text text-gray-900 message-content-fix">
                               {message.messageType === 'image' ? (
