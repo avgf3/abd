@@ -1721,18 +1721,7 @@ li > * > div.effect-crystal {
   }
 }
 
-/* Desktop-only: center avatar with first line content in chat rows */
-@media (min-width: 769px) {
-  .ac-message-row .runin-name {
-    display: inline-flex;           /* keep inline flow with run-in text */
-    align-items: center;            /* vertically center name/badges with avatar */
-    min-height: 38px;               /* match avatar container height (38px) */
-  }
-  .ac-message-row .runin-name > * {
-    display: inline-flex;
-    align-items: center;
-  }
-}
+/* (removed desktop-only rule; alignment handled in component via Tailwind) */
 
 /* ========== MODERN ADVANCED DESIGN SYSTEM ========== */
 

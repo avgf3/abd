@@ -752,7 +752,7 @@ export default function MessageArea({
                       <div className="flex items-start gap-2">
                         <div className="flex-1 min-w-0">
                           <div className="runin-container">
-                            <div className="runin-name">
+                            <div className="runin-name md:inline-flex md:items-center md:min-h-[38px]">
                               {message.sender && (
                                 <span className="inline-flex items-center justify-center mr-1">
                                   <UserRoleBadge user={message.sender} size={14} hideGuestAndGender />
@@ -881,7 +881,7 @@ export default function MessageArea({
                       <div className="flex items-start gap-2">
                         <div className="flex-1 min-w-0">
                           <div className="runin-container">
-                          <div className="runin-name">
+                            <div className="runin-name md:inline-flex md:items-center md:min-h-[38px]">
                             {message.sender && (
                               <span className="inline-flex items-center justify-center mr-1">
                                 <UserRoleBadge user={message.sender} size={14} hideGuestAndGender />
