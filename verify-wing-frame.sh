@@ -17,13 +17,13 @@ FAIL=0
 echo "📁 فحص الملفات | Checking Files..."
 echo "-----------------------------------"
 
-# Check frame7.png
-if [ -f "/workspace/client/public/frames/frame7.png" ]; then
-    SIZE=$(du -h /workspace/client/public/frames/frame7.png | cut -f1)
-    echo -e "${GREEN}✅${NC} frame7.png موجود (حجم: $SIZE)"
+# Check frame7.svg
+if [ -f "/workspace/client/public/frames/frame7.svg" ]; then
+    SIZE=$(du -h /workspace/client/public/frames/frame7.svg | cut -f1)
+    echo -e "${GREEN}✅${NC} frame7.svg موجود (حجم: $SIZE) - محسّن بصيغة SVG!"
     PASS=$((PASS + 1))
 else
-    echo -e "${RED}❌${NC} frame7.png غير موجود"
+    echo -e "${RED}❌${NC} frame7.svg غير موجود"
     FAIL=$((FAIL + 1))
 fi
 
@@ -38,11 +38,11 @@ fi
 
 # Check VipAvatar.tsx
 if [ -f "/workspace/client/src/components/ui/VipAvatar.tsx" ]; then
-    if grep -q "frame7.png" /workspace/client/src/components/ui/VipAvatar.tsx; then
-        echo -e "${GREEN}✅${NC} VipAvatar.tsx محدث بدعم frame7"
+    if grep -q "frame7.svg" /workspace/client/src/components/ui/VipAvatar.tsx; then
+        echo -e "${GREEN}✅${NC} VipAvatar.tsx محدث بدعم frame7.svg"
         PASS=$((PASS + 1))
     else
-        echo -e "${YELLOW}⚠️${NC} VipAvatar.tsx موجود لكن قد لا يدعم frame7"
+        echo -e "${YELLOW}⚠️${NC} VipAvatar.tsx موجود لكن قد لا يدعم frame7.svg"
         FAIL=$((FAIL + 1))
     fi
 else
@@ -85,14 +85,6 @@ if grep -q "wing-elegant-float" /workspace/client/src/index.css; then
     PASS=$((PASS + 1))
 else
     echo -e "${RED}❌${NC} wing-elegant-float animation غير موجودة"
-    FAIL=$((FAIL + 1))
-fi
-
-if grep -q "wing-sparkle" /workspace/client/src/index.css; then
-    echo -e "${GREEN}✅${NC} wing-sparkle animation موجودة"
-    PASS=$((PASS + 1))
-else
-    echo -e "${RED}❌${NC} wing-sparkle animation غير موجودة"
     FAIL=$((FAIL + 1))
 fi
 

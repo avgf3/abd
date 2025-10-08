@@ -37,9 +37,9 @@ export default function VipAvatar({
   };
 
   // Use image-based overlay for frames 1..10 if available
-  // Frame 7 uses PNG format (wing design), others use WebP
+  // Frame 7 uses SVG format (wing design), others use WebP
   const frameImage = frame >= 1 && frame <= 6 ? `/frames/frame${frame}.webp` : 
-                     frame === 7 ? `/frames/frame7.png` :
+                     frame === 7 ? `/frames/frame7.svg` :
                      frame >= 8 && frame <= 10 ? `/frames/frame${frame}.webp` : undefined;
   const hasImageOverlay = Boolean(frameImage);
 
