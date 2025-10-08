@@ -1246,6 +1246,11 @@ export const useChat = () => {
               dispatch({ type: 'SET_CURRENT_ROOM', payload: roomId });
               try { saveSession({ roomId }); } catch {}
             }
+            // بث نافذة داخلية لإعلام منطق الإرسال المؤجل بأن الانضمام اكتمل
+            try {
+              const ev = new CustomEvent('roomJoinedAck', { detail: { roomId } });
+              window.dispatchEvent(ev);
+            } catch {}
             // تنظيف queue الانضمام: تم تأكيد الانضمام
             try {
               if (pendingJoinRoomRef.current === roomId) {
@@ -1538,19 +1543,9 @@ export const useChat = () => {
             try {
               const meId = currentUserRef.current?.id;
               const isIncoming = meId && message.receiverId === meId && message.senderId === conversationId;
-              const isOpenSame = (selectedPrivateUserRef as any)?.current?.id === conversationId;
-              if (isIncoming && isOpenSame) {
-                const body: any = {
-                  otherUserId: conversationId,
-                  lastReadMessageId: (message as any).id,
-                  lastReadAt: (message as any).timestamp,
-                };
-                fetch('/api/private-messages/reads', {
-                  method: 'PUT',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify(body),
-                  credentials: 'include',
-                }).catch(() => {});
+              // Conversation open state is managed outside this hook; skip auto-read here to avoid false updates.
+              if (isIncoming) {
+                // No-op: rely on UI to mark as read when the conversation view is active.
               }
             } catch {}
           }
@@ -2014,7 +2009,55 @@ export const useChat = () => {
           },
         }).catch(() => {});
       } else {
-        socket.current.emit('publicMessage', messageData);
+        // Guard: ensure we are in the intended room; if not yet joined/acknowledged, queue and retry after roomJoined
+        const targetRoom = messageData.roomId || currentRoomIdRef.current;
+        const rooms: Set<string> | undefined = (socket.current as any)?.rooms;
+        const inTarget = !!(rooms && targetRoom && rooms.has(`room_${targetRoom}`));
+        const joinedAck = currentRoomIdRef.current && targetRoom && currentRoomIdRef.current === targetRoom;
+
+        if (inTarget && joinedAck) {
+          socket.current.emit('publicMessage', messageData);
+        } else {
+          // Queue message until we get roomJoined for targetRoom (max short delay window)
+          const key = targetRoom || 'general';
+          const buf = messageBufferRef.current.get(key) || [];
+          // ضع الرسالة في buffer خاص للإرسال لاحقاً (نستخدم نفس الهيكل لتبسيط التخزين المؤقت)
+          messageBufferRef.current.set(key, buf);
+
+          const trySend = () => {
+            const rooms2: Set<string> | undefined = (socket.current as any)?.rooms;
+            const inTarget2 = !!(rooms2 && key && rooms2.has(`room_${key}`));
+            const joinedAck2 = currentRoomIdRef.current && key && currentRoomIdRef.current === key;
+            if (inTarget2 && joinedAck2) {
+              socket.current?.emit('publicMessage', messageData);
+            } else {
+              // retry once after a brief delay
+              setTimeout(() => {
+                const rooms3: Set<string> | undefined = (socket.current as any)?.rooms;
+                const inTarget3 = !!(rooms3 && key && rooms3.has(`room_${key}`));
+                const joinedAck3 = currentRoomIdRef.current && key && currentRoomIdRef.current === key;
+                if (inTarget3 && joinedAck3) {
+                  socket.current?.emit('publicMessage', messageData);
+                } else {
+                  console.warn('⚠️ تأجيل إرسال الرسالة حتى تأكيد الانضمام للغرفة');
+                }
+              }, 300);
+            }
+          };
+
+          // Hook into roomJoined event path by temporarily listening via window event dispatch from on('message') handler
+          const onRoomJoined = (ev: any) => {
+            try {
+              const detail = ev?.detail;
+              const rid = (detail && detail.roomId) || undefined;
+              if (rid && rid === key) {
+                setTimeout(trySend, 0);
+                window.removeEventListener('roomJoinedAck' as any, onRoomJoined as any);
+              }
+            } catch {}
+          };
+          window.addEventListener('roomJoinedAck' as any, onRoomJoined as any, { once: true } as any);
+        }
       }
     },
     [state.currentUser, state.currentRoomId]

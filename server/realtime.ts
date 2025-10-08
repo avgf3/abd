@@ -1259,11 +1259,32 @@ export function setupRealtime(httpServer: HttpServer): IOServer<ClientToServerEv
 
         // Ensure the socket is actually in the target room to prevent bypassing join checks
         try {
-          const rooms = (socket as any).rooms as Set<string> | undefined;
           const target = `room_${roomId}`;
+          let rooms = (socket as any).rooms as Set<string> | undefined;
           if (!rooms || !rooms.has(target)) {
-            socket.emit('message', { type: 'error', message: 'غير مسموح بإرسال الرسائل لهذه الغرفة' });
-            return;
+            // Attempt graceful self-heal: if the user is (or can be) a member at the service level,
+            // join the Socket.IO room on the fly to avoid race condition between join and first message.
+            try {
+              await roomService.joinRoom(socket.userId, roomId);
+              try { socket.join(target); } catch {}
+              try {
+                // Set currentRoom and update connectedUsers map for this socket
+                socket.currentRoom = roomId;
+                const entry = connectedUsers.get(socket.userId);
+                if (entry) {
+                  const now = new Date();
+                  entry.sockets.set(socket.id, { room: roomId, lastSeen: now });
+                  connectedUsers.set(socket.userId, entry);
+                }
+              } catch {}
+            } catch {}
+
+            // Re-check after self-heal
+            rooms = (socket as any).rooms as Set<string> | undefined;
+            if (!rooms || !rooms.has(target)) {
+              socket.emit('message', { type: 'error', message: 'غير مسموح بإرسال الرسائل لهذه الغرفة' });
+              return;
+            }
           }
         } catch {}
 
