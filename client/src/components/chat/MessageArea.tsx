@@ -667,7 +667,7 @@ export default function MessageArea({
   }, []);
 
   return (
-    <section className="flex-1 flex flex-col bg-white min-h-0">
+    <section className="rooms-scope flex-1 flex flex-col bg-white min-h-0">
       {/* Chat Lock Status Indicator */}
       {(chatLockAll || chatLockVisitors) && (
         <div className={`px-4 py-2 text-center text-sm font-medium border-b ${

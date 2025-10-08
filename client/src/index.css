@@ -1591,7 +1591,7 @@ li > * > div.effect-crystal {
 }
 
 /* إصلاح موضع آخر كلمة في الرسائل */
-.message-content-fix {
+.rooms-scope .message-content-fix {
   line-height: 1.6;
   padding-bottom: 2px;
   padding-inline-end: 2px; /* منع قصّ آخر حرف في نهايات RTL/LTR على الهاتف */
@@ -1601,7 +1601,7 @@ li > * > div.effect-crystal {
   text-align: start; /* يمين في RTL */
 }
 
-.message-content-fix .truncate {
+.rooms-scope .message-content-fix .truncate {
   line-height: inherit;
   vertical-align: baseline;
   margin-bottom: 1px;
@@ -1630,7 +1630,7 @@ li > * > div.effect-crystal {
 }
 
 /* تحسين عرض السمايلات في الرسائل */
-.message-content-fix .animated-emoji {
+.rooms-scope .message-content-fix .animated-emoji {
   width: 32px;
   height: 32px;
   margin: 0 4px;
@@ -1658,9 +1658,9 @@ li > * > div.effect-crystal {
 
 /* أسلوب run-in للجوال: الاسم يظهر في السطر الأول فقط، وبقية الأسطر تمتد بكامل العرض */
 /* Keep run-in container flexible for both, but optimize only on mobile */
-.runin-container { display: block; width: 100%; }
+.rooms-scope .runin-container { display: block; width: 100%; }
 
-.runin-name {
+.rooms-scope .runin-name {
   display: inline-flex;
   align-items: center;
   white-space: nowrap;
@@ -1668,19 +1668,19 @@ li > * > div.effect-crystal {
   min-height: 28px; /* stabilize name row height next to avatar */
 }
 
-.runin-name > * {
+.rooms-scope .runin-name > * {
   display: inline;
   vertical-align: baseline;
 }
 
 /* Ensure clickable username aligns perfectly with role badge */
-.runin-name button {
+.rooms-scope .runin-name button {
   display: inline-flex;
   align-items: center;
 }
 
 /* Force message content to start on a new line under the name on all viewports */
-.runin-text {
+.rooms-scope .runin-text {
   display: block;
   text-align: start;
   word-break: break-word;
@@ -1691,20 +1691,20 @@ li > * > div.effect-crystal {
 }
 
 /* Zebra striping for room messages (mobile and desktop) */
-.ac-message-row.log2 {
+.rooms-scope .ac-message-row.log2 {
   background: #f8fafc;
 }
 
 /* Desktop: center-align avatar with name/text for cleaner baseline */
 @media (min-width: 769px) {
-  .ac-message-row {
+  .rooms-scope .ac-message-row {
     align-items: center; /* avatar, name, and text centered vertically */
   }
-  .ac-message-row .runin-name {
+  .rooms-scope .ac-message-row .runin-name {
     display: inline-flex; /* keep inline flow but center internal items */
     align-items: center;
   }
-  .ac-message-row .runin-text {
+  .rooms-scope .ac-message-row .runin-text {
     display: block; /* text begins on a new line under the name */
     margin-top: 0;
     line-height: 1.6;
@@ -1714,27 +1714,27 @@ li > * > div.effect-crystal {
 /* Mobile message rows: mirror desktop run-in layout exactly */
 @media (max-width: 768px) {
   /* Unified renderer: no special mobile container needed */
-  .ac-message-row {
+  .rooms-scope .ac-message-row {
     border-radius: inherit !important;
     align-items: center !important; /* center avatar vertically with name block */
   }
   /* Match desktop inline-flex name alignment on mobile */
-  .ac-message-row .runin-name {
+  .rooms-scope .ac-message-row .runin-name {
     display: inline-flex;
     align-items: center;
     line-height: 1.6; /* keep same inter-line spacing as desktop */
   }
   /* Match desktop text line-height on mobile */
-  .ac-message-row .runin-text {
+  .rooms-scope .ac-message-row .runin-text {
     line-height: 1.6;
   }
-  .ac-message-row .runin-name button {
+  .rooms-scope .ac-message-row .runin-name button {
     font-weight: 700;
   }
-  .ac-time {
+  .rooms-scope .ac-time {
     display: none !important;
   }
-  .ac-composer {
+  .rooms-scope .ac-composer {
     border: 1px solid #e5e7eb;
     border-radius: 10px;
     background: #ffffff;
@@ -1743,19 +1743,19 @@ li > * > div.effect-crystal {
 
 /* تطبيق تأثير run-in محسّن للجوال - مطابق لسطح المكتب */
 @media (max-width: 768px) {
-  .runin-container {
+  .rooms-scope .runin-container {
     position: relative;
   }
-  .runin-name {
+  .rooms-scope .runin-name {
     display: inline-flex; /* keep badge + name centered on the name row */
     align-items: center;
     line-height: 1.6;
   }
-  .runin-name > * {
+  .rooms-scope .runin-name > * {
     display: inline;
     vertical-align: baseline;
   }
-  .runin-text {
+  .rooms-scope .runin-text {
     display: block; /* start content on a new line under the name */
     margin-top: 0; /* no extra gap between name and first line */
     text-align: start;
@@ -2517,7 +2517,7 @@ li::before {
 }
 
 /* Message text in rooms and private DM: medium weight, size 13px */
-.ac-message-text {
+.rooms-scope .ac-message-text {
   font-family: 'Cairo', Arial, sans-serif;
   font-weight: 600;
   font-size: 13px;
@@ -2817,7 +2817,7 @@ li::before {
 }
 
 /* ===== arabic.chat-like public room name:message layout (literal) ===== */
-.ch_logs .my_text .cname {
+.rooms-scope .ch_logs .my_text .cname {
   display: grid;
   grid-template-columns: max-content 1fr auto;
   column-gap: 0.5rem;
@@ -2956,12 +2956,12 @@ li::before {
 }
 .pm-bubble--me .pm-meta { color: rgba(255,255,255,0.85); }
 .pm-bubble--other .pm-meta { color: #9ca3af; }
-.ch_logs .my_text .cname > .rtl_fright {
+.rooms-scope .ch_logs .my_text .cname > .rtl_fright {
   float: none !important;
   white-space: nowrap;
   text-align: end;
 }
-.ch_logs .my_text .cname > .chat_message {
+.rooms-scope .ch_logs .my_text .cname > .chat_message {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
