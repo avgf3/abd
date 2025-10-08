@@ -1493,6 +1493,16 @@ li > * > div.effect-crystal {
   background: conic-gradient(from 0deg, #7c2d12, #f59e0b, #7c2d12);
   box-shadow: 0 0 12px rgba(245, 158, 11, 0.4);
 }
+.vip-frame-5.cool-pink::before,
+.vip-frame-5.cool-pink-gradient::before {
+  background: conic-gradient(from 0deg, #f9a8d4 0%, #c084fc 50%, #93c5fd 100%);
+  box-shadow: 0 0 14px rgba(201, 148, 255, 0.45);
+}
+.vip-frame-6.cool-berry::before,
+.vip-frame-6.cool-berry-gradient::before {
+  background: conic-gradient(from 0deg, #9f7aea 0%, #6ee7b7 50%, #f472b6 100%);
+  box-shadow: 0 0 14px rgba(159, 122, 234, 0.4);
+}
 .vip-frame-7::before {
   background: conic-gradient(from 0deg, #ffd700, #ffed4e, #ffa500, #ffd700);
   box-shadow: 0 0 15px rgba(255, 215, 0, 0.6);

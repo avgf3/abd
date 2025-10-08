@@ -203,6 +203,62 @@
                 gap: 30px;
             }
         }
+        
+        /* VIP frame (CSS-based) preview for gradient variants */
+        .vip-frame.base {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 150px;
+            height: 150px;
+        }
+        .vip-frame-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            border-radius: 9999px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .vip-frame-img {
+            width: 111px;
+            height: 111px;
+            border-radius: 9999px;
+            object-fit: cover;
+            background: #0b1220;
+            position: relative;
+            z-index: 2;
+        }
+        .vip-frame.base::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 9999px;
+            z-index: 3;
+            padding: 2px; /* frame thickness */
+            -webkit-mask:
+                linear-gradient(#000 0 0) content-box,
+                linear-gradient(#000 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+        }
+        /* Cool Pink variant for Frame 5 */
+        .vip-frame-5.cool-pink::before,
+        .vip-frame-5.cool-pink-gradient::before {
+            background: conic-gradient(from 0deg, #f9a8d4 0%, #c084fc 50%, #93c5fd 100%);
+            box-shadow: 0 0 14px rgba(201, 148, 255, 0.45);
+        }
+        /* Cool Berry variant for Frame 6 */
+        .vip-frame-6.cool-berry::before,
+        .vip-frame-6.cool-berry-gradient::before {
+            background: conic-gradient(from 0deg, #9f7aea 0%, #6ee7b7 50%, #f472b6 100%);
+            box-shadow: 0 0 14px rgba(159, 122, 234, 0.4);
+        }
     </style>
 </head>
 <body>
@@ -337,6 +393,40 @@
                 <div class="frame-badge badge-special">مميز</div>
                 <h3 class="frame-name">إطار TOP الفضي اللامع</h3>
                 <p class="frame-description">إطار فضي متألق مع شارة TOP للأعضاء المرموقين</p>
+            </div>
+        </div>
+
+        <div class="section-divider">
+            <h2>ألوان باردة جديدة (للإطارين 5 و 6)</h2>
+        </div>
+
+        <div class="frames-grid">
+            <!-- Frame 5 - Cool Pink Variant -->
+            <div class="frame-card">
+                <div class="frame-preview" style="display:flex;align-items:center;justify-content:center;">
+                    <div class="vip-frame base vip-frame-5 cool-pink">
+                        <div class="vip-frame-inner">
+                            <img class="vip-frame-img" src="https://ui-avatars.com/api/?name=User&background=0b1220&color=fff&size=111" alt="Frame 5 Cool Pink">
+                        </div>
+                    </div>
+                </div>
+                <div class="frame-badge badge-special">مميز</div>
+                <h3 class="frame-name">الإطار 5 - زهري بارد</h3>
+                <p class="frame-description">تدرّج زهري بارد حديث وأنيق مستوحى من إطار 5.</p>
+            </div>
+
+            <!-- Frame 6 - Cool Berry Variant -->
+            <div class="frame-card">
+                <div class="frame-preview" style="display:flex;align-items:center;justify-content:center;">
+                    <div class="vip-frame base vip-frame-6 cool-berry">
+                        <div class="vip-frame-inner">
+                            <img class="vip-frame-img" src="https://ui-avatars.com/api/?name=User&background=0b1220&color=fff&size=111" alt="Frame 6 Cool Berry">
+                        </div>
+                    </div>
+                </div>
+                <div class="frame-badge badge-special">مميز</div>
+                <h3 class="frame-name">الإطار 6 - توتي بارد</h3>
+                <p class="frame-description">تدرّج توتي بارد أنيق وعصري مستوحى من إطار 6.</p>
             </div>
         </div>
     </div>
