@@ -220,6 +220,53 @@
                 gap: 30px;
             }
         }
+        
+        /* VIP frame preview using original overlays (tinted only) */
+        .vip-frame.base {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 150px;
+            height: 150px;
+        }
+        .vip-frame-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            border-radius: 9999px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .vip-frame-img {
+            width: 111px;
+            height: 111px;
+            border-radius: 9999px;
+            object-fit: cover;
+            background: #0b1220;
+            position: relative;
+            z-index: 2;
+        }
+        .vip-frame.base::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 9999px;
+            z-index: 3;
+            padding: 2px; /* frame thickness */
+            -webkit-mask:
+                linear-gradient(#000 0 0) content-box,
+                linear-gradient(#000 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+        }
+        /* Apply the new tint filters (inherited from app CSS if loaded) */
+        .vip-frame-5.cool-pink .vip-frame-overlay { filter: hue-rotate(-8deg) saturate(1.25) brightness(1.06); }
+        .vip-frame-6.cool-berry .vip-frame-overlay { filter: hue-rotate(215deg) saturate(1.2) brightness(1.05); }
     </style>
 </head>
 <body>
@@ -410,6 +457,42 @@
                 <li>يمكن تعيين الإطارات للمستخدمين من خلال واجهة الإدارة</li>
                 <li>الإطارات تعمل بسلاسة مع جميع أحجام الصور الشخصية</li>
             </ul>
+        </div>
+
+        <div class="section-divider">
+            <h2>ألوان باردة جديدة (للإطارين 5 و 6)</h2>
+        </div>
+
+        <div class="frames-grid">
+            <!-- Frame 5 - Cool Pink Variant (same original design, tinted) -->
+            <div class="frame-card">
+                <div class="frame-preview" style="display:flex;align-items:center;justify-content:center;">
+                    <div class="vip-frame base with-image vip-frame-5 cool-pink">
+                        <div class="vip-frame-inner">
+                            <img class="vip-frame-img" src="https://ui-avatars.com/api/?name=User&background=0b1220&color=fff&size=111" alt="Frame 5 Cool Pink">
+                            <img class="vip-frame-overlay" src="/client/public/frames/frame5.webp" alt="Frame 5 overlay" style="transform: scale(1);">
+                        </div>
+                    </div>
+                </div>
+                <div class="frame-badge badge-new">جديد</div>
+                <h3 class="frame-name">الإطار 5 - زهري بارد</h3>
+                <p class="frame-description">تدرّج زهري بارد حديث وأنيق مستوحى من إطار 5.</p>
+            </div>
+
+            <!-- Frame 6 - Cool Berry Variant (same original design, tinted) -->
+            <div class="frame-card">
+                <div class="frame-preview" style="display:flex;align-items:center;justify-content:center;">
+                    <div class="vip-frame base with-image vip-frame-6 cool-berry">
+                        <div class="vip-frame-inner">
+                            <img class="vip-frame-img" src="https://ui-avatars.com/api/?name=User&background=0b1220&color=fff&size=111" alt="Frame 6 Cool Berry">
+                            <img class="vip-frame-overlay" src="/client/public/frames/frame6.webp" alt="Frame 6 overlay" style="transform: scale(1);">
+                        </div>
+                    </div>
+                </div>
+                <div class="frame-badge badge-new">جديد</div>
+                <h3 class="frame-name">الإطار 6 - توتي بارد</h3>
+                <p class="frame-description">تدرّج توتي بارد أنيق وعصري مستوحى من إطار 6.</p>
+            </div>
         </div>
     </div>
 </body>
