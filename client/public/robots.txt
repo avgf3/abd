@@ -1,7 +1,10 @@
 User-agent: *
 Allow: /
-Disallow: /api/
-Disallow: /admin/
-Disallow: /private/
+
+User-agent: Discordbot
+Allow: /
+
+User-agent: Twitterbot
+Allow: /
 
 Sitemap: https://www.arabya.chat/sitemap.xml
