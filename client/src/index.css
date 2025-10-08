@@ -1468,7 +1468,7 @@ li > * > div.effect-crystal {
 /* عند استخدام صورة إطار جاهزة، أخفِ الإطار الشعاعي */
 .vip-frame.with-image::before { display: none !important; }
 
-/* 12 distinct gradient frames matching modern VIP look */
+/* 9 distinct gradient frames matching modern VIP look */
 .vip-frame-1::before {
   background: conic-gradient(from 0deg, #ffcc33, #ff6633, #ffcc33);
   box-shadow: 0 0 12px rgba(255, 204, 51, 0.5);
@@ -1494,28 +1494,16 @@ li > * > div.effect-crystal {
   box-shadow: 0 0 12px rgba(245, 158, 11, 0.4);
 }
 .vip-frame-7::before {
-  background: conic-gradient(from 0deg, #ff00ff, #00ffff, #ff00ff);
-  box-shadow: 0 0 15px rgba(255, 0, 255, 0.6);
-}
-.vip-frame-8::before {
-  background: conic-gradient(from 0deg, #e0e7ff, #a5b4fc, #6366f1, #e0e7ff);
-  box-shadow: 0 0 12px rgba(99, 102, 241, 0.5);
-}
-.vip-frame-9::before {
-  background: conic-gradient(from 0deg, #ff6b6b, #ff9800, #ffeb3b, #ff6b6b);
-  box-shadow: 0 0 14px rgba(255, 107, 107, 0.6);
-}
-.vip-frame-10::before {
-  background: conic-gradient(from 0deg, #0ea5e9, #0284c7, #0369a1, #0ea5e9);
-  box-shadow: 0 0 12px rgba(14, 165, 233, 0.5);
-}
-.vip-frame-11::before {
-  background: conic-gradient(from 0deg, #ffd700, #ffb700, #ff8c00, #ffd700);
+  background: conic-gradient(from 0deg, #ffd700, #ffed4e, #ffa500, #ffd700);
   box-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
 }
-.vip-frame-12::before {
-  background: conic-gradient(from 0deg, #7c3aed, #a78bfa, #e0e7ff, #7c3aed);
-  box-shadow: 0 0 15px rgba(124, 58, 237, 0.6);
+.vip-frame-8::before {
+  background: conic-gradient(from 0deg, #e6f3ff, #87ceeb, #4682b4, #e6f3ff);
+  box-shadow: 0 0 12px rgba(70, 130, 180, 0.5);
+}
+.vip-frame-9::before {
+  background: conic-gradient(from 0deg, #f8f8ff, #c0c0c0, #a8a8a8, #f8f8ff);
+  box-shadow: 0 0 12px rgba(192, 192, 192, 0.5);
 }
 
 /* Optional subtle pulsation */
