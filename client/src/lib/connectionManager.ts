@@ -123,7 +123,7 @@ export class ConnectionManager {
   }
 
   private hardReload() {
-    try { window.location.reload(true); } catch { window.location.reload(); }
+    try { window.location.reload(); } catch {}
   }
 
   private updateMonitors(startedAt: number) {
