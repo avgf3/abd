@@ -578,14 +578,7 @@ async function joinRoom(
   const users = await buildOnlineUsersForRoom(roomId);
   socket.emit('message', { type: 'roomJoined', roomId, users });
   
-  // 🔥 بث قائمة المستخدمين المحدثة للغرفة فوراً
-  io.to(`room_${roomId}`).emit('message', {
-    type: 'onlineUsers',
-    users,
-    roomId,
-    source: 'join_immediate',
-    timestamp: Date.now(),
-  });
+  // إزالة البث الفوري لقائمة المستخدمين لتفادي الازدواج؛ سنعتمد على التحديث المجمع
 
   // 🔥 بث تحديث عدد المستخدمين في الغرفة لجميع المتصلين
   try {
@@ -709,17 +702,9 @@ async function leaveRoom(
   // ✅ استخدام التحديث المجمع
   scheduleUserListUpdate(roomId);
   
-  // 🔥 بث قائمة المستخدمين المحدثة للغرفة فوراً بعد المغادرة
+  // عند المغادرة: لا نبث onlineUsers فورياً لتفادي الازدواج؛ نكتفي بتحديث العداد العام
   try {
     const updatedUsers = await buildOnlineUsersForRoom(roomId);
-    io.to(`room_${roomId}`).emit('message', {
-      type: 'onlineUsers',
-      users: updatedUsers,
-      roomId,
-      source: 'leave_immediate',
-      timestamp: Date.now(),
-    });
-    
     // 🔥 بث تحديث عدد المستخدمين في الغرفة لجميع المتصلين
     try {
       const room = await roomService.getRoom(roomId);
@@ -1206,13 +1191,9 @@ export function setupRealtime(httpServer: HttpServer): IOServer<ClientToServerEv
         const previousRoom = socket.currentRoom;
         await joinRoom(io, socket, socket.userId, username, roomId);
         if (previousRoom && previousRoom !== roomId) {
+          // جدولة تحديث قائمة مستخدمي الغرفة السابقة بدلاً من البث الفوري لتقليل الازدواج
+          scheduleUserListUpdate(previousRoom);
           const prevUsers = await buildOnlineUsersForRoom(previousRoom);
-          io.to(`room_${previousRoom}`).emit('message', {
-            type: 'onlineUsers',
-            users: prevUsers,
-            roomId: previousRoom,
-            source: 'switch_room',
-          });
         // 🔥 بث تحديث عدد المستخدمين للغرفة السابقة أيضاً لضمان تزامن واجهة قائمة الغرف
         try {
           const prevRoom = await roomService.getRoom(previousRoom);

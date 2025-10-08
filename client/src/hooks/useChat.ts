@@ -1789,14 +1789,7 @@ export const useChat = () => {
         // إعداد المستمعين
         setupSocketListeners(s);
 
-        // إذا كان متصلاً بالفعل، أرسل المصادقة فقط، والانضمام سيتم بعد التأكيد
-        if (s.connected) {
-          s.emit('auth', {
-            userId: user.id,
-            username: user.username,
-            userType: user.userType,
-          });
-        }
+        // الاعتماد على إعادة المصادقة الموحدة داخل attachCoreListeners فقط
 
         // إرسال المصادقة عند الاتصال/إعادة الاتصال يتم من خلال الوحدة المشتركة
         s.on('connect', () => {
@@ -1812,14 +1805,7 @@ export const useChat = () => {
             disconnectUiTimerRef.current = null;
           }
 
-          // إعادة إرسال المصادقة فقط، والانضمام للغرفة بعد Event roomJoined
-          try {
-            s.emit('auth', {
-              userId: user.id,
-              username: user.username,
-              userType: user.userType,
-            });
-          } catch {}
+          // لا نرسل auth هنا لتفادي التكرار؛ يتم عبر attachCoreListeners
 
           // Prefetch expected data shortly after connection success
           try {
