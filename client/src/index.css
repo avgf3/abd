@@ -1732,10 +1732,10 @@ li > * > div.effect-crystal {
     vertical-align: baseline;
   }
   .runin-text {
-    display: block; /* move message text to next line on mobile */
-    margin-top: 2px; /* small separation under the name */
+    display: inline; /* keep name and text on the same line */
+    margin-top: 0; /* no extra gap between name and first line */
     text-align: start;
-    line-height: 1.6;
+    line-height: 1.4;
   }
 }
 
