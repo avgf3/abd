@@ -1681,12 +1681,29 @@ li > * > div.effect-crystal {
   background: #f8fafc;
 }
 
+/* Desktop: center-align avatar with name/text for cleaner baseline */
+@media (min-width: 769px) {
+  .ac-message-row {
+    align-items: center; /* avatar, name, and text centered vertically */
+  }
+  .ac-message-row .runin-name {
+    display: inline-flex; /* keep inline flow but center internal items */
+    align-items: center;
+  }
+  .ac-message-row .runin-text {
+    display: inline; /* keep name:text on the same line on desktop */
+    margin-top: 0;
+    line-height: 1.6;
+  }
+}
+
 /* Mobile message rows: keep same structure, remove colored right strip only */
 @media (max-width: 768px) {
   /* Unified renderer: no special mobile container needed */
   .ac-message-row {
     border-right: 0 !important; /* remove colored strip on small screens for readability */
     border-radius: inherit !important;
+    align-items: center !important; /* center avatar vertically with name block */
   }
   .ac-message-row .runin-name button {
     font-weight: 700;
@@ -1715,9 +1732,10 @@ li > * > div.effect-crystal {
     vertical-align: baseline;
   }
   .runin-text {
-    display: inline;
+    display: block; /* move message text to next line on mobile */
+    margin-top: 2px; /* small separation under the name */
     text-align: start;
-    line-height: 1.4;
+    line-height: 1.6;
   }
 }
 
