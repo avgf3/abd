@@ -1701,8 +1701,7 @@ li > * > div.effect-crystal {
 @media (max-width: 768px) {
   /* Unified renderer: no special mobile container needed */
   .ac-message-row {
-    border-right: 0 !important; /* remove colored strip on small screens for readability */
-    border-radius: inherit !important;
+    /* keep colored right strip same as desktop */
     align-items: center !important; /* center avatar vertically with name block */
   }
   .ac-message-row .runin-name button {
