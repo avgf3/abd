@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1200, height=630">
+    <title>OG Image Template - Arabya Chat</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            width: 1200px;
+            height: 630px;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            font-family: 'Cairo', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .container {
+            width: 1200px;
+            height: 630px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #4c51bf 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        /* خلفية هندسية */
+        .container::before {
+            content: '';
+            position: absolute;
+            width: 150%;
+            height: 150%;
+            background-image: 
+                radial-gradient(circle at 25% 25%, rgba(255,255,255,0.05) 0%, transparent 50%),
+                radial-gradient(circle at 75% 75%, rgba(255,255,255,0.05) 0%, transparent 50%);
+            animation: pulse 15s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        
+        /* دوائر ديكور */
+        .circle {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .circle1 { width: 300px; height: 300px; top: -100px; left: -100px; }
+        .circle2 { width: 200px; height: 200px; bottom: -50px; right: 100px; }
+        .circle3 { width: 150px; height: 150px; top: 100px; right: -50px; }
+        
+        .content {
+            position: relative;
+            z-index: 10;
+            text-align: center;
+            padding: 40px;
+        }
+        
+        .logo {
+            width: 120px;
+            height: 120px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 30px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .logo-text {
+            font-size: 60px;
+            font-weight: bold;
+            color: white;
+        }
+        
+        h1 {
+            font-size: 90px;
+            font-weight: 900;
+            color: white;
+            margin: 0 0 20px 0;
+            text-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            letter-spacing: -2px;
+        }
+        
+        .subtitle {
+            font-size: 42px;
+            color: rgba(255, 255, 255, 0.95);
+            font-weight: 600;
+            margin-bottom: 15px;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        .description {
+            font-size: 28px;
+            color: rgba(255, 255, 255, 0.8);
+            font-weight: 400;
+            line-height: 1.4;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .badge {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.25);
+            padding: 8px 20px;
+            border-radius: 50px;
+            font-size: 20px;
+            color: white;
+            font-weight: 600;
+            margin-top: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        /* أيقونات ديكور */
+        .icon {
+            position: absolute;
+            font-size: 40px;
+            opacity: 0.15;
+        }
+        
+        .icon1 { top: 50px; left: 100px; }
+        .icon2 { bottom: 100px; right: 150px; }
+        .icon3 { top: 200px; right: 200px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="circle circle1"></div>
+        <div class="circle circle2"></div>
+        <div class="circle circle3"></div>
+        
+        <div class="icon icon1">💬</div>
+        <div class="icon icon2">🌍</div>
+        <div class="icon icon3">✨</div>
+        
+        <div class="content">
+            <div class="logo">
+                <div class="logo-text">A</div>
+            </div>
+            <h1>Arabya Chat</h1>
+            <div class="subtitle">منصة التواصل العربية</div>
+            <div class="description">مجتمع عربي آمن واحترافي للحوار والنقاش البناء</div>
+            <div class="badge">🔒 آمن ومنظم</div>
+        </div>
+    </div>
+    
+    <script>
+        // معلومات للمستخدم
+        console.log('📸 لأخذ screenshot:');
+        console.log('1. اضبط نافذة المتصفح إلى 1200×630 بكسل بالضبط');
+        console.log('2. اضغط F12 واكتب: window.resizeTo(1200, 630)');
+        console.log('3. خذ screenshot بملء الشاشة');
+        console.log('4. احفظ الصورة كـ og-image.jpg');
+        console.log('5. ضع الملف في client/public/og-image.jpg');
+    </script>
+</body>
+</html>
