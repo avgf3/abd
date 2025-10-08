@@ -1516,6 +1516,18 @@ li > * > div.effect-crystal {
   box-shadow: 0 0 12px rgba(192, 192, 192, 0.5);
 }
 
+/* Tinted color variants for original overlay images (keep exact design, change color only) */
+.vip-frame-5.tint-cool-pink .vip-frame-overlay,
+.vip-frame-5.cool-pink .vip-frame-overlay,
+.vip-frame-5.tint-pink .vip-frame-overlay {
+  filter: hue-rotate(-8deg) saturate(1.25) brightness(1.06);
+}
+.vip-frame-6.tint-cool-berry .vip-frame-overlay,
+.vip-frame-6.cool-berry .vip-frame-overlay,
+.vip-frame-6.tint-berry .vip-frame-overlay {
+  filter: hue-rotate(215deg) saturate(1.2) brightness(1.05);
+}
+
 /* Optional subtle pulsation */
 /* تعطيل أي نبض/حركة */
 .vip-frame.base { animation: none !important; }

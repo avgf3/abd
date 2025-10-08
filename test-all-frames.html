@@ -221,7 +221,7 @@
             }
         }
         
-        /* VIP frame (CSS-based) preview for gradient variants */
+        /* VIP frame preview using original overlays (tinted only) */
         .vip-frame.base {
             position: relative;
             display: inline-flex;
@@ -264,18 +264,9 @@
             -webkit-mask-composite: xor;
             mask-composite: exclude;
         }
-        /* Cool Pink variant for Frame 5 */
-        .vip-frame-5.cool-pink::before,
-        .vip-frame-5.cool-pink-gradient::before {
-            background: conic-gradient(from 0deg, #f9a8d4 0%, #c084fc 50%, #93c5fd 100%);
-            box-shadow: 0 0 14px rgba(201, 148, 255, 0.45);
-        }
-        /* Cool Berry variant for Frame 6 */
-        .vip-frame-6.cool-berry::before,
-        .vip-frame-6.cool-berry-gradient::before {
-            background: conic-gradient(from 0deg, #9f7aea 0%, #6ee7b7 50%, #f472b6 100%);
-            box-shadow: 0 0 14px rgba(159, 122, 234, 0.4);
-        }
+        /* Apply the new tint filters (inherited from app CSS if loaded) */
+        .vip-frame-5.cool-pink .vip-frame-overlay { filter: hue-rotate(-8deg) saturate(1.25) brightness(1.06); }
+        .vip-frame-6.cool-berry .vip-frame-overlay { filter: hue-rotate(215deg) saturate(1.2) brightness(1.05); }
     </style>
 </head>
 <body>
@@ -473,12 +464,13 @@
         </div>
 
         <div class="frames-grid">
-            <!-- Frame 5 - Cool Pink Variant -->
+            <!-- Frame 5 - Cool Pink Variant (same original design, tinted) -->
             <div class="frame-card">
                 <div class="frame-preview" style="display:flex;align-items:center;justify-content:center;">
-                    <div class="vip-frame base vip-frame-5 cool-pink">
+                    <div class="vip-frame base with-image vip-frame-5 cool-pink">
                         <div class="vip-frame-inner">
                             <img class="vip-frame-img" src="https://ui-avatars.com/api/?name=User&background=0b1220&color=fff&size=111" alt="Frame 5 Cool Pink">
+                            <img class="vip-frame-overlay" src="/client/public/frames/frame5.webp" alt="Frame 5 overlay" style="transform: scale(1);">
                         </div>
                     </div>
                 </div>
@@ -487,12 +479,13 @@
                 <p class="frame-description">تدرّج زهري بارد حديث وأنيق مستوحى من إطار 5.</p>
             </div>
 
-            <!-- Frame 6 - Cool Berry Variant -->
+            <!-- Frame 6 - Cool Berry Variant (same original design, tinted) -->
             <div class="frame-card">
                 <div class="frame-preview" style="display:flex;align-items:center;justify-content:center;">
-                    <div class="vip-frame base vip-frame-6 cool-berry">
+                    <div class="vip-frame base with-image vip-frame-6 cool-berry">
                         <div class="vip-frame-inner">
                             <img class="vip-frame-img" src="https://ui-avatars.com/api/?name=User&background=0b1220&color=fff&size=111" alt="Frame 6 Cool Berry">
+                            <img class="vip-frame-overlay" src="/client/public/frames/frame6.webp" alt="Frame 6 overlay" style="transform: scale(1);">
                         </div>
                     </div>
                 </div>
