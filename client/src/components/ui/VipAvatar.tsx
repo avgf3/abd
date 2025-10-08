@@ -1,3 +1,5 @@
+/* @jsxRuntime classic */
+/* @jsx React.createElement */
 import React, { useMemo } from 'react';
 
 interface VipAvatarProps {
@@ -23,6 +25,12 @@ export default function VipAvatar({
   // الإطار (الحاوية) يتكيف ليكون أكبر من الصورة بنسبة كافية لاستيعاب الإطار بالكامل
   const frameSize = imageSize * 1.35; // الإطار أكبر بـ 35% لضمان احتواء الإطار بالكامل داخل الحاوية
 
+  // تكبير خاص لإطارات 7 و8 و9 فقط كي تطابق حجم بقية الإطارات
+  const overlayScale = useMemo(() => {
+    if (frame === 7 || frame === 8 || frame === 9) return 1.08;
+    return 1;
+  }, [frame]);
+
   const containerStyle: React.CSSProperties & { ['--vip-spin-duration']?: string } = {
     width: frameSize,
     height: frameSize,
@@ -44,7 +52,12 @@ export default function VipAvatar({
       <div className="vip-frame-inner">
         <img src={src} alt={alt} className="vip-frame-img" style={imgStyle} />
         {hasImageOverlay && (
-          <img src={frameImage} alt="frame" className="vip-frame-overlay" />
+          <img
+            src={frameImage}
+            alt="frame"
+            className="vip-frame-overlay"
+            style={{ transform: overlayScale === 1 ? 'scale(1)' : `scale(${overlayScale})` }}
+          />
         )}
       </div>
     </div>
