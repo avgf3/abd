@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار الشعارات</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+            direction: rtl;
+        }
+        .logo-test {
+            background: white;
+            padding: 20px;
+            margin: 10px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .logo-test img {
+            width: 24px;
+            height: 24px;
+            display: inline-block;
+            vertical-align: middle;
+        }
+        .error {
+            color: red;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>اختبار شعارات الأدوار</h1>
+    
+    <div class="logo-test">
+        <img src="/svgs/crown.svg" alt="مالك" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
+        <span class="error" style="display:none;">❌ فشل تحميل التاج</span>
+        <span>شعار المالك (التاج)</span>
+    </div>
+    
+    <div class="logo-test">
+        <img src="/svgs/star.svg" alt="مشرف عام" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
+        <span class="error" style="display:none;">❌ فشل تحميل النجمة</span>
+        <span>شعار المشرف العام (النجمة)</span>
+    </div>
+    
+    <div class="logo-test">
+        <img src="/svgs/moderator_shield.svg" alt="مشرف" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
+        <span class="error" style="display:none;">❌ فشل تحميل الدرع</span>
+        <span>شعار المشرف (الدرع)</span>
+    </div>
+
+    <div class="logo-test">
+        <img src="/svgs/blue_arrow.svg" alt="عضو ذكر" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
+        <span class="error" style="display:none;">❌ فشل تحميل السهم الأزرق</span>
+        <span>شعار العضو الذكر (السهم الأزرق)</span>
+    </div>
+
+    <div class="logo-test">
+        <img src="/svgs/pink_medal.svg" alt="عضو أنثى" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
+        <span class="error" style="display:none;">❌ فشل تحميل الميدالية الوردية</span>
+        <span>شعار العضو الأنثى (الميدالية الوردية)</span>
+    </div>
+
+    <script>
+        // اختبار تحميل الملفات
+        const images = document.querySelectorAll('img');
+        images.forEach(img => {
+            img.onload = function() {
+                console.log('✅ تم تحميل:', this.src);
+            };
+            img.onerror = function() {
+                console.error('❌ فشل تحميل:', this.src);
+            };
+        });
+
+        // اختبار الوصول المباشر للملفات
+        fetch('/svgs/crown.svg')
+            .then(response => {
+                if (response.ok) {
+                    console.log('✅ ملف التاج متاح عبر HTTP');
+                } else {
+                    console.error('❌ ملف التاج غير متاح:', response.status);
+                }
+            })
+            .catch(error => {
+                console.error('❌ خطأ في الوصول لملف التاج:', error);
+            });
+    </script>
+</body>
+</html>
