@@ -2,7 +2,12 @@ import { User, Home, Moon, Shield, LogOut, Settings, Palette, Brush, Camera } fr
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { getFinalUsernameColor, getUserListItemStyles } from '@/utils/themeUtils';
+import {
+  getFinalUsernameColor,
+  getUserListItemStyles,
+  getUserNameplateStyles,
+  getUserListItemClasses,
+} from '@/utils/themeUtils';
 
 interface SettingsMenuProps {
   onOpenProfile: () => void;
@@ -53,9 +58,25 @@ export default function SettingsMenu({
           <div className="p-3 border-b border-border" style={getUserListItemStyles(currentUser)}>
             <div className="flex items-center gap-2">
               <User className="w-4 h-4" style={{ color: getFinalUsernameColor(currentUser) }} />
-              <span className="font-semibold" style={{ color: getFinalUsernameColor(currentUser) }}>
-                {currentUser.username}
-              </span>
+              {(() => {
+                const np = getUserNameplateStyles(currentUser);
+                const hasNp = np && Object.keys(np).length > 0;
+                const effectClasses = getUserListItemClasses(currentUser);
+                const hasEffect = !!(effectClasses && effectClasses.length > 0);
+                if (hasNp || hasEffect) {
+                  return (
+                    <span className={`ac-nameplate ${effectClasses}`} style={np}>
+                      <span className="ac-name">{currentUser.username}</span>
+                      <span className="ac-mark">〰</span>
+                    </span>
+                  );
+                }
+                return (
+                  <span className="font-semibold" style={{ color: getFinalUsernameColor(currentUser) }}>
+                    {currentUser.username}
+                  </span>
+                );
+              })()}
             </div>
           </div>
         )}
