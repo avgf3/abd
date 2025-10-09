@@ -112,6 +112,11 @@ async function applyDeploymentFixes() {
     await sql`ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS username_color TEXT DEFAULT '#ffffff'`;
     await sql`ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS bio TEXT DEFAULT ''`;
     await sql`ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS ignored_users TEXT DEFAULT '[]'`;
+    
+    // إضافة أعمدة التدرج والتأثير لأسماء المستخدمين (من migration 0025)
+    console.log('🔍 التحقق من أعمدة username_gradient و username_effect...');
+    await sql`ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS username_gradient TEXT`;
+    await sql`ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS username_effect TEXT`;
 
     console.log('🔄 ضبط القيم الافتراضية لأعمدة التفضيلات...');
     try {
