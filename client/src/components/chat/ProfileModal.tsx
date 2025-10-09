@@ -2212,7 +2212,7 @@ export default function ProfileModal({
 
         .profile-cover {
           position: relative;
-          height: 200px; /* ارتفاع مطابق للصورة المرجعية */
+          height: 160px; /* ارتفاع أقل مطابق للصورة المرجعية */
           background-size: cover;
           background-position: center center;
           background-repeat: no-repeat;
@@ -2243,18 +2243,18 @@ export default function ProfileModal({
         /* تم حذف أنماط الأزرار المحذوفة */
 
         .profile-avatar {
-          width: 80px; /* حجم مطابق للصورة المرجعية */
-          height: 80px;
+          width: 60px; /* حجم أصغر مطابق للصورة المرجعية */
+          height: 60px;
           border-radius: 50%; /* دائري بالكامل */
           overflow: visible; /* السماح للإطار بالظهور خارج الحدود - مهم جداً للإطارات */
           position: absolute;
-          bottom: 15px; /* موضوعة في أسفل الغلاف */
-          right: 15px; /* في الزاوية اليمنى */
+          bottom: -10px; /* تداخل مع الغلاف من الأسفل */
+          right: 20px; /* في الزاوية اليمنى */
           background-color: transparent;
-          box-shadow: none; /* إزالة الظل لعدم التداخل مع الإطار */
-          z-index: 3;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.4); /* ظل خفيف */
+          z-index: 4;
           transition: transform 0.3s ease;
-          border: none; /* إزالة الإطار الأبيض لعدم التداخل مع إطارات البروفايل */
+          border: 3px solid #ffffff; /* إطار أبيض مطابق للصورة المرجعية */
         }
 
         .profile-avatar:hover {
@@ -2262,12 +2262,12 @@ export default function ProfileModal({
         }
 
         .profile-avatar img {
-          width: 100%;
-          height: 100%;
+          width: 54px; /* الحجم الداخلي للصورة */
+          height: 54px;
           object-fit: cover;
           display: block;
           border-radius: 50%; /* الصورة دائرية */
-          border: none; /* إزالة أي إطار قد يتداخل مع إطارات البروفايل */
+          border: none;
         }
 
         .change-avatar-btn {
@@ -2893,7 +2893,8 @@ export default function ProfileModal({
             right: 12px; /* موضع ثابت من اليمين */
             border-radius: 50%; /* دائري بالكامل */
             z-index: 3;
-            border: 2px solid #fff; /* إطار أبيض أرفع على الجوال */
+            border: none; /* إزالة الإطار لعدم التداخل مع إطارات البروفايل */
+            overflow: visible; /* مهم جداً للإطارات على الجوال */
           }
           
           .change-avatar-btn {
@@ -3003,19 +3004,19 @@ export default function ProfileModal({
                   🖼️ تغيير الغلاف
                 </button>
                 
-                {/* اسم المستخدم مع الرتبة - مطابق للصورة المرجعية */}
+                {/* اسم المستخدم مع الرتبة - مطابق حرفياً للصورة المرجعية */}
                 <div style={{
                   position: 'absolute',
-                  bottom: '15px',
+                  bottom: '10px',
                   left: '15px',
-                  right: '110px', /* اترك مساحة للصورة الشخصية الصغيرة */
+                  right: '90px', /* اترك مساحة للصورة الشخصية */
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'flex-start',
-                  gap: '4px',
-                  zIndex: 2,
+                  gap: '2px',
+                  zIndex: 3,
                   textAlign: 'left',
-                  maxWidth: 'calc(100% - 125px)',
+                  maxWidth: 'calc(100% - 105px)',
                 }}>
                   {/* الاسم والرتبة في سطر واحد - مطابق للصورة المرجعية */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
