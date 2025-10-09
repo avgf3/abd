@@ -11,6 +11,8 @@ export interface ChatUser {
   profileBanner?: string;
   profileBackgroundColor?: string;
   usernameColor?: string;
+  usernameGradient?: string; // تدرج لوني لاسم المستخدم (للمشرفين)
+  usernameEffect?: string; // تأثير حركي لاسم المستخدم (للمشرفين)
   profileEffect?: string;
   // إطار البروفايل (اسم/مسار ثابت محفوظ)
   profileFrame?: string;

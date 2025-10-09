@@ -44,6 +44,8 @@ export const users = pgTable('users', {
   deviceId: varchar('device_id', { length: 100 }),
   ignoredUsers: text('ignored_users').default('[]'), // قائمة المستخدمين المتجاهلين - JSON string للتوافق مع SQLite
   usernameColor: text('username_color').default('#4A90E2'), // لون اسم المستخدم (افتراضي أزرق)
+  usernameGradient: text('username_gradient'), // تدرج لوني لاسم المستخدم (للمشرفين)
+  usernameEffect: text('username_effect'), // تأثير حركي لاسم المستخدم (للمشرفين)
   profileEffect: text('profile_effect').default('none'), // تأثير البروفايل
   // إطار صورة البروفايل (مسار ثابت داخل public/frames أو اسم معرف إطار)
   profileFrame: text('profile_frame'),

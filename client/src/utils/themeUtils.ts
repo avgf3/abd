@@ -1,3 +1,5 @@
+import React from 'react';
+
 // دوال مساعدة للتأثيرات
 export const getEffectColor = (effect: string): string => {
   const effectColors = {
@@ -162,6 +164,55 @@ export const getFinalUsernameColor = (user: any): string => {
   }
   
   return '#000000';
+};
+
+// دالة جديدة لدعم التدرجات والتأثيرات للمشرفين
+export const getUsernameDisplayStyle = (user: any): { style: React.CSSProperties; className: string } => {
+  const isModerator = user && ['owner', 'admin', 'moderator'].includes(user.userType);
+  
+  // إذا كان مشرف ولديه تدرج لوني
+  if (isModerator && user.usernameGradient) {
+    return {
+      style: {
+        background: user.usernameGradient,
+        backgroundClip: 'text',
+        WebkitBackgroundClip: 'text',
+        color: 'transparent',
+        fontWeight: 'bold',
+      },
+      className: user.usernameEffect || '',
+    };
+  }
+  
+  // إذا كان مشرف ولديه تأثير فقط (بدون تدرج)
+  if (isModerator && user.usernameEffect && user.usernameEffect !== 'none') {
+    return {
+      style: {
+        color: getFinalUsernameColor(user),
+        fontWeight: 'bold',
+      },
+      className: user.usernameEffect,
+    };
+  }
+  
+  // الحالة العادية - لون فقط
+  return {
+    style: {
+      color: getFinalUsernameColor(user),
+    },
+    className: '',
+  };
+};
+
+// دالة مساعدة لتطبيق نمط الاسم على عنصر span
+export const applyUsernameStyle = (user: any, children: React.ReactNode): JSX.Element => {
+  const { style, className } = getUsernameDisplayStyle(user);
+  
+  return (
+    <span style={style} className={className}>
+      {children}
+    </span>
+  );
 };
 
 // ===== نظام موحد جديد لتأثيرات صندوق المستخدم مع الملف الشخصي =====
