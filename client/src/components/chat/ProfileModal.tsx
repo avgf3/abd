@@ -3000,15 +3000,15 @@ export default function ProfileModal({
                   🖼️ تغيير الغلاف
                 </button>
                 
-                {/* صف: وصف الدور — شارة — أيقونة، وأسفلهم الاسم يبدأ من اتجاهه */}
+                {/* صف: أيقونة — شارة — الاسم، وأسفلهم وصف الدور */}
                 <div style={{
                   position: 'absolute',
                   bottom: '70px',
                   right: (typeof window !== 'undefined' && window.innerWidth <= 480) ? '170px' : '210px',
                   display: 'grid',
-                  gridTemplateColumns: 'auto 20px 20px',
+                  gridTemplateColumns: '20px 20px auto',
                   gridTemplateRows: 'auto auto',
-                  gridTemplateAreas: '"role badge icon" "name name name"',
+                  gridTemplateAreas: '"icon badge name" "role role role"',
                   columnGap: '6px',
                   rowGap: '4px',
                   alignItems: 'start',
@@ -3018,21 +3018,13 @@ export default function ProfileModal({
                   boxSizing: 'border-box',
                   direction: 'ltr'
                 }}>
-                  {/* وصف الدور */}
-                  {(localUser?.userType === 'owner' || localUser?.userType === 'admin' || localUser?.userType === 'moderator') && (
-                    <span style={{ gridArea: 'role', fontSize: '13px', fontWeight: 600, whiteSpace: 'nowrap', textAlign: 'start' }}>
-                      {localUser?.userType === 'owner' && 'Owner'}
-                      {localUser?.userType === 'admin' && 'Admin'}
-                      {localUser?.userType === 'moderator' && 'Moderator'}
-                    </span>
-                  )}
+                  {/* الأيقونة */}
+                  <img src="/icons/lead-icon.png" alt="icon"
+                       style={{ width: 18, height: 18, gridArea: 'icon' }} />
                   {/* شارة الدور */}
                   <span style={{ gridArea: 'badge', lineHeight: 0 }}>
                     {getUserLevelIcon(localUser, 16)}
                   </span>
-                  {/* الأيقونة اليمنى بعد العكس */}
-                  <img src="/icons/lead-icon.png" alt="icon"
-                       style={{ width: 18, height: 18, gridArea: 'icon' }} />
                   {/* الاسم أسفل الوصف ويبدأ من اتجاهه */}
                   <h3
                     style={{
@@ -3055,6 +3047,14 @@ export default function ProfileModal({
                   >
                     <bdi>{localUser?.username || 'اسم المستخدم'}</bdi>
                   </h3>
+                  {/* وصف الدور أسفل الاسم بعد العكس */}
+                  {(localUser?.userType === 'owner' || localUser?.userType === 'admin' || localUser?.userType === 'moderator') && (
+                    <span style={{ gridArea: 'role', fontSize: '13px', fontWeight: 600, whiteSpace: 'nowrap', textAlign: 'start' }}>
+                      {localUser?.userType === 'owner' && 'Owner'}
+                      {localUser?.userType === 'admin' && 'Admin'}
+                      {localUser?.userType === 'moderator' && 'Moderator'}
+                    </span>
+                  )}
                 </div>
               </>
             )}
@@ -3071,9 +3071,9 @@ export default function ProfileModal({
                   bottom: '70px',
                   right: (typeof window !== 'undefined' && window.innerWidth <= 480) ? '170px' : '210px',
                   display: 'grid',
-                  gridTemplateColumns: 'auto 20px 20px',
+                  gridTemplateColumns: '20px 20px auto',
                   gridTemplateRows: 'auto auto',
-                  gridTemplateAreas: '"role badge icon" "name name name"',
+                  gridTemplateAreas: '"icon badge name" "role role role"',
                   columnGap: '6px',
                   rowGap: '4px',
                   alignItems: 'start',
@@ -3083,18 +3083,13 @@ export default function ProfileModal({
                   boxSizing: 'border-box',
                   direction: 'ltr'
                 }}>
-                  {(localUser?.userType === 'owner' || localUser?.userType === 'admin' || localUser?.userType === 'moderator') && (
-                    <span style={{ gridArea: 'role', fontSize: '13px', fontWeight: 600, whiteSpace: 'nowrap', textAlign: 'start' }}>
-                      {localUser?.userType === 'owner' && 'Owner'}
-                      {localUser?.userType === 'admin' && 'Admin'}
-                      {localUser?.userType === 'moderator' && 'Moderator'}
-                    </span>
-                  )}
+                  {/* الأيقونة */}
+                  <img src="/icons/lead-icon.png" alt="icon"
+                       style={{ width: 18, height: 18, gridArea: 'icon' }} />
+                  {/* شارة الدور */}
                   <span style={{ gridArea: 'badge', lineHeight: 0 }}>
                     {getUserLevelIcon(localUser, 16)}
                   </span>
-                  <img src="/icons/lead-icon.png" alt="icon"
-                       style={{ width: 18, height: 18, gridArea: 'icon' }} />
                   <h3
                     style={{
                       gridArea: 'name',
@@ -3116,6 +3111,13 @@ export default function ProfileModal({
                   >
                     <bdi>{localUser?.username || 'اسم المستخدم'}</bdi>
                   </h3>
+                  {(localUser?.userType === 'owner' || localUser?.userType === 'admin' || localUser?.userType === 'moderator') && (
+                    <span style={{ gridArea: 'role', fontSize: '13px', fontWeight: 600, whiteSpace: 'nowrap', textAlign: 'start' }}>
+                      {localUser?.userType === 'owner' && 'Owner'}
+                      {localUser?.userType === 'admin' && 'Admin'}
+                      {localUser?.userType === 'moderator' && 'Moderator'}
+                    </span>
+                  )}
                 </div>
               </>
             )}
@@ -3128,9 +3130,9 @@ export default function ProfileModal({
                   bottom: '70px',
                   right: (typeof window !== 'undefined' && window.innerWidth <= 480) ? '170px' : '210px',
                   display: 'grid',
-                  gridTemplateColumns: 'auto 20px 20px',
+                  gridTemplateColumns: '20px 20px auto',
                   gridTemplateRows: 'auto auto',
-                  gridTemplateAreas: '"role badge icon" "name name name"',
+                  gridTemplateAreas: '"icon badge name" "role role role"',
                   columnGap: '6px',
                   rowGap: '4px',
                   alignItems: 'start',
@@ -3141,18 +3143,13 @@ export default function ProfileModal({
                   boxSizing: 'border-box',
                   direction: 'ltr'
                 }}>
-                  {(localUser?.userType === 'owner' || localUser?.userType === 'admin' || localUser?.userType === 'moderator') && (
-                    <span style={{ gridArea: 'role', fontSize: '13px', fontWeight: 600, whiteSpace: 'nowrap', textAlign: 'start' }}>
-                      {localUser?.userType === 'owner' && 'Owner'}
-                      {localUser?.userType === 'admin' && 'Admin'}
-                      {localUser?.userType === 'moderator' && 'Moderator'}
-                    </span>
-                  )}
+                  {/* الأيقونة */}
+                  <img src="/icons/lead-icon.png" alt="icon"
+                       style={{ width: 18, height: 18, gridArea: 'icon' }} />
+                  {/* شارة الدور */}
                   <span style={{ gridArea: 'badge', lineHeight: 0 }}>
                     {getUserLevelIcon(localUser, 16)}
                   </span>
-                  <img src="/icons/lead-icon.png" alt="icon"
-                       style={{ width: 18, height: 18, gridArea: 'icon' }} />
                   <h3
                     style={{
                       gridArea: 'name',
@@ -3172,6 +3169,13 @@ export default function ProfileModal({
                   >
                     <bdi>{localUser?.username || 'اسم المستخدم'}</bdi>
                   </h3>
+                  {(localUser?.userType === 'owner' || localUser?.userType === 'admin' || localUser?.userType === 'moderator') && (
+                    <span style={{ gridArea: 'role', fontSize: '13px', fontWeight: 600, whiteSpace: 'nowrap', textAlign: 'start' }}>
+                      {localUser?.userType === 'owner' && 'Owner'}
+                      {localUser?.userType === 'admin' && 'Admin'}
+                      {localUser?.userType === 'moderator' && 'Moderator'}
+                    </span>
+                  )}
                 </div>
               </>
             )}
