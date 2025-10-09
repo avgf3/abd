@@ -2195,27 +2195,52 @@ export default function ProfileModal({
         .profile-card {
           width: 100%;
           max-width: 520px;
-          border-radius: 0;
+          border-radius: 25px;
           overflow: hidden;
-          background: var(--card-bg);
-          box-shadow: 0 8px 32px rgba(0,0,0,0.8);
+          background: linear-gradient(135deg, 
+            rgba(20, 25, 40, 0.95) 0%, 
+            rgba(30, 35, 50, 0.95) 50%, 
+            rgba(25, 30, 45, 0.95) 100%);
+          backdrop-filter: blur(30px) saturate(180%);
+          border: 2px solid rgba(255, 255, 255, 0.1);
+          box-shadow: 
+            0 20px 60px rgba(0, 0, 0, 0.5),
+            0 0 100px rgba(255, 255, 255, 0.05),
+            inset 0 1px 0 rgba(255, 255, 255, 0.1);
           position: relative;
-          transition: transform 0.3s ease, box-shadow 0.3s ease;
+          transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
           height: fit-content;
           color: #fff;
         }
 
         .profile-card:hover {
-          transform: translateY(-5px);
-          box-shadow: 0 12px 40px rgba(0,0,0,0.9);
+          transform: translateY(-8px) scale(1.02);
+          box-shadow: 
+            0 25px 80px rgba(0, 0, 0, 0.6),
+            0 0 120px rgba(255, 255, 255, 0.08),
+            inset 0 1px 0 rgba(255, 255, 255, 0.15);
+          border-color: rgba(255, 255, 255, 0.15);
         }
 
         .profile-cover {
           position: relative;
-          height: 268px; /* زيادة طفيفة لارتفاع الغلاف */
-          background-size: cover;
-          background-position: center center;
-          background-repeat: no-repeat;
+          height: 280px; /* زيادة الارتفاع للتصميم الجديد */
+          background: linear-gradient(135deg, 
+            #ff6b6b 0%, 
+            #4ecdc4 25%, 
+            #45b7d1 50%, 
+            #96ceb4 75%, 
+            #feca57 100%);
+          background-size: 400% 400%;
+          animation: gradientFlow 15s ease infinite;
+          border-radius: 20px 20px 0 0;
+          overflow: hidden;
+        }
+        
+        @keyframes gradientFlow {
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
         }
 
         .change-cover-btn {
@@ -2243,17 +2268,21 @@ export default function ProfileModal({
         /* تم حذف أنماط الأزرار المحذوفة */
 
         .profile-avatar {
-          width: 200px;
-          height: 200px;
-          border-radius: 9999px; /* دائري بالكامل */
-          overflow: visible; /* السماح للإطار بالظهور خارج الحدود */
+          width: 160px;
+          height: 160px;
+          border-radius: 50%;
+          overflow: visible;
           position: absolute;
-          top: calc(100% - 195px); /* رفع الصورة للأعلى قليلاً */
-          right: 10px; /* نقل الصورة لأقصى اليمين */
-          background-color: transparent;
-          box-shadow: none; /* إزالة الظل من الـ container */
-          z-index: 2;
-          transition: transform 0.3s ease;
+          top: calc(100% - 140px);
+          right: 20px;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          padding: 4px;
+          box-shadow: 
+            0 8px 32px rgba(0, 0, 0, 0.3),
+            0 0 0 4px rgba(255, 255, 255, 0.2),
+            inset 0 0 0 2px rgba(255, 255, 255, 0.1);
+          z-index: 5;
+          transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .profile-avatar:hover {
@@ -2295,6 +2324,115 @@ export default function ProfileModal({
           display: none;
         }
 
+        .profile-header-section {
+          padding: 20px;
+          background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+          backdrop-filter: blur(20px);
+          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .profile-status-badges {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 12px;
+          justify-content: center;
+          margin-bottom: 20px;
+        }
+
+        .status-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          padding: 8px 16px;
+          border-radius: 25px;
+          font-size: 14px;
+          font-weight: 700;
+          text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+          box-shadow: 
+            0 4px 15px rgba(0, 0, 0, 0.2),
+            inset 0 1px 0 rgba(255, 255, 255, 0.2);
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          backdrop-filter: blur(10px);
+        }
+
+        .status-badge:hover {
+          transform: translateY(-2px) scale(1.05);
+          box-shadow: 
+            0 8px 25px rgba(0, 0, 0, 0.3),
+            inset 0 1px 0 rgba(255, 255, 255, 0.3);
+        }
+
+        .owner-badge {
+          background: linear-gradient(135deg, #ffd700 0%, #ffed4e 50%, #ffa500 100%);
+          color: #000;
+          border: 2px solid rgba(255, 215, 0, 0.5);
+        }
+
+        .admin-badge {
+          background: linear-gradient(135deg, #e6f3ff 0%, #87ceeb 50%, #4682b4 100%);
+          color: #000;
+          border: 2px solid rgba(70, 130, 180, 0.5);
+        }
+
+        .mod-badge {
+          background: linear-gradient(135deg, #98fb98 0%, #90ee90 50%, #32cd32 100%);
+          color: #000;
+          border: 2px solid rgba(50, 205, 50, 0.5);
+        }
+
+        .level-badge {
+          background: linear-gradient(135deg, #dda0dd 0%, #da70d6 50%, #ba55d3 100%);
+          color: #fff;
+          border: 2px solid rgba(186, 85, 211, 0.5);
+        }
+
+        .points-badge {
+          background: linear-gradient(135deg, #ff69b4 0%, #ff1493 50%, #dc143c 100%);
+          color: #fff;
+          border: 2px solid rgba(220, 20, 60, 0.5);
+        }
+
+        .crown-icon, .admin-icon, .mod-icon, .level-icon, .points-icon {
+          font-size: 16px;
+          filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
+        }
+
+        .badge-text {
+          font-family: 'Cairo', sans-serif;
+          font-weight: 700;
+          letter-spacing: 0.5px;
+        }
+
+        .inline-crown, .inline-star, .inline-shield {
+          font-size: 20px;
+          margin-left: 8px;
+          filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+          animation: gentleGlow 2s ease-in-out infinite;
+        }
+
+        .inline-crown {
+          color: #ffd700;
+        }
+
+        .inline-star {
+          color: #87ceeb;
+        }
+
+        .inline-shield {
+          color: #90ee90;
+        }
+
+        @keyframes gentleGlow {
+          0%, 100% {
+            transform: scale(1);
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+          }
+          50% {
+            transform: scale(1.1);
+            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.4));
+          }
+        }
+
         .profile-body {
           padding: 0 20px 10px;
         }
@@ -2305,19 +2443,27 @@ export default function ProfileModal({
         }
 
         .profile-info {
-          margin-bottom: 12px;
+          margin-bottom: 16px;
           text-align: center;
-          margin-top: 0;
+          margin-top: 10px;
+          position: relative;
         }
 
         .profile-info h3 {
-          margin: 0 0 6px 0;
-          font-size: 20px;
-          font-weight: bold;
-          color: var(--accent-color);
-          text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+          margin: 0 0 8px 0;
+          font-size: 24px;
+          font-weight: 800;
+          background: linear-gradient(135deg, #ffd700 0%, #ffed4e 50%, #ffa500 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+          text-shadow: 0 4px 8px rgba(255, 215, 0, 0.3);
           cursor: pointer;
           transition: all 0.3s ease;
+          position: relative;
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
         }
 
         .profile-info h3:hover {
@@ -3055,6 +3201,9 @@ export default function ProfileModal({
                     onClick={() => openEditModal('name')}
                     dir="auto"
                   >
+                    {localUser?.userType === 'owner' && <span className="inline-crown">👑</span>}
+                    {localUser?.userType === 'admin' && <span className="inline-star">⭐</span>}
+                    {localUser?.userType === 'moderator' && <span className="inline-shield">🛡️</span>}
                     <bdi>{localUser?.username || 'اسم المستخدم'}</bdi>
                   </h3>
                 </div>
@@ -3122,6 +3271,9 @@ export default function ProfileModal({
                     onClick={() => openEditModal('name')}
                     dir="auto"
                   >
+                    {localUser?.userType === 'owner' && <span className="inline-crown">👑</span>}
+                    {localUser?.userType === 'admin' && <span className="inline-star">⭐</span>}
+                    {localUser?.userType === 'moderator' && <span className="inline-shield">🛡️</span>}
                     <bdi>{localUser?.username || 'اسم المستخدم'}</bdi>
                   </h3>
                 </div>
@@ -3184,6 +3336,9 @@ export default function ProfileModal({
                     }}
                     dir="auto"
                   >
+                    {localUser?.userType === 'owner' && <span className="inline-crown">👑</span>}
+                    {localUser?.userType === 'admin' && <span className="inline-star">⭐</span>}
+                    {localUser?.userType === 'moderator' && <span className="inline-shield">🛡️</span>}
                     <bdi>{localUser?.username || 'اسم المستخدم'}</bdi>
                   </h3>
                 </div>
@@ -3243,6 +3398,51 @@ export default function ProfileModal({
               </button>
             )}
 
+          </div>
+
+          {/* Profile Header with Icons and Status */}
+          <div className="profile-header-section">
+            <div className="profile-status-badges">
+              {/* Owner Crown Icon */}
+              {localUser?.userType === 'owner' && (
+                <div className="status-badge owner-badge">
+                  <span className="crown-icon">👑</span>
+                  <span className="badge-text">المالك</span>
+                </div>
+              )}
+              
+              {/* Admin Badge */}
+              {localUser?.userType === 'admin' && (
+                <div className="status-badge admin-badge">
+                  <span className="admin-icon">⭐</span>
+                  <span className="badge-text">مشرف</span>
+                </div>
+              )}
+              
+              {/* Moderator Badge */}
+              {localUser?.userType === 'moderator' && (
+                <div className="status-badge mod-badge">
+                  <span className="mod-icon">🛡️</span>
+                  <span className="badge-text">مراقب</span>
+                </div>
+              )}
+              
+              {/* Level Badge */}
+              {localUser?.level && (
+                <div className="status-badge level-badge">
+                  <span className="level-icon">🏆</span>
+                  <span className="badge-text">المستوى {localUser.level}</span>
+                </div>
+              )}
+              
+              {/* Points Badge */}
+              {localUser?.points && (
+                <div className="status-badge points-badge">
+                  <span className="points-icon">💎</span>
+                  <span className="badge-text">{formatPoints(localUser.points)} نقطة</span>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Profile Body - Tab System */}
