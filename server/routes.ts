@@ -3279,14 +3279,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const updates = req.body || {};
 
-      // التحقق من الصلاحيات للتأثيرات والألوان
-      if (updates.profileBackgroundColor || updates.profileEffect) {
+      // التحقق من الصلاحيات للتأثيرات والألوان والتدرجات
+      if (updates.profileBackgroundColor || updates.profileEffect || updates.usernameGradient || updates.usernameEffect) {
         const user = await storage.getUser(idNum);
         if (!user) {
           return res.status(404).json({ error: 'User not found' });
         }
         
-        if (user.userType !== 'owner' && user.userType !== 'admin' && user.userType !== 'moderator') {
+        // التدرجات والتأثيرات للاسم متاحة للمشرفين فقط
+        if ((updates.usernameGradient || updates.usernameEffect) && 
+            user.userType !== 'owner' && user.userType !== 'admin' && user.userType !== 'moderator') {
+          return res.status(403).json({ error: 'التدرجات والتأثيرات متاحة للمشرفين فقط' });
+        }
+        
+        // ألوان وتأثيرات الملف الشخصي للمشرفين فقط
+        if ((updates.profileBackgroundColor || updates.profileEffect) &&
+            user.userType !== 'owner' && user.userType !== 'admin' && user.userType !== 'moderator') {
           return res.status(403).json({ error: 'هذه الميزة متاحة للمشرفين فقط' });
         }
       }
@@ -3321,6 +3329,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         'relation',
         'bio',
         'usernameColor',
+        'usernameGradient', // تدرج لوني لاسم المستخدم (للمشرفين)
+        'usernameEffect', // تأثير حركي لاسم المستخدم (للمشرفين)
         'profileBackgroundColor',
         'profileEffect',
         'profileFrame',
