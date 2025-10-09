@@ -28,7 +28,7 @@ import {
   insertMention,
 } from '@/utils/mentionUtils';
 import { getDynamicBorderColor } from '@/utils/messageUtils';
-import { getFinalUsernameColor, getUserNameplateStyles } from '@/utils/themeUtils';
+import { getFinalUsernameColor, getUserNameplateStyles, getUsernameDisplayStyle } from '@/utils/themeUtils';
 import { formatTime } from '@/utils/timeUtils';
 // Removed ComposerPlusMenu (ready/quick options)
 import { useComposerStyle } from '@/contexts/ComposerStyleContext';
@@ -775,15 +775,18 @@ export default function MessageArea({
                                     </button>
                                   );
                                 }
-                                return (
-                                  <button
-                                    onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
-                                    className="font-semibold hover:underline transition-colors duration-200 text-sm"
-                                    style={{ color: getFinalUsernameColor(message.sender) }}
-                                  >
-                                    {message.sender?.username || 'جاري التحميل...'}
-                                  </button>
-                                );
+                                return (() => {
+                                  const uds = getUsernameDisplayStyle(message.sender);
+                                  return (
+                                    <button
+                                      onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
+                                      className={`font-semibold hover:underline transition-colors duration-200 text-sm ${uds.className || ''}`}
+                                      style={uds.style}
+                                    >
+                                      {message.sender?.username || 'جاري التحميل...'}
+                                    </button>
+                                  );
+                                })();
                               })()}
                               <span className="text-red-400 mx-1">:</span>
                             </div>
@@ -906,15 +909,18 @@ export default function MessageArea({
                                     </button>
                                   );
                                 }
-                                return (
-                                  <button
-                                    onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
-                                    className="font-semibold hover:underline transition-colors duration-200 text-sm"
-                                    style={{ color: getFinalUsernameColor(message.sender) }}
-                                  >
-                                    {message.sender?.username || 'جاري التحميل...'}
-                                  </button>
-                                );
+                                return (() => {
+                                  const uds = getUsernameDisplayStyle(message.sender);
+                                  return (
+                                    <button
+                                      onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
+                                      className={`font-semibold hover:underline transition-colors duration-200 text-sm ${uds.className || ''}`}
+                                      style={uds.style}
+                                    >
+                                      {message.sender?.username || 'جاري التحميل...'}
+                                    </button>
+                                  );
+                                })();
                               })()}
                               <span className="text-gray-400 mx-1">:</span>
                             </div>

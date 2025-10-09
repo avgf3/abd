@@ -4840,6 +4840,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       role: sanitized.role,
       isHidden: !!sanitized.isHidden,
       usernameColor: sanitized.usernameColor,
+      // تضمين حقول التدرج والتأثير للاسم للمزامنة الفورية على الواجهة
+      usernameGradient: (sanitized as any).usernameGradient,
+      usernameEffect: (sanitized as any).usernameEffect,
       profileBackgroundColor: sanitized.profileBackgroundColor,
       profileEffect: sanitized.profileEffect,
       profileFrame: sanitized.profileFrame, // إضافة إطار البروفايل

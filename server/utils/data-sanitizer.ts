@@ -44,6 +44,15 @@ export function sanitizeEffect(effect: string | null | undefined): string {
     'effect-shadow',
     'effect-electric',
     'effect-crystal',
+    // تأثيرات إضافية مدعومة في الواجهة
+    'effect-holographic',
+    'effect-galaxy',
+    'effect-shimmer',
+    'effect-prism',
+    'effect-magnetic',
+    'effect-heartbeat',
+    'effect-stars',
+    'effect-snow',
   ];
 
   return validEffects.includes(effect) ? effect : 'none';
@@ -126,6 +135,13 @@ export function sanitizeUserData(user: any): any {
     ...user,
     profileBackgroundColor: sanitizeProfileBackgroundColor(user.profileBackgroundColor),
     usernameColor: sanitizeHexColor(user.usernameColor, '#4A90E2'),
+    // تمرير تدرج اسم المستخدم كما هو إذا كان نصاً صالحاً يبدأ بـ linear-gradient(
+    usernameGradient:
+      typeof user.usernameGradient === 'string' && user.usernameGradient.startsWith('linear-gradient(')
+        ? user.usernameGradient
+        : undefined,
+    // تنظيف تأثير الاسم (إن وجد)
+    usernameEffect: sanitizeEffect(user.usernameEffect),
     profileEffect: sanitizeEffect(user.profileEffect),
     dmPrivacy,
     // تفضيلات عامة (ضمان قيم منطقية افتراضية)
