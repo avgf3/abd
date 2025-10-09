@@ -2246,15 +2246,15 @@ export default function ProfileModal({
           width: 80px; /* حجم مطابق للصورة المرجعية */
           height: 80px;
           border-radius: 50%; /* دائري بالكامل */
-          overflow: visible; /* السماح للإطار بالظهور خارج الحدود */
+          overflow: visible; /* السماح للإطار بالظهور خارج الحدود - مهم جداً للإطارات */
           position: absolute;
           bottom: 15px; /* موضوعة في أسفل الغلاف */
           right: 15px; /* في الزاوية اليمنى */
           background-color: transparent;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.3); /* ظل خفيف */
+          box-shadow: none; /* إزالة الظل لعدم التداخل مع الإطار */
           z-index: 3;
           transition: transform 0.3s ease;
-          border: 3px solid #fff; /* إطار أبيض */
+          border: none; /* إزالة الإطار الأبيض لعدم التداخل مع إطارات البروفايل */
         }
 
         .profile-avatar:hover {
@@ -2266,7 +2266,8 @@ export default function ProfileModal({
           height: 100%;
           object-fit: cover;
           display: block;
-          border-radius: 9999px; /* الصورة دائرية */
+          border-radius: 50%; /* الصورة دائرية */
+          border: none; /* إزالة أي إطار قد يتداخل مع إطارات البروفايل */
         }
 
         .change-avatar-btn {
@@ -2886,12 +2887,13 @@ export default function ProfileModal({
           }
           
           .profile-avatar {
-            width: 160px;
-            height: 160px;
-            top: calc(100% - 175px); /* رفع الصورة للأعلى قليلاً على الجوال */
-            right: 10px; /* نقل الصورة لأقصى اليمين على الجوال */
-            border-radius: 12px; /* زوايا مدورة قليلاً للأجهزة المحمولة */
-            z-index: 10; /* جعل الصورة تتعدى الزر */
+            width: 70px; /* حجم أصغر على الجوال */
+            height: 70px;
+            bottom: 12px; /* موضع ثابت من الأسفل */
+            right: 12px; /* موضع ثابت من اليمين */
+            border-radius: 50%; /* دائري بالكامل */
+            z-index: 3;
+            border: 2px solid #fff; /* إطار أبيض أرفع على الجوال */
           }
           
           .change-avatar-btn {
