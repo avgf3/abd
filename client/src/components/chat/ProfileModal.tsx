@@ -3000,25 +3000,25 @@ export default function ProfileModal({
                   🖼️ تغيير الغلاف
                 </button>
                 
-                {/* اسم المستخدم مع الرتبة - في أسفل صورة الغلاف */}
+                {/* اسم المستخدم مع الرتبة - محاذاة إلى اليسار وبجانب الصورة الشخصية */}
                 <div style={{
                   position: 'absolute',
-                  bottom: '10px', /* في أسفل صورة الغلاف قبل الحافة مباشرة */
-                  left: '50%',
-                  transform: 'translateX(calc(-50% - 12px - 2cm))',
+                  bottom: '10px',
+                  left: '12px',
+                  right: 'calc(200px + 24px)', /* اترك مساحة للصورة الشخصية على اليمين */
                   display: 'flex',
                   flexDirection: 'column',
-                  alignItems: 'center',
-                  gap: '2px', /* فراغ صغير بين الشعار والاسم */
+                  alignItems: 'flex-start',
+                  gap: '2px',
                   zIndex: 10,
-                  textAlign: 'center',
-                  maxWidth: 'calc(100% - 180px)',
+                  textAlign: 'left',
+                  maxWidth: 'calc(100% - 240px)',
                   padding: '0 12px',
                   boxSizing: 'border-box'
                 }}>
                   {/* الرتبة فوق الاسم */}
                   {(localUser?.userType === 'owner' || localUser?.userType === 'admin' || localUser?.userType === 'moderator') && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', transform: 'translateX(2cm)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                       <span style={{ fontSize: '13px' }}>
                         {localUser?.userType === 'owner' && 'Owner'}
                         {localUser?.userType === 'admin' && 'Admin'}
@@ -3040,12 +3040,11 @@ export default function ProfileModal({
                     // direction accepts 'ltr' | 'rtl' in TS types; rely on CSS default by omitting invalid value
                     // direction: 'auto',
                     unicodeBidi: 'plaintext',
-                    textAlign: 'center',
+                    textAlign: 'left',
                     whiteSpace: 'normal',
                     overflowWrap: 'break-word',
                     wordBreak: 'keep-all',
                     hyphens: 'none',
-                    transform: 'translateX(2cm)'
                   }}
                   onClick={() => openEditModal('name')}
                   >
@@ -3064,21 +3063,21 @@ export default function ProfileModal({
               <>
                 <div style={{
                   position: 'absolute',
-                  bottom: '10px', /* في أسفل صورة الغلاف قبل الحافة مباشرة */
-                  left: '50%',
-                  transform: 'translateX(calc(-50% - 12px - 2cm))',
+                  bottom: '10px',
+                  left: '12px',
+                  right: 'calc(200px + 24px)',
                   display: 'flex',
                   flexDirection: 'column',
-                  alignItems: 'center',
-                  gap: '2px', /* فراغ صغير بين الشعار والاسم */
+                  alignItems: 'flex-start',
+                  gap: '2px',
                   zIndex: 12,
-                  textAlign: 'center',
-                  maxWidth: 'calc(100% - 180px)',
+                  textAlign: 'left',
+                  maxWidth: 'calc(100% - 240px)',
                   padding: '0 12px',
                   boxSizing: 'border-box'
                 }}>
                   {(localUser?.userType === 'owner' || localUser?.userType === 'admin' || localUser?.userType === 'moderator') && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', transform: 'translateX(2cm)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                       <span style={{ fontSize: '13px' }}>
                         {localUser?.userType === 'owner' && 'Owner'}
                         {localUser?.userType === 'admin' && 'Admin'}
@@ -3098,12 +3097,11 @@ export default function ProfileModal({
                     cursor: 'pointer',
                     // direction: 'auto',
                     unicodeBidi: 'plaintext',
-                    textAlign: 'center',
+                    textAlign: 'left',
                     whiteSpace: 'normal',
                     overflowWrap: 'break-word',
                     wordBreak: 'keep-all',
                     hyphens: 'none',
-                    transform: 'translateX(2cm)'
                   }}
                   onClick={() => openEditModal('name')}
                   >
@@ -3118,23 +3116,23 @@ export default function ProfileModal({
                 {/* اسم المستخدم مع الرتبة - في أسفل صورة الغلاف */}
                 <div style={{
                   position: 'absolute',
-                  bottom: '10px', /* في أسفل صورة الغلاف قبل الحافة مباشرة */
-                  left: '50%',
-                  transform: 'translateX(calc(-50% - 12px - 2cm))',
+                  bottom: '10px',
+                  left: '12px',
+                  right: 'calc(200px + 24px)',
                   display: 'flex',
                   flexDirection: 'column',
-                  alignItems: 'center',
-                  gap: '2px', /* فراغ صغير بين الشعار والاسم */
+                  alignItems: 'flex-start',
+                  gap: '2px',
                   zIndex: 12,
                   pointerEvents: 'none',
-                  textAlign: 'center',
-                  maxWidth: 'calc(100% - 180px)',
+                  textAlign: 'left',
+                  maxWidth: 'calc(100% - 240px)',
                   padding: '0 12px',
                   boxSizing: 'border-box'
                 }}>
                   {/* الرتبة فوق الاسم */}
                   {(localUser?.userType === 'owner' || localUser?.userType === 'admin' || localUser?.userType === 'moderator') && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', transform: 'translateX(2cm)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                       <span style={{ fontSize: '13px' }}>
                         {localUser?.userType === 'owner' && 'Owner'}
                         {localUser?.userType === 'admin' && 'Admin'}
@@ -3154,12 +3152,11 @@ export default function ProfileModal({
                     textShadow: '0 2px 4px rgba(0,0,0,0.5)',
                     // direction: 'auto',
                     unicodeBidi: 'plaintext',
-                    textAlign: 'center',
+                    textAlign: 'left',
                     whiteSpace: 'normal',
                     overflowWrap: 'break-word',
                     wordBreak: 'keep-all',
                     hyphens: 'none',
-                    transform: 'translateX(2cm)'
                   }}>
                     <bdi>{localUser?.username || 'اسم المستخدم'}</bdi>
                   </h3>
