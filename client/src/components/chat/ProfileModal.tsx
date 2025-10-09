@@ -3004,7 +3004,7 @@ export default function ProfileModal({
                 <div style={{
                   position: 'absolute',
                   bottom: '70px',
-                  right: '240px',
+                  right: (typeof window !== 'undefined' && window.innerWidth <= 480) ? '170px' : '210px',
                   display: 'grid',
                   gridTemplateColumns: '20px 20px auto',
                   gridTemplateRows: 'auto auto',
@@ -3013,7 +3013,7 @@ export default function ProfileModal({
                   rowGap: '4px',
                   alignItems: 'start',
                   zIndex: 10,
-                  maxWidth: 'calc(100% - 260px)',
+                  maxWidth: `calc(100% - ${((typeof window !== 'undefined' && window.innerWidth <= 480) ? 190 : 230)}px)`,
                   padding: '0',
                   boxSizing: 'border-box',
                   direction: 'ltr'
@@ -3069,7 +3069,7 @@ export default function ProfileModal({
                 <div style={{
                   position: 'absolute',
                   bottom: '70px',
-                  right: '240px',
+                  right: (typeof window !== 'undefined' && window.innerWidth <= 480) ? '170px' : '210px',
                   display: 'grid',
                   gridTemplateColumns: '20px 20px auto',
                   gridTemplateRows: 'auto auto',
@@ -3078,7 +3078,7 @@ export default function ProfileModal({
                   rowGap: '4px',
                   alignItems: 'start',
                   zIndex: 12,
-                  maxWidth: 'calc(100% - 260px)',
+                  maxWidth: `calc(100% - ${((typeof window !== 'undefined' && window.innerWidth <= 480) ? 190 : 230)}px)`,
                   padding: '0',
                   boxSizing: 'border-box',
                   direction: 'ltr'
@@ -3126,7 +3126,7 @@ export default function ProfileModal({
                 <div style={{
                   position: 'absolute',
                   bottom: '70px',
-                  right: '240px',
+                  right: (typeof window !== 'undefined' && window.innerWidth <= 480) ? '170px' : '210px',
                   display: 'grid',
                   gridTemplateColumns: '20px 20px auto',
                   gridTemplateRows: 'auto auto',
@@ -3136,7 +3136,7 @@ export default function ProfileModal({
                   alignItems: 'start',
                   zIndex: 12,
                   pointerEvents: 'none',
-                  maxWidth: 'calc(100% - 260px)',
+                  maxWidth: `calc(100% - ${((typeof window !== 'undefined' && window.innerWidth <= 480) ? 190 : 230)}px)`,
                   padding: '0',
                   boxSizing: 'border-box',
                   direction: 'ltr'
