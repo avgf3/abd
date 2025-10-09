@@ -237,7 +237,9 @@ export default function UnifiedSidebar({
   // 🚀 تحسين: استخدام مكون UserRoleBadge المركزي
   const renderUserBadge = useCallback((user: ChatUser) => {
     if (!user) return null;
-    return <UserRoleBadge user={user} size={20} />;
+    const baseSize = 20;
+    const adjustedSize = user.userType === 'owner' ? Math.round(baseSize * 0.85) : baseSize;
+    return <UserRoleBadge user={user} size={adjustedSize} />;
   }, []);
 
   // استبدال إيموجي العلم بصورة علم حقيقية
