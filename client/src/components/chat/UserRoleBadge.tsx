@@ -36,6 +36,9 @@ export function getUserRoleIcon(userType: string): string {
   }
 }
 
+// إضافة timestamp لكسر التخزين المؤقت للشعارات
+const LOGO_VERSION = Date.now();
+
 // دالة مساعدة للحصول على أيقونة المستوى/الدور
 export function getUserLevelIcon(user: ChatUser, size: number = 20): JSX.Element {
   // التحقق من وجود المستخدم
@@ -58,13 +61,17 @@ export function getUserLevelIcon(user: ChatUser, size: number = 20): JSX.Element
     const h = size * 1.15;
     return (
       <img
-        src="/svgs/crown.svg"
+        src={`/svgs/crown.svg?v=${LOGO_VERSION}`}
         alt="owner"
         style={{ width: w, height: h, display: 'inline', verticalAlign: 'middle' }}
         onError={(e) => {
+          console.error('❌ فشل تحميل شعار المالك من /svgs/crown.svg');
           const target = e.target as HTMLImageElement;
           target.style.display = 'none';
-          target.outerHTML = '<span style="font-size: ' + Math.max(w, h) + 'px; display: inline;">👑</span>';
+          target.outerHTML = '<span style="font-size: ' + Math.max(w, h) + 'px; display: inline; color: #ffd700;">👑</span>';
+        }}
+        onLoad={() => {
+          console.log('✅ تم تحميل شعار المالك');
         }}
       />
     );
@@ -75,13 +82,17 @@ export function getUserLevelIcon(user: ChatUser, size: number = 20): JSX.Element
     const h = size;
     return (
       <img
-        src="/svgs/star.svg"
+        src={`/svgs/star.svg?v=${LOGO_VERSION}`}
         alt="admin"
         style={{ width: w, height: h, display: 'inline', verticalAlign: 'middle' }}
         onError={(e) => {
+          console.error('❌ فشل تحميل شعار المشرف العام من /svgs/star.svg');
           const target = e.target as HTMLImageElement;
           target.style.display = 'none';
-          target.outerHTML = '<span style="font-size: ' + Math.max(w, h) + 'px; display: inline;">⭐</span>';
+          target.outerHTML = '<span style="font-size: ' + Math.max(w, h) + 'px; display: inline; color: #ffd700;">⭐</span>';
+        }}
+        onLoad={() => {
+          console.log('✅ تم تحميل شعار المشرف العام');
         }}
       />
     );
@@ -92,13 +103,17 @@ export function getUserLevelIcon(user: ChatUser, size: number = 20): JSX.Element
     const h = size;
     return (
       <img
-        src="/svgs/moderator_shield.svg"
+        src={`/svgs/moderator_shield.svg?v=${LOGO_VERSION}`}
         alt="moderator"
         style={{ width: w, height: h, display: 'inline', verticalAlign: 'middle' }}
         onError={(e) => {
+          console.error('❌ فشل تحميل شعار المشرف من /svgs/moderator_shield.svg');
           const target = e.target as HTMLImageElement;
           target.style.display = 'none';
-          target.outerHTML = '<span style="font-size: ' + Math.max(w, h) + 'px; display: inline;">🛡️</span>';
+          target.outerHTML = '<span style="font-size: ' + Math.max(w, h) + 'px; display: inline; color: #c0c0c0;">🛡️</span>';
+        }}
+        onLoad={() => {
+          console.log('✅ تم تحميل شعار المشرف');
         }}
       />
     );
@@ -119,9 +134,13 @@ export function getUserLevelIcon(user: ChatUser, size: number = 20): JSX.Element
           alt="male-lvl1-10"
           style={{ width: w, height: h, display: 'inline', verticalAlign: 'middle' }}
           onError={(e) => {
+            console.error('❌ فشل تحميل السهم الأزرق من /svgs/blue_arrow.svg');
             const target = e.target as HTMLImageElement;
             target.outerHTML =
               '<span style="color: #3b82f6; font-size: ' + Math.max(w, h) + 'px; display: inline;">↗️</span>';
+          }}
+          onLoad={() => {
+            console.log('✅ تم تحميل شعار العضو الذكر');
           }}
         />
       );
@@ -136,9 +155,13 @@ export function getUserLevelIcon(user: ChatUser, size: number = 20): JSX.Element
           alt="female-lvl1-10"
           style={{ width: w, height: h, display: 'inline', verticalAlign: 'middle' }}
           onError={(e) => {
+            console.error('❌ فشل تحميل الميدالية الوردية من /svgs/pink_medal.svg');
             const target = e.target as HTMLImageElement;
             target.outerHTML =
               '<span style="color: #ec4899; font-size: ' + Math.max(w, h) + 'px; display: inline;">🏅</span>';
+          }}
+          onLoad={() => {
+            console.log('✅ تم تحميل شعار العضو الأنثى');
           }}
         />
       );
