@@ -3000,15 +3000,15 @@ export default function ProfileModal({
                   🖼️ تغيير الغلاف
                 </button>
                 
-                {/* صف: أيقونة — شارة — الاسم، وأسفلهم وصف الدور */}
+                {/* صف: وصف الدور — شارة — الاسم، وأسفله الأيقونة */}
                 <div style={{
                   position: 'absolute',
                   bottom: '70px',
                   right: (typeof window !== 'undefined' && window.innerWidth <= 480) ? '170px' : '210px',
                   display: 'grid',
-                  gridTemplateColumns: '20px 20px auto',
+                  gridTemplateColumns: 'auto 20px auto',
                   gridTemplateRows: 'auto auto',
-                  gridTemplateAreas: '"icon badge name" "role role role"',
+                  gridTemplateAreas: '"role badge name" "icon icon icon"',
                   columnGap: '6px',
                   rowGap: '4px',
                   alignItems: 'start',
@@ -3071,9 +3071,9 @@ export default function ProfileModal({
                   bottom: '70px',
                   right: (typeof window !== 'undefined' && window.innerWidth <= 480) ? '170px' : '210px',
                   display: 'grid',
-                  gridTemplateColumns: '20px 20px auto',
+                  gridTemplateColumns: 'auto 20px auto',
                   gridTemplateRows: 'auto auto',
-                  gridTemplateAreas: '"icon badge name" "role role role"',
+                  gridTemplateAreas: '"role badge name" "icon icon icon"',
                   columnGap: '6px',
                   rowGap: '4px',
                   alignItems: 'start',
@@ -3130,9 +3130,9 @@ export default function ProfileModal({
                   bottom: '70px',
                   right: (typeof window !== 'undefined' && window.innerWidth <= 480) ? '170px' : '210px',
                   display: 'grid',
-                  gridTemplateColumns: '20px 20px auto',
+                  gridTemplateColumns: 'auto 20px auto',
                   gridTemplateRows: 'auto auto',
-                  gridTemplateAreas: '"icon badge name" "role role role"',
+                  gridTemplateAreas: '"role badge name" "icon icon icon"',
                   columnGap: '6px',
                   rowGap: '4px',
                   alignItems: 'start',
