@@ -9,6 +9,9 @@ interface UserRoleBadgeProps {
   hideGuestAndGender?: boolean;
 }
 
+// إصدار للأصول لكسر الكاش عند تحديث الشعارات
+const ASSET_VERSION = '3';
+
 /**
  * نظام الشعارات الموحد للموقع
  *
@@ -58,7 +61,7 @@ export function getUserLevelIcon(user: ChatUser, size: number = 20): JSX.Element
     const h = size * 1.15;
     return (
       <img
-        src="/svgs/crown.svg"
+        src={`/svgs/crown.svg?v=${ASSET_VERSION}`}
         alt="owner"
         style={{ width: w, height: h, display: 'inline', verticalAlign: 'middle' }}
         onError={(e) => {
@@ -75,7 +78,7 @@ export function getUserLevelIcon(user: ChatUser, size: number = 20): JSX.Element
     const h = size;
     return (
       <img
-        src="/svgs/star.svg"
+        src={`/svgs/star.svg?v=${ASSET_VERSION}`}
         alt="admin"
         style={{ width: w, height: h, display: 'inline', verticalAlign: 'middle' }}
         onError={(e) => {
@@ -92,7 +95,7 @@ export function getUserLevelIcon(user: ChatUser, size: number = 20): JSX.Element
     const h = size;
     return (
       <img
-        src="/svgs/moderator_shield.svg"
+        src={`/svgs/moderator_shield.svg?v=${ASSET_VERSION}`}
         alt="moderator"
         style={{ width: w, height: h, display: 'inline', verticalAlign: 'middle' }}
         onError={(e) => {
@@ -115,7 +118,7 @@ export function getUserLevelIcon(user: ChatUser, size: number = 20): JSX.Element
       const h = size;
       return (
         <img
-          src="/svgs/blue_arrow.svg"
+          src={`/svgs/blue_arrow.svg?v=${ASSET_VERSION}`}
           alt="male-lvl1-10"
           style={{ width: w, height: h, display: 'inline', verticalAlign: 'middle' }}
           onError={(e) => {
@@ -132,7 +135,7 @@ export function getUserLevelIcon(user: ChatUser, size: number = 20): JSX.Element
       const h = size;
       return (
         <img
-          src="/svgs/pink_medal.svg"
+          src={`/svgs/pink_medal.svg?v=${ASSET_VERSION}`}
           alt="female-lvl1-10"
           style={{ width: w, height: h, display: 'inline', verticalAlign: 'middle' }}
           onError={(e) => {
@@ -149,7 +152,7 @@ export function getUserLevelIcon(user: ChatUser, size: number = 20): JSX.Element
       const h = size * 0.85; // تقصير بالطول فقط
       return (
         <img
-          src="/svgs/white.svg"
+          src={`/svgs/white.svg?v=${ASSET_VERSION}`}
           alt="lvl11-20"
           style={{ width: w, height: h, display: 'inline', verticalAlign: 'middle' }}
           onError={(e) => {
@@ -166,7 +169,7 @@ export function getUserLevelIcon(user: ChatUser, size: number = 20): JSX.Element
       const h = size * 0.85; // تقصير بالطول فقط
       return (
         <img
-          src="/svgs/emerald.svg"
+          src={`/svgs/emerald.svg?v=${ASSET_VERSION}`}
           alt="lvl21-30"
           style={{ width: w, height: h, display: 'inline', verticalAlign: 'middle' }}
           onError={(e) => {
@@ -183,7 +186,7 @@ export function getUserLevelIcon(user: ChatUser, size: number = 20): JSX.Element
       const h = size * 0.85; // تقصير بالطول فقط
       return (
         <img
-          src="/svgs/orange_shine.svg"
+          src={`/svgs/orange_shine.svg?v=${ASSET_VERSION}`}
           alt="lvl31-40"
           style={{ width: w, height: h, display: 'inline', verticalAlign: 'middle' }}
           onError={(e) => {
