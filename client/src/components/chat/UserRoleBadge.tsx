@@ -20,9 +20,8 @@ const ASSET_VERSION = '3';
  * المراقب (moderator): 🛡️
  * العضو (ذكر) مستوى 1–10: سهم أزرق client/public/svgs/blue_arrow.svg
  * العضو (أنثى) مستوى 1–10: ميدالية وردية client/public/svgs/pink_medal.svg
- * العضو مستوى 11–20: ألماسة بيضاء client/public/svgs/white.svg
- * العضو مستوى 21–30: ألماسة خضراء client/public/svgs/emerald.svg
- * العضو مستوى 31–40: ألماسة برتقالية لامعة client/public/svgs/orange_shine.svg
+ * العضو مستوى 20 وأكثر: شعار رمادي client/public/svgs/level20_gray.svg
+ * العضو مستوى 30 وأكثر: شعار برتقالي client/public/svgs/level30_orange.svg
  */
 
 // دالة للحصول على أيقونة الدور فقط (بدون مستوى)
@@ -146,53 +145,36 @@ export function getUserLevelIcon(user: ChatUser, size: number = 20): JSX.Element
         />
       );
     }
-    // عضو لفل 11-20: ألماسة بيضاء
-    if (level >= 11 && level <= 20) {
+    // عضو مستوى 30 وأكثر: شعار برتقالي
+    if (level >= 30) {
       const w = size;
-      const h = size * 0.85; // تقصير بالطول فقط
+      const h = size;
       return (
         <img
-          src={`/svgs/white.svg?v=${ASSET_VERSION}`}
-          alt="lvl11-20"
+          src={`/svgs/level30_orange.svg?v=${ASSET_VERSION}`}
+          alt="lvl30+"
           style={{ width: w, height: h, display: 'inline', verticalAlign: 'middle' }}
           onError={(e) => {
             const target = e.target as HTMLImageElement;
             target.outerHTML =
-              '<span style="color: #f8fafc; font-size: ' + Math.max(w, h) + 'px; display: inline;">💎</span>';
+              '<span style="color: #FF8C00; font-size: ' + Math.max(w, h) + 'px; display: inline;">🔥</span>';
           }}
         />
       );
     }
-    // عضو لفل 21-30: ألماسة خضراء
-    if (level >= 21 && level <= 30) {
+    // عضو مستوى 20 وأكثر: شعار رمادي
+    if (level >= 20) {
       const w = size;
-      const h = size * 0.85; // تقصير بالطول فقط
+      const h = size;
       return (
         <img
-          src={`/svgs/emerald.svg?v=${ASSET_VERSION}`}
-          alt="lvl21-30"
+          src={`/svgs/level20_gray.svg?v=${ASSET_VERSION}`}
+          alt="lvl20+"
           style={{ width: w, height: h, display: 'inline', verticalAlign: 'middle' }}
           onError={(e) => {
             const target = e.target as HTMLImageElement;
             target.outerHTML =
-              '<span style="color: #10b981; font-size: ' + Math.max(w, h) + 'px; display: inline;">💚</span>';
-          }}
-        />
-      );
-    }
-    // عضو لفل 31-40: ألماسة برتقالية مضيئة
-    if (level >= 31 && level <= 40) {
-      const w = size;
-      const h = size * 0.85; // تقصير بالطول فقط
-      return (
-        <img
-          src={`/svgs/orange_shine.svg?v=${ASSET_VERSION}`}
-          alt="lvl31-40"
-          style={{ width: w, height: h, display: 'inline', verticalAlign: 'middle' }}
-          onError={(e) => {
-            const target = e.target as HTMLImageElement;
-            target.outerHTML =
-              '<span style="color: #f97316; font-size: ' + Math.max(w, h) + 'px; display: inline;">🔥</span>';
+              '<span style="color: #767373; font-size: ' + Math.max(w, h) + 'px; display: inline;">⚡</span>';
           }}
         />
       );
@@ -223,6 +205,7 @@ export default function UserRoleBadge({
     return undefined;
   };
   // إخفاء شعار الضيف وشعار الأعضاء المعتمد على الجنس للمستويات 1–10 في سياقات محددة (مثل الدردشة)
+  // المستويات 20+ و 30+ ستظهر دائماً
   if (hideGuestAndGender) {
     if (user?.userType === 'guest') {
       return null;
@@ -230,7 +213,7 @@ export default function UserRoleBadge({
     if (user?.userType === 'member') {
       const level = user.level || 1;
       const gender = normalizeGender(user.gender) || 'male';
-      if (level >= 1 && level <= 10 && (gender === 'male' || gender === 'female')) {
+      if (level >= 1 && level <= 19 && (gender === 'male' || gender === 'female')) {
         return null;
       }
     }
