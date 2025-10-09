@@ -2212,10 +2212,11 @@ export default function ProfileModal({
 
         .profile-cover {
           position: relative;
-          height: 160px; /* ارتفاع أقل مطابق للصورة المرجعية */
+          height: 145px; /* ارتفاع مطابق تماماً للصورة المرجعية */
           background-size: cover;
           background-position: center center;
           background-repeat: no-repeat;
+          border-radius: 0; /* بدون زوايا مدورة مثل الصورة المرجعية */
         }
 
         .change-cover-btn {
@@ -2243,18 +2244,21 @@ export default function ProfileModal({
         /* تم حذف أنماط الأزرار المحذوفة */
 
         .profile-avatar {
-          width: 60px; /* حجم أصغر مطابق للصورة المرجعية */
-          height: 60px;
+          width: 52px; /* حجم مطابق تماماً للصورة المرجعية */
+          height: 52px;
           border-radius: 50%; /* دائري بالكامل */
           overflow: visible; /* السماح للإطار بالظهور خارج الحدود - مهم جداً للإطارات */
           position: absolute;
-          bottom: -10px; /* تداخل مع الغلاف من الأسفل */
-          right: 20px; /* في الزاوية اليمنى */
-          background-color: transparent;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.4); /* ظل خفيف */
-          z-index: 4;
+          bottom: -8px; /* تداخل مع الغلاف بالضبط مثل الصورة المرجعية */
+          right: 15px; /* موضع مطابق للصورة المرجعية */
+          background-color: #ffffff;
+          box-shadow: 0 3px 12px rgba(0,0,0,0.3); /* ظل مطابق للصورة المرجعية */
+          z-index: 5;
           transition: transform 0.3s ease;
-          border: 3px solid #ffffff; /* إطار أبيض مطابق للصورة المرجعية */
+          border: 2.5px solid #ffffff; /* إطار أبيض مطابق للصورة المرجعية */
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
 
         .profile-avatar:hover {
@@ -2262,8 +2266,8 @@ export default function ProfileModal({
         }
 
         .profile-avatar img {
-          width: 54px; /* الحجم الداخلي للصورة */
-          height: 54px;
+          width: 47px; /* الحجم الداخلي للصورة مطابق للصورة المرجعية */
+          height: 47px;
           object-fit: cover;
           display: block;
           border-radius: 50%; /* الصورة دائرية */
@@ -2272,20 +2276,21 @@ export default function ProfileModal({
 
         .change-avatar-btn {
           position: absolute;
-          bottom: 10px; /* موضع ثابت من الأسفل */
-          right: 10px; /* موضع ثابت من اليمين */
-          background: rgba(0,0,0,0.8);
+          bottom: -2px; /* موضع مطابق للصورة المرجعية */
+          right: -2px; /* موضع مطابق للصورة المرجعية */
+          background: rgba(0,0,0,0.85);
           border-radius: 50%;
-          width: 25px;
-          height: 25px;
+          width: 20px;
+          height: 20px;
           text-align: center;
-          line-height: 25px;
-          font-size: 12px;
+          line-height: 20px;
+          font-size: 10px;
           color: #fff;
           cursor: pointer;
-          z-index: 4;
+          z-index: 6;
           transition: background 0.3s ease, transform 0.2s ease;
-          border: none;
+          border: 1px solid #ffffff;
+          box-shadow: 0 2px 6px rgba(0,0,0,0.3);
         }
 
         .change-avatar-btn:hover {
@@ -2887,29 +2892,31 @@ export default function ProfileModal({
           }
           
           .profile-avatar {
-            width: 70px; /* حجم أصغر على الجوال */
-            height: 70px;
-            bottom: 12px; /* موضع ثابت من الأسفل */
-            right: 12px; /* موضع ثابت من اليمين */
+            width: 45px; /* حجم مطابق للصورة المرجعية على الجوال */
+            height: 45px;
+            bottom: -6px; /* موضع مطابق للصورة المرجعية */
+            right: 12px; /* موضع مطابق للصورة المرجعية */
             border-radius: 50%; /* دائري بالكامل */
-            z-index: 3;
-            border: none; /* إزالة الإطار لعدم التداخل مع إطارات البروفايل */
+            z-index: 5;
+            border: 2px solid #ffffff; /* إطار أبيض مطابق للصورة المرجعية */
             overflow: visible; /* مهم جداً للإطارات على الجوال */
+            background-color: #ffffff;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
           }
           
           .change-avatar-btn {
-            top: calc(100% - 50px); /* رفع الزر ليتناسب مع الصورة على الجوال */
-            right: calc(1.3cm + 37px); /* نقل الزر لليمين مع الإطار */
-            width: 25px;
-            height: 25px;
-            z-index: 5; /* جعل الزر تحت الصورة */
-            line-height: 25px;
-            font-size: 12px;
+            bottom: -1px; /* موضع مطابق للصورة المرجعية على الجوال */
+            right: -1px; /* موضع مطابق للصورة المرجعية على الجوال */
+            width: 18px;
+            height: 18px;
+            z-index: 6;
+            line-height: 18px;
+            font-size: 9px;
           }
 
-          /* على الجوال، زيادة بسيطة أيضاً لضمان تناسق النِسَب */
+          /* على الجوال، ارتفاع مطابق للصورة المرجعية */
           .profile-cover {
-            height: 298px; /* زيادة 20px إضافية على الجوال */
+            height: 130px; /* ارتفاع مطابق للصورة المرجعية على الجوال */
           }
           
           .profile-body {
@@ -3004,29 +3011,29 @@ export default function ProfileModal({
                   🖼️ تغيير الغلاف
                 </button>
                 
-                {/* اسم المستخدم مع الرتبة - مطابق حرفياً للصورة المرجعية */}
+                {/* اسم المستخدم مع الرتبة - مطابق حرفياً 100% للصورة المرجعية */}
                 <div style={{
                   position: 'absolute',
-                  bottom: '10px',
+                  bottom: '8px',
                   left: '15px',
-                  right: '90px', /* اترك مساحة للصورة الشخصية */
+                  right: '75px', /* اترك مساحة دقيقة للصورة الشخصية */
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'flex-start',
-                  gap: '2px',
-                  zIndex: 3,
+                  gap: '1px',
+                  zIndex: 4,
                   textAlign: 'left',
-                  maxWidth: 'calc(100% - 105px)',
+                  maxWidth: 'calc(100% - 90px)',
                 }}>
-                  {/* الاسم والشعار في سطر واحد - مطابق حرفياً للصورة المرجعية */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px' }}>
+                  {/* الاسم والشعار في سطر واحد - نسخة مطابقة 100% للصورة المرجعية */}
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', marginBottom: '0px' }}>
                     {/* الاسم */}
                     <h3 style={{
                       margin: 0,
-                      fontSize: '18px', /* حجم مطابق للصورة المرجعية */
-                      fontWeight: '700', /* عريض جداً */
-                      color: '#ffffff',
-                      textShadow: '0 1px 3px rgba(0,0,0,0.8)',
+                      fontSize: '20px', /* حجم مطابق تماماً للصورة المرجعية */
+                      fontWeight: '800', /* عريض جداً مثل الصورة المرجعية */
+                      color: '#FFFFFF',
+                      textShadow: '0 1px 3px rgba(0,0,0,0.8), 0 0 8px rgba(0,0,0,0.4)',
                       cursor: 'pointer',
                       unicodeBidi: 'plaintext',
                       textAlign: 'left',
@@ -3034,35 +3041,42 @@ export default function ProfileModal({
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
                       maxWidth: '160px',
-                      letterSpacing: '0.5px',
+                      letterSpacing: '0.2px',
+                      fontFamily: 'Cairo, "Segoe UI", Tahoma, Geneva, Verdana, sans-serif',
+                      lineHeight: '1.1',
                     }}
                     onClick={() => openEditModal('name')}
                     >
                       <bdi>{localUser?.username || 'اسم المستخدم'}</bdi>
                     </h3>
                     
-                    {/* الشعار مباشرة بجانب الاسم */}
+                    {/* الشعار مباشرة بجانب الاسم - مطابق للصورة المرجعية */}
                     {(localUser?.userType === 'owner' || localUser?.userType === 'admin' || localUser?.userType === 'moderator') && (
                       <span style={{ 
-                        fontSize: '16px', 
+                        fontSize: '14px', 
                         filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.8))',
-                        marginLeft: '2px'
+                        marginLeft: '1px',
+                        marginBottom: '1px',
+                        display: 'inline-block'
                       }}>
-                        {getUserLevelIcon(localUser, 16)}
+                        {getUserLevelIcon(localUser, 14)}
                       </span>
                     )}
                   </div>
                   
-                  {/* الوصف تحت الاسم مباشرة */}
+                  {/* الوصف تحت الاسم مباشرة - مطابق للصورة المرجعية */}
                   <div style={{
-                    fontSize: '12px',
-                    color: 'rgba(255,255,255,0.85)',
-                    textShadow: '0 1px 2px rgba(0,0,0,0.8)',
-                    maxWidth: '200px',
+                    fontSize: '11px',
+                    color: 'rgba(255,255,255,0.9)',
+                    textShadow: '0 1px 2px rgba(0,0,0,0.7)',
+                    maxWidth: '180px',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
                     whiteSpace: 'nowrap',
                     fontWeight: '400',
+                    fontFamily: 'Cairo, "Segoe UI", Tahoma, Geneva, Verdana, sans-serif',
+                    lineHeight: '1.2',
+                    marginTop: '1px',
                   }}>
                     {localUser?.userType === 'owner' && 'مالك الموقع'}
                     {localUser?.userType === 'admin' && 'مدير الموقع'}
@@ -3082,57 +3096,69 @@ export default function ProfileModal({
               <>
                 <div style={{
                   position: 'absolute',
-                  bottom: '15px',
+                  bottom: '8px',
                   left: '15px',
-                  right: '110px',
+                  right: '75px',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'flex-start',
-                  gap: '4px',
-                  zIndex: 2,
+                  gap: '1px',
+                  zIndex: 4,
                   textAlign: 'left',
-                  maxWidth: 'calc(100% - 125px)',
+                  maxWidth: 'calc(100% - 90px)',
                 }}>
-                  {/* الاسم والرتبة في سطر واحد - مطابق للصورة المرجعية */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  {/* الاسم والشعار في سطر واحد - نسخة مطابقة 100% للصورة المرجعية */}
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', marginBottom: '0px' }}>
                     {/* الاسم */}
                     <h3 style={{
                       margin: 0,
-                      fontSize: '22px',
-                      fontWeight: 'bold',
-                      color: '#ffffff',
-                      textShadow: '0 2px 6px rgba(0,0,0,0.8)',
+                      fontSize: '20px',
+                      fontWeight: '800',
+                      color: '#FFFFFF',
+                      textShadow: '0 1px 3px rgba(0,0,0,0.8), 0 0 8px rgba(0,0,0,0.4)',
                       cursor: 'pointer',
                       unicodeBidi: 'plaintext',
                       textAlign: 'left',
                       whiteSpace: 'nowrap',
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
-                      maxWidth: '200px',
+                      maxWidth: '160px',
+                      letterSpacing: '0.2px',
+                      fontFamily: 'Cairo, "Segoe UI", Tahoma, Geneva, Verdana, sans-serif',
+                      lineHeight: '1.1',
                     }}
                     onClick={() => openEditModal('name')}
                     >
                       <bdi>{localUser?.username || 'اسم المستخدم'}</bdi>
                     </h3>
                     
-                    {/* الرتبة والشعار */}
+                    {/* الشعار مباشرة بجانب الاسم - مطابق للصورة المرجعية */}
                     {(localUser?.userType === 'owner' || localUser?.userType === 'admin' || localUser?.userType === 'moderator') && (
-                      <span style={{ fontSize: '20px', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.6))' }}>
-                        {getUserLevelIcon(localUser, 20)}
+                      <span style={{ 
+                        fontSize: '14px', 
+                        filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.8))',
+                        marginLeft: '1px',
+                        marginBottom: '1px',
+                        display: 'inline-block'
+                      }}>
+                        {getUserLevelIcon(localUser, 14)}
                       </span>
                     )}
                   </div>
                   
-                  {/* وصف الشعار أو النبذة */}
+                  {/* الوصف تحت الاسم مباشرة - مطابق للصورة المرجعية */}
                   <div style={{
-                    fontSize: '14px',
+                    fontSize: '11px',
                     color: 'rgba(255,255,255,0.9)',
-                    textShadow: '0 1px 3px rgba(0,0,0,0.7)',
-                    marginTop: '2px',
-                    maxWidth: '250px',
+                    textShadow: '0 1px 2px rgba(0,0,0,0.7)',
+                    maxWidth: '180px',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap'
+                    whiteSpace: 'nowrap',
+                    fontWeight: '400',
+                    fontFamily: 'Cairo, "Segoe UI", Tahoma, Geneva, Verdana, sans-serif',
+                    lineHeight: '1.2',
+                    marginTop: '1px',
                   }}>
                     {localUser?.userType === 'owner' && 'مالك الموقع'}
                     {localUser?.userType === 'admin' && 'مدير الموقع'}
@@ -3148,55 +3174,67 @@ export default function ProfileModal({
                 {/* اسم المستخدم مع الرتبة - مطابق للصورة المرجعية */}
                 <div style={{
                   position: 'absolute',
-                  bottom: '15px',
+                  bottom: '8px',
                   left: '15px',
-                  right: '110px',
+                  right: '75px',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'flex-start',
-                  gap: '4px',
-                  zIndex: 2,
+                  gap: '1px',
+                  zIndex: 4,
                   pointerEvents: 'none',
                   textAlign: 'left',
-                  maxWidth: 'calc(100% - 125px)',
+                  maxWidth: 'calc(100% - 90px)',
                 }}>
-                  {/* الاسم والرتبة في سطر واحد - مطابق للصورة المرجعية */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  {/* الاسم والشعار في سطر واحد - نسخة مطابقة 100% للصورة المرجعية */}
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', marginBottom: '0px' }}>
                     {/* الاسم */}
                     <h3 style={{
                       margin: 0,
-                      fontSize: '22px',
-                      fontWeight: 'bold',
-                      color: '#ffffff',
-                      textShadow: '0 2px 6px rgba(0,0,0,0.8)',
+                      fontSize: '20px',
+                      fontWeight: '800',
+                      color: '#FFFFFF',
+                      textShadow: '0 1px 3px rgba(0,0,0,0.8), 0 0 8px rgba(0,0,0,0.4)',
                       unicodeBidi: 'plaintext',
                       textAlign: 'left',
                       whiteSpace: 'nowrap',
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
-                      maxWidth: '200px',
+                      maxWidth: '160px',
+                      letterSpacing: '0.2px',
+                      fontFamily: 'Cairo, "Segoe UI", Tahoma, Geneva, Verdana, sans-serif',
+                      lineHeight: '1.1',
                     }}>
                       <bdi>{localUser?.username || 'اسم المستخدم'}</bdi>
                     </h3>
                     
-                    {/* الرتبة والشعار */}
+                    {/* الشعار مباشرة بجانب الاسم - مطابق للصورة المرجعية */}
                     {(localUser?.userType === 'owner' || localUser?.userType === 'admin' || localUser?.userType === 'moderator') && (
-                      <span style={{ fontSize: '20px', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.6))' }}>
-                        {getUserLevelIcon(localUser, 20)}
+                      <span style={{ 
+                        fontSize: '14px', 
+                        filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.8))',
+                        marginLeft: '1px',
+                        marginBottom: '1px',
+                        display: 'inline-block'
+                      }}>
+                        {getUserLevelIcon(localUser, 14)}
                       </span>
                     )}
                   </div>
                   
-                  {/* وصف الشعار أو النبذة */}
+                  {/* الوصف تحت الاسم مباشرة - مطابق للصورة المرجعية */}
                   <div style={{
-                    fontSize: '14px',
+                    fontSize: '11px',
                     color: 'rgba(255,255,255,0.9)',
-                    textShadow: '0 1px 3px rgba(0,0,0,0.7)',
-                    marginTop: '2px',
-                    maxWidth: '250px',
+                    textShadow: '0 1px 2px rgba(0,0,0,0.7)',
+                    maxWidth: '180px',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap'
+                    whiteSpace: 'nowrap',
+                    fontWeight: '400',
+                    fontFamily: 'Cairo, "Segoe UI", Tahoma, Geneva, Verdana, sans-serif',
+                    lineHeight: '1.2',
+                    marginTop: '1px',
                   }}>
                     {localUser?.userType === 'owner' && 'مالك الموقع'}
                     {localUser?.userType === 'admin' && 'مدير الموقع'}
@@ -3222,7 +3260,7 @@ export default function ProfileModal({
                 <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <ProfileImage 
                     user={localUser} 
-                    pixelSize={74}
+                    pixelSize={47}
                     hideRoleBadgeOverlay={true}
                     disableFrame={false}
                   />
@@ -3233,8 +3271,8 @@ export default function ProfileModal({
                     src={getProfileImageSrcLocal()}
                     alt="الصورة الشخصية"
                     style={{
-                      width: '74px',
-                      height: '74px',
+                      width: '47px',
+                      height: '47px',
                       objectFit: 'cover',
                       display: 'block',
                       transition: 'none',
