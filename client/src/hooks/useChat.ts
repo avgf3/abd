@@ -10,6 +10,7 @@ import type { ChatUser, ChatMessage } from '@/types/chat';
 import type { Notification } from '@/types/chat';
 import { mapDbMessagesToChatMessages } from '@/utils/messageUtils';
 import { userCache, setCachedUser } from '@/utils/userCacheManager';
+import { connectionMonitor } from '@/lib/connectionMonitor';
 
 // Audio notification function
 const playNotificationSound = () => {
@@ -458,7 +459,14 @@ export const useChat = () => {
       if (!pollManagerRef.current) {
         pollManagerRef.current = createDefaultConnectionManager({ roomId: rid, token });
       }
+      
+      // 🚀 ربط ذكي مع حالة Socket
+      if (socket.current) {
+        pollManagerRef.current.setSocketStatus(socket.current.connected);
+      }
+      
       pollManagerRef.current.start();
+      console.log('🔄 بدء HTTP polling كـ backup للـ Socket');
     } catch {}
   }, []);
 
@@ -581,11 +589,21 @@ export const useChat = () => {
       }
     };
     
+    // 🔍 بدء مراقبة الاتصال الذكية
+    connectionMonitor.startMonitoring();
+    
     // تهيئة Web Worker
     initSocketWorker();
     // مزامنة حالة الاتصال مع Web Worker ليعرف متى يُرسل ping
     try {
       socketInstance.on('connect', () => {
+        console.log('🟢 Socket.IO متصل');
+        dispatch({ type: 'SET_CONNECTION_STATUS', payload: true });
+        dispatch({ type: 'SET_CONNECTION_ERROR', payload: null });
+        
+        // 🔍 تسجيل الاتصال الناجح في المراقب
+        connectionMonitor.recordSuccessfulConnection();
+        
         try {
           if (socketWorkerRef.current) {
             socketWorkerRef.current.postMessage({
@@ -593,9 +611,20 @@ export const useChat = () => {
               data: { connected: true },
             });
           }
+          
+          // 🚀 تحديث ذكي لحالة الـ polling
+          if (pollManagerRef.current) {
+            pollManagerRef.current.setSocketStatus(true);
+          }
         } catch {}
       });
-      socketInstance.on('disconnect', () => {
+      socketInstance.on('disconnect', (reason) => {
+        console.log('🔴 Socket.IO منقطع -', reason);
+        dispatch({ type: 'SET_CONNECTION_STATUS', payload: false });
+        
+        // 🔍 تسجيل الانقطاع في المراقب
+        connectionMonitor.recordDisconnection(reason);
+        
         try {
           if (socketWorkerRef.current) {
             socketWorkerRef.current.postMessage({
@@ -603,9 +632,22 @@ export const useChat = () => {
               data: { connected: false },
             });
           }
+          
+          // 🚀 تفعيل backup polling عند انقطاع Socket
+          if (pollManagerRef.current) {
+            pollManagerRef.current.setSocketStatus(false);
+          } else {
+            // إذا لم يكن موجود، ابدأه كـ backup
+            startPollingFallback();
+          }
         } catch {}
       });
-      socketInstance.on('connect_error', () => {
+      socketInstance.on('connect_error', (error) => {
+        console.warn('❌ خطأ اتصال Socket.IO:', error);
+        
+        // 🔍 تسجيل خطأ الاتصال في المراقب
+        connectionMonitor.recordFailedConnection(error?.message || 'خطأ اتصال');
+        
         try {
           if (socketWorkerRef.current) {
             socketWorkerRef.current.postMessage({
@@ -664,24 +706,41 @@ export const useChat = () => {
           clearInterval(pingIntervalRef.current);
         }
         
-        // على iOS: لا تحاول إبقاء الاتصال حيّاً بالخلفية (سيتم إيقافه على أي حال)
-        if (!isIOSRef.current) {
-          // تفعيل Web Worker و Service Worker للping في الخلفية
+        // 🚀 استراتيجية ذكية للهاتف المحمول (iOS + Android)
+        if (isIOSRef.current) {
+          // 🍎 استراتيجية iOS: حفظ الحالة + إعادة اتصال ذكية
+          try {
+            const connectionSnapshot = {
+              timestamp: Date.now(),
+              roomId: currentRoomIdRef.current,
+              userId: state.currentUser?.id,
+              wasConnected: socket.current?.connected || false,
+              strategy: 'ios_background'
+            };
+            localStorage.setItem('ios_connection_snapshot', JSON.stringify(connectionSnapshot));
+            
+            // على iOS: قطع الاتصال بلطف وحفظ الحالة
+            if (socket.current?.connected) {
+              socket.current.emit('going_background', { timestamp: Date.now() });
+            }
+          } catch {}
+        } else {
+          // 🤖 استراتيجية Android: Web Worker + Service Worker
           if (socketWorkerRef.current) {
             socketWorkerRef.current.postMessage({
               type: 'start-ping',
-              data: { interval: 60000 }
+              data: { interval: 30000 } // ping أسرع للأندرويد
             });
           }
           if (serviceWorkerRef.current) {
             serviceWorkerRef.current.postMessage({
               type: 'start-background-ping',
-              data: { interval: 60000 }
+              data: { interval: 30000 }
             });
           }
           if (!socketWorkerRef.current && !serviceWorkerRef.current) {
-            // fallback إلى ping أبطأ إذا لم يتوفر Web Worker أو Service Worker
-            backgroundPingIntervalRef.current = startPing(60000);
+            // fallback للأندرويد
+            backgroundPingIntervalRef.current = startPing(30000);
           }
         }
         
@@ -746,37 +805,98 @@ export const useChat = () => {
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
     // دعم أفضل لدورة حياة الصفحة على الأجهزة المحمولة: pageshow/pagehide
-    const handlePageShow = () => {
+    const handlePageShow = async () => {
+      console.log('📱 الصفحة عادت للمقدمة - فحص ذكي للاتصال');
+      
       try {
-        if (socket.current && !socket.current.connected) {
-          socket.current.connect();
+        // 🚀 فحص ذكي للحالة المحفوظة
+        const { shouldReconnectOnPageShow, getConnectionHealth } = await import('@/lib/socket');
+        const health = getConnectionHealth();
+        
+        console.log('🔍 حالة الاتصال:', health);
+        
+        // 🍎 معالجة خاصة لـ iOS
+        if (isIOSRef.current) {
+          const iosSnapshot = localStorage.getItem('ios_connection_snapshot');
+          if (iosSnapshot) {
+            try {
+              const snapshot = JSON.parse(iosSnapshot);
+              const timeDiff = Date.now() - snapshot.timestamp;
+              
+              console.log(`🍎 iOS: مر ${Math.round(timeDiff/1000)} ثانية منذ الخلفية`);
+              
+              // إذا مر أكثر من 10 ثواني، أعد الاتصال بالكامل
+              if (timeDiff > 10000 && snapshot.wasConnected) {
+                console.log('🔄 iOS: إعادة اتصال كاملة');
+                if (socket.current) {
+                  socket.current.disconnect();
+                  setTimeout(() => socket.current?.connect(), 500);
+                }
+              }
+              
+              // تنظيف الـ snapshot
+              localStorage.removeItem('ios_connection_snapshot');
+            } catch {}
+          }
+        } else {
+          // 🤖 معالجة Android العادية
+          if (shouldReconnectOnPageShow()) {
+            console.log('🤖 Android: إعادة اتصال مطلوبة');
+            if (socket.current && !socket.current.connected) {
+              socket.current.connect();
+            }
+          }
         }
-      } catch {}
-      // عند العودة للصفحة، تفريغ الرسائل المؤجلة وجلب المفقود
-      try {
+        
+        // عند العودة للصفحة، تفريغ الرسائل المؤجلة وجلب المفقود
         const roomId = currentRoomIdRef.current;
         if (roomId) {
           const buffered = messageBufferRef.current.get(roomId) || [];
           if (buffered.length > 0) {
+            console.log(`📨 استعادة ${buffered.length} رسالة مؤجلة`);
             for (const msg of buffered) {
               dispatch({ type: 'ADD_ROOM_MESSAGE', payload: { roomId, message: msg } });
             }
             messageBufferRef.current.set(roomId, []);
           }
-          fetchMissedMessagesForRoom(roomId).catch(() => {});
+          
+          // جلب الرسائل المفقودة إذا مر وقت طويل
+          if (health.timeSinceLastConnection > 30000) {
+            console.log('📥 جلب الرسائل المفقودة');
+            fetchMissedMessagesForRoom(roomId).catch(() => {});
+          }
         }
-      } catch {}
+      } catch (error) {
+        console.warn('⚠️ خطأ في handlePageShow:', error);
+        // fallback: محاولة اتصال بسيطة
+        if (socket.current && !socket.current.connected) {
+          socket.current.connect();
+        }
+      }
     };
     const handlePageHide = () => {
       try {
-        // على iOS لا نحاول تشغيل pings بالخلفية
-        if (!isIOSRef.current) {
-          // تأكيد تفعيل الping في الخلفية عند الانتقال للخلفية
+        // 🚀 استراتيجية ذكية حسب نوع الجهاز
+        if (isIOSRef.current) {
+          // 🍎 iOS: حفظ حالة إضافية عند pagehide
+          try {
+            const enhancedSnapshot = {
+              timestamp: Date.now(),
+              roomId: currentRoomIdRef.current,
+              userId: state.currentUser?.id,
+              wasConnected: socket.current?.connected || false,
+              strategy: 'ios_pagehide',
+              userAgent: navigator.userAgent.slice(0, 50)
+            };
+            localStorage.setItem('ios_pagehide_snapshot', JSON.stringify(enhancedSnapshot));
+          } catch {}
+        } else {
+          // 🤖 Android: تأكيد تفعيل الping في الخلفية
           if (socketWorkerRef.current) {
-            socketWorkerRef.current.postMessage({ type: 'start-ping', data: { interval: 60000 } });
+            socketWorkerRef.current.postMessage({ type: 'start-ping', data: { interval: 30000 } });
           }
           if (serviceWorkerRef.current) {
-            serviceWorkerRef.current.postMessage({ type: 'start-background-ping', data: { interval: 60000 } });
+            serviceWorkerRef.current.postMessage({ type: 'start-background-ping', data: { interval: 30000 } });
           }
         }
         // إرسال keepalive سريع لإعلام الخادم قبل نوم الصفحة
@@ -813,6 +933,10 @@ export const useChat = () => {
       if (backgroundPingIntervalRef.current) {
         clearInterval(backgroundPingIntervalRef.current);
       }
+      
+      // 🔍 إيقاف مراقبة الاتصال
+      connectionMonitor.stopMonitoring();
+      
       // تنظيف Web Worker و Service Worker
       if (socketWorkerRef.current) {
         socketWorkerRef.current.postMessage({ type: 'cleanup' });

@@ -25,6 +25,10 @@ export class ConnectionManager {
   private consecutiveFailures = 0;
   private speedMs: number;
   private lastServerLatency = 0;
+  // 🚀 تحسينات ذكية للـ backup polling
+  private isSocketConnected = false;
+  private shouldBackupPoll = false;
+  private backupPollActive = false;
 
   constructor(private cfg: ConnectionManagerConfig) {
     this.speedMs = this.cfg.speedVisibleMs ?? 1500;
@@ -100,6 +104,33 @@ export class ConnectionManager {
       clearTimeout(this.pollTimerId);
       this.pollTimerId = null;
     }
+    this.backupPollActive = false;
+  }
+
+  // 🚀 دوال ذكية للـ backup polling
+  public setSocketStatus(connected: boolean) {
+    this.isSocketConnected = connected;
+    
+    // 🔥 منطق ذكي: فعل backup polling عند انقطاع Socket
+    if (!connected && !this.backupPollActive) {
+      console.log('🔄 Socket منقطع - تفعيل backup polling');
+      this.shouldBackupPoll = true;
+      this.backupPollActive = true;
+      this.scheduleNextPoll(500); // polling سريع عند انقطاع Socket
+    } else if (connected && this.backupPollActive) {
+      console.log('✅ Socket متصل - إيقاف backup polling');
+      this.shouldBackupPoll = false;
+      this.backupPollActive = false;
+      // العودة للسرعة العادية
+      this.scheduleNextPoll(this.speedMs);
+    }
+  }
+
+  public enableBackupMode() {
+    console.log('🆘 تفعيل وضع الطوارئ - backup polling مستمر');
+    this.shouldBackupPoll = true;
+    this.backupPollActive = true;
+    this.scheduleNextPoll(1000); // polling كل ثانية في وضع الطوارئ
   }
 
   public forceReload() {
@@ -139,6 +170,12 @@ export class ConnectionManager {
   private pollOnce() {
     if (!this.isOnline) {
       this.scheduleNextPoll(this.backoffDelay());
+      return;
+    }
+
+    // 🚀 منطق ذكي: تخطي polling إذا كان Socket متصل ولا نحتاج backup
+    if (this.isSocketConnected && !this.shouldBackupPoll && !this.backupPollActive) {
+      this.scheduleNextPoll(this.speedMs * 2); // polling أبطأ عندما Socket يعمل
       return;
     }
 
