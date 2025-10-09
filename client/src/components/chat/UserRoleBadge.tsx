@@ -103,7 +103,7 @@ export function getUserLevelIcon(user: ChatUser, size: number = 20): JSX.Element
     const h = size;
     return (
       <img
-        src="/svgs/moderator_shield.svg"
+        src={`/svgs/moderator_shield.svg?v=${LOGO_VERSION}`}
         alt="moderator"
         style={{ width: w, height: h, display: 'inline', verticalAlign: 'middle' }}
         onError={(e) => {
