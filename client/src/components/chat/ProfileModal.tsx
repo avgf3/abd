@@ -3018,46 +3018,51 @@ export default function ProfileModal({
                   textAlign: 'left',
                   maxWidth: 'calc(100% - 105px)',
                 }}>
-                  {/* الاسم والرتبة في سطر واحد - مطابق للصورة المرجعية */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  {/* الاسم والشعار في سطر واحد - مطابق حرفياً للصورة المرجعية */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px' }}>
                     {/* الاسم */}
                     <h3 style={{
                       margin: 0,
-                      fontSize: '22px', /* حجم أكبر للاسم */
-                      fontWeight: 'bold',
+                      fontSize: '18px', /* حجم مطابق للصورة المرجعية */
+                      fontWeight: '700', /* عريض جداً */
                       color: '#ffffff',
-                      textShadow: '0 2px 6px rgba(0,0,0,0.8)',
+                      textShadow: '0 1px 3px rgba(0,0,0,0.8)',
                       cursor: 'pointer',
                       unicodeBidi: 'plaintext',
                       textAlign: 'left',
                       whiteSpace: 'nowrap',
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
-                      maxWidth: '200px',
+                      maxWidth: '160px',
+                      letterSpacing: '0.5px',
                     }}
                     onClick={() => openEditModal('name')}
                     >
                       <bdi>{localUser?.username || 'اسم المستخدم'}</bdi>
                     </h3>
                     
-                    {/* الرتبة والشعار */}
+                    {/* الشعار مباشرة بجانب الاسم */}
                     {(localUser?.userType === 'owner' || localUser?.userType === 'admin' || localUser?.userType === 'moderator') && (
-                      <span style={{ fontSize: '20px', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.6))' }}>
-                        {getUserLevelIcon(localUser, 20)}
+                      <span style={{ 
+                        fontSize: '16px', 
+                        filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.8))',
+                        marginLeft: '2px'
+                      }}>
+                        {getUserLevelIcon(localUser, 16)}
                       </span>
                     )}
                   </div>
                   
-                  {/* وصف الشعار أو النبذة */}
+                  {/* الوصف تحت الاسم مباشرة */}
                   <div style={{
-                    fontSize: '14px',
-                    color: 'rgba(255,255,255,0.9)',
-                    textShadow: '0 1px 3px rgba(0,0,0,0.7)',
-                    marginTop: '2px',
-                    maxWidth: '250px',
+                    fontSize: '12px',
+                    color: 'rgba(255,255,255,0.85)',
+                    textShadow: '0 1px 2px rgba(0,0,0,0.8)',
+                    maxWidth: '200px',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap'
+                    whiteSpace: 'nowrap',
+                    fontWeight: '400',
                   }}>
                     {localUser?.userType === 'owner' && 'مالك الموقع'}
                     {localUser?.userType === 'admin' && 'مدير الموقع'}
