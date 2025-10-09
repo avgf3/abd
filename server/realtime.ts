@@ -835,9 +835,9 @@ export function setupRealtime(httpServer: HttpServer): IOServer<ClientToServerEv
       ? ['polling']
       : ['websocket', 'polling'],
     allowEIO3: true,
-    // 🔥 تحسين أوقات الاستجابة لدعم العمل في الخلفية
-    pingTimeout: (process?.env?.NODE_ENV === 'production') ? 120000 : 60000, // دقيقتان في الإنتاج، دقيقة في التطوير (زيادة لدعم الخلفية)
-    pingInterval: (process?.env?.NODE_ENV === 'production') ? 30000 : 20000, // ping كل 30 ثانية في الإنتاج، 20 في التطوير (أبطأ لدعم الخلفية)
+    // 🚀 أوقات استجابة ذكية وسريعة مثل المواقع الناجحة
+    pingTimeout: 15000, // مهلة قصيرة للكشف السريع عن انقطاع الاتصال
+    pingInterval: 5000, // ping سريع كل 5 ثواني للاستجابة الفورية
     upgradeTimeout: 45000, // زيادة timeout للترقية لدعم الاتصالات البطيئة
     allowUpgrades: (process?.env?.SOCKET_IO_POLLING_ONLY !== 'true'),
     cookie: false,

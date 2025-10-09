@@ -18,6 +18,17 @@ export function saveSession(partial: Partial<StoredSession>) {
     const existing = getSession();
     const merged: StoredSession = { ...existing, ...partial };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+    
+    // 🆕 حفظ معلومات إضافية للذكاء
+    const connectionState = {
+      lastSaved: Date.now(),
+      isActive: true,
+      roomId: merged.roomId,
+      userId: merged.userId,
+      username: merged.username,
+      userType: merged.userType
+    };
+    localStorage.setItem('connection_state', JSON.stringify(connectionState));
   } catch {}
 }
 
@@ -34,13 +45,73 @@ export function getSession(): StoredSession {
 export function clearSession() {
   try {
     localStorage.removeItem(STORAGE_KEY);
+    // 🆕 مسح معلومات الاتصال الإضافية
+    localStorage.removeItem('connection_state');
+    localStorage.removeItem('socket_last_connected');
+    localStorage.removeItem('socket_connection_stable');
   } catch {}
   // إعادة تعيين Socket instance عند مسح الجلسة
   if (socketInstance) {
     socketInstance.removeAllListeners();
     socketInstance.disconnect();
     socketInstance = null;
-    // listeners are scoped to instance via a private flag now
+  }
+}
+
+// 🆕 دالة ذكية لفحص واستعادة الحالة
+export function getConnectionHealth(): {
+  isHealthy: boolean;
+  shouldReconnect: boolean;
+  lastConnected: number | null;
+  timeSinceLastConnection: number;
+  connectionStable: boolean;
+} {
+  try {
+    const lastConnected = localStorage.getItem('socket_last_connected');
+    const isStable = localStorage.getItem('socket_connection_stable') === 'true';
+    const connectionState = localStorage.getItem('connection_state');
+    
+    const lastConnectedTime = lastConnected ? parseInt(lastConnected) : null;
+    const timeSince = lastConnectedTime ? Date.now() - lastConnectedTime : Infinity;
+    
+    // 🔥 منطق ذكي لتحديد صحة الاتصال
+    const isHealthy = isStable && timeSince < 30000; // أقل من 30 ثانية
+    const shouldReconnect = !isHealthy && timeSince > 5000; // أكثر من 5 ثواني
+    
+    return {
+      isHealthy,
+      shouldReconnect,
+      lastConnected: lastConnectedTime,
+      timeSinceLastConnection: timeSince,
+      connectionStable: isStable
+    };
+  } catch {
+    return {
+      isHealthy: false,
+      shouldReconnect: true,
+      lastConnected: null,
+      timeSinceLastConnection: Infinity,
+      connectionStable: false
+    };
+  }
+}
+
+// 🆕 دالة ذكية للتحقق من ضرورة إعادة الاتصال عند العودة للصفحة
+export function shouldReconnectOnPageShow(): boolean {
+  try {
+    const health = getConnectionHealth();
+    const session = getSession();
+    
+    // إذا لا توجد جلسة، لا حاجة لإعادة الاتصال
+    if (!session.userId && !session.username) return false;
+    
+    // إذا كان الاتصال صحي، لا حاجة لإعادة الاتصال
+    if (health.isHealthy) return false;
+    
+    // إذا مر وقت طويل، أعد الاتصال
+    return health.shouldReconnect;
+  } catch {
+    return true; // في حالة الخطأ، من الأفضل إعادة الاتصال
   }
 }
 
@@ -66,9 +137,13 @@ function attachCoreListeners(socket: Socket) {
   if (anySocket.__coreListenersAttached) return;
   anySocket.__coreListenersAttached = true;
 
+  // 🚀 نظام إعادة اتصال ذكي ومتقدم
+  let reconnectAttempt = 0;
+  let maxReconnectAttempt = 0;
+  let isManualDisconnect = false;
+
   const reauth = (isReconnect: boolean) => {
     const session = getSession();
-    // لا ترسل auth إذا لم تتوفر جلسة محفوظة صالحة
     if (!session || (!session.userId && !session.username)) return;
     try {
       socket.emit('auth', {
@@ -77,26 +152,122 @@ function attachCoreListeners(socket: Socket) {
         userType: session.userType,
         token: session.token,
         reconnect: isReconnect,
+        // 🆕 معلومات إضافية للذكاء
+        reconnectAttempt,
+        timestamp: Date.now(),
       });
     } catch {}
   };
 
+  // 🔥 معالجة الاتصال الناجح
   socket.on('connect', () => {
+    console.log('🟢 Socket متصل بنجاح');
+    reconnectAttempt = 0; // إعادة تعيين العداد
     reauth(false);
-    // إذا لم تكن هناك جلسة محفوظة، لا نرسل auth هنا لتفادي مهلة غير ضرورية
+    
+    // 🆕 حفظ حالة الاتصال في localStorage
+    try {
+      localStorage.setItem('socket_last_connected', Date.now().toString());
+      localStorage.setItem('socket_connection_stable', 'true');
+    } catch {}
   });
 
-  socket.on('reconnect', () => {
+  // 🔥 معالجة إعادة الاتصال الذكية
+  socket.on('reconnect', (attemptNumber) => {
+    console.log(`🔄 إعادة اتصال ناجحة - محاولة #${attemptNumber}`);
+    reconnectAttempt = attemptNumber;
+    maxReconnectAttempt = Math.max(maxReconnectAttempt, attemptNumber);
     reauth(true);
+    
+    // 🆕 تحديث إحصائيات الاتصال
+    try {
+      localStorage.setItem('socket_last_reconnected', Date.now().toString());
+      localStorage.setItem('socket_max_reconnect_attempts', maxReconnectAttempt.toString());
+    } catch {}
   });
 
-  // If network goes back online, try to connect
+  // 🔥 معالجة محاولات إعادة الاتصال
+  socket.on('reconnect_attempt', (attemptNumber) => {
+    console.log(`🔄 محاولة إعادة اتصال #${attemptNumber}`);
+    reconnectAttempt = attemptNumber;
+    
+    // 🆕 استراتيجية ذكية حسب رقم المحاولة
+    if (attemptNumber > 5) {
+      // بعد 5 محاولات، جرب تغيير النقل
+      socket.io.opts.transports = ['polling', 'websocket'];
+    }
+    if (attemptNumber > 10) {
+      // بعد 10 محاولات، أعد تعيين الاتصال بالكامل
+      try {
+        socket.disconnect();
+        setTimeout(() => socket.connect(), 1000);
+      } catch {}
+    }
+  });
+
+  // 🔥 معالجة أخطاء الاتصال
+  socket.on('connect_error', (error) => {
+    console.warn(`❌ خطأ اتصال: ${error.message}`);
+    
+    // 🆕 حفظ معلومات الخطأ للتشخيص
+    try {
+      const errorInfo = {
+        message: error.message,
+        timestamp: Date.now(),
+        attempt: reconnectAttempt,
+        transport: socket.io.engine?.transport?.name || 'unknown'
+      };
+      localStorage.setItem('socket_last_error', JSON.stringify(errorInfo));
+    } catch {}
+  });
+
+  // 🔥 معالجة قطع الاتصال الذكية
+  socket.on('disconnect', (reason) => {
+    console.log(`🔴 Socket منقطع - السبب: ${reason}`);
+    
+    // 🆕 تحليل سبب الانقطاع
+    isManualDisconnect = reason === 'io client disconnect';
+    
+    try {
+      localStorage.setItem('socket_last_disconnected', Date.now().toString());
+      localStorage.setItem('socket_disconnect_reason', reason);
+      localStorage.setItem('socket_connection_stable', 'false');
+    } catch {}
+    
+    // 🚀 إعادة اتصال ذكية حسب السبب
+    if (!isManualDisconnect) {
+      if (reason === 'transport close' || reason === 'transport error') {
+        // مشكلة في النقل - جرب نقل مختلف
+        socket.io.opts.transports = socket.io.opts.transports.reverse();
+      }
+      
+      // محاولة إعادة اتصال فورية للأسباب المؤقتة
+      if (reason === 'ping timeout' || reason === 'transport close') {
+        setTimeout(() => {
+          if (!socket.connected) {
+            socket.connect();
+          }
+        }, 100);
+      }
+    }
+  });
+
+  // 🔥 معالجة عودة الشبكة
   window.addEventListener('online', () => {
-    if (!socket.connected) {
+    console.log('🌐 الشبكة عادت - محاولة إعادة اتصال');
+    if (!socket.connected && !isManualDisconnect) {
       try {
         socket.connect();
       } catch {}
     }
+  });
+
+  // 🔥 معالجة انقطاع الشبكة
+  window.addEventListener('offline', () => {
+    console.log('📴 الشبكة منقطعة');
+    try {
+      localStorage.setItem('socket_network_offline', Date.now().toString());
+    } catch {}
   });
 }
 
@@ -132,38 +303,39 @@ export function getSocket(): Socket {
   
   socketInstance = io(serverUrl, {
     path: '/socket.io',
-    // Prefer websocket but allow polling fallback; aligns with server config
+    // 🚀 إعدادات ذكية مثل المواقع الناجحة
     transports: ['websocket', 'polling'],
     upgrade: true,
-    // rememberUpgrade is a client option but can cause sticky WS usage across origins; disable
-    rememberUpgrade: false,
+    rememberUpgrade: true, // تذكر الترقية الناجحة
     autoConnect: false,
     reconnection: true,
-    // 🔥 تحسين إعادة الاتصال - محاولات محدودة مع تدرج ذكي
-    reconnectionAttempts: isProduction ? 10 : 5, // محاولات محدودة بدلاً من لانهائية
-    reconnectionDelay: isDevelopment ? 1000 : 2000, // تقليل التأخير في التطوير
-    reconnectionDelayMax: isProduction ? 10000 : 5000, // تقليل الحد الأقصى
-    randomizationFactor: 0.3, // تقليل العشوائية لاتصال أسرع
-    // 🔥 تحسين أوقات الاستجابة
-    timeout: isDevelopment ? 15000 : 20000, // timeout أقل لاستجابة أسرع
-    forceNew: false, // إعادة استخدام الاتصالات الموجودة
+    // 🔥 إعادة اتصال لانهائية وذكية مثل المواقع الناجحة
+    reconnectionAttempts: Infinity, // لا يستسلم أبداً!
+    reconnectionDelay: 200, // بداية سريعة جداً
+    reconnectionDelayMax: 2000, // حد أقصى منخفض للسرعة
+    randomizationFactor: 0.1, // عشوائية قليلة للسرعة
+    // 🔥 أوقات استجابة سريعة جداً
+    timeout: 8000, // مهلة قصيرة للكشف السريع عن المشاكل
+    forceNew: false,
     withCredentials: true,
     auth: { deviceId, token: sessionForHandshake?.token },
     extraHeaders: { 'x-device-id': deviceId },
-    // 🔥 إعدادات محسّنة للاستقرار والأداء
+    // 🔥 إعدادات محسّنة للاستقرار الذكي
     closeOnBeforeunload: false, // لا تغلق عند إعادة التحميل
-    // Avoid non-standard client options (keep to safe set)
     forceBase64: false,
-    // 🔥 إعدادات ping مخصصة (هذه الخيارات للخادم فقط، لكن نتركها للتوثيق)
-    // pingTimeout: isProduction ? 60000 : 30000, // مطابق للخادم
-    // pingInterval: isProduction ? 25000 : 15000, // مطابق للخادم
+    // 🔥 معلومات تشخيصية ذكية
     query: {
       deviceId,
-      t: Date.now(), // timestamp لتجنب الكاش
-      // 🔥 إضافة معلومات إضافية للتشخيص
-      userAgent: navigator.userAgent.slice(0, 100), // معلومات المتصفح (محدودة)
-      screen: `${screen.width}x${screen.height}`, // دقة الشاشة
-      connection: (navigator as any).connection?.effectiveType || 'unknown', // نوع الاتصال
+      t: Date.now(),
+      userAgent: navigator.userAgent.slice(0, 100),
+      screen: `${screen.width}x${screen.height}`,
+      connection: (navigator as any).connection?.effectiveType || 'unknown',
+      // 🆕 معلومات إضافية للذكاء
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      language: navigator.language,
+      platform: navigator.platform,
+      cookieEnabled: navigator.cookieEnabled,
+      onLine: navigator.onLine,
     },
   });
 
