@@ -205,14 +205,10 @@ export const getUsernameDisplayStyle = (user: any): { style: React.CSSProperties
 };
 
 // دالة مساعدة لتطبيق نمط الاسم على عنصر span
-export const applyUsernameStyle = (user: any, children: React.ReactNode): JSX.Element => {
+export const applyUsernameStyle = (user: any, children: React.ReactNode) => {
   const { style, className } = getUsernameDisplayStyle(user);
   
-  return (
-    <span style={style} className={className}>
-      {children}
-    </span>
-  );
+  return React.createElement('span', { style, className }, children);
 };
 
 // ===== نظام موحد جديد لتأثيرات صندوق المستخدم مع الملف الشخصي =====
