@@ -2212,7 +2212,7 @@ export default function ProfileModal({
 
         .profile-cover {
           position: relative;
-          height: 268px; /* زيادة طفيفة لارتفاع الغلاف */
+          height: 200px; /* ارتفاع مطابق للصورة المرجعية */
           background-size: cover;
           background-position: center center;
           background-repeat: no-repeat;
@@ -2243,17 +2243,18 @@ export default function ProfileModal({
         /* تم حذف أنماط الأزرار المحذوفة */
 
         .profile-avatar {
-          width: 200px;
-          height: 200px;
-          border-radius: 9999px; /* دائري بالكامل */
+          width: 80px; /* حجم مطابق للصورة المرجعية */
+          height: 80px;
+          border-radius: 50%; /* دائري بالكامل */
           overflow: visible; /* السماح للإطار بالظهور خارج الحدود */
           position: absolute;
-          top: calc(100% - 195px); /* رفع الصورة للأعلى قليلاً */
-          right: 10px; /* نقل الصورة لأقصى اليمين */
+          bottom: 15px; /* موضوعة في أسفل الغلاف */
+          right: 15px; /* في الزاوية اليمنى */
           background-color: transparent;
-          box-shadow: none; /* إزالة الظل من الـ container */
-          z-index: 2;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.3); /* ظل خفيف */
+          z-index: 3;
           transition: transform 0.3s ease;
+          border: 3px solid #fff; /* إطار أبيض */
         }
 
         .profile-avatar:hover {
@@ -2270,18 +2271,18 @@ export default function ProfileModal({
 
         .change-avatar-btn {
           position: absolute;
-          top: calc(100% - 70px); /* رفع الزر ليتناسب مع الصورة الجديدة */
-          right: calc(1.5cm + 40px); /* نقل الزر لليمين مع الإطار */
+          bottom: 10px; /* موضع ثابت من الأسفل */
+          right: 10px; /* موضع ثابت من اليمين */
           background: rgba(0,0,0,0.8);
           border-radius: 50%;
-          width: 30px;
-          height: 30px;
+          width: 25px;
+          height: 25px;
           text-align: center;
-          line-height: 30px;
-          font-size: 14px;
+          line-height: 25px;
+          font-size: 12px;
           color: #fff;
           cursor: pointer;
-          z-index: 3;
+          z-index: 4;
           transition: background 0.3s ease, transform 0.2s ease;
           border: none;
         }
@@ -3000,56 +3001,66 @@ export default function ProfileModal({
                   🖼️ تغيير الغلاف
                 </button>
                 
-                {/* اسم المستخدم مع الرتبة - محاذاة إلى اليسار وبجانب الصورة الشخصية */}
+                {/* اسم المستخدم مع الرتبة - مطابق للصورة المرجعية */}
                 <div style={{
                   position: 'absolute',
-                  bottom: '10px',
-                  left: '12px',
-                  right: 'calc(200px + 24px)', /* اترك مساحة للصورة الشخصية على اليمين */
+                  bottom: '15px',
+                  left: '15px',
+                  right: '110px', /* اترك مساحة للصورة الشخصية الصغيرة */
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'flex-start',
-                  gap: '2px',
-                  zIndex: 10,
+                  gap: '4px',
+                  zIndex: 2,
                   textAlign: 'left',
-                  maxWidth: 'calc(100% - 240px)',
-                  padding: '0 12px',
-                  boxSizing: 'border-box'
+                  maxWidth: 'calc(100% - 125px)',
                 }}>
-                  {/* الرتبة فوق الاسم */}
-                  {(localUser?.userType === 'owner' || localUser?.userType === 'admin' || localUser?.userType === 'moderator') && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <span style={{ fontSize: '13px' }}>
-                        {localUser?.userType === 'owner' && 'Owner'}
-                        {localUser?.userType === 'admin' && 'Admin'}
-                        {localUser?.userType === 'moderator' && 'Moderator'}
+                  {/* الاسم والرتبة في سطر واحد - مطابق للصورة المرجعية */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    {/* الاسم */}
+                    <h3 style={{
+                      margin: 0,
+                      fontSize: '22px', /* حجم أكبر للاسم */
+                      fontWeight: 'bold',
+                      color: '#ffffff',
+                      textShadow: '0 2px 6px rgba(0,0,0,0.8)',
+                      cursor: 'pointer',
+                      unicodeBidi: 'plaintext',
+                      textAlign: 'left',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      maxWidth: '200px',
+                    }}
+                    onClick={() => openEditModal('name')}
+                    >
+                      <bdi>{localUser?.username || 'اسم المستخدم'}</bdi>
+                    </h3>
+                    
+                    {/* الرتبة والشعار */}
+                    {(localUser?.userType === 'owner' || localUser?.userType === 'admin' || localUser?.userType === 'moderator') && (
+                      <span style={{ fontSize: '20px', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.6))' }}>
+                        {getUserLevelIcon(localUser, 20)}
                       </span>
-                      <span style={{ fontSize: '16px' }}>
-                        {getUserLevelIcon(localUser, 16)}
-                      </span>
-                    </div>
-                  )}
-                  {/* الاسم */}
-                  <h3 style={{
-                    margin: 0,
-                    fontSize: '18px',
-                    fontWeight: 'bold',
-                    color: getFinalUsernameColor(localUser || {}),
-                    textShadow: '0 2px 4px rgba(0,0,0,0.5)',
-                    cursor: 'pointer',
-                    // direction accepts 'ltr' | 'rtl' in TS types; rely on CSS default by omitting invalid value
-                    // direction: 'auto',
-                    unicodeBidi: 'plaintext',
-                    textAlign: 'left',
-                    whiteSpace: 'normal',
-                    overflowWrap: 'break-word',
-                    wordBreak: 'keep-all',
-                    hyphens: 'none',
-                  }}
-                  onClick={() => openEditModal('name')}
-                  >
-                    <bdi>{localUser?.username || 'اسم المستخدم'}</bdi>
-                  </h3>
+                    )}
+                  </div>
+                  
+                  {/* وصف الشعار أو النبذة */}
+                  <div style={{
+                    fontSize: '14px',
+                    color: 'rgba(255,255,255,0.9)',
+                    textShadow: '0 1px 3px rgba(0,0,0,0.7)',
+                    marginTop: '2px',
+                    maxWidth: '250px',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap'
+                  }}>
+                    {localUser?.userType === 'owner' && 'مالك الموقع'}
+                    {localUser?.userType === 'admin' && 'مدير الموقع'}
+                    {localUser?.userType === 'moderator' && 'مشرف الموقع'}
+                    {(!localUser?.userType || localUser?.userType === 'member') && `المستوى ${localUser?.level || 1}`}
+                  </div>
                 </div>
               </>
             )}
@@ -3063,103 +3074,127 @@ export default function ProfileModal({
               <>
                 <div style={{
                   position: 'absolute',
-                  bottom: '10px',
-                  left: '12px',
-                  right: 'calc(200px + 24px)',
+                  bottom: '15px',
+                  left: '15px',
+                  right: '110px',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'flex-start',
-                  gap: '2px',
-                  zIndex: 12,
+                  gap: '4px',
+                  zIndex: 2,
                   textAlign: 'left',
-                  maxWidth: 'calc(100% - 240px)',
-                  padding: '0 12px',
-                  boxSizing: 'border-box'
+                  maxWidth: 'calc(100% - 125px)',
                 }}>
-                  {(localUser?.userType === 'owner' || localUser?.userType === 'admin' || localUser?.userType === 'moderator') && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <span style={{ fontSize: '13px' }}>
-                        {localUser?.userType === 'owner' && 'Owner'}
-                        {localUser?.userType === 'admin' && 'Admin'}
-                        {localUser?.userType === 'moderator' && 'Moderator'}
+                  {/* الاسم والرتبة في سطر واحد - مطابق للصورة المرجعية */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    {/* الاسم */}
+                    <h3 style={{
+                      margin: 0,
+                      fontSize: '22px',
+                      fontWeight: 'bold',
+                      color: '#ffffff',
+                      textShadow: '0 2px 6px rgba(0,0,0,0.8)',
+                      cursor: 'pointer',
+                      unicodeBidi: 'plaintext',
+                      textAlign: 'left',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      maxWidth: '200px',
+                    }}
+                    onClick={() => openEditModal('name')}
+                    >
+                      <bdi>{localUser?.username || 'اسم المستخدم'}</bdi>
+                    </h3>
+                    
+                    {/* الرتبة والشعار */}
+                    {(localUser?.userType === 'owner' || localUser?.userType === 'admin' || localUser?.userType === 'moderator') && (
+                      <span style={{ fontSize: '20px', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.6))' }}>
+                        {getUserLevelIcon(localUser, 20)}
                       </span>
-                      <span style={{ fontSize: '16px' }}>
-                        {getUserLevelIcon(localUser, 16)}
-                      </span>
-                    </div>
-                  )}
-                  <h3 style={{
-                    margin: 0,
-                    fontSize: '18px',
-                    fontWeight: 'bold',
-                    color: getFinalUsernameColor(localUser || {}),
-                    textShadow: '0 2px 4px rgba(0,0,0,0.5)',
-                    cursor: 'pointer',
-                    // direction: 'auto',
-                    unicodeBidi: 'plaintext',
-                    textAlign: 'left',
-                    whiteSpace: 'normal',
-                    overflowWrap: 'break-word',
-                    wordBreak: 'keep-all',
-                    hyphens: 'none',
-                  }}
-                  onClick={() => openEditModal('name')}
-                  >
-                    <bdi>{localUser?.username || 'اسم المستخدم'}</bdi>
-                  </h3>
+                    )}
+                  </div>
+                  
+                  {/* وصف الشعار أو النبذة */}
+                  <div style={{
+                    fontSize: '14px',
+                    color: 'rgba(255,255,255,0.9)',
+                    textShadow: '0 1px 3px rgba(0,0,0,0.7)',
+                    marginTop: '2px',
+                    maxWidth: '250px',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap'
+                  }}>
+                    {localUser?.userType === 'owner' && 'مالك الموقع'}
+                    {localUser?.userType === 'admin' && 'مدير الموقع'}
+                    {localUser?.userType === 'moderator' && 'مشرف الموقع'}
+                    {(!localUser?.userType || localUser?.userType === 'member') && `المستوى ${localUser?.level || 1}`}
+                  </div>
                 </div>
               </>
             )}
 
             {localUser?.id !== currentUser?.id && (
               <>
-                {/* اسم المستخدم مع الرتبة - في أسفل صورة الغلاف */}
+                {/* اسم المستخدم مع الرتبة - مطابق للصورة المرجعية */}
                 <div style={{
                   position: 'absolute',
-                  bottom: '10px',
-                  left: '12px',
-                  right: 'calc(200px + 24px)',
+                  bottom: '15px',
+                  left: '15px',
+                  right: '110px',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'flex-start',
-                  gap: '2px',
-                  zIndex: 12,
+                  gap: '4px',
+                  zIndex: 2,
                   pointerEvents: 'none',
                   textAlign: 'left',
-                  maxWidth: 'calc(100% - 240px)',
-                  padding: '0 12px',
-                  boxSizing: 'border-box'
+                  maxWidth: 'calc(100% - 125px)',
                 }}>
-                  {/* الرتبة فوق الاسم */}
-                  {(localUser?.userType === 'owner' || localUser?.userType === 'admin' || localUser?.userType === 'moderator') && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <span style={{ fontSize: '13px' }}>
-                        {localUser?.userType === 'owner' && 'Owner'}
-                        {localUser?.userType === 'admin' && 'Admin'}
-                        {localUser?.userType === 'moderator' && 'Moderator'}
+                  {/* الاسم والرتبة في سطر واحد - مطابق للصورة المرجعية */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    {/* الاسم */}
+                    <h3 style={{
+                      margin: 0,
+                      fontSize: '22px',
+                      fontWeight: 'bold',
+                      color: '#ffffff',
+                      textShadow: '0 2px 6px rgba(0,0,0,0.8)',
+                      unicodeBidi: 'plaintext',
+                      textAlign: 'left',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      maxWidth: '200px',
+                    }}>
+                      <bdi>{localUser?.username || 'اسم المستخدم'}</bdi>
+                    </h3>
+                    
+                    {/* الرتبة والشعار */}
+                    {(localUser?.userType === 'owner' || localUser?.userType === 'admin' || localUser?.userType === 'moderator') && (
+                      <span style={{ fontSize: '20px', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.6))' }}>
+                        {getUserLevelIcon(localUser, 20)}
                       </span>
-                      <span style={{ fontSize: '16px' }}>
-                        {getUserLevelIcon(localUser, 16)}
-                      </span>
-                    </div>
-                  )}
-                  {/* الاسم */}
-                  <h3 style={{
-                    margin: 0,
-                    fontSize: '18px',
-                    fontWeight: 'bold',
-                    color: getFinalUsernameColor(localUser || {}),
-                    textShadow: '0 2px 4px rgba(0,0,0,0.5)',
-                    // direction: 'auto',
-                    unicodeBidi: 'plaintext',
-                    textAlign: 'left',
-                    whiteSpace: 'normal',
-                    overflowWrap: 'break-word',
-                    wordBreak: 'keep-all',
-                    hyphens: 'none',
+                    )}
+                  </div>
+                  
+                  {/* وصف الشعار أو النبذة */}
+                  <div style={{
+                    fontSize: '14px',
+                    color: 'rgba(255,255,255,0.9)',
+                    textShadow: '0 1px 3px rgba(0,0,0,0.7)',
+                    marginTop: '2px',
+                    maxWidth: '250px',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap'
                   }}>
-                    <bdi>{localUser?.username || 'اسم المستخدم'}</bdi>
-                  </h3>
+                    {localUser?.userType === 'owner' && 'مالك الموقع'}
+                    {localUser?.userType === 'admin' && 'مدير الموقع'}
+                    {localUser?.userType === 'moderator' && 'مشرف الموقع'}
+                    {(!localUser?.userType || localUser?.userType === 'member') && `المستوى ${localUser?.level || 1}`}
+                  </div>
                 </div>
               </>
             )}
@@ -3179,7 +3214,7 @@ export default function ProfileModal({
                 <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <ProfileImage 
                     user={localUser} 
-                    pixelSize={135}
+                    pixelSize={74}
                     hideRoleBadgeOverlay={true}
                     disableFrame={false}
                   />
@@ -3190,8 +3225,8 @@ export default function ProfileModal({
                     src={getProfileImageSrcLocal()}
                     alt="الصورة الشخصية"
                     style={{
-                      width: '130px',
-                      height: '130px',
+                      width: '74px',
+                      height: '74px',
                       objectFit: 'cover',
                       display: 'block',
                       transition: 'none',
