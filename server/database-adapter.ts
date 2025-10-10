@@ -91,9 +91,17 @@ export async function initializeDatabase(): Promise<boolean> {
     }
 
     // اكتشاف استخدام PgBouncer عبر سلسلة الاتصال أو متغير بيئة
-    const isPgBouncer =
+    // يشمل اكتشاف Pooler الخاص بـ Supabase مثل: aws-*-*.pooler.supabase.com
+    let isPgBouncer =
       /pgbouncer=1|pgbouncer=true/i.test(connectionString) ||
       String(process.env.USE_PGBOUNCER || '').toLowerCase() === 'true';
+    try {
+      const parsed = new URL(connectionString);
+      const host = parsed.host || '';
+      if (/pooler\.supabase\.com/i.test(host) || /pgbouncer/i.test(host)) {
+        isPgBouncer = true;
+      }
+    } catch {}
 
     // إعدادات المجمع والقيم الافتراضية الآمنة
     // دعم وضع "بدون حدود" عبر متغيرات البيئة التالية: DB_NO_LIMITS / DB_UNLIMITED / NO_DB_LIMITS
@@ -109,7 +117,8 @@ export async function initializeDatabase(): Promise<boolean> {
     // ملاحظة: القيم الكبيرة قد تستنزف اتصالات القاعدة بدون PgBouncer
     // - مع PgBouncer (transaction pooling): يمكن رفع max كثيراً بأمان
     // - بدون PgBouncer: نجعل max متوسطاً لتفادي استنزاف max_connections على الخادم
-    const defaultMax = noLimits ? (isPgBouncer ? 1000 : 50) : isPgBouncer ? 20 : 5;
+    // مع PgBouncer ننصح بـ ~50 اتصال فقط من Node.js، والذي يكفي لأكثر من 8K مستخدم WebSocket
+    const defaultMax = noLimits ? (isPgBouncer ? 1000 : 50) : isPgBouncer ? 50 : 5;
     const poolMax = Number(process.env.DB_POOL_MAX || process.env.POOL_MAX || defaultMax);
     const poolMin = noLimits ? 0 : Number(process.env.DB_POOL_MIN || 0);
     // لمنع انقطاع الاتصال: 0 يعني تعطيل المهلة في postgres.js
@@ -121,6 +130,7 @@ export async function initializeDatabase(): Promise<boolean> {
 
     const client = postgres(connectionString, {
       ssl: sslRequired ? 'require' : undefined,
+      // مع PgBouncer لا نستخدم prepared statements لتجنب مشاكل session pooling
       prepare: isPgBouncer ? false : true,
       onnotice: () => {},
       fetch_types: false,
@@ -128,12 +138,11 @@ export async function initializeDatabase(): Promise<boolean> {
       connection: {
         application_name: `chat-app:${process.pid}`,
       },
-      // مهلات واستقرار
+      // مهلات واستقرار (بالثواني)
       idle_timeout: idleTimeout,
       max_lifetime: maxLifetime,
       connect_timeout: connectTimeout,
       // حدود المجمع
-      // في وضع noLimits نسمح بقيم كبيرة (خصوصاً مع PgBouncer)
       max: Math.max(1, poolMax),
       min: Math.max(0, Math.min(poolMin, poolMax)),
       // إعدادات إعادة المحاولة

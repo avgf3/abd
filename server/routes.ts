@@ -182,8 +182,6 @@ const musicUpload = multer({
     parts: 20 
   },
   fileFilter: (_req, file, cb) => {
-    console.log(`🔍 فحص ملف: ${file.originalname}, نوع MIME: ${file.mimetype}`);
-    
     // قائمة أنواع الملفات المدعومة - محسنة
     const allowedMimeTypes = [
       'audio/mpeg',
@@ -206,14 +204,10 @@ const musicUpload = multer({
     const fileExtension = path.extname(file.originalname).toLowerCase();
     const isValidExtension = allowedExtensions.includes(fileExtension);
     
-    console.log(`🔍 نوع MIME صحيح: ${isValidMimeType}, امتداد صحيح: ${isValidExtension}`);
-    
     if (!isValidMimeType && !isValidExtension) {
-      console.log(`❌ رفض الملف في الفلتر: نوع غير مدعوم ${file.mimetype}`);
       return cb(new Error(`Unsupported audio file type: ${file.mimetype}. Supported types: MP3, WAV, OGG, M4A, AAC`));
     }
     
-    console.log(`✅ قبول الملف في الفلتر: ${file.originalname}`);
     cb(null, true);
   },
 });
@@ -601,13 +595,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const uploadedSize = (req.file as any)?.size || 0;
           const maxUserFileSize = 10 * 1024 * 1024;
           
-          console.log(`📊 تحقق من حجم الملف: ${uploadedSize} بايت = ${(uploadedSize / (1024 * 1024)).toFixed(2)} ميجابايت`);
-          console.log(`📊 نوع الملف: ${req.file?.mimetype}`);
-          console.log(`📊 اسم الملف الأصلي: ${req.file?.originalname}`);
-          
           // التحقق من الحد الأدنى للحجم (يجب أن يكون أكبر من 0)
           if (uploadedSize === 0) {
-            console.log('❌ رفض الملف: حجم صفر');
             try { await fsp.unlink(req.file.path).catch(() => {}); } catch {}
             return res.status(400).json({
               success: false,
@@ -617,7 +606,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           // التحقق من الحد الأقصى للحجم
           if (uploadedSize > maxUserFileSize) {
-            console.log(`❌ رفض الملف: حجم كبير جداً (${(uploadedSize / (1024 * 1024)).toFixed(2)} ميجابايت)`);
             try { await fsp.unlink(req.file.path).catch(() => {}); } catch {}
             return res.status(413).json({
               success: false,
@@ -625,8 +613,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             });
           }
           
-          console.log('✅ تم قبول الملف: الحجم والنوع صحيحان');
-        } catch (sizeCheckError) {
+          } catch (sizeCheckError) {
           console.error('❌ خطأ في فحص حجم الملف:', sizeCheckError);
         }
 
@@ -667,8 +654,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           try {
             if (oldPath.startsWith(uploadsRoot)) {
               await fsp.unlink(oldPath);
-              console.log(`✅ تم حذف الملف القديم: ${oldPath}`);
-            } else {
+              } else {
               console.warn('⚠️ تم تجاهل حذف ملف خارج مجلد الرفع:', oldPath);
             }
           } catch (unlinkErr) {
@@ -695,8 +681,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // حذف الملف في حالة فشل التحديث
           try { 
             await fsp.unlink(req.file.path);
-            console.log(`✅ تم حذف الملف بعد فشل التحديث: ${req.file.path}`);
-          } catch (cleanupErr) {
+            } catch (cleanupErr) {
             console.warn(`⚠️ تعذر حذف الملف بعد فشل التحديث: ${req.file.path}`, cleanupErr);
           }
           return res.status(500).json({ 
@@ -711,8 +696,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           emitUserUpdatedToUser(userId, sanitizedUser); 
           emitUserUpdatedToAll(sanitizedUser); 
           
-          console.log(`✅ تم بث تحديث موسيقى البروفايل للمستخدم ${userId}`);
-        } catch (broadcastErr) {
+          } catch (broadcastErr) {
           console.error('❌ خطأ في بث التحديث:', broadcastErr);
           // لا نوقف العملية إذا فشل البث
         }
@@ -730,8 +714,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (req.file) {
           try { 
             await fsp.unlink(req.file.path);
-            console.log(`✅ تم حذف الملف بعد حدوث خطأ: ${req.file.path}`);
-          } catch (cleanupErr) {
+            } catch (cleanupErr) {
             console.warn(`⚠️ تعذر حذف الملف بعد حدوث خطأ: ${req.file.path}`, cleanupErr);
           }
         }
@@ -3612,8 +3595,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         try {
           if (filePath.startsWith(uploadsRoot)) {
             await fsp.unlink(filePath);
-            console.log(`✅ تم حذف ملف الموسيقى: ${filePath}`);
-          } else {
+            } else {
             console.warn('⚠️ تم تجاهل حذف ملف خارج مجلد الرفع:', filePath);
           }
         } catch (unlinkErr) {
@@ -3634,8 +3616,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         emitUserUpdatedToUser(userId, sanitizedUser); 
         emitUserUpdatedToAll(sanitizedUser); 
         
-        console.log(`✅ تم بث حذف موسيقى البروفايل للمستخدم ${userId}`);
-      } catch (broadcastErr) {
+        } catch (broadcastErr) {
         console.error('❌ خطأ في بث حذف الموسيقى:', broadcastErr);
       }
       res.json({ success: true });
@@ -3806,8 +3787,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         emitUserUpdatedToUser(userIdNum, sanitizedUser);
         emitUserUpdatedToAll(sanitizedUser);
         
-        console.log(`✅ تم بث تحديث إعدادات موسيقى البروفايل للمستخدم ${userIdNum}`);
-      } catch (broadcastErr) {
+        } catch (broadcastErr) {
         console.error('❌ خطأ في بث تحديث إعدادات الموسيقى:', broadcastErr);
       }
 
@@ -3943,8 +3923,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const sanitizedUser = sanitizeUserData(updatedUser);
         emitUserUpdatedToUser(userIdNum, sanitizedUser);
         emitUserUpdatedToAll(sanitizedUser);
-        console.log(`✅ تم بث تحديث البروفايل للمستخدم ${userIdNum}`);
-      } catch (broadcastErr) {
+        } catch (broadcastErr) {
         console.error('❌ خطأ في بث تحديث البروفايل:', broadcastErr);
       }
 

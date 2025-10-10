@@ -60,14 +60,6 @@ export default function CityChat() {
   const [, setLocation] = useLocation();
 
   // Enhanced debug logging
-  console.log('CityChat Debug Info:', {
-    currentPath: window.location.pathname,
-    match: match,
-    params: params,
-    paramsType: typeof params,
-    paramsKeys: params ? Object.keys(params) : 'null'
-  });
-
   // Test mode for Universal City System
   const testMode = params?.city === 'test-universal-system';
 
@@ -89,27 +81,11 @@ export default function CityChat() {
   const cityData = getCityByPath(cityPath);
 
   // Enhanced debug logging
-  console.log('CityChat Debug Info:', {
-    currentPath: window.location.pathname,
-    match,
-    params: params ? params : 'null/undefined',
-    cityPath,
-    cityData: cityData ? 'FOUND' : 'NOT FOUND',
-    cityDataDetails: cityData,
-    availableCitiesCount: getAllCities().length,
-    allCityPaths: getAllCities().map(c => c.path).slice(0, 10), // Show first 10 city paths for debugging
-    searchingFor: cityPath,
-    foundInData: getAllCities().some(c => c.path === cityPath) ? 'YES' : 'NO'
-  });
-
   // Import getAllCities for debugging - Remove this problematic async import
   // import('@/data/cityChats').then(module => {
   //   const { getAllCities } = module;
-  //   console.log('Available cities:', getAllCities().slice(0, 5)); // First 5 cities
-  //   console.log('City found for', cityPath, ':', getAllCities().find(c => c.path === cityPath));
-  // }).catch(err => console.log('Error importing cityChats:', err));
-
-  // Enhanced city data with additional information using CitiesSystem
+  //   // First 5 cities
+  //   // }).catch(err => // Enhanced city data with additional information using CitiesSystem
   const cityInfo = cityData ? CitiesSystem.getCitiesWithCountryInfo(cityData.countryPath) : null;
 
   // Additional city information for debugging
@@ -225,18 +201,6 @@ export default function CityChat() {
   };
 
   if (!cityData) {
-    console.log('CityChat ERROR - cityData is null/undefined:', {
-      currentPath: window.location.pathname,
-      match,
-      params,
-      cityPath,
-      cityData,
-      availableCities: getAllCities().length,
-      cityExists: getAllCities().some(c => c.path === cityPath),
-      allCities: getAllCities().map(c => ({ path: c.path, name: c.nameAr })).slice(0, 5),
-      countryCities: getCitiesByCountry(params?.country || '').map(c => ({ path: c.path, name: c.nameAr }))
-    });
-
     return (
       <div className="min-h-[100dvh] bg-gradient-to-br from-red-50 to-red-100 flex items-center justify-center">
         <div className="text-center p-8 bg-white rounded-xl shadow-lg">

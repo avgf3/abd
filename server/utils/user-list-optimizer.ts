@@ -68,8 +68,6 @@ class UserListOptimizer {
       // تجميع الأحداث وإزالة التكرارات
       const optimizedEvents = this.optimizeEvents(pending.events);
       
-      console.log(`🔄 معالجة ${optimizedEvents.length} أحداث للغرفة ${roomId}`);
-      
       // بناء قائمة المستخدمين المحدثة
       const users = await this.buildUpdatedUserList(roomId, optimizedEvents);
       

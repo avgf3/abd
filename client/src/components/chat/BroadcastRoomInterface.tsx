@@ -313,7 +313,6 @@ export default function BroadcastRoomInterface({
     try {
       // التحقق من السياق الآمن
       if (window.isSecureContext) {
-        console.log('✅ السياق آمن (HTTPS أو localhost)');
         return true;
       }
       
@@ -321,7 +320,6 @@ export default function BroadcastRoomInterface({
       const isLocalhost = host === 'localhost' || host === '127.0.0.1' || host === '0.0.0.0';
       
       if (isLocalhost) {
-        console.log('✅ السياق آمن (localhost)');
         return true;
       }
       
@@ -348,7 +346,6 @@ export default function BroadcastRoomInterface({
         throw new Error('المتصفح لا يدعم getUserMedia');
       }
       
-      console.log('✅ المتصفح يدعم WebRTC');
       return true;
     } catch (error) {
       console.error('❌ المتصفح لا يدعم WebRTC:', error);
@@ -428,8 +425,6 @@ export default function BroadcastRoomInterface({
     for (let i = 0; i < constraintsList.length; i++) {
       const constraints = constraintsList[i];
       try {
-        console.log(`محاولة الحصول على الميكروفون بمستوى ${i + 1}:`, constraints);
-        
         const stream = await navigator.mediaDevices.getUserMedia(constraints);
         
         // التحقق من صحة الـ stream
@@ -440,16 +435,8 @@ export default function BroadcastRoomInterface({
         // تأكد من تفعيل جميع المسارات الصوتية
         stream.getAudioTracks().forEach((track) => {
           track.enabled = true;
-          console.log(`تم تفعيل المسار الصوتي:`, {
-            id: track.id,
-            label: track.label,
-            enabled: track.enabled,
-            muted: track.muted,
-            readyState: track.readyState
           });
-        });
         
-        console.log('✅ تم الحصول على الميكروفون بنجاح');
         return stream;
         
       } catch (err: any) {
@@ -517,8 +504,6 @@ export default function BroadcastRoomInterface({
     if (!currentUser || !room.id) return;
     
     try {
-      console.log('🚀 بدء عملية البث الصوتي...');
-      
       // 1. فحص السياق الآمن
       if (!isSecureContext()) {
         throw new Error('يتطلب الميكروفون اتصالاً آمناً. افتح الموقع عبر HTTPS (أو محلياً على localhost).');
@@ -541,21 +526,15 @@ export default function BroadcastRoomInterface({
         throw new Error('لا يوجد جهاز ميكروفون متاح على هذا الجهاز.');
       }
       
-      console.log('✅ جميع الفحوصات نجحت، بدء الحصول على الميكروفون...');
-      
       // 5. الحصول على الميكروفون
       const stream = await getUserMediaWithFallbacks();
       setLocalStream(stream);
       setIsBroadcasting(true);
       
-      console.log('✅ تم الحصول على الميكروفون، بدء إنشاء الاتصالات...');
-      
       // 6. إنشاء اتصالات مع المستمعين
       const listeners = humanOnlineUsers.filter(
         (u) => u.id !== currentUser.id && !speakers.includes(u.id) && u.id !== broadcastInfo?.hostId
       );
-      
-      console.log(`📡 إنشاء اتصالات مع ${listeners.length} مستمع...`);
       
       for (const listener of listeners) {
         try {
@@ -563,7 +542,6 @@ export default function BroadcastRoomInterface({
           
           // إضافة مراقبة حالة الاتصال
           pc.onconnectionstatechange = () => {
-            console.log(`🔗 حالة الاتصال مع ${listener.username}:`, pc.connectionState);
             if (pc.connectionState === 'failed') {
               toast({
                 title: 'مشكلة في الاتصال',
@@ -571,24 +549,20 @@ export default function BroadcastRoomInterface({
                 variant: 'destructive',
               });
             } else if (pc.connectionState === 'connected') {
-              console.log(`✅ تم الاتصال بنجاح مع ${listener.username}`);
-            }
+              }
           };
           
           pc.oniceconnectionstatechange = () => {
-            console.log(`🧊 حالة ICE مع ${listener.username}:`, pc.iceConnectionState);
-          };
+            };
           
           // إضافة مسارات الصوت
           stream.getTracks().forEach((track) => {
             pc.addTrack(track, stream);
-            console.log(`➕ تم إضافة مسار صوتي للاتصال مع ${listener.username}:`, track.id);
-          });
+            });
           
           // إرسال ICE candidates
           pc.onicecandidate = (event) => {
             if (event.candidate) {
-              console.log(`🧊 إرسال ICE candidate إلى ${listener.username}`);
               chat.sendWebRTCIceCandidate?.(listener.id, room.id, event.candidate);
             }
           };
@@ -599,7 +573,6 @@ export default function BroadcastRoomInterface({
           const offer = await pc.createOffer({ offerToReceiveAudio: false });
           await pc.setLocalDescription(offer);
           
-          console.log(`📤 إرسال عرض WebRTC إلى ${listener.username}`);
           chat.sendWebRTCOffer?.(listener.id, room.id, offer);
           
         } catch (error) {
@@ -612,9 +585,7 @@ export default function BroadcastRoomInterface({
         description: `تم بدء البث الصوتي بنجاح لـ ${listeners.length} مستمع`,
       });
       
-      console.log('🎉 تم بدء البث الصوتي بنجاح!');
-      
-    } catch (err) {
+      } catch (err) {
       console.error('❌ خطأ في بدء البث:', err);
       explainStartBroadcastError(err);
     }
@@ -671,7 +642,6 @@ export default function BroadcastRoomInterface({
           pc.oniceconnectionstatechange = () => {};
 
           pc.ontrack = async (event) => {
-            console.log('🎵 استقبال مسار صوتي جديد:', event);
             if (!audioRef.current) {
               console.warn('⚠️ عنصر الصوت غير متاح بعد. سيتم المحاولة لاحقاً.');
               return;
@@ -690,14 +660,6 @@ export default function BroadcastRoomInterface({
               return;
             }
 
-            console.log('🎵 تم استقبال مسارات صوتية:', audioTracks.map(track => ({
-              id: track.id,
-              label: track.label,
-              enabled: track.enabled,
-              muted: track.muted,
-              readyState: track.readyState
-            })));
-
             // تعيين الـ stream للعنصر الصوتي
             if (audioRef.current.srcObject !== stream) {
               audioRef.current.srcObject = stream;
@@ -710,14 +672,11 @@ export default function BroadcastRoomInterface({
             // محاولة تشغيل الصوت مع معالجة الأخطاء
             try {
               await audioRef.current.play();
-              console.log('✅ تم تشغيل الصوت بنجاح');
               setPlaybackBlocked(false);
               audioRef.current?.addEventListener('canplay', () => {
-                console.log('🎵 الصوت جاهز للتشغيل');
-              });
+                });
               audioRef.current?.addEventListener('playing', () => {
-                console.log('🎵 الصوت يعمل الآن');
-              });
+                });
               audioRef.current?.addEventListener('error', (e) => {
                 console.error('❌ خطأ في تشغيل الصوت:', e);
               });
@@ -1041,38 +1000,14 @@ export default function BroadcastRoomInterface({
           playsInline
           autoPlay
           controlsList="nodownload noplaybackrate"
-          onLoadedMetadata={() => console.log('🎵 تم تحميل بيانات الصوت (root)')}
-          onCanPlay={() => console.log('🎵 الصوت جاهز للتشغيل (root)')}
-          onPlay={() => console.log('🎵 بدء تشغيل الصوت (root)')}
-          onPause={() => console.log('🎵 توقف تشغيل الصوت (root)')}
-          onError={(e) => console.error('❌ خطأ في العنصر الصوتي (root):', e)}
-        />
-      </div>
-      {/* شريط علوي بسيط مماثل لباقي الغرف */}
-      <div className="modern-nav px-3 py-2 sm:px-4 border-b flex-shrink-0">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Mic className="w-5 h-5 text-primary" />
-            <span className="font-semibold text-base">غرفة البث المباشر</span>
-            <Badge variant="secondary" className="hidden sm:inline-flex">
-              {listenerCount} مستمع
-            </Badge>
-          </div>
-          <div className="flex items-center gap-2">
-            {isListener && playbackBlocked && (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => {
-                  try {
-                    audioRef.current?.play();
-                    setPlaybackBlocked(false);
-                  } catch {}
-                }}
-              >
-                <PlayCircle className="w-4 h-4" /> تشغيل الصوت
-              </Button>
-            )}
+          onLoadedMetadata={() => {
+            try {
+              setPlaybackBlocked(false);
+            } catch {}
+          }}
+        >
+        </audio>
+            
             <Button
               size="sm"
               variant="ghost"

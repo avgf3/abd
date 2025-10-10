@@ -113,12 +113,10 @@ export class ConnectionManager {
     
     // 🔥 منطق ذكي: فعل backup polling عند انقطاع Socket
     if (!connected && !this.backupPollActive) {
-      console.log('🔄 Socket منقطع - تفعيل backup polling');
       this.shouldBackupPoll = true;
       this.backupPollActive = true;
       this.scheduleNextPoll(500); // polling سريع عند انقطاع Socket
     } else if (connected && this.backupPollActive) {
-      console.log('✅ Socket متصل - إيقاف backup polling');
       this.shouldBackupPoll = false;
       this.backupPollActive = false;
       // العودة للسرعة العادية
@@ -127,7 +125,6 @@ export class ConnectionManager {
   }
 
   public enableBackupMode() {
-    console.log('🆘 تفعيل وضع الطوارئ - backup polling مستمر');
     this.shouldBackupPoll = true;
     this.backupPollActive = true;
     this.scheduleNextPoll(1000); // polling كل ثانية في وضع الطوارئ

@@ -17,6 +17,7 @@ import { formatRoomEventMessage } from './utils/roomEventFormatter';
 import { roomService } from './services/roomService';
 import { voiceService } from './services/voiceService';
 import { storage } from './storage';
+import { setUserPresence, getUserPresence, clearUserPresence } from './utils/redis';
 import { sanitizeUsersArray } from './utils/data-sanitizer';
 import { getClientIpFromHeaders, getDeviceIdFromHeaders } from './utils/device';
 import { verifyAuthToken } from './utils/auth-token';
@@ -350,17 +351,27 @@ export async function buildOnlineUsersForRoom(roomId: string) {
       }
       // تأكيد وجود حقول الحالة والزمن بشكل متناسق
       next.isOnline = true;
-      // جلب lastSeen و currentRoom من قاعدة البيانات بدلاً من الذاكرة المحلية
+      // محاولة القراءة السريعة من Redis presence قبل اللجوء إلى قاعدة البيانات
       try {
-        const dbUser = await storage.getUser(u.id);
+        const cached = await getUserPresence(u.id);
+        if (cached) {
+          if (typeof cached.isHidden === 'boolean') (next as any).isHidden = cached.isHidden;
+          if ((cached as any).currentRoom) (next as any).currentRoom = (cached as any).currentRoom;
+          if ((cached as any).lastSeen) (next as any).lastSeen = new Date((cached as any).lastSeen as any);
+        }
+      } catch {}
+      // جلب lastSeen و currentRoom من قاعدة البيانات بدلاً من الذاكرة المحلية عند الحاجة فقط
+      try {
+        const needsDb = !(next as any).currentRoom || !(next as any).lastSeen;
+        const dbUser = needsDb ? await storage.getUser(u.id) : null;
         // تحديث حالة الإخفاء وفق قاعدة البيانات (مصدر الحقيقة)
-        const hidden = (dbUser as any)?.isHidden === true || (u as any)?.isHidden === true;
+        const hidden = (dbUser as any)?.isHidden === true || (u as any)?.isHidden === true || (next as any)?.isHidden === true;
         next.isHidden = hidden;
         if (hidden) {
           return null as any; // استثناء المستخدمين المخفيين بالكامل من القائمة
         }
-        next.lastSeen = dbUser?.lastSeen || (u as any).createdAt || new Date();
-        next.currentRoom = dbUser?.currentRoom || u.currentRoom || 'general';
+        next.lastSeen = dbUser?.lastSeen || (next as any).lastSeen || (u as any).createdAt || new Date();
+        next.currentRoom = dbUser?.currentRoom || (next as any).currentRoom || u.currentRoom || 'general';
       } catch (error) {
         next.lastSeen = (u as any).lastSeen || (u as any).createdAt || new Date();
         next.currentRoom = u.currentRoom || 'general';
@@ -406,7 +417,7 @@ export async function buildOnlineUsersForRoom(roomId: string) {
         (next as any).currentRoom = u.currentRoom || roomId;
       }
       
-      // تحديث الغرفة الحالية في قاعدة البيانات إذا لزم الأمر (للمستخدمين العاديين فقط)
+      // تحديث الغرفة الحالية في قاعدة البيانات وإذا أمكن Cache presence (للمستخدمين العاديين فقط)
       if (u.userType !== 'bot') {
         const entry = connectedUsers.get(u.id);
         const now = Date.now();
@@ -420,6 +431,7 @@ export async function buildOnlineUsersForRoom(roomId: string) {
               await storage.updateUser(u.id, { currentRoom: roomId });
               entry.user.currentRoom = roomId;
               connectedUsers.set(u.id, entry);
+              try { await setUserPresence(u.id, { currentRoom: roomId, isOnline: true, lastSeen: new Date() }); } catch {}
               isUpdatingRoom = false;
             }
           } catch (updateError) {
@@ -461,8 +473,6 @@ export async function emitOnlineUsersForRoom(roomId: string): Promise<void> {
 async function emitOptimizedOnlineUsers(roomId: string, users: any[]): Promise<void> {
   try {
     if (!roomId || !ioInstance) return;
-    
-    console.log(`📤 إرسال قائمة محدثة للغرفة ${roomId}: ${users.length} مستخدم`);
     
     ioInstance.to(`room_${roomId}`).emit('message', {
       type: 'onlineUsers',
@@ -1147,6 +1157,8 @@ export function setupRealtime(httpServer: HttpServer): IOServer<ClientToServerEv
           try {
             await storage.setUserOnlineStatus(user.id, true);
           } catch {}
+          // Cache presence for quick lookups
+          try { await setUserPresence(user.id, { isOnline: true, currentRoom: null, lastSeen: new Date() }); } catch {}
 
           // إذا كان هناك مؤقت إعلان خروج معلق للمستخدم (من سوكت سابق)، ألغِه — هذا استئناف سريع
           try {
@@ -1443,8 +1455,6 @@ export function setupRealtime(httpServer: HttpServer): IOServer<ClientToServerEv
         const userId = socket.userId;
         if (!userId) return;
         
-        console.log(`🔌 المستخدم ${userId} قطع الاتصال - السبب: ${reason}`);
-        
         const entry = connectedUsers.get(userId);
         if (entry) {
           // إزالة socket من قائمة sockets
@@ -1475,15 +1485,14 @@ export function setupRealtime(httpServer: HttpServer): IOServer<ClientToServerEv
               try {
                 // تحديث آخر تواجد في قاعدة البيانات قبل إزالة المستخدم
                 await storage.setUserOnlineStatus(userId, false);
-                console.log(`📝 تم تحديث آخر تواجد للمستخدم ${userId} في قاعدة البيانات`);
-              } catch (dbError) {
+                // Clear cached presence
+                try { await clearUserPresence(userId); } catch {}
+                } catch (dbError) {
                 console.error(`❌ فشل تحديث آخر تواجد للمستخدم ${userId}:`, dbError);
               }
               
               // إزالة المستخدم من الذاكرة المحلية
               connectedUsers.delete(userId);
-              console.log(`🗑️ تم إزالة المستخدم ${userId} من الذاكرة المحلية`);
-              
               // إشعار جميع الغرف بأن المستخدم انقطع
               const lastRoom = socket.currentRoom;
               if (lastRoom) {
@@ -1522,8 +1531,7 @@ export function setupRealtime(httpServer: HttpServer): IOServer<ClientToServerEv
                     console.error('❌ فشل بث تحديث عدد المستخدمين:', err);
                   }
                   
-                  console.log(`📡 تم إشعار الغرفة ${lastRoom} بانقطاع المستخدم ${userId}`);
-                } catch (emitError) {
+                  } catch (emitError) {
                   console.error(`❌ فشل إشعار الغرفة ${lastRoom}:`, emitError);
                 }
               }
@@ -1531,7 +1539,6 @@ export function setupRealtime(httpServer: HttpServer): IOServer<ClientToServerEv
             pendingOfflineTimers.set(userId, timer);
           } else {
             // المستخدم لا يزال متصلاً عبر sockets أخرى
-            console.log(`👤 المستخدم ${userId} لا يزال متصلاً عبر ${entry.sockets.size} socket(s)`);
             connectedUsers.set(userId, entry);
           }
         }
@@ -1656,8 +1663,7 @@ async function updateBotsPeriodically() {
       await updateConnectedUserCache(bot.id, botUser);
     }
     
-    console.log(`تم تحديث ${activeBots.length} بوت بنجاح`);
-  } catch (error) {
+    } catch (error) {
     console.error('خطأ في التحديث الدوري للبوتات:', error);
   }
 }
@@ -1670,16 +1676,14 @@ export function startBotUpdater() {
   
   // تحديث كل 30 ثانية للبوتات
   botUpdateInterval = setInterval(updateBotsPeriodically, 30000);
-  console.log('تم بدء نظام التحديث الدوري للبوتات كل 30 ثانية');
-}
+  }
 
 // إيقاف نظام التحديث الدوري للبوتات
 export function stopBotUpdater() {
   if (botUpdateInterval) {
     clearInterval(botUpdateInterval);
     botUpdateInterval = null;
-    console.log('تم إيقاف نظام التحديث الدوري للبوتات');
-  }
+    }
 }
 
 // دالة تحديث lastSeen للمستخدمين المتصلين
@@ -1703,8 +1707,6 @@ async function updateLastSeenForConnectedUsers() {
     }
     
     await Promise.all(updatePromises);
-    console.log(`تم تحديث lastSeen لـ ${updatePromises.length} مستخدم متصل`);
-
     // بث userUpdated بشكل خفيف لإبلاغ الواجهة بالتحديث الدوري لـ lastSeen مع تضمين isHidden من قاعدة البيانات
     try {
       if (ioInstance) {
@@ -1748,14 +1750,12 @@ export function startLastSeenUpdater() {
   
   // تحديث كل دقيقة (60000 ms)
   lastSeenUpdateInterval = setInterval(updateLastSeenForConnectedUsers, 60000);
-  console.log('تم بدء نظام التحديث الدوري لـ lastSeen كل دقيقة');
-}
+  }
 
 // إيقاف نظام التحديث الدوري
 export function stopLastSeenUpdater() {
   if (lastSeenUpdateInterval) {
     clearInterval(lastSeenUpdateInterval);
     lastSeenUpdateInterval = null;
-    console.log('تم إيقاف نظام التحديث الدوري لـ lastSeen');
-  }
+    }
 }
