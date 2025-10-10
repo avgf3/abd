@@ -151,7 +151,7 @@ export const getFinalUsernameColor = (user: any): string => {
       case 'owner':
         return '#FFD700'; // ذهبي للمالك
       case 'admin':
-        return '#FF4444'; // أحمر للمشرف العام
+        return '#9B59B6'; // بنفسجي للمشرف العام
       case 'moderator':
         return '#4A90E2'; // أزرق للمشرف
       case 'member':
