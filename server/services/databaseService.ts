@@ -610,6 +610,9 @@ export class DatabaseService {
             profileEffect: schema.users.profileEffect,
             profileFrame: (schema.users as any).profileFrame,
             usernameColor: schema.users.usernameColor,
+            // تضمين تدرج وتأثير اسم المستخدم لعرضها في واجهة الأثرياء
+            usernameGradient: (schema.users as any).usernameGradient,
+            usernameEffect: (schema.users as any).usernameEffect,
             isOnline: schema.users.isOnline,
             lastSeen: schema.users.lastSeen,
             points: schema.users.points,
@@ -689,6 +692,9 @@ export class DatabaseService {
             profileEffect: schema.users.profileEffect,
             profileFrame: (schema.users as any).profileFrame,
             usernameColor: schema.users.usernameColor,
+            // تضمين تدرج وتأثير اسم المستخدم لعرضها أثناء الترشيح والإضافة
+            usernameGradient: (schema.users as any).usernameGradient,
+            usernameEffect: (schema.users as any).usernameEffect,
             isOnline: schema.users.isOnline,
             lastSeen: schema.users.lastSeen,
             points: schema.users.points,
