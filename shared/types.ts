@@ -6,6 +6,10 @@ export interface ChatUser {
   profileImage?: string;
   profileBanner?: string;
   profileBackgroundColor: string;
+  // تأثيرات وعناصر تنسيق الاسم (خاصة بالمشرفين)
+  usernameColor: string;
+  usernameGradient?: string;
+  usernameEffect?: string;
   status?: string;
   gender?: string;
   age?: number;
@@ -26,7 +30,6 @@ export interface ChatUser {
   ipAddress?: string;
   deviceId?: string;
   ignoredUsers: number[];
-  usernameColor: string;
   profileEffect?: string;
   points?: number;
   level?: number;

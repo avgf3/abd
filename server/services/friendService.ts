@@ -102,6 +102,8 @@ export class FriendService {
           senderUserType: users.userType,
           senderUsernameColor: users.usernameColor,
           senderProfileEffect: users.profileEffect,
+          senderUsernameGradient: (users as any).usernameGradient,
+          senderUsernameEffect: (users as any).usernameEffect,
         })
         .from(friends)
         .leftJoin(users, eq(friends.userId, users.id))
@@ -121,6 +123,8 @@ export class FriendService {
           userType: req.senderUserType,
           usernameColor: req.senderUsernameColor,
           profileEffect: req.senderProfileEffect || 'none',
+          usernameGradient: (req as any).senderUsernameGradient,
+          usernameEffect: (req as any).senderUsernameEffect,
         },
       }));
     } catch (error) {
@@ -145,6 +149,8 @@ export class FriendService {
           receiverUserType: users.userType,
           receiverUsernameColor: users.usernameColor,
           receiverProfileEffect: users.profileEffect,
+          receiverUsernameGradient: (users as any).usernameGradient,
+          receiverUsernameEffect: (users as any).usernameEffect,
         })
         .from(friends)
         .leftJoin(users, eq(friends.friendId, users.id))
@@ -164,6 +170,8 @@ export class FriendService {
           userType: req.receiverUserType,
           usernameColor: req.receiverUsernameColor,
           profileEffect: req.receiverProfileEffect || 'none',
+          usernameGradient: (req as any).receiverUsernameGradient,
+          usernameEffect: (req as any).receiverUsernameEffect,
         },
       }));
     } catch (error) {
@@ -256,6 +264,8 @@ export class FriendService {
           createdAt: users.createdAt,
           usernameColor: users.usernameColor,
           profileEffect: users.profileEffect,
+          usernameGradient: (users as any).usernameGradient,
+          usernameEffect: (users as any).usernameEffect,
           // حقول أخرى مطلوبة
           role: users.role,
           isMuted: users.isMuted,
