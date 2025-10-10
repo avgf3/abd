@@ -358,12 +358,17 @@ export const stories = pgTable(
     userId: integer('user_id')
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
+    username: text('username'), // اسم المستخدم وقت إنشاء القصة
     mediaUrl: text('media_url').notNull(),
     mediaType: text('media_type').notNull(), // 'image' | 'video'
     caption: text('caption'),
     durationSec: integer('duration_sec').notNull().default(0), // ثواني (للصور 5-7 مثلاً، للفيديو <= 30)
     expiresAt: timestamp('expires_at').notNull(),
     createdAt: timestamp('created_at').defaultNow(),
+    // أعمدة لون الاسم للعرض المتسق
+    usernameColor: text('username_color').default('#4A90E2'),
+    usernameGradient: text('username_gradient'), // تدرج لوني لاسم المستخدم (للمشرفين)
+    usernameEffect: text('username_effect'), // تأثير حركي لاسم المستخدم (للمشرفين)
   },
   (t) => ({
     byUserCreated: index('idx_stories_user_created').on(t.userId, t.createdAt),

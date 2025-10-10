@@ -28,6 +28,7 @@ import { ensureUsernameColorDefaultBlue } from './database-adapter';
 import { ensureMessageTextStylingColumns } from './database-adapter';
 import { ensureUserProfileFrameColumn } from './database-adapter';
 import { ensureWallPostsUserProfileFrameColumn } from './database-adapter';
+import { ensureUsernameColorColumns } from './database-adapter';
 import { optimizeDatabaseIndexes } from './utils/database-optimization';
 
 // إعادة تصدير دالة التهيئة من المحول
@@ -284,6 +285,13 @@ export async function initializeSystem(): Promise<boolean> {
       await ensureWallPostsUserProfileFrameColumn();
     } catch (e) {
       console.warn('⚠️ تعذر ضمان عمود user_profile_frame في wall_posts:', (e as any)?.message || e);
+    }
+
+    // ضمان أعمدة لون الاسم في الحوائط والقصص
+    try {
+      await ensureUsernameColorColumns();
+    } catch (e) {
+      console.warn('⚠️ تعذر ضمان أعمدة لون الاسم في الحوائط والقصص:', (e as any)?.message || e);
     }
 
     // ضمان وجود أعمدة chat_lock في جدول الغرف

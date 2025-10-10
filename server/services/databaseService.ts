@@ -3,6 +3,7 @@ import { sql, eq, desc, asc, and, or, like, count, isNull, gte, lt, inArray, gt 
 import * as schema from '../../shared/schema';
 import { dbAdapter, dbType } from '../database-adapter';
 import { withTimeout, safeDbOperation } from '../utils/database-timeout';
+import { withDatabaseErrorHandling, handleDatabaseError } from '../utils/database-error-handler';
 
 // Type definitions for database operations
 export interface User {
@@ -171,7 +172,7 @@ export class DatabaseService {
   async getUserById(id: number): Promise<User | null> {
     if (!this.isConnected()) return null;
 
-    return safeDbOperation(
+    return withDatabaseErrorHandling(
       async () => {
         if (this.type === 'postgresql') {
           const result = await withTimeout(
@@ -180,7 +181,7 @@ export class DatabaseService {
               .from(schema.users)
               .where(eq(schema.users.id, id))
               .limit(1),
-            { timeout: 8000, retries: 1 }
+            { timeout: 8000, retries: 3, exponentialBackoff: true }
           );
           return result?.[0] || null;
         } else {
@@ -188,8 +189,8 @@ export class DatabaseService {
           return null;
         }
       },
-      null,
-      { timeout: 8000 }
+      `getUserById(${id})`,
+      3
     );
   }
 
@@ -325,7 +326,7 @@ export class DatabaseService {
       return await this.getUserById(id);
     }
 
-    return safeDbOperation(
+    return withDatabaseErrorHandling(
       async () => {
         if (this.type === 'postgresql') {
           const result = await withTimeout(
@@ -334,7 +335,7 @@ export class DatabaseService {
               .set(validUpdates)
               .where(eq(schema.users.id, id))
               .returning(),
-            { timeout: 8000, retries: 1 }
+            { timeout: 8000, retries: 3, exponentialBackoff: true }
           );
           return result?.[0] || null;
         } else {
@@ -342,8 +343,8 @@ export class DatabaseService {
           return null;
         }
       },
-      null,
-      { timeout: 8000 }
+      `updateUser(${id})`,
+      3
     );
   }
 
@@ -716,18 +717,40 @@ export class DatabaseService {
 
   // Message operations
   // ===================== Stories operations =====================
-  async createStory(data: Omit<Story, 'id' | 'createdAt'>): Promise<Story | null> {
+  async createStory(data: Omit<Story, 'id' | 'createdAt'> & { username?: string; usernameColor?: string; usernameGradient?: string; usernameEffect?: string }): Promise<Story | null> {
     if (!this.isConnected()) return null;
     try {
       if (this.type === 'postgresql') {
+        // جلب معلومات المستخدم إذا لم تُمرر
+        let userInfo = {
+          username: data.username,
+          usernameColor: data.usernameColor,
+          usernameGradient: data.usernameGradient,
+          usernameEffect: data.usernameEffect
+        };
+        
+        if (!userInfo.username || !userInfo.usernameColor) {
+          const user = await this.getUserById(data.userId);
+          if (user) {
+            userInfo.username = userInfo.username || user.username;
+            userInfo.usernameColor = userInfo.usernameColor || user.usernameColor || '#4A90E2';
+            userInfo.usernameGradient = userInfo.usernameGradient || (user as any).usernameGradient;
+            userInfo.usernameEffect = userInfo.usernameEffect || (user as any).usernameEffect;
+          }
+        }
+        
         const values: any = {
           userId: data.userId,
+          username: userInfo.username,
           mediaUrl: data.mediaUrl,
           mediaType: data.mediaType,
           caption: data.caption || null,
           durationSec: Math.min(30, Math.max(0, Number(data.durationSec) || 0)),
           expiresAt: data.expiresAt || new Date(Date.now() + 24 * 60 * 60 * 1000),
           createdAt: new Date(),
+          usernameColor: userInfo.usernameColor || '#4A90E2',
+          usernameGradient: userInfo.usernameGradient,
+          usernameEffect: userInfo.usernameEffect,
         };
         const [row] = await (this.db as any).insert((schema as any).stories).values(values).returning();
         return row || null;
@@ -798,12 +821,16 @@ export class DatabaseService {
           .select({
             id: (schema as any).stories.id,
             userId: (schema as any).stories.userId,
+            username: (schema as any).stories.username,
             mediaUrl: (schema as any).stories.mediaUrl,
             mediaType: (schema as any).stories.mediaType,
             caption: (schema as any).stories.caption,
             durationSec: (schema as any).stories.durationSec,
             expiresAt: (schema as any).stories.expiresAt,
             createdAt: (schema as any).stories.createdAt,
+            usernameColor: (schema as any).stories.usernameColor,
+            usernameGradient: (schema as any).stories.usernameGradient,
+            usernameEffect: (schema as any).stories.usernameEffect,
             myReaction: (schema as any).storyReactions.type,
           })
           .from((schema as any).stories)
@@ -820,12 +847,16 @@ export class DatabaseService {
         return (rows || []).map((r: any) => ({
           id: r.id,
           userId: r.userId,
+          username: r.username,
           mediaUrl: r.mediaUrl,
           mediaType: r.mediaType,
           caption: r.caption ?? undefined,
           durationSec: r.durationSec,
           expiresAt: r.expiresAt,
           createdAt: r.createdAt,
+          usernameColor: r.usernameColor || '#4A90E2',
+          usernameGradient: r.usernameGradient,
+          usernameEffect: r.usernameEffect,
           myReaction: (r.myReaction as any) ?? null,
         }));
       }
