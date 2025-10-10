@@ -288,6 +288,8 @@ export const wallPosts = pgTable('wall_posts', {
   // إطار المستخدم وقت إنشاء المنشور لضمان عرضه بدون جلب إضافي
   userProfileFrame: text('user_profile_frame'),
   usernameColor: text('username_color').default('#4A90E2'),
+  usernameGradient: text('username_gradient'), // تدرج لوني لاسم المستخدم (للمشرفين)
+  usernameEffect: text('username_effect'), // تأثير حركي لاسم المستخدم (للمشرفين)
   totalLikes: integer('total_likes').default(0),
   totalDislikes: integer('total_dislikes').default(0),
   totalHearts: integer('total_hearts').default(0),

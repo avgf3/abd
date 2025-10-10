@@ -4398,6 +4398,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // تمرير إطار البروفايل للحائط لعرضه مباشرةً دون قواعد إضافية
         userProfileFrame: (user as any)?.profileFrame || null,
         usernameColor: user.usernameColor,
+        usernameGradient: (user as any).usernameGradient,
+        usernameEffect: (user as any).usernameEffect,
       };
 
       // حفظ المنشور

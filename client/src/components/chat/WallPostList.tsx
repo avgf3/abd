@@ -35,14 +35,17 @@ export default function WallPostList({
 }: WallPostListProps) {
   const [usersData, setUsersData] = useState<{[key: number]: ChatUser}>({});
 
-  // جلب بيانات المستخدمين لكل منشور
+  // جلب بيانات المستخدمين لكل منشور مع التركيز على المشرفين
   useEffect(() => {
     const fetchUsersData = async () => {
       const userIds = [...new Set(posts.map(post => post.userId))];
       const newUsersData: {[key: number]: ChatUser} = {};
       
       for (const userId of userIds) {
-        if (!usersData[userId]) {
+        // جلب بيانات المستخدم دائماً للمشرفين لضمان الحصول على أحدث ألوان وتأثيرات
+        const isModeratorPost = posts.some(p => p.userId === userId && ['admin', 'owner', 'moderator'].includes(p.userRole as string));
+        
+        if (!usersData[userId] || isModeratorPost) {
           try {
             const userData = await apiRequest(`/api/users/${userId}`);
             if (userData) {
@@ -62,7 +65,7 @@ export default function WallPostList({
     if (posts.length > 0) {
       fetchUsersData();
     }
-  }, [posts]);
+  }, [posts, usersData]);
   if (loading) {
     return (
       <div className="text-center py-12">
@@ -112,6 +115,8 @@ export default function WallPostList({
                           isOnline: true,
                           profileImage: post.userProfileImage,
                           usernameColor: post.usernameColor,
+                          usernameGradient: (post as any).usernameGradient,
+                          usernameEffect: (post as any).usernameEffect,
                         }) as ChatUser;
                     if (!('profileFrame' in (effectiveUser as any)) && frameFromPost) {
                       (effectiveUser as any).profileFrame = frameFromPost;
@@ -140,6 +145,8 @@ export default function WallPostList({
                         : {
                             userType: (post.userRole as any) || 'member',
                             usernameColor: post.usernameColor,
+                            usernameGradient: (post as any).usernameGradient,
+                            usernameEffect: (post as any).usernameEffect,
                           };
                       const uds = getUsernameDisplayStyle(displayUser);
                       return (
@@ -155,6 +162,8 @@ export default function WallPostList({
                               isOnline: true,
                               profileImage: post.userProfileImage,
                               usernameColor: post.usernameColor,
+                              usernameGradient: (post as any).usernameGradient,
+                              usernameEffect: (post as any).usernameEffect,
                               gender: (post as any).userGender,
                               level: (post as any).userLevel || 1,
                             } as ChatUser;

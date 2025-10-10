@@ -70,6 +70,25 @@ export default function RichestModal({ isOpen, onClose, currentUser, onUserClick
         cleaned.profileEffect = 'none';
       }
     }
+    // تطبيع ألوان وتأثيرات اسم المستخدم
+    if (cleaned && typeof cleaned.usernameColor === 'string') {
+      const v = cleaned.usernameColor;
+      if (v === 'null' || v === 'undefined' || v.trim() === '') {
+        cleaned.usernameColor = null;
+      }
+    }
+    if (cleaned && typeof cleaned.usernameGradient === 'string') {
+      const v = cleaned.usernameGradient;
+      if (v === 'null' || v === 'undefined' || v.trim() === '') {
+        cleaned.usernameGradient = null;
+      }
+    }
+    if (cleaned && typeof cleaned.usernameEffect === 'string') {
+      const v = cleaned.usernameEffect;
+      if (v === 'null' || v === 'undefined' || v.trim() === '') {
+        cleaned.usernameEffect = null;
+      }
+    }
     return cleaned as ChatUser;
   }, []);
 
