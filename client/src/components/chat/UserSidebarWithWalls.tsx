@@ -593,7 +593,7 @@ export default function UnifiedSidebar({
                         const uds = getUsernameDisplayStyle(user);
                         return (
                           <span
-                            className={`ac-user-name transition-colors duration-300 truncate ${uds.className || ''}`}
+                            className={`ac-user-name text-sm font-medium transition-colors duration-300 truncate ${uds.className || ''}`}
                             style={uds.style}
                             title={user.username}
                           >

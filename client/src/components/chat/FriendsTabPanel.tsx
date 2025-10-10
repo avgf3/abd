@@ -376,7 +376,7 @@ export default function FriendsTabPanel({
                                 const uds = getUsernameDisplayStyle(friend);
                                 return (
                                   <span
-                                    className={`text-base font-medium transition-all duration-300 ${uds.className || ''}`}
+                                    className={`text-sm font-medium transition-all duration-300 ${uds.className || ''}`}
                                     style={uds.style}
                                     title={friend.username}
                                   >
@@ -487,7 +487,7 @@ export default function FriendsTabPanel({
                                     const uds = getUsernameDisplayStyle(request.user);
                                     return (
                                       <span
-                                        className={`text-base font-medium transition-all duration-300 ${uds.className || ''}`}
+                                        className={`text-sm font-medium transition-all duration-300 ${uds.className || ''}`}
                                         style={uds.style}
                                         title={request.user.username}
                                       >
@@ -564,7 +564,7 @@ export default function FriendsTabPanel({
                                     const uds = getUsernameDisplayStyle(request.user);
                                     return (
                                       <span
-                                        className={`text-base font-medium transition-all duration-300 ${uds.className || ''}`}
+                                        className={`text-sm font-medium transition-all duration-300 ${uds.className || ''}`}
                                         style={uds.style}
                                         title={request.user.username}
                                       >
