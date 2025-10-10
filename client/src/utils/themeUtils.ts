@@ -140,9 +140,9 @@ const gradientToTransparent = (gradient: string, opacity: number): string => {
 
 // دالة لحصول على لون الاسم النهائي (يعتمد على usernameColor المخصص فقط)
 export const getFinalUsernameColor = (user: any): string => {
-  // للمشرفين: إذا كان لديهم تدرج، استخدم لون مشتق من التدرج
+  // للمشرفين: إذا كان لديهم تدرج، استخدم لون مشتق من التدرج للأيقونات
   const isModerator = user && ['owner', 'admin', 'moderator'].includes(user.userType);
-  if (isModerator && user.usernameGradient) {
+  if (isModerator && user.usernameGradient && typeof user.usernameGradient === 'string') {
     // استخراج أول لون من التدرج كلون للأيقونة
     const gradientMatch = user.usernameGradient.match(/#[a-fA-F0-9]{6}/);
     if (gradientMatch) {
@@ -150,12 +150,17 @@ export const getFinalUsernameColor = (user: any): string => {
     }
   }
   
-  // استخدام اللون المخصص للمستخدم فقط
-  const color = user && user.usernameColor ? String(user.usernameColor) : '';
-  const cleaned = sanitizeHexColor(color, '');
-  if (cleaned) return cleaned;
+  // استخدام اللون المخصص للمستخدم
+  if (user && user.usernameColor && typeof user.usernameColor === 'string') {
+    const color = String(user.usernameColor).trim();
+    // التحقق من أن اللون ليس قيمة فارغة أو null
+    if (color && color !== 'null' && color !== 'undefined' && color !== '') {
+      const cleaned = sanitizeHexColor(color, '');
+      if (cleaned) return cleaned;
+    }
+  }
   
-  // إذا لم يكن له لون مخصص، استخدم اللون الافتراضي الأزرق
+  // إذا لم يكن له لون مخصص صالح، استخدم اللون الافتراضي الأزرق
   return '#4A90E2';
 };
 
@@ -164,16 +169,18 @@ export const getUsernameDisplayStyle = (user: any): { style: React.CSSProperties
   const isModerator = user && ['owner', 'admin', 'moderator'].includes(user.userType);
   
   // إذا كان مشرف ولديه تدرج لوني
-  if (isModerator && user.usernameGradient) {
+  if (isModerator && user.usernameGradient && typeof user.usernameGradient === 'string' && user.usernameGradient.startsWith('linear-gradient')) {
     return {
       style: {
         background: user.usernameGradient,
         backgroundClip: 'text',
         WebkitBackgroundClip: 'text',
         color: 'transparent',
-        fontWeight: 'bold',
+        fontWeight: 800, // زيادة الوزن للوضوح
+        display: 'inline-block', // مطلوب للتدرجات
+        lineHeight: 1.2,
       },
-      className: user.usernameEffect || '',
+      className: user.usernameEffect && user.usernameEffect !== 'none' ? user.usernameEffect : '',
     };
   }
   
@@ -182,16 +189,22 @@ export const getUsernameDisplayStyle = (user: any): { style: React.CSSProperties
     return {
       style: {
         color: getFinalUsernameColor(user),
-        fontWeight: 'bold',
+        fontWeight: 800, // زيادة الوزن للوضوح
+        display: 'inline-block',
+        lineHeight: 1.2,
       },
       className: user.usernameEffect,
     };
   }
   
   // الحالة العادية - لون فقط
+  const finalColor = getFinalUsernameColor(user);
   return {
     style: {
-      color: getFinalUsernameColor(user),
+      color: finalColor,
+      fontWeight: 700, // وزن عادي للأعضاء
+      display: 'inline-block',
+      lineHeight: 1.2,
     },
     className: '',
   };
