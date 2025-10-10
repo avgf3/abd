@@ -2,6 +2,7 @@ import { Trophy, Medal, Award, Crown } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 
 import { getUserLevelIcon } from '@/components/chat/UserRoleBadge';
+import { getUsernameDisplayStyle } from '@/utils/themeUtils';
 import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser } from '@/types/chat';
 import { getLevelInfo, getLevelColor, formatPoints } from '@/utils/pointsUtils';
@@ -149,10 +150,15 @@ export function Leaderboard({ currentUser, onClose }: LeaderboardProps) {
 
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="font-semibold text-sm">
-                        {user.username}
-                        {isCurrentUser && <span className="text-blue-500 text-xs">(أنت)</span>}
-                      </span>
+                      {(() => {
+                        const uds = getUsernameDisplayStyle(user);
+                        return (
+                          <span className={`font-semibold text-sm ${uds.className || ''}`} style={uds.style}>
+                            {user.username}
+                            {isCurrentUser && <span className="text-blue-500 text-xs">(أنت)</span>}
+                          </span>
+                        );
+                      })()}
                       {levelIcon}
                     </div>
                     <div className="flex items-center gap-2 text-xs text-gray-600">
