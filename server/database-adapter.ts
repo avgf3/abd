@@ -744,6 +744,122 @@ function startConnectionMonitoring(): void {
   });
 }
 
+// دالة لضمان وجود أعمدة لون الاسم في جداول الحوائط والقصص
+export async function ensureUsernameColorColumns(): Promise<void> {
+  try {
+    if (!dbAdapter.client) return;
+
+    console.log('🎨 ضمان وجود أعمدة لون الاسم في الحوائط والقصص...');
+
+    // فحص الأعمدة الموجودة في wall_posts
+    const wallPostsColumns = await dbAdapter.client`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = 'wall_posts' 
+      AND column_name IN ('username_color', 'username_gradient', 'username_effect')
+    ` as any;
+    
+    const existingWallColumns = wallPostsColumns.map((r: any) => r.column_name);
+    
+    // إضافة الأعمدة المفقودة في wall_posts
+    if (!existingWallColumns.includes('username_color')) {
+      console.log('📝 إضافة عمود username_color في wall_posts...');
+      await dbAdapter.client.unsafe(`
+        ALTER TABLE "wall_posts" 
+        ADD COLUMN IF NOT EXISTS "username_color" TEXT DEFAULT '#4A90E2'
+      `);
+    }
+    
+    if (!existingWallColumns.includes('username_gradient')) {
+      console.log('📝 إضافة عمود username_gradient في wall_posts...');
+      await dbAdapter.client.unsafe(`
+        ALTER TABLE "wall_posts" 
+        ADD COLUMN IF NOT EXISTS "username_gradient" TEXT
+      `);
+    }
+    
+    if (!existingWallColumns.includes('username_effect')) {
+      console.log('📝 إضافة عمود username_effect في wall_posts...');
+      await dbAdapter.client.unsafe(`
+        ALTER TABLE "wall_posts" 
+        ADD COLUMN IF NOT EXISTS "username_effect" TEXT
+      `);
+    }
+
+    // فحص الأعمدة الموجودة في stories
+    const storiesColumns = await dbAdapter.client`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = 'stories' 
+      AND column_name IN ('username_color', 'username_gradient', 'username_effect', 'username')
+    ` as any;
+    
+    const existingStoriesColumns = storiesColumns.map((r: any) => r.column_name);
+    
+    // إضافة الأعمدة المفقودة في stories
+    if (!existingStoriesColumns.includes('username')) {
+      console.log('📝 إضافة عمود username في stories...');
+      await dbAdapter.client.unsafe(`
+        ALTER TABLE "stories" 
+        ADD COLUMN IF NOT EXISTS "username" TEXT
+      `);
+    }
+    
+    if (!existingStoriesColumns.includes('username_color')) {
+      console.log('📝 إضافة عمود username_color في stories...');
+      await dbAdapter.client.unsafe(`
+        ALTER TABLE "stories" 
+        ADD COLUMN IF NOT EXISTS "username_color" TEXT DEFAULT '#4A90E2'
+      `);
+    }
+    
+    if (!existingStoriesColumns.includes('username_gradient')) {
+      console.log('📝 إضافة عمود username_gradient في stories...');
+      await dbAdapter.client.unsafe(`
+        ALTER TABLE "stories" 
+        ADD COLUMN IF NOT EXISTS "username_gradient" TEXT
+      `);
+    }
+    
+    if (!existingStoriesColumns.includes('username_effect')) {
+      console.log('📝 إضافة عمود username_effect في stories...');
+      await dbAdapter.client.unsafe(`
+        ALTER TABLE "stories" 
+        ADD COLUMN IF NOT EXISTS "username_effect" TEXT
+      `);
+    }
+
+    // تحديث القيم الفارغة بالقيم الافتراضية
+    await dbAdapter.client.unsafe(`
+      UPDATE "wall_posts" 
+      SET "username_color" = '#4A90E2' 
+      WHERE "username_color" IS NULL OR "username_color" = ''
+    `);
+
+    await dbAdapter.client.unsafe(`
+      UPDATE "stories" 
+      SET "username_color" = '#4A90E2' 
+      WHERE "username_color" IS NULL OR "username_color" = ''
+    `);
+
+    // إنشاء فهارس للأداء
+    await dbAdapter.client.unsafe(`
+      CREATE INDEX IF NOT EXISTS "idx_wall_posts_username_color" 
+      ON "wall_posts" ("username_color")
+    `);
+    
+    await dbAdapter.client.unsafe(`
+      CREATE INDEX IF NOT EXISTS "idx_stories_username_color" 
+      ON "stories" ("username_color")
+    `);
+
+    console.log('✅ تم ضمان وجود أعمدة لون الاسم في الحوائط والقصص');
+    
+  } catch (error) {
+    console.error('❌ خطأ في ضمان أعمدة لون الاسم:', (error as any)?.message || error);
+  }
+}
+
 // دالة لضمان وجود جدول البوتات
 export async function ensureBotsTable(): Promise<void> {
   try {
