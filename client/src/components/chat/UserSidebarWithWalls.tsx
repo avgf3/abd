@@ -293,6 +293,8 @@ export default function UnifiedSidebar({
   const wallsScrollRef = useRef<HTMLDivElement>(null);
   const [isAtBottomSidebarWall, setIsAtBottomSidebarWall] = useState(true);
   const wallImageInputRef = useRef<HTMLInputElement>(null);
+  // Cache for wall post authors to apply admin gradients/effects consistently
+  const [wallUsersData, setWallUsersData] = useState<{ [key: number]: ChatUser }>({});
 
   useGrabScroll(usersScrollRef);
   useGrabScroll(wallsScrollRef);
@@ -319,6 +321,32 @@ export default function UnifiedSidebar({
       setPostsByTab((prev) => ({ ...prev, [activeTab]: data.posts! }));
     }
   }, [wallData, isFetching, activeTab]);
+
+  // Fetch full user data for wall posts to get usernameGradient/Effect
+  useEffect(() => {
+    if (activeView !== 'walls') return;
+    const postsAll = [...(postsByTab.public || []), ...(postsByTab.friends || [])];
+    const uniqueIds = Array.from(new Set(postsAll.map((p) => p.userId))).filter(
+      (id) => !wallUsersData[id]
+    );
+    if (uniqueIds.length === 0) return;
+    let cancelled = false;
+    (async () => {
+      const results: { [key: number]: ChatUser } = {};
+      for (const id of uniqueIds) {
+        try {
+          const user = await apiRequest(`/api/users/${id}`);
+          if (user) results[id] = user as ChatUser;
+        } catch {}
+      }
+      if (!cancelled && Object.keys(results).length > 0) {
+        setWallUsersData((prev) => ({ ...prev, ...results }));
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [activeView, postsByTab.public, postsByTab.friends]);
 
   // تحديث activeView عند تغيير propActiveView
   useEffect(() => {
@@ -832,13 +860,22 @@ export default function UnifiedSidebar({
                                     isOnline: true,
                                     profileImage: post.userProfileImage,
                                     usernameColor: post.usernameColor,
+                                    usernameGradient: (wallUsersData[post.userId] as any)?.usernameGradient,
+                                    usernameEffect: (wallUsersData[post.userId] as any)?.usernameEffect,
                                   } as ChatUser;
                                   handleUserClick(e as any, targetUser);
                                 }}
                                 title="عرض خيارات المستخدم"
                               >
                                 {(() => {
-                                  const uds = getUsernameDisplayStyle({ userType: post.userRole || 'member', usernameGradient: (post as any)?.usernameGradient, usernameEffect: (post as any)?.usernameEffect, usernameColor: post.usernameColor });
+                                  const displayUser: Partial<ChatUser> =
+                                    wallUsersData[post.userId] || {
+                                      userType: (post.userRole as any) || 'member',
+                                      usernameColor: post.usernameColor,
+                                      usernameGradient: (post as any)?.usernameGradient,
+                                      usernameEffect: (post as any)?.usernameEffect,
+                                    };
+                                  const uds = getUsernameDisplayStyle(displayUser);
                                   return (
                                     <span className={`${uds.className || ''}`} style={uds.style}>
                                       {post.username}
@@ -983,13 +1020,22 @@ export default function UnifiedSidebar({
                                     isOnline: true,
                                     profileImage: post.userProfileImage,
                                     usernameColor: post.usernameColor,
+                                    usernameGradient: (wallUsersData[post.userId] as any)?.usernameGradient,
+                                    usernameEffect: (wallUsersData[post.userId] as any)?.usernameEffect,
                                   } as ChatUser;
                                   handleUserClick(e as any, targetUser);
                                 }}
                                 title="عرض خيارات المستخدم"
                               >
                                 {(() => {
-                                  const uds = getUsernameDisplayStyle({ userType: post.userRole || 'member', usernameGradient: (post as any)?.usernameGradient, usernameEffect: (post as any)?.usernameEffect, usernameColor: post.usernameColor });
+                                  const displayUser: Partial<ChatUser> =
+                                    wallUsersData[post.userId] || {
+                                      userType: (post.userRole as any) || 'member',
+                                      usernameColor: post.usernameColor,
+                                      usernameGradient: (post as any)?.usernameGradient,
+                                      usernameEffect: (post as any)?.usernameEffect,
+                                    };
+                                  const uds = getUsernameDisplayStyle(displayUser);
                                   return (
                                     <span className={`${uds.className || ''}`} style={uds.style}>
                                       {post.username}
