@@ -3220,7 +3220,7 @@ export default function ProfileModal({
                     }}>
                       {localUser?.userType === 'owner' && '⭐ Owner'}
                       {localUser?.userType === 'admin' && '⭐ Admin'}
-                      {localUser?.userType === 'moderator' && '⭐ Moderator'}
+                      {localUser?.userType === 'moderator' && 'Moderator'}
                     </span>
                   )}
                 </div>
