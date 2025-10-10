@@ -2952,6 +2952,8 @@ export default function ProfileModal({
               })(),
               backgroundSize: 'cover',
               backgroundPosition: (() => {
+                const bannerSrc = getProfileBannerSrcLocal();
+                if (!bannerSrc) return 'top center';
                 const type = (localUser as any)?.userType;
                 const isModerator = type === 'owner' || type === 'admin' || type === 'moderator';
                 const lvl = Number((localUser as any)?.level || 1);
