@@ -768,12 +768,17 @@ export default function MessageArea({
                                       className="transition-transform duration-200 hover:scale-[1.02]"
                                       title={message.sender?.username}
                                     >
-                                      <span className="ac-nameplate" style={np}>
-                                        <span className="ac-name" style={{ color: getFinalUsernameColor(message.sender) }}>
-                                          {message.sender?.username || '...'}
-                                        </span>
-                                        <span className="ac-mark">〰</span>
-                                      </span>
+                                      {(() => {
+                                        const uds = getUsernameDisplayStyle(message.sender);
+                                        return (
+                                          <span className="ac-nameplate" style={np}>
+                                            <span className={`ac-name ${uds.className || ''}`} style={uds.style}>
+                                              {message.sender?.username || '...'}
+                                            </span>
+                                            <span className="ac-mark">〰</span>
+                                          </span>
+                                        );
+                                      })()}
                                     </button>
                                   );
                                 }
@@ -906,12 +911,17 @@ export default function MessageArea({
                                       className="transition-transform duration-200 hover:scale-[1.02]"
                                       title={message.sender?.username}
                                     >
-                                      <span className="ac-nameplate" style={np}>
-                                        <span className="ac-name" style={{ color: getFinalUsernameColor(message.sender) }}>
-                                          {message.sender?.username || '...'}
-                                        </span>
-                                        <span className="ac-mark">〰</span>
-                                      </span>
+                                      {(() => {
+                                        const uds = getUsernameDisplayStyle(message.sender);
+                                        return (
+                                          <span className="ac-nameplate" style={np}>
+                                            <span className={`ac-name ${uds.className || ''}`} style={uds.style}>
+                                              {message.sender?.username || '...'}
+                                            </span>
+                                            <span className="ac-mark">〰</span>
+                                          </span>
+                                        );
+                                      })()}
                                     </button>
                                   );
                                 }
