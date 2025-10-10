@@ -24,6 +24,7 @@ import {
   getUserListItemClasses,
 } from '@/utils/themeUtils';
 import { formatTimeAgo, getStatusColor } from '@/utils/timeUtils';
+import UserName from '@/components/common/UserName';
 
 // Using shared types for Friend and FriendRequest
 
@@ -371,21 +372,11 @@ export default function FriendsTabPanel({
                         <div className="flex-1">
                           <div className="flex items-center justify-between gap-2">
                             <div className="flex items-center gap-2">
-                              <span
+                              <UserName
+                                user={friend as any}
                                 className="text-base font-medium transition-all duration-300"
-                                style={{
-                                  color: getFinalUsernameColor(friend),
-                                  textShadow: getFinalUsernameColor(friend)
-                                    ? `0 0 10px ${getFinalUsernameColor(friend)}40`
-                                    : 'none',
-                                  filter: getFinalUsernameColor(friend)
-                                    ? 'drop-shadow(0 0 3px rgba(255,255,255,0.3))'
-                                    : 'none',
-                                }}
                                 title={friend.username}
-                              >
-                                {friend.username}
-                              </span>
+                              />
                               {/* إشارة المكتوم */}
                               {friend.isMuted && (
                                 <span className="text-yellow-400 text-xs">🔇</span>
@@ -485,21 +476,11 @@ export default function FriendsTabPanel({
                               />
                               <div className="flex-1">
                                 <div className="flex items-center gap-2">
-                                  <span
+                                  <UserName
+                                    user={request.user as any}
                                     className="text-base font-medium transition-all duration-300"
-                                    style={{
-                                      color: getFinalUsernameColor(request.user),
-                                      textShadow: getFinalUsernameColor(request.user)
-                                        ? `0 0 10px ${getFinalUsernameColor(request.user)}40`
-                                        : 'none',
-                                      filter: getFinalUsernameColor(request.user)
-                                        ? 'drop-shadow(0 0 3px rgba(255,255,255,0.3))'
-                                        : 'none',
-                                    }}
                                     title={request.user.username}
-                                  >
-                                    {request.user.username}
-                                  </span>
+                                  />
                                   {renderUserBadge(request.user)}
                                   {renderCountryFlag(request.user)}
                                 </div>
@@ -565,21 +546,11 @@ export default function FriendsTabPanel({
                               />
                               <div className="flex-1">
                                 <div className="flex items-center gap-2">
-                                  <span
+                                  <UserName
+                                    user={request.user as any}
                                     className="text-base font-medium transition-all duration-300"
-                                    style={{
-                                      color: getFinalUsernameColor(request.user),
-                                      textShadow: getFinalUsernameColor(request.user)
-                                        ? `0 0 10px ${getFinalUsernameColor(request.user)}40`
-                                        : 'none',
-                                      filter: getFinalUsernameColor(request.user)
-                                        ? 'drop-shadow(0 0 3px rgba(255,255,255,0.3))'
-                                        : 'none',
-                                    }}
                                     title={request.user.username}
-                                  >
-                                    {request.user.username}
-                                  </span>
+                                  />
                                   {renderUserBadge(request.user)}
                                   {renderCountryFlag(request.user)}
                                 </div>

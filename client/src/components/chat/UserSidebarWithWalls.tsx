@@ -36,10 +36,11 @@ import CountryFlag from '@/components/ui/CountryFlag';
 import {
   getUserEffectStyles,
   getUserEffectClasses,
-  getFinalUsernameColor,
   getUserListItemStyles,
   getUserListItemClasses,
+  getUsernameDisplayStyle,
 } from '@/utils/themeUtils';
+import UserName from '@/components/common/UserName';
 import { formatTimeAgo } from '@/utils/timeUtils';
 
 interface UnifiedSidebarProps {
@@ -588,15 +589,7 @@ export default function UnifiedSidebar({
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 min-w-0 flex-1">
-                      <span
-                        className="ac-user-name transition-colors duration-300 truncate"
-                        style={{
-                          color: getFinalUsernameColor(user),
-                        }}
-                        title={user.username}
-                      >
-                        {user.username}
-                      </span>
+                      <UserName user={user} className="ac-user-name transition-colors duration-300 truncate" title={user.username} />
                       {user.isMuted && <span className="text-yellow-400 text-xs flex-shrink-0">🔇</span>}
                     </div>
                     <div className="flex items-center gap-1">

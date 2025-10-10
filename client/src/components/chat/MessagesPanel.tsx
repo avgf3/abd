@@ -14,7 +14,8 @@ import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser } from '@/types/chat';
 import { formatMessagePreview, getPmLastOpened, setPmLastOpened } from '@/utils/messageUtils';
 import { formatTime } from '@/utils/timeUtils';
-import { getFinalUsernameColor, getUserListItemStyles, getUserListItemClasses, getUsernameDisplayStyle } from '@/utils/themeUtils';
+import { getUserListItemStyles, getUserListItemClasses, getUsernameDisplayStyle } from '@/utils/themeUtils';
+import UserName from '@/components/common/UserName';
 import { userCache, getCachedUserWithMerge, setCachedUser } from '@/utils/userCacheManager';
 
 interface MessagesPanelProps {
@@ -389,16 +390,9 @@ export default function MessagesPanel({
                         </div>
                         <div className="flex-1 min-w-0 flex flex-col justify-center">
                           <div className="flex items-center justify-between gap-2 w-full">
-                            {(() => {
-                              const uds = getUsernameDisplayStyle(user);
-                              return (
-                                <span className={`text-base font-medium transition-all duration-300 truncate flex-shrink-0`} title={user.username}>
-                                  <span className={`${uds.className || ''}`} style={uds.style}>
-                                    {user.username}
-                                  </span>
-                                </span>
-                              );
-                            })()}
+                            <span className={`text-base font-medium transition-all duration-300 truncate flex-shrink-0`} title={user.username}>
+                              <UserName user={user} />
+                            </span>
                             <div className="flex items-center gap-2 flex-shrink-0">
                               <UserRoleBadge user={user} size={20} />
                               <span className="text-xs text-foreground/60 whitespace-nowrap">

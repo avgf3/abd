@@ -9,6 +9,7 @@ import {
   getUserListItemClasses,
   getUsernameDisplayStyle,
 } from '@/utils/themeUtils';
+import UserName from '@/components/common/UserName';
 
 interface SettingsMenuProps {
   onOpenProfile: () => void;
@@ -72,12 +73,9 @@ export default function SettingsMenu({
                     </span>
                   );
                 }
-                const uds = getUsernameDisplayStyle(currentUser);
                 return (
                   <span className={`font-semibold`} title={currentUser.username}>
-                    <span className={`${uds.className || ''}`} style={uds.style}>
-                      {currentUser.username}
-                    </span>
+                    <UserName user={currentUser} />
                   </span>
                 );
               })()}

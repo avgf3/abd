@@ -10,7 +10,8 @@ import type { ChatUser } from '@/types/chat';
 import { formatTimestamp } from '@/utils/timeUtils';
 import UserPopup from '@/components/chat/UserPopup';
 import ProfileImage from '@/components/chat/ProfileImage';
-import { getFinalUsernameColor, getUsernameDisplayStyle } from '@/utils/themeUtils';
+import { getUsernameDisplayStyle } from '@/utils/themeUtils';
+import UserName from '@/components/common/UserName';
 import { getCachedUserWithMerge, setCachedUser } from '@/utils/userCacheManager';
 
 interface ReportData {
@@ -251,19 +252,13 @@ export default function ReportsLog({ currentUser, isVisible, onClose }: ReportsL
                                 className="cursor-pointer"
                                 hideRoleBadgeOverlay
                               />
-                              {(() => {
-                                const uds = getUsernameDisplayStyle(reporter);
-                                return (
-                                  <button
-                                    className={`font-medium hover:underline disabled:opacity-60 ${uds.className || ''}`}
-                                    style={uds.style}
-                                    onClick={(e) => openUserPopup(e, report.reporterId, report.reporterName)}
-                                    disabled={!report.reporterId}
-                                  >
-                                    {reporter.username}
-                                  </button>
-                                );
-                              })()}
+                              <button
+                                className={`font-medium hover:underline disabled:opacity-60`}
+                                onClick={(e) => openUserPopup(e, report.reporterId, report.reporterName)}
+                                disabled={!report.reporterId}
+                              >
+                                <UserName user={reporter} />
+                              </button>
                               <span className="text-gray-400">بلّغ عن</span>
                               <ProfileImage
                                 user={reported}
@@ -272,19 +267,13 @@ export default function ReportsLog({ currentUser, isVisible, onClose }: ReportsL
                                 className="cursor-pointer"
                                 hideRoleBadgeOverlay
                               />
-                              {(() => {
-                                const uds = getUsernameDisplayStyle(reported);
-                                return (
-                                  <button
-                                    className={`font-medium hover:underline disabled:opacity-60 ${uds.className || ''}`}
-                                    style={uds.style}
-                                    onClick={(e) => openUserPopup(e, report.reportedUserId, report.reportedUserName)}
-                                    disabled={!report.reportedUserId}
-                                  >
-                                    {reported.username}
-                                  </button>
-                                );
-                              })()}
+                              <button
+                                className={`font-medium hover:underline disabled:opacity-60`}
+                                onClick={(e) => openUserPopup(e, report.reportedUserId, report.reportedUserName)}
+                                disabled={!report.reportedUserId}
+                              >
+                                <UserName user={reported} />
+                              </button>
                             </div>
 
                             <div className="flex items-center gap-2 mb-2">

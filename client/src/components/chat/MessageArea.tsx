@@ -28,7 +28,8 @@ import {
   insertMention,
 } from '@/utils/mentionUtils';
 import { getDynamicBorderColor } from '@/utils/messageUtils';
-import { getFinalUsernameColor, getUserNameplateStyles, getUsernameDisplayStyle } from '@/utils/themeUtils';
+import { getUserNameplateStyles, getUsernameDisplayStyle } from '@/utils/themeUtils';
+import UserName from '@/components/common/UserName';
 import { formatTime } from '@/utils/timeUtils';
 // Removed ComposerPlusMenu (ready/quick options)
 import { useComposerStyle } from '@/contexts/ComposerStyleContext';
@@ -776,16 +777,13 @@ export default function MessageArea({
                                   );
                                 }
                                 return (() => {
-                                  const uds = getUsernameDisplayStyle(message.sender);
                                   return (
                                     <button
                                       onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
                                       className={`font-semibold hover:underline transition-colors duration-200 text-sm`}
                                       title={message.sender?.username}
                                     >
-                                      <span className={`${uds.className || ''}`} style={uds.style}>
-                                        {message.sender?.username || 'جاري التحميل...'}
-                                      </span>
+                                      <UserName user={message.sender} />
                                     </button>
                                   );
                                 })();
@@ -912,16 +910,13 @@ export default function MessageArea({
                                   );
                                 }
                                 return (() => {
-                                  const uds = getUsernameDisplayStyle(message.sender);
                                   return (
                                     <button
                                       onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
                                       className={`font-semibold hover:underline transition-colors duration-200 text-sm`}
                                       title={message.sender?.username}
                                     >
-                                      <span className={`${uds.className || ''}`} style={uds.style}>
-                                        {message.sender?.username || 'جاري التحميل...'}
-                                      </span>
+                                      <UserName user={message.sender} />
                                     </button>
                                   );
                                 })();

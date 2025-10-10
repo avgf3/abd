@@ -69,7 +69,7 @@ import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser, ChatRoom } from '@/types/chat';
 import { setCachedUser, getCachedUserWithMerge } from '@/utils/userCacheManager';
 import { getPmLastOpened, setPmListLastOpened } from '@/utils/messageUtils';
-import { getFinalUsernameColor } from '@/utils/themeUtils';
+import UserName from '@/components/common/UserName';
 
 interface ChatInterfaceProps {
   chat: UseChatReturn;
@@ -1870,8 +1870,8 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                           👤
                         </div>
                       )}
-                      <span className="font-medium" style={{ color: colorUser ? getFinalUsernameColor(colorUser as any) : undefined }}>
-                        {user?.username}
+                      <span className="font-medium">
+                        {user ? <UserName user={colorUser as any} /> : user?.username}
                       </span>
                     </div>
                     <Button size="sm" variant="outline" onClick={() => chat.unignoreUser?.(id)}>

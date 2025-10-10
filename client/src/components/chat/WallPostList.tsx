@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Trash2, Globe } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
-import { getFinalUsernameColor, getUsernameDisplayStyle } from '@/utils/themeUtils';
+import { getUsernameDisplayStyle } from '@/utils/themeUtils';
+import UserName from '@/components/common/UserName';
 import ImageLightbox from '@/components/ui/ImageLightbox';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import type { WallPost, ChatUser } from '@/types/chat';
@@ -141,7 +142,6 @@ export default function WallPostList({
                             userType: (post.userRole as any) || 'member',
                             usernameColor: post.usernameColor,
                           };
-                      const uds = getUsernameDisplayStyle(displayUser);
                       return (
                         <div
                           className={`font-bold text-base ${onUserClick ? 'cursor-pointer hover:underline' : ''}`}
@@ -162,9 +162,7 @@ export default function WallPostList({
                           }}
                           title="عرض خيارات المستخدم"
                         >
-                          <span className={`${uds.className || ''}`} style={uds.style}>
-                            {post.username}
-                          </span>
+                          <UserName user={displayUser as any} />
                         </div>
                       );
                     })()}

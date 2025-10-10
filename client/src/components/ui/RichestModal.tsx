@@ -5,7 +5,8 @@ import { getSocket } from '@/lib/socket';
 import type { ChatUser } from '@/types/chat';
 import { getImageSrc } from '@/utils/imageUtils';
 import CountryFlag from '@/components/ui/CountryFlag';
-import { getFinalUsernameColor, getUserListItemClasses, getUserListItemStyles, getUsernameDisplayStyle } from '@/utils/themeUtils';
+import { getUserListItemClasses, getUserListItemStyles, getUsernameDisplayStyle } from '@/utils/themeUtils';
+import UserName from '@/components/common/UserName';
 import ProfileImage from '@/components/chat/ProfileImage';
 import UserRoleBadge from '@/components/chat/UserRoleBadge';
 import SimpleUserMenu from '@/components/chat/SimpleUserMenu';
@@ -296,18 +297,7 @@ export default function RichestModal({ isOpen, onClose, currentUser, onUserClick
                     <div className="flex-1">
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2">
-                          {(() => {
-                            const uds = getUsernameDisplayStyle(u);
-                            return (
-                              <span
-                                className={`ac-user-name transition-colors duration-300 ${uds.className || ''}`}
-                                style={uds.style}
-                                title={u.username}
-                              >
-                                {u.username}
-                              </span>
-                            );
-                          })()}
+                          <UserName user={u} className="ac-user-name transition-colors duration-300" title={u.username} />
                           {u.isMuted && <span className="text-yellow-400 text-xs">🔇</span>}
                         </div>
                         <div className="flex items-center gap-1">
@@ -351,14 +341,7 @@ export default function RichestModal({ isOpen, onClose, currentUser, onUserClick
                       <ProfileImage user={c} size="small" pixelSize={22} className="" hideRoleBadgeOverlay={true} />
                     </div>
                     <div className="flex-1">
-                      {(() => {
-                        const uds = getUsernameDisplayStyle(c);
-                        return (
-                          <span className={`ac-user-name ${uds.className || ''}`} style={uds.style} title={c.username}>
-                            {c.username}
-                          </span>
-                        );
-                      })()}
+                      <UserName user={c} className="ac-user-name" title={c.username} />
                     </div>
                     <button
                     className="text-xs px-2 py-1 rounded bg-primary/10 hover:bg-primary/20 text-primary"

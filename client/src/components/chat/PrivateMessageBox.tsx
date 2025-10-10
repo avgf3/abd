@@ -15,7 +15,8 @@ import {
   sortMessagesAscending,
   setPmLastOpened,
 } from '@/utils/messageUtils';
-import { getFinalUsernameColor, getUserNameplateStyles } from '@/utils/themeUtils';
+import { getUserNameplateStyles } from '@/utils/themeUtils';
+import UserName from '@/components/common/UserName';
 import { getSocket } from '@/lib/socket';
 import { formatTimeWithDate } from '@/utils/timeUtils';
 import { api } from '@/lib/queryClient';
@@ -484,18 +485,9 @@ export default function PrivateMessageBox({
                               handleViewProfileClick();
                             }
                           }}
-                          style={{
-                            color: getFinalUsernameColor(user),
-                            textShadow: getFinalUsernameColor(user)
-                              ? `0 0 10px ${getFinalUsernameColor(user)}40`
-                              : 'none',
-                            filter: getFinalUsernameColor(user)
-                              ? 'drop-shadow(0 0 3px rgba(255,255,255,0.3))'
-                              : 'none',
-                          }}
                           title={user.username}
                         >
-                          {user.username || 'جاري التحميل...'}
+                          <UserName user={user} />
                         </span>
                       );
                     })()}
