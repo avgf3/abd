@@ -161,7 +161,6 @@ function attachCoreListeners(socket: Socket) {
 
   // 🔥 معالجة الاتصال الناجح
   socket.on('connect', () => {
-    console.log('🟢 Socket متصل بنجاح');
     reconnectAttempt = 0; // إعادة تعيين العداد
     reauth(false);
     
@@ -174,7 +173,6 @@ function attachCoreListeners(socket: Socket) {
 
   // 🔥 معالجة إعادة الاتصال الذكية
   socket.on('reconnect', (attemptNumber) => {
-    console.log(`🔄 إعادة اتصال ناجحة - محاولة #${attemptNumber}`);
     reconnectAttempt = attemptNumber;
     maxReconnectAttempt = Math.max(maxReconnectAttempt, attemptNumber);
     reauth(true);
@@ -188,7 +186,6 @@ function attachCoreListeners(socket: Socket) {
 
   // 🔥 معالجة محاولات إعادة الاتصال
   socket.on('reconnect_attempt', (attemptNumber) => {
-    console.log(`🔄 محاولة إعادة اتصال #${attemptNumber}`);
     reconnectAttempt = attemptNumber;
     
     // 🆕 استراتيجية ذكية حسب رقم المحاولة
@@ -223,8 +220,6 @@ function attachCoreListeners(socket: Socket) {
 
   // 🔥 معالجة قطع الاتصال الذكية
   socket.on('disconnect', (reason) => {
-    console.log(`🔴 Socket منقطع - السبب: ${reason}`);
-    
     // 🆕 تحليل سبب الانقطاع
     isManualDisconnect = reason === 'io client disconnect';
     
@@ -254,7 +249,6 @@ function attachCoreListeners(socket: Socket) {
 
   // 🔥 معالجة عودة الشبكة
   window.addEventListener('online', () => {
-    console.log('🌐 الشبكة عادت - محاولة إعادة اتصال');
     if (!socket.connected && !isManualDisconnect) {
       try {
         socket.connect();
@@ -264,7 +258,6 @@ function attachCoreListeners(socket: Socket) {
 
   // 🔥 معالجة انقطاع الشبكة
   window.addEventListener('offline', () => {
-    console.log('📴 الشبكة منقطعة');
     try {
       localStorage.setItem('socket_network_offline', Date.now().toString());
     } catch {}

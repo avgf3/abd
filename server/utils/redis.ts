@@ -150,3 +150,55 @@ export async function deleteCachePattern(pattern: string): Promise<void> {
 }
 
 export { redisClient, sessionStore };
+
+// ===== Presence helpers (fast in-memory cache with TTL on Redis) =====
+
+export interface UserPresenceData {
+  userId: number;
+  isOnline: boolean;
+  isHidden?: boolean;
+  currentRoom?: string | null;
+  lastSeen?: string | number | Date;
+}
+
+const presenceKey = (userId: number) => `presence:user:${userId}`;
+
+export async function setUserPresence(
+  userId: number,
+  presence: Partial<UserPresenceData>,
+  ttlSeconds = 120
+): Promise<void> {
+  if (!redisClient || !isRedisConnected()) return;
+  try {
+    const key = presenceKey(userId);
+    const payload = JSON.stringify({ userId, ...presence });
+    if (ttlSeconds && ttlSeconds > 0) {
+      await redisClient.setex(key, ttlSeconds, payload);
+    } else {
+      await redisClient.set(key, payload);
+    }
+  } catch (error) {
+    // Non-fatal
+  }
+}
+
+export async function getUserPresence<T extends UserPresenceData = UserPresenceData>(
+  userId: number
+): Promise<T | null> {
+  if (!redisClient || !isRedisConnected()) return null;
+  try {
+    const key = presenceKey(userId);
+    const raw = await redisClient.get(key);
+    if (!raw) return null;
+    return JSON.parse(raw) as T;
+  } catch (error) {
+    return null;
+  }
+}
+
+export async function clearUserPresence(userId: number): Promise<void> {
+  if (!redisClient || !isRedisConnected()) return;
+  try {
+    await redisClient.del(presenceKey(userId));
+  } catch {}
+}

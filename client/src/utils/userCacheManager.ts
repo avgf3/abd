@@ -284,8 +284,7 @@ class UserCacheManager {
 
     if (changed) {
       this.saveToLocalStorage();
-      console.log(`تم تنظيف الكاش: حذف ${removedCount} مستخدم، الحجم الحالي: ${this.memoryCache.size}`);
-    }
+      }
   }
 
   /**

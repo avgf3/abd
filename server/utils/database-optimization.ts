@@ -12,8 +12,6 @@ export async function optimizeDatabaseIndexes(): Promise<void> {
       return;
     }
 
-    console.log('🔧 Starting database optimization...');
-
     // Create indexes for frequently queried columns
     const indexes = [
       // Users table indexes
@@ -82,8 +80,7 @@ export async function optimizeDatabaseIndexes(): Promise<void> {
     for (const indexQuery of indexes) {
       try {
         await dbAdapter.client.unsafe(indexQuery);
-        console.log(`✅ Created index: ${indexQuery.split(' ')[5] || 'unknown'}`);
-      } catch (error: any) {
+        } catch (error: any) {
         // Ignore errors for indexes that already exist or tables that don't exist
         if (!error.message?.includes('already exists') && 
             !error.message?.includes('does not exist') &&
@@ -104,8 +101,7 @@ export async function optimizeDatabaseIndexes(): Promise<void> {
     for (const table of tables) {
       try {
         await dbAdapter.client.unsafe(`ANALYZE ${table}`);
-        console.log(`📊 Analyzed table: ${table}`);
-      } catch (error: any) {
+        } catch (error: any) {
         // Ignore errors for tables that don't exist
         if (!error.message?.includes('does not exist')) {
           console.warn(`⚠️ Failed to analyze table ${table}: ${error.message}`);
@@ -113,8 +109,7 @@ export async function optimizeDatabaseIndexes(): Promise<void> {
       }
     }
 
-    console.log('✅ Database optimization completed successfully');
-  } catch (error) {
+    } catch (error) {
     console.error('❌ Database optimization failed:', error);
   }
 }
@@ -128,8 +123,6 @@ export async function checkDatabasePerformance(): Promise<void> {
       console.warn('⚠️ Database client not available for performance check');
       return;
     }
-
-    console.log('🔍 Checking database performance...');
 
     // Check for missing indexes on frequently queried columns
     const missingIndexes = await dbAdapter.client`
@@ -146,10 +139,8 @@ export async function checkDatabasePerformance(): Promise<void> {
       ORDER BY tablename, attname
     ` as any;
 
-    console.log('📊 Database statistics:');
     missingIndexes.forEach((stat: any) => {
-      console.log(`  ${stat.tablename}.${stat.attname}: distinct=${stat.n_distinct}, correlation=${stat.correlation}`);
-    });
+      });
 
     // Check for slow queries (if pg_stat_statements is available)
     try {
@@ -167,16 +158,12 @@ export async function checkDatabasePerformance(): Promise<void> {
       ` as any;
 
       if (slowQueries.length > 0) {
-        console.log('🐌 Slow queries detected:');
         slowQueries.forEach((query: any) => {
-          console.log(`  ${query.mean_time}ms avg: ${query.query.substring(0, 100)}...`);
-        });
+          });
       } else {
-        console.log('✅ No slow queries detected');
-      }
+        }
     } catch (error) {
-      console.log('ℹ️ pg_stat_statements not available for slow query analysis');
-    }
+      }
 
   } catch (error) {
     console.error('❌ Database performance check failed:', error);

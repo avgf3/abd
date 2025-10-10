@@ -63,16 +63,13 @@ class SocketPerformanceMonitor {
     });
     this.metrics.connections = this.connections.size;
     
-    console.log(`🔗 اتصال جديد: ${socketId} عبر ${transport} (إجمالي: ${this.metrics.connections})`);
-  }
+    }
 
   // تسجيل انقطاع اتصال
   onDisconnection(socketId: string, reason: string) {
     const connection = this.connections.get(socketId);
     if (connection) {
       const duration = Date.now() - connection.connectedAt.getTime();
-      console.log(`❌ انقطاع اتصال: ${socketId} بعد ${Math.round(duration / 1000)}s - السبب: ${reason}`);
-      
       this.connections.delete(socketId);
       this.metrics.connections = this.connections.size;
     }
@@ -81,8 +78,7 @@ class SocketPerformanceMonitor {
   // تسجيل إعادة اتصال
   onReconnection(socketId: string) {
     this.metrics.reconnections++;
-    console.log(`🔄 إعادة اتصال: ${socketId} (إجمالي: ${this.metrics.reconnections})`);
-  }
+    }
 
   // تسجيل رسالة
   onMessage(socketId: string, eventName: string) {
@@ -213,16 +209,7 @@ class SocketPerformanceMonitor {
     const metrics = this.getMetrics();
     const transportStats = this.getTransportStats();
     
-    console.log('\n📊 تقرير أداء Socket.IO:');
-    console.log(`🔗 الاتصالات النشطة: ${metrics.connections}`);
-    console.log(`📨 إجمالي الرسائل: ${metrics.totalMessages}`);
-    console.log(`⚡ رسائل/ثانية: ${metrics.messagesPerSecond}`);
-    console.log(`⏱️ متوسط الكمون: ${metrics.averageLatency}ms`);
-    console.log(`🔄 إعادة الاتصالات: ${metrics.reconnections}`);
-    console.log(`❌ الأخطاء: ${metrics.errors}`);
-    console.log(`🌐 WebSocket: ${transportStats.websocket}, Polling: ${transportStats.polling}`);
-    console.log(`🕒 آخر تحديث: ${metrics.lastUpdated.toISOString()}\n`);
-  }
+    }
 }
 
 // إنشاء مثيل واحد
@@ -237,8 +224,7 @@ export function setupSocketMonitoring(io: any) {
     // مراقبة تغيير النقل
     socket.conn.on('upgrade', () => {
       const newTransport = socket.conn.transport.name;
-      console.log(`🚀 ترقية النقل: ${socket.id} إلى ${newTransport}`);
-    });
+      });
     
     // مراقبة الرسائل
     const originalEmit = socket.emit;

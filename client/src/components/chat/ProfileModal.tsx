@@ -3747,7 +3747,6 @@ export default function ProfileModal({
                                   }
                                   
                                   // التحقق من حجم الملف (10 ميجا كحد أقصى)
-                                  console.log('حجم الملف:', file.size, 'بايت =', (file.size / (1024 * 1024)).toFixed(2), 'ميجابايت');
                                   if (file.size > 10 * 1024 * 1024) {
                                     toast({
                                       title: 'حجم الملف كبير جداً',

@@ -119,8 +119,7 @@ class VoiceService extends EventEmitter {
   initialize(io: SocketIOServer): void {
     this.io = io;
     this.setupSocketHandlers();
-    console.log('✅ تم تهيئة خدمة الصوت');
-  }
+    }
 
   /**
    * إعداد معالجات Socket.IO
@@ -129,8 +128,6 @@ class VoiceService extends EventEmitter {
     if (!this.io) return;
 
     this.io.on('connection', (socket) => {
-      console.log(`🔌 اتصال صوتي جديد: ${socket.id}`);
-      
       // انضمام لغرفة صوتية
       socket.on('voice:join-room', async (data) => {
         await this.handleJoinRoom(socket, data);
@@ -272,9 +269,7 @@ class VoiceService extends EventEmitter {
       // تحديث إحصائيات الغرفة
       this.updateRoomStats(room);
 
-      console.log(`✅ ${user.username} انضم للغرفة الصوتية: ${roomId}`);
-
-    } catch (error) {
+      } catch (error) {
       console.error('❌ خطأ في الانضمام للغرفة الصوتية:', error);
       socket.emit('voice:error', { message: 'خطأ في الانضمام للغرفة' });
     }
@@ -317,8 +312,7 @@ class VoiceService extends EventEmitter {
           this.voiceRooms.delete(roomId);
         }
 
-        console.log(`👋 مستخدم ${userId} غادر الغرفة الصوتية: ${roomId}`);
-      }
+        }
 
       // تنظيف الجلسة
       this.voiceSessions.delete(socket.id);
@@ -581,8 +575,7 @@ class VoiceService extends EventEmitter {
     try {
       await this.handleLeaveRoom(socket);
       this.stats.totalConnections = Math.max(0, this.stats.totalConnections - 1);
-      console.log(`🔌 انقطع الاتصال الصوتي: ${socket.id}`);
-    } catch (error) {
+      } catch (error) {
       console.error('❌ خطأ في معالجة قطع الاتصال:', error);
     }
   }
@@ -631,7 +624,6 @@ class VoiceService extends EventEmitter {
       this.voiceRooms.set(roomId, voiceRoom);
       this.stats.activeRooms++;
       
-      console.log(`✅ تم إنشاء غرفة صوتية: ${roomId}`);
       return voiceRoom;
 
     } catch (error) {
@@ -720,14 +712,12 @@ class VoiceService extends EventEmitter {
     expiredSessions.forEach(socketId => {
       const session = this.voiceSessions.get(socketId);
       if (session) {
-        console.log(`🧹 تنظيف جلسة منتهية الصلاحية: ${socketId}`);
         this.cleanupSession(socketId, session);
       }
     });
 
     if (expiredSessions.length > 0) {
-      console.log(`🧹 تم تنظيف ${expiredSessions.length} جلسة منتهية الصلاحية`);
-    }
+      }
   }
 
   /**

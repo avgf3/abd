@@ -135,8 +135,7 @@ export class VoiceManager {
       this.isInitialized = true;
       this.emit('initialized');
       
-      console.log('✅ تم تهيئة النظام الصوتي بنجاح');
-    } catch (error) {
+      } catch (error) {
       console.error('❌ خطأ في تهيئة النظام الصوتي:', error);
       this.emit('error', error);
       throw error;
@@ -186,8 +185,7 @@ export class VoiceManager {
         this.emit('error', new Error(data.message));
       });
 
-      console.log('✅ تم تهيئة Socket.IO للصوت');
-    } catch (error) {
+      } catch (error) {
       console.error('❌ خطأ في تهيئة Socket.IO للصوت:', error);
       throw error;
     }
@@ -333,8 +331,6 @@ export class VoiceManager {
         userId: this.getUserId() // سنحتاج لتنفيذ هذه الدالة
       });
       
-      console.log(`✅ تم إرسال طلب الانضمام للغرفة الصوتية: ${roomId}`);
-
       // ابدأ التفاوض (Offer) بعد الانضمام
       await this.startConnection(connection);
       
@@ -374,9 +370,7 @@ export class VoiceManager {
       this.currentRoom = null;
       this.emit('room_left', { roomId });
       
-      console.log(`✅ تم مغادرة الغرفة الصوتية: ${roomId}`);
-      
-    } catch (error) {
+      } catch (error) {
       console.error('❌ خطأ في مغادرة الغرفة:', error);
       this.emit('error', error);
     }
@@ -838,8 +832,7 @@ export class VoiceManager {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       stream.getTracks().forEach(track => track.stop());
-      console.log('✅ تم الحصول على إذن الميكروفون');
-    } catch (error) {
+      } catch (error) {
       console.error('❌ تم رفض إذن الميكروفون:', error);
       throw new Error('يجب السماح بالوصول للميكروفون لاستخدام الغرف الصوتية');
     }
@@ -873,8 +866,7 @@ export class VoiceManager {
     if (!this.settings.adaptiveQuality) return;
     
     // تنفيذ منطق تعديل الجودة
-    console.log(`🔧 تعديل الجودة للخلفية: ${isBackground}`);
-  }
+    }
 
   /**
    * تشغيل الأصوات
@@ -893,8 +885,7 @@ export class VoiceManager {
         }
       })();
       if (!globalPref) return;
-      console.log(`🔊 تشغيل صوت: ${type}`);
-    } catch {}
+      } catch {}
   }
 
   /**
@@ -979,8 +970,7 @@ export class VoiceManager {
       connection.gainNode = undefined;
       connection.analyserNode = undefined;
       
-      console.log('✅ تم تنظيف موارد الاتصال');
-    } catch (error) {
+      } catch (error) {
       console.error('❌ خطأ في تنظيف الاتصال:', error);
     }
   }
@@ -1019,8 +1009,7 @@ export class VoiceManager {
       this.currentRoom = null;
       this.isInitialized = false;
       
-      console.log('✅ تم تنظيف جميع موارد النظام الصوتي');
-    } catch (error) {
+      } catch (error) {
       console.error('❌ خطأ في تنظيف الموارد:', error);
     }
   }

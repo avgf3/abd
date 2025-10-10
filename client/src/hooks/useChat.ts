@@ -466,8 +466,7 @@ export const useChat = () => {
       }
       
       pollManagerRef.current.start();
-      console.log('🔄 بدء HTTP polling كـ backup للـ Socket');
-    } catch {}
+      } catch {}
   }, []);
 
   const stopPollingFallback = useCallback(() => {
@@ -527,7 +526,6 @@ export const useChat = () => {
             
             switch (type) {
               case 'background-ping-success':
-                console.log('✅ Service Worker: ping نجح في الخلفية');
                 break;
             }
           });
@@ -538,8 +536,7 @@ export const useChat = () => {
             data: { serverUrl: window.location.origin }
           });
           
-          console.log('🚀 تم تهيئة Service Worker للـ Socket.IO');
-        }
+          }
       } catch (error) {
         console.warn('⚠️ لا يمكن تهيئة Service Worker:', error);
       }
@@ -567,7 +564,6 @@ export const useChat = () => {
                 break;
                 
               case 'worker-ready':
-                console.log('🔧 Web Worker جاهز للعمل');
                 break;
                 
               case 'worker-error':
@@ -582,8 +578,7 @@ export const useChat = () => {
             data: { pingInterval: 20000 }
           });
           
-          console.log('🚀 تم تهيئة Web Worker للـ Socket.IO');
-        }
+          }
       } catch (error) {
         console.warn('⚠️ لا يمكن تهيئة Web Worker:', error);
       }
@@ -597,7 +592,6 @@ export const useChat = () => {
     // مزامنة حالة الاتصال مع Web Worker ليعرف متى يُرسل ping
     try {
       socketInstance.on('connect', () => {
-        console.log('🟢 Socket.IO متصل');
         dispatch({ type: 'SET_CONNECTION_STATUS', payload: true });
         dispatch({ type: 'SET_CONNECTION_ERROR', payload: null });
         
@@ -619,7 +613,6 @@ export const useChat = () => {
         } catch {}
       });
       socketInstance.on('disconnect', (reason) => {
-        console.log('🔴 Socket.IO منقطع -', reason);
         dispatch({ type: 'SET_CONNECTION_STATUS', payload: false });
         
         // 🔍 تسجيل الانقطاع في المراقب
@@ -700,8 +693,6 @@ export const useChat = () => {
       if (document.hidden && !isBackgroundRef.current) {
         // الصفحة أصبحت في الخلفية - استخدام Web Worker للping
         isBackgroundRef.current = true;
-        console.log('🔄 الصفحة في الخلفية - تفعيل Web Worker للping');
-        
         if (pingIntervalRef.current) {
           clearInterval(pingIntervalRef.current);
         }
@@ -747,8 +738,6 @@ export const useChat = () => {
       } else if (!document.hidden && isBackgroundRef.current) {
         // الصفحة عادت للمقدمة - إيقاف Web Worker واستعادة ping العادي
         isBackgroundRef.current = false;
-        console.log('🔄 الصفحة في المقدمة - إيقاف Web Worker واستعادة ping العادي');
-        
         // إيقاف Web Worker و Service Worker
         if (socketWorkerRef.current) {
           socketWorkerRef.current.postMessage({
@@ -806,14 +795,10 @@ export const useChat = () => {
 
     // دعم أفضل لدورة حياة الصفحة على الأجهزة المحمولة: pageshow/pagehide
     const handlePageShow = async () => {
-      console.log('📱 الصفحة عادت للمقدمة - فحص ذكي للاتصال');
-      
       try {
         // 🚀 فحص ذكي للحالة المحفوظة
         const { shouldReconnectOnPageShow, getConnectionHealth } = await import('@/lib/socket');
         const health = getConnectionHealth();
-        
-        console.log('🔍 حالة الاتصال:', health);
         
         // 🍎 معالجة خاصة لـ iOS
         if (isIOSRef.current) {
@@ -823,11 +808,8 @@ export const useChat = () => {
               const snapshot = JSON.parse(iosSnapshot);
               const timeDiff = Date.now() - snapshot.timestamp;
               
-              console.log(`🍎 iOS: مر ${Math.round(timeDiff/1000)} ثانية منذ الخلفية`);
-              
               // إذا مر أكثر من 10 ثواني، أعد الاتصال بالكامل
               if (timeDiff > 10000 && snapshot.wasConnected) {
-                console.log('🔄 iOS: إعادة اتصال كاملة');
                 if (socket.current) {
                   socket.current.disconnect();
                   setTimeout(() => socket.current?.connect(), 500);
@@ -841,7 +823,6 @@ export const useChat = () => {
         } else {
           // 🤖 معالجة Android العادية
           if (shouldReconnectOnPageShow()) {
-            console.log('🤖 Android: إعادة اتصال مطلوبة');
             if (socket.current && !socket.current.connected) {
               socket.current.connect();
             }
@@ -853,7 +834,6 @@ export const useChat = () => {
         if (roomId) {
           const buffered = messageBufferRef.current.get(roomId) || [];
           if (buffered.length > 0) {
-            console.log(`📨 استعادة ${buffered.length} رسالة مؤجلة`);
             for (const msg of buffered) {
               dispatch({ type: 'ADD_ROOM_MESSAGE', payload: { roomId, message: msg } });
             }
@@ -862,7 +842,6 @@ export const useChat = () => {
           
           // جلب الرسائل المفقودة إذا مر وقت طويل
           if (health.timeSinceLastConnection > 30000) {
-            console.log('📥 جلب الرسائل المفقودة');
             fetchMissedMessagesForRoom(roomId).catch(() => {});
           }
         }

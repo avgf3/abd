@@ -25,8 +25,6 @@ export class ConnectionMonitor {
     if (this.isMonitoring) return;
     
     this.isMonitoring = true;
-    console.log('🔍 بدء مراقبة الاتصال الذكية');
-    
     // مراقبة دورية كل 30 ثانية
     this.monitorInterval = window.setInterval(() => {
       this.updateMetrics();
@@ -44,14 +42,12 @@ export class ConnectionMonitor {
       clearInterval(this.monitorInterval);
       this.monitorInterval = null;
     }
-    console.log('⏹️ إيقاف مراقبة الاتصال');
-  }
+    }
 
   // 🔥 تسجيل محاولة اتصال
   recordConnectionAttempt() {
     this.metrics.connectionAttempts++;
-    console.log(`🔄 محاولة اتصال #${this.metrics.connectionAttempts}`);
-  }
+    }
 
   // 🔥 تسجيل اتصال ناجح
   recordSuccessfulConnection() {
@@ -65,8 +61,7 @@ export class ConnectionMonitor {
       this.metrics.reconnectTimes = this.metrics.reconnectTimes.slice(-10);
     }
     
-    console.log(`✅ اتصال ناجح - المجموع: ${this.metrics.successfulConnections}`);
-  }
+    }
 
   // 🔥 تسجيل اتصال فاشل
   recordFailedConnection(error?: string) {
@@ -74,8 +69,7 @@ export class ConnectionMonitor {
     if (error) {
       this.recordError(error, 'connection_failure');
     }
-    console.log(`❌ اتصال فاشل - المجموع: ${this.metrics.failedConnections}`);
-  }
+    }
 
   // 🔥 تسجيل انقطاع
   recordDisconnection(reason?: string) {
@@ -90,8 +84,7 @@ export class ConnectionMonitor {
       this.metrics.connectionUptime += uptime;
     }
     
-    console.log(`🔴 انقطاع - المجموع: ${this.metrics.totalDisconnects}`);
-  }
+    }
 
   // 🔥 تسجيل زمن الاستجابة
   recordLatency(latency: number) {
@@ -131,8 +124,7 @@ export class ConnectionMonitor {
       // إرسال تقرير للخادم (اختياري)
       this.reportPoorConnection(health);
     } else if (health.status === 'good') {
-      console.log('✅ جودة الاتصال جيدة');
-    }
+      }
   }
 
   // 🔥 الحصول على تقرير صحة الاتصال
@@ -246,8 +238,7 @@ export class ConnectionMonitor {
       if (saved) {
         const data = JSON.parse(saved);
         this.metrics = { ...this.metrics, ...data };
-        console.log('📊 تم تحميل مقاييس الاتصال المحفوظة');
-      }
+        }
     } catch (error) {
       console.warn('فشل تحميل مقاييس الاتصال:', error);
     }
@@ -292,8 +283,7 @@ export class ConnectionMonitor {
       localStorage.removeItem('connection_metrics');
     } catch {}
     
-    console.log('🔄 تم إعادة تعيين مقاييس الاتصال');
-  }
+    }
 }
 
 // 🔥 مثيل عام للمراقب

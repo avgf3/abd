@@ -9,8 +9,7 @@ import { nanoid } from 'nanoid';
 import { log as logger } from './utils/logger';
 
 export function log(message: string, source = 'express') {
-  console.log(`[${source}] ${message}`);
-}
+  }
 
 export async function setupVite(app: Express, server: Server) {
   const serverOptions = {
