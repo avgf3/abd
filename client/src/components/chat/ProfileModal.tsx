@@ -3007,11 +3007,10 @@ export default function ProfileModal({
                   bottom: '70px',
                   right: (typeof window !== 'undefined' && window.innerWidth <= 480) ? '170px' : '210px',
                   display: 'grid',
-                  gridTemplateColumns: 'auto 20px 20px',
-                  gridTemplateRows: 'auto auto',
-                  gridTemplateAreas: '"role badge icon" "name name name"',
+                  gridTemplateColumns: '20px auto 20px',
+                  gridTemplateRows: 'auto',
+                  gridTemplateAreas: '"badge name icon"',
                   columnGap: '6px',
-                  rowGap: '4px',
                   alignItems: 'center',
                   zIndex: 10,
                   maxWidth: `calc(100% - ${((typeof window !== 'undefined' && window.innerWidth <= 480) ? 190 : 230)}px)`,
@@ -3046,32 +3045,13 @@ export default function ProfileModal({
                       </h3>
                     );
                   })()}
-                  {/* شارة الدور (التاج/المستوى) بجانب الوصف */}
+                  {/* شارة الدور بجانب الاسم في نفس السطر */}
                   <span style={{ gridArea: 'badge', lineHeight: 0, display: 'flex', alignItems: 'center' }}>
                     {getUserLevelIcon(localUser, 18)}
                   </span>
                   {/* الأيقونة */}
                   <img src="/icons/lead-icon.png" alt="icon"
                        style={{ width: 18, height: 18, gridArea: 'icon' }} />
-                  {/* وصف الشعار أعلى الاسم */}
-                  {(localUser?.userType === 'owner' || localUser?.userType === 'admin' || localUser?.userType === 'moderator') && (
-                    <span style={{ 
-                      gridArea: 'role', 
-                      fontSize: '14px', 
-                      fontWeight: 700, 
-                      whiteSpace: 'nowrap', 
-                      textAlign: 'start',
-                      color: '#FFD700',
-                      textShadow: '0 2px 4px rgba(0,0,0,0.5)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '4px'
-                    }}>
-                      {localUser?.userType === 'owner' && 'Owner'}
-                      {localUser?.userType === 'admin' && 'Admin'}
-                      {localUser?.userType === 'moderator' && 'Moderator'}
-                    </span>
-                  )}
                 </div>
               </>
             )}
@@ -3088,11 +3068,10 @@ export default function ProfileModal({
                   bottom: '70px',
                   right: (typeof window !== 'undefined' && window.innerWidth <= 480) ? '170px' : '210px',
                   display: 'grid',
-                  gridTemplateColumns: 'auto 20px 20px',
-                  gridTemplateRows: 'auto auto',
-                  gridTemplateAreas: '"role badge icon" "name name name"',
+                  gridTemplateColumns: '20px auto 20px',
+                  gridTemplateRows: 'auto',
+                  gridTemplateAreas: '"badge name icon"',
                   columnGap: '6px',
-                  rowGap: '4px',
                   alignItems: 'center',
                   zIndex: 12,
                   maxWidth: `calc(100% - ${((typeof window !== 'undefined' && window.innerWidth <= 480) ? 190 : 230)}px)`,
@@ -3126,30 +3105,12 @@ export default function ProfileModal({
                       </h3>
                     );
                   })()}
-                  {/* شارة الدور (التاج/المستوى) بجانب الوصف */}
+                  {/* شارة الدور بجانب الاسم في نفس السطر */}
                   <span style={{ gridArea: 'badge', lineHeight: 0, display: 'flex', alignItems: 'center' }}>
                     {getUserLevelIcon(localUser, 18)}
                   </span>
                   <img src="/icons/lead-icon.png" alt="icon"
                        style={{ width: 18, height: 18, gridArea: 'icon' }} />
-                  {(localUser?.userType === 'owner' || localUser?.userType === 'admin' || localUser?.userType === 'moderator') && (
-                    <span style={{ 
-                      gridArea: 'role', 
-                      fontSize: '14px', 
-                      fontWeight: 700, 
-                      whiteSpace: 'nowrap', 
-                      textAlign: 'start',
-                      color: '#FFD700',
-                      textShadow: '0 2px 4px rgba(0,0,0,0.5)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '4px'
-                    }}>
-                      {localUser?.userType === 'owner' && 'Owner'}
-                      {localUser?.userType === 'admin' && 'Admin'}
-                      {localUser?.userType === 'moderator' && 'Moderator'}
-                    </span>
-                  )}
                 </div>
               </>
             )}
@@ -3162,11 +3123,10 @@ export default function ProfileModal({
                   bottom: '70px',
                   right: (typeof window !== 'undefined' && window.innerWidth <= 480) ? '170px' : '210px',
                   display: 'grid',
-                  gridTemplateColumns: 'auto 20px 20px',
-                  gridTemplateRows: 'auto auto',
-                  gridTemplateAreas: '"role badge icon" "name name name"',
+                  gridTemplateColumns: '20px auto 20px',
+                  gridTemplateRows: 'auto',
+                  gridTemplateAreas: '"badge name icon"',
                   columnGap: '6px',
-                  rowGap: '4px',
                   alignItems: 'center',
                   zIndex: 12,
                   pointerEvents: 'none',
@@ -3199,30 +3159,13 @@ export default function ProfileModal({
                       </h3>
                     );
                   })()}
-                  {/* شارة الدور (التاج/المستوى) بجانب الوصف */}
+                  {/* شارة الدور بجانب الاسم في نفس السطر */}
                   <span style={{ gridArea: 'badge', lineHeight: 0, display: 'flex', alignItems: 'center' }}>
                     {getUserLevelIcon(localUser, 18)}
                   </span>
                   <img src="/icons/lead-icon.png" alt="icon"
                        style={{ width: 18, height: 18, gridArea: 'icon' }} />
-                  {(localUser?.userType === 'owner' || localUser?.userType === 'admin' || localUser?.userType === 'moderator') && (
-                    <span style={{ 
-                      gridArea: 'role', 
-                      fontSize: '14px', 
-                      fontWeight: 700, 
-                      whiteSpace: 'nowrap', 
-                      textAlign: 'start',
-                      color: '#FFD700',
-                      textShadow: '0 2px 4px rgba(0,0,0,0.5)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '4px'
-                    }}>
-                      {localUser?.userType === 'owner' && '⭐ Owner'}
-                      {localUser?.userType === 'admin' && '⭐ Admin'}
-                      {localUser?.userType === 'moderator' && '⭐ Moderator'}
-                    </span>
-                  )}
+                  {/* إزالة وصف الدور نصياً لمنع تكرار أيقونة النجمة */}
                 </div>
               </>
             )}
