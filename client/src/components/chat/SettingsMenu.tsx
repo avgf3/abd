@@ -74,8 +74,10 @@ export default function SettingsMenu({
                 }
                 const uds = getUsernameDisplayStyle(currentUser);
                 return (
-                  <span className={`font-semibold ${uds.className || ''}`} style={uds.style}>
-                    {currentUser.username}
+                  <span className={`font-semibold`} title={currentUser.username}>
+                    <span className={`${uds.className || ''}`} style={uds.style}>
+                      {currentUser.username}
+                    </span>
                   </span>
                 );
               })()}

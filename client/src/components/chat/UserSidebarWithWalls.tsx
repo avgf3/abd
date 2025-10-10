@@ -819,7 +819,6 @@ export default function UnifiedSidebar({
                             <div className="flex items-center gap-2">
                               <span
                                 className="font-medium text-sm cursor-pointer hover:underline"
-                                style={{ color: getFinalUsernameColor({ userType: post.userRole || 'member', usernameColor: post.usernameColor }) }}
                                 onClick={(e) => {
                                   const targetUser: ChatUser = {
                                     id: post.userId,
@@ -834,7 +833,14 @@ export default function UnifiedSidebar({
                                 }}
                                 title="عرض خيارات المستخدم"
                               >
-                                {post.username}
+                                {(() => {
+                                  const uds = getUsernameDisplayStyle({ userType: post.userRole || 'member', usernameGradient: (post as any)?.usernameGradient, usernameEffect: (post as any)?.usernameEffect, usernameColor: post.usernameColor });
+                                  return (
+                                    <span className={`${uds.className || ''}`} style={uds.style}>
+                                      {post.username}
+                                    </span>
+                                  );
+                                })()}
                               </span>
                               {/* تمت إزالة الشارات بجانب الاسم وفق المطلوب */}
                             </div>
@@ -964,7 +970,6 @@ export default function UnifiedSidebar({
                             <div className="flex items-center gap-2">
                               <span
                                 className="font-medium text-sm cursor-pointer hover:underline"
-                                style={{ color: getFinalUsernameColor({ userType: post.userRole || 'member', usernameColor: post.usernameColor }) }}
                                 onClick={(e) => {
                                   const targetUser: ChatUser = {
                                     id: post.userId,
@@ -979,7 +984,14 @@ export default function UnifiedSidebar({
                                 }}
                                 title="عرض خيارات المستخدم"
                               >
-                                {post.username}
+                                {(() => {
+                                  const uds = getUsernameDisplayStyle({ userType: post.userRole || 'member', usernameGradient: (post as any)?.usernameGradient, usernameEffect: (post as any)?.usernameEffect, usernameColor: post.usernameColor });
+                                  return (
+                                    <span className={`${uds.className || ''}`} style={uds.style}>
+                                      {post.username}
+                                    </span>
+                                  );
+                                })()}
                               </span>
                               {/* تمت إزالة الشارات بجانب الاسم وفق المطلوب */}
                             </div>

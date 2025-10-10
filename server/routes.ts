@@ -3301,6 +3301,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Normalize profileBackgroundColor: allow full linear-gradient strings, otherwise sanitize HEX or fallback
       const normalizedUpdates: any = { ...updates };
+
+      // Username color: accept only HEX; clear gradient/effect by default when plain color selected
+      if (typeof normalizedUpdates.usernameColor === 'string') {
+        const c = String(normalizedUpdates.usernameColor).trim();
+        if (/^#[0-9A-Fa-f]{6}$/.test(c)) {
+          normalizedUpdates.usernameColor = c;
+          if (typeof normalizedUpdates.usernameGradient === 'undefined') normalizedUpdates.usernameGradient = null;
+          if (typeof normalizedUpdates.usernameEffect === 'undefined') normalizedUpdates.usernameEffect = null;
+        } else if (c === '' || c === 'null' || c === 'undefined') {
+          normalizedUpdates.usernameColor = null;
+        } else {
+          return res.status(400).json({ error: 'لون الاسم غير صحيح. الرجاء إدخال HEX مثل #AABBCC' });
+        }
+      }
+
+      // Username gradient: accept only full linear-gradient strings; clear plain color by default when chosen
+      if (typeof normalizedUpdates.usernameGradient === 'string') {
+        const g = String(normalizedUpdates.usernameGradient).trim();
+        if (g.startsWith('linear-gradient(')) {
+          normalizedUpdates.usernameGradient = g;
+          if (typeof normalizedUpdates.usernameColor === 'undefined') normalizedUpdates.usernameColor = null;
+        } else if (g === '' || g === 'null' || g === 'undefined') {
+          normalizedUpdates.usernameGradient = null;
+        } else {
+          return res.status(400).json({ error: 'تنسيق التدرج غير صحيح. يجب أن يبدأ بـ linear-gradient(' });
+        }
+      }
+
+      // Username effect: validate allowed list and map 'none' to null
+      if (typeof normalizedUpdates.usernameEffect === 'string') {
+        const eff = String(normalizedUpdates.usernameEffect).trim();
+        const allowedEffects = [
+          'none','effect-glow','effect-pulse','effect-water','effect-aurora','effect-neon','effect-fire','effect-ice','effect-rainbow','effect-shadow','effect-electric','effect-crystal','effect-holographic','effect-galaxy','effect-shimmer','effect-prism','effect-magnetic','effect-heartbeat','effect-stars','effect-snow'
+        ];
+        if (!allowedEffects.includes(eff)) {
+          return res.status(400).json({ error: 'تأثير غير مسموح' });
+        }
+        if (eff === 'none') normalizedUpdates.usernameEffect = null;
+      }
+
       if (typeof normalizedUpdates.profileBackgroundColor === 'string') {
         const str = String(normalizedUpdates.profileBackgroundColor).trim();
         if (str.startsWith('linear-gradient(')) {
@@ -3357,6 +3397,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // بث خفيف للجميع + بث كامل لصاحب التعديل
       emitUserUpdatedToAll(user);
       emitUserUpdatedToUser(idNum, user);
+      // إذا تغير usernameColor أو usernameGradient أو usernameEffect، أرسل أيضاً حدثاً متخصصاً لتزامن فوري دقيق
+      try {
+        const changedColor = Object.prototype.hasOwnProperty.call(sanitized, 'usernameColor');
+        const changedGradient = Object.prototype.hasOwnProperty.call(sanitized, 'usernameGradient');
+        const changedEffect = Object.prototype.hasOwnProperty.call(sanitized, 'usernameEffect');
+        if (changedColor) {
+          await emitToUserRooms(idNum, { type: 'usernameColorChanged', userId: idNum, color: (user as any).usernameColor });
+        }
+        if (changedGradient) {
+          await emitToUserRooms(idNum, { type: 'usernameGradientChanged', userId: idNum, gradient: (user as any).usernameGradient });
+        }
+        if (changedEffect) {
+          await emitToUserRooms(idNum, { type: 'usernameEffectChanged', userId: idNum, effect: (user as any).usernameEffect });
+        }
+      } catch {}
 
       const payload = buildUserBroadcastPayload(user);
       res.json(payload);
