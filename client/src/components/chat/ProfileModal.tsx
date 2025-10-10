@@ -3000,7 +3000,7 @@ export default function ProfileModal({
                   🖼️ تغيير الغلاف
                 </button>
                 
-                {/* التصميم الجديد: الاسم في الأعلى + التاج والأيقونة بجانبه + الشعار تحته */}
+                {/* التصميم: وصف الشعار في الأعلى + التاج والأيقونة بجانب الاسم أسفله */}
                 <div style={{
                   position: 'absolute',
                   bottom: '70px',
@@ -3008,7 +3008,7 @@ export default function ProfileModal({
                   display: 'grid',
                   gridTemplateColumns: 'auto 20px 20px',
                   gridTemplateRows: 'auto auto',
-                  gridTemplateAreas: '"name badge icon" "role role role"',
+                  gridTemplateAreas: '"role role role" "name badge icon"',
                   columnGap: '6px',
                   rowGap: '4px',
                   alignItems: 'center',
@@ -3018,7 +3018,7 @@ export default function ProfileModal({
                   boxSizing: 'border-box',
                   direction: 'ltr'
                 }}>
-                  {/* الاسم في الأعلى */}
+                  {/* الاسم في الأسفل */}
                   <h3
                     style={{
                       gridArea: 'name',
@@ -3084,7 +3084,7 @@ export default function ProfileModal({
                   display: 'grid',
                   gridTemplateColumns: 'auto 20px 20px',
                   gridTemplateRows: 'auto auto',
-                  gridTemplateAreas: '"name badge icon" "role role role"',
+                  gridTemplateAreas: '"role role role" "name badge icon"',
                   columnGap: '6px',
                   rowGap: '4px',
                   alignItems: 'center',
@@ -3152,7 +3152,7 @@ export default function ProfileModal({
                   display: 'grid',
                   gridTemplateColumns: 'auto 20px 20px',
                   gridTemplateRows: 'auto auto',
-                  gridTemplateAreas: '"name badge icon" "role role role"',
+                  gridTemplateAreas: '"role role role" "name badge icon"',
                   columnGap: '6px',
                   rowGap: '4px',
                   alignItems: 'center',
