@@ -203,7 +203,7 @@ export default function UsernameColorPicker({
     setSelectedGradient(''); // إزالة التدرج عند اختيار لون عادي
     setSelectedEffect('none'); // إزالة التأثير عند اختيار لون عادي
     // تحديث محلي فوري
-    try { onUserFieldsUpdate?.({ usernameColor: color, usernameGradient: undefined, usernameEffect: undefined }); } catch {}
+    try { onUserFieldsUpdate?.({ usernameColor: color, usernameGradient: null, usernameEffect: null }); } catch {}
     setIsLoading(true);
 
     try {
@@ -248,7 +248,7 @@ export default function UsernameColorPicker({
     setSelectedGradient(gradient);
     setSelectedColor(''); // إزالة اللون العادي عند اختيار تدرج
     // تحديث محلي فوري
-    try { onUserFieldsUpdate?.({ usernameGradient: gradient, usernameColor: undefined }); } catch {}
+    try { onUserFieldsUpdate?.({ usernameGradient: gradient, usernameColor: null }); } catch {}
     setIsLoading(true);
 
     try {
@@ -291,7 +291,7 @@ export default function UsernameColorPicker({
 
     setSelectedEffect(effect);
     // تحديث محلي فوري
-    try { onUserFieldsUpdate?.({ usernameEffect: effect === 'none' ? undefined : effect }); } catch {}
+    try { onUserFieldsUpdate?.({ usernameEffect: effect === 'none' ? null : effect }); } catch {}
     setIsLoading(true);
 
     try {

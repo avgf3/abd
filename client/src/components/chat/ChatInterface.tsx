@@ -1760,9 +1760,9 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                   // دعم كلٍ من اللون والتدرج: إذا كان value تدرجاً فحدّث usernameGradient محلياً
                   const isGradient = typeof value === 'string' && value.trim().toLowerCase().startsWith('linear-gradient(');
                   if (isGradient) {
-                    chat.updateCurrentUser({ usernameGradient: value, usernameColor: undefined } as any);
+                    chat.updateCurrentUser({ usernameGradient: value, usernameColor: null } as any);
                   } else {
-                    chat.updateCurrentUser({ usernameColor: value, usernameGradient: undefined } as any);
+                    chat.updateCurrentUser({ usernameColor: value, usernameGradient: null } as any);
                   }
                   setShowUsernameColorPicker(false);
                 }}
