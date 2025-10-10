@@ -140,6 +140,16 @@ const gradientToTransparent = (gradient: string, opacity: number): string => {
 
 // دالة لحصول على لون الاسم النهائي (يعتمد على usernameColor المخصص فقط)
 export const getFinalUsernameColor = (user: any): string => {
+  // للمشرفين: إذا كان لديهم تدرج، استخدم لون مشتق من التدرج
+  const isModerator = user && ['owner', 'admin', 'moderator'].includes(user.userType);
+  if (isModerator && user.usernameGradient) {
+    // استخراج أول لون من التدرج كلون للأيقونة
+    const gradientMatch = user.usernameGradient.match(/#[a-fA-F0-9]{6}/);
+    if (gradientMatch) {
+      return gradientMatch[0];
+    }
+  }
+  
   // استخدام اللون المخصص للمستخدم فقط
   const color = user && user.usernameColor ? String(user.usernameColor) : '';
   const cleaned = sanitizeHexColor(color, '');

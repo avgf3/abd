@@ -1085,9 +1085,9 @@ export const useChat = () => {
           const targetId = userId || user?.id;
           if (targetId) {
             if (currentUserRef.current?.id === targetId) {
-              dispatch({ type: 'SET_CURRENT_USER', payload: { ...currentUserRef.current!, usernameGradient: gradient, usernameColor: undefined } as any });
+              dispatch({ type: 'SET_CURRENT_USER', payload: { ...currentUserRef.current!, usernameGradient: gradient, usernameColor: null } as any });
             }
-            dispatch({ type: 'UPSERT_ONLINE_USER', payload: { id: targetId, usernameGradient: gradient, usernameColor: undefined } as any });
+            dispatch({ type: 'UPSERT_ONLINE_USER', payload: { id: targetId, usernameGradient: gradient, usernameColor: null } as any });
           }
         }
 
