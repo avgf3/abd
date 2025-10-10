@@ -14,6 +14,7 @@ import {
   getEffectColor,
   getFinalUsernameColor,
   buildProfileBackgroundGradient,
+  getUsernameDisplayStyle,
 } from '@/utils/themeUtils';
 import { getUserLevelIcon } from '@/components/chat/UserRoleBadge';
 import ProfileImage from './ProfileImage';
@@ -3019,27 +3020,32 @@ export default function ProfileModal({
                   direction: 'ltr'
                 }}>
                   {/* الاسم في الأسفل */}
-                  <h3
-                    style={{
-                      gridArea: 'name',
-                      margin: 0,
-                      fontSize: '20px',
-                      fontWeight: 'bold',
-                      color: getFinalUsernameColor(localUser || {}),
-                      textShadow: '0 2px 4px rgba(0,0,0,0.5)',
-                      cursor: 'pointer',
-                      unicodeBidi: 'plaintext',
-                      textAlign: 'right',
-                      whiteSpace: 'normal',
-                      overflowWrap: 'break-word',
-                      wordBreak: 'keep-all',
-                      hyphens: 'none'
-                    }}
-                    onClick={() => openEditModal('name')}
-                    dir="auto"
-                  >
-                    <bdi>{localUser?.username || 'اسم المستخدم'}</bdi>
-                  </h3>
+                  {(() => {
+                    const uds = getUsernameDisplayStyle(localUser || {});
+                    return (
+                      <h3
+                        style={{
+                          gridArea: 'name',
+                          margin: 0,
+                          fontSize: '20px',
+                          fontWeight: 'bold',
+                          cursor: 'pointer',
+                          unicodeBidi: 'plaintext',
+                          textAlign: 'right',
+                          whiteSpace: 'normal',
+                          overflowWrap: 'break-word',
+                          wordBreak: 'keep-all',
+                          hyphens: 'none'
+                        }}
+                        onClick={() => openEditModal('name')}
+                        dir="auto"
+                      >
+                        <span className={uds.className || ''} style={uds.style}>
+                          <bdi>{localUser?.username || 'اسم المستخدم'}</bdi>
+                        </span>
+                      </h3>
+                    );
+                  })()}
                   {/* شارة الدور (التاج/المستوى) بجانب الوصف */}
                   <span style={{ gridArea: 'badge', lineHeight: 0, display: 'flex', alignItems: 'center' }}>
                     {getUserLevelIcon(localUser, 18)}
@@ -3094,27 +3100,32 @@ export default function ProfileModal({
                   boxSizing: 'border-box',
                   direction: 'ltr'
                 }}>
-                  <h3
-                    style={{
-                      gridArea: 'name',
-                      margin: 0,
-                      fontSize: '20px',
-                      fontWeight: 'bold',
-                      color: getFinalUsernameColor(localUser || {}),
-                      textShadow: '0 2px 4px rgba(0,0,0,0.5)',
-                      cursor: 'pointer',
-                      unicodeBidi: 'plaintext',
-                      textAlign: 'right',
-                      whiteSpace: 'normal',
-                      overflowWrap: 'break-word',
-                      wordBreak: 'keep-all',
-                      hyphens: 'none'
-                    }}
-                    onClick={() => openEditModal('name')}
-                    dir="auto"
-                  >
-                    <bdi>{localUser?.username || 'اسم المستخدم'}</bdi>
-                  </h3>
+                  {(() => {
+                    const uds = getUsernameDisplayStyle(localUser || {});
+                    return (
+                      <h3
+                        style={{
+                          gridArea: 'name',
+                          margin: 0,
+                          fontSize: '20px',
+                          fontWeight: 'bold',
+                          cursor: 'pointer',
+                          unicodeBidi: 'plaintext',
+                          textAlign: 'right',
+                          whiteSpace: 'normal',
+                          overflowWrap: 'break-word',
+                          wordBreak: 'keep-all',
+                          hyphens: 'none'
+                        }}
+                        onClick={() => openEditModal('name')}
+                        dir="auto"
+                      >
+                        <span className={uds.className || ''} style={uds.style}>
+                          <bdi>{localUser?.username || 'اسم المستخدم'}</bdi>
+                        </span>
+                      </h3>
+                    );
+                  })()}
                   {/* شارة الدور (التاج/المستوى) بجانب الوصف */}
                   <span style={{ gridArea: 'badge', lineHeight: 0, display: 'flex', alignItems: 'center' }}>
                     {getUserLevelIcon(localUser, 18)}
@@ -3164,25 +3175,30 @@ export default function ProfileModal({
                   boxSizing: 'border-box',
                   direction: 'ltr'
                 }}>
-                  <h3
-                    style={{
-                      gridArea: 'name',
-                      margin: 0,
-                      fontSize: '20px',
-                      fontWeight: 'bold',
-                      color: getFinalUsernameColor(localUser || {}),
-                      textShadow: '0 2px 4px rgba(0,0,0,0.5)',
-                      unicodeBidi: 'plaintext',
-                      textAlign: 'right',
-                      whiteSpace: 'normal',
-                      overflowWrap: 'break-word',
-                      wordBreak: 'keep-all',
-                      hyphens: 'none'
-                    }}
-                    dir="auto"
-                  >
-                    <bdi>{localUser?.username || 'اسم المستخدم'}</bdi>
-                  </h3>
+                  {(() => {
+                    const uds = getUsernameDisplayStyle(localUser || {});
+                    return (
+                      <h3
+                        style={{
+                          gridArea: 'name',
+                          margin: 0,
+                          fontSize: '20px',
+                          fontWeight: 'bold',
+                          unicodeBidi: 'plaintext',
+                          textAlign: 'right',
+                          whiteSpace: 'normal',
+                          overflowWrap: 'break-word',
+                          wordBreak: 'keep-all',
+                          hyphens: 'none'
+                        }}
+                        dir="auto"
+                      >
+                        <span className={uds.className || ''} style={uds.style}>
+                          <bdi>{localUser?.username || 'اسم المستخدم'}</bdi>
+                        </span>
+                      </h3>
+                    );
+                  })()}
                   {/* شارة الدور (التاج/المستوى) بجانب الوصف */}
                   <span style={{ gridArea: 'badge', lineHeight: 0, display: 'flex', alignItems: 'center' }}>
                     {getUserLevelIcon(localUser, 18)}

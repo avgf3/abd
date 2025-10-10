@@ -5,7 +5,7 @@ import { getSocket } from '@/lib/socket';
 import type { ChatUser } from '@/types/chat';
 import { getImageSrc } from '@/utils/imageUtils';
 import CountryFlag from '@/components/ui/CountryFlag';
-import { getFinalUsernameColor, getUserListItemClasses, getUserListItemStyles } from '@/utils/themeUtils';
+import { getFinalUsernameColor, getUserListItemClasses, getUserListItemStyles, getUsernameDisplayStyle } from '@/utils/themeUtils';
 import ProfileImage from '@/components/chat/ProfileImage';
 import UserRoleBadge from '@/components/chat/UserRoleBadge';
 import SimpleUserMenu from '@/components/chat/SimpleUserMenu';
@@ -296,13 +296,18 @@ export default function RichestModal({ isOpen, onClose, currentUser, onUserClick
                     <div className="flex-1">
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2">
-                          <span
-                            className="ac-user-name transition-colors duration-300"
-                            style={{ color: getFinalUsernameColor(u) }}
-                            title={u.username}
-                          >
-                            {u.username}
-                          </span>
+                          {(() => {
+                            const uds = getUsernameDisplayStyle(u);
+                            return (
+                              <span
+                                className={`ac-user-name transition-colors duration-300 ${uds.className || ''}`}
+                                style={uds.style}
+                                title={u.username}
+                              >
+                                {u.username}
+                              </span>
+                            );
+                          })()}
                           {u.isMuted && <span className="text-yellow-400 text-xs">🔇</span>}
                         </div>
                         <div className="flex items-center gap-1">
@@ -346,9 +351,14 @@ export default function RichestModal({ isOpen, onClose, currentUser, onUserClick
                       <ProfileImage user={c} size="small" pixelSize={22} className="" hideRoleBadgeOverlay={true} />
                     </div>
                     <div className="flex-1">
-                      <span className="ac-user-name" style={{ color: getFinalUsernameColor(c) }} title={c.username}>
-                        {c.username}
-                      </span>
+                      {(() => {
+                        const uds = getUsernameDisplayStyle(c);
+                        return (
+                          <span className={`ac-user-name ${uds.className || ''}`} style={uds.style} title={c.username}>
+                            {c.username}
+                          </span>
+                        );
+                      })()}
                     </div>
                     <button
                     className="text-xs px-2 py-1 rounded bg-primary/10 hover:bg-primary/20 text-primary"
