@@ -3047,7 +3047,7 @@ export default function ProfileModal({
                   {/* الأيقونة */}
                   <img src="/icons/lead-icon.png" alt="icon"
                        style={{ width: 18, height: 18, gridArea: 'icon' }} />
-                  {/* شعار الدور تحت الاسم */}
+                  {/* وصف الشعار تحت الاسم */}
                   {(localUser?.userType === 'owner' || localUser?.userType === 'admin' || localUser?.userType === 'moderator') && (
                     <span style={{ 
                       gridArea: 'role', 
@@ -3061,9 +3061,9 @@ export default function ProfileModal({
                       alignItems: 'center',
                       gap: '4px'
                     }}>
-                      {localUser?.userType === 'owner' && '⭐ Owner'}
-                      {localUser?.userType === 'admin' && '⭐ Admin'}
-                      {localUser?.userType === 'moderator' && '⭐ Moderator'}
+                      {localUser?.userType === 'owner' && 'Owner'}
+                      {localUser?.userType === 'admin' && 'Admin'}
+                      {localUser?.userType === 'moderator' && 'Moderator'}
                     </span>
                   )}
                 </div>
@@ -3133,9 +3133,9 @@ export default function ProfileModal({
                       alignItems: 'center',
                       gap: '4px'
                     }}>
-                      {localUser?.userType === 'owner' && '⭐ Owner'}
-                      {localUser?.userType === 'admin' && '⭐ Admin'}
-                      {localUser?.userType === 'moderator' && '⭐ Moderator'}
+                      {localUser?.userType === 'owner' && 'Owner'}
+                      {localUser?.userType === 'admin' && 'Admin'}
+                      {localUser?.userType === 'moderator' && 'Moderator'}
                     </span>
                   )}
                 </div>
