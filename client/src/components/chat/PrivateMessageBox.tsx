@@ -466,7 +466,7 @@ export default function PrivateMessageBox({
                             title={user.username}
                           >
                             <span className="ac-nameplate" style={np}>
-                              <span className="ac-name">{user.username || '...'}</span>
+                              <span className="ac-name" style={{ color: getFinalUsernameColor(user) }}>{user.username || '...'}</span>
                               <span className="ac-mark">〰</span>
                             </span>
                           </button>
