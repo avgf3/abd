@@ -392,11 +392,10 @@ export default function MessagesPanel({
                             {(() => {
                               const uds = getUsernameDisplayStyle(user);
                               return (
-                                <span
-                                  className={`text-base font-medium transition-all duration-300 truncate flex-shrink-0 ${uds.className || ''}`}
-                                  style={uds.style}
-                                >
-                                  {user.username}
+                                <span className={`text-base font-medium transition-all duration-300 truncate flex-shrink-0`} title={user.username}>
+                                  <span className={`${uds.className || ''}`} style={uds.style}>
+                                    {user.username}
+                                  </span>
                                 </span>
                               );
                             })()}

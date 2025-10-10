@@ -780,10 +780,12 @@ export default function MessageArea({
                                   return (
                                     <button
                                       onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
-                                      className={`font-semibold hover:underline transition-colors duration-200 text-sm ${uds.className || ''}`}
-                                      style={uds.style}
+                                      className={`font-semibold hover:underline transition-colors duration-200 text-sm`}
+                                      title={message.sender?.username}
                                     >
-                                      {message.sender?.username || 'جاري التحميل...'}
+                                      <span className={`${uds.className || ''}`} style={uds.style}>
+                                        {message.sender?.username || 'جاري التحميل...'}
+                                      </span>
                                     </button>
                                   );
                                 })();
@@ -914,10 +916,12 @@ export default function MessageArea({
                                   return (
                                     <button
                                       onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
-                                      className={`font-semibold hover:underline transition-colors duration-200 text-sm ${uds.className || ''}`}
-                                      style={uds.style}
+                                      className={`font-semibold hover:underline transition-colors duration-200 text-sm`}
+                                      title={message.sender?.username}
                                     >
-                                      {message.sender?.username || 'جاري التحميل...'}
+                                      <span className={`${uds.className || ''}`} style={uds.style}>
+                                        {message.sender?.username || 'جاري التحميل...'}
+                                      </span>
                                     </button>
                                   );
                                 })();

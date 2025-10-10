@@ -8,7 +8,8 @@ import type { ChatUser } from '@/types/chat';
 
 interface UsernameColorPickerProps {
   currentUser: ChatUser;
-  onColorUpdate: (color: string) => void;
+  onColorUpdate: (colorOrGradient: string) => void;
+  onUserFieldsUpdate?: (partial: Partial<ChatUser>) => void;
 }
 
 // 40 لون جميل ومتنوع - يتضمن ألوان النيون القوية والمتوهجة
@@ -185,6 +186,7 @@ const MODERATOR_EFFECTS = [
 export default function UsernameColorPicker({
   currentUser,
   onColorUpdate,
+  onUserFieldsUpdate,
 }: UsernameColorPickerProps) {
   const [selectedColor, setSelectedColor] = useState(currentUser.usernameColor || '#4A90E2');
   const [selectedGradient, setSelectedGradient] = useState(currentUser.usernameGradient || '');
@@ -200,6 +202,8 @@ export default function UsernameColorPicker({
     setSelectedColor(color);
     setSelectedGradient(''); // إزالة التدرج عند اختيار لون عادي
     setSelectedEffect('none'); // إزالة التأثير عند اختيار لون عادي
+    // تحديث محلي فوري
+    try { onUserFieldsUpdate?.({ usernameColor: color, usernameGradient: undefined, usernameEffect: undefined }); } catch {}
     setIsLoading(true);
 
     try {
@@ -243,6 +247,8 @@ export default function UsernameColorPicker({
 
     setSelectedGradient(gradient);
     setSelectedColor(''); // إزالة اللون العادي عند اختيار تدرج
+    // تحديث محلي فوري
+    try { onUserFieldsUpdate?.({ usernameGradient: gradient, usernameColor: undefined }); } catch {}
     setIsLoading(true);
 
     try {
@@ -284,6 +290,8 @@ export default function UsernameColorPicker({
     }
 
     setSelectedEffect(effect);
+    // تحديث محلي فوري
+    try { onUserFieldsUpdate?.({ usernameEffect: effect === 'none' ? undefined : effect }); } catch {}
     setIsLoading(true);
 
     try {

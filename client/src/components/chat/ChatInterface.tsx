@@ -1756,9 +1756,19 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             <Suspense fallback={<div className="p-4 text-center">...جاري التحميل</div>}>
               <UsernameColorPicker
                 currentUser={chat.currentUser}
-                onColorUpdate={(color) => {
-                  chat.updateCurrentUser({ usernameColor: color } as any);
+                onColorUpdate={(value) => {
+                  // دعم كلٍ من اللون والتدرج: إذا كان value تدرجاً فحدّث usernameGradient محلياً
+                  const isGradient = typeof value === 'string' && value.trim().toLowerCase().startsWith('linear-gradient(');
+                  if (isGradient) {
+                    chat.updateCurrentUser({ usernameGradient: value, usernameColor: undefined } as any);
+                  } else {
+                    chat.updateCurrentUser({ usernameColor: value, usernameGradient: undefined } as any);
+                  }
                   setShowUsernameColorPicker(false);
+                }}
+                onUserFieldsUpdate={(partial) => {
+                  // تحديث فوري محلي لتأثير/تدرج/لون الاسم بدون انتظار بث WebSocket
+                  chat.updateCurrentUser(partial as any);
                 }}
               />
             </Suspense>

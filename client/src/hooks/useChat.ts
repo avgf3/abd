@@ -1079,6 +1079,31 @@ export const useChat = () => {
           }
         }
 
+        // بث خاص لتحديث تدرج الاسم
+        if (envelope.type === 'usernameGradientChanged') {
+          const { userId, gradient, user } = envelope as any;
+          const targetId = userId || user?.id;
+          if (targetId) {
+            if (currentUserRef.current?.id === targetId) {
+              dispatch({ type: 'SET_CURRENT_USER', payload: { ...currentUserRef.current!, usernameGradient: gradient, usernameColor: undefined } as any });
+            }
+            dispatch({ type: 'UPSERT_ONLINE_USER', payload: { id: targetId, usernameGradient: gradient, usernameColor: undefined } as any });
+          }
+        }
+
+        // بث خاص لتحديث تأثير الاسم
+        if (envelope.type === 'usernameEffectChanged') {
+          const { userId, effect, user } = envelope as any;
+          const targetId = userId || user?.id;
+          if (targetId) {
+            const normalizedEffect = effect === 'none' ? undefined : effect;
+            if (currentUserRef.current?.id === targetId) {
+              dispatch({ type: 'SET_CURRENT_USER', payload: { ...currentUserRef.current!, usernameEffect: normalizedEffect } as any });
+            }
+            dispatch({ type: 'UPSERT_ONLINE_USER', payload: { id: targetId, usernameEffect: normalizedEffect } as any });
+          }
+        }
+
         // تحديث لون صندوق المستخدم (profileBackgroundColor)
         if (envelope.type === 'user_background_updated') {
           const { data } = envelope as any;
