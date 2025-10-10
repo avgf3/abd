@@ -91,7 +91,7 @@ export default function RoomListItem({
       <div className="flex-1">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            <span className="text-base font-medium transition-colors duration-300">
+            <span className="text-sm font-medium transition-colors duration-300">
               {room.name}
             </span>
             <span className="flex items-center gap-1">
