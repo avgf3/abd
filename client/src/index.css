@@ -1194,6 +1194,222 @@ body.ltr {
   overflow: hidden;
 }
 
+/* ===== تأثيرات أسماء المستخدمين للمشرفين ===== */
+
+/* تأثير النبض للأسماء */
+span.effect-pulse {
+  animation: usernamePulse 2s ease-in-out infinite;
+}
+
+@keyframes usernamePulse {
+  0%, 100% {
+    transform: scale(1);
+    text-shadow: 0 0 5px currentColor;
+  }
+  50% {
+    transform: scale(1.05);
+    text-shadow: 0 0 15px currentColor;
+  }
+}
+
+/* تأثير التوهج للأسماء */
+span.effect-glow {
+  animation: usernameGlow 3s ease-in-out infinite;
+  text-shadow: 0 0 10px currentColor;
+}
+
+@keyframes usernameGlow {
+  0%, 100% {
+    text-shadow: 0 0 10px currentColor;
+  }
+  50% {
+    text-shadow: 0 0 20px currentColor, 0 0 30px currentColor;
+  }
+}
+
+/* تأثير النيون للأسماء */
+span.effect-neon {
+  animation: usernameNeon 2s ease-in-out infinite;
+  text-shadow: 0 0 5px currentColor, 0 0 10px currentColor;
+}
+
+@keyframes usernameNeon {
+  0%, 100% {
+    text-shadow: 0 0 5px currentColor, 0 0 10px currentColor;
+  }
+  50% {
+    text-shadow: 0 0 10px currentColor, 0 0 20px currentColor, 0 0 30px currentColor;
+  }
+}
+
+/* تأثير النار للأسماء */
+span.effect-fire {
+  animation: usernameFire 1.5s ease-in-out infinite;
+  text-shadow: 0 0 8px #ff4500, 0 0 15px #ff6500;
+}
+
+@keyframes usernameFire {
+  0%, 100% {
+    text-shadow: 0 0 8px #ff4500, 0 0 15px #ff6500;
+  }
+  50% {
+    text-shadow: 0 0 15px #ff4500, 0 0 25px #ff6500, 0 0 35px #ff8500;
+  }
+}
+
+/* تأثير المياه للأسماء */
+span.effect-water {
+  animation: usernameWater 4s ease-in-out infinite;
+  text-shadow: 0 0 8px #00ced1;
+}
+
+@keyframes usernameWater {
+  0%, 100% {
+    text-shadow: 0 0 8px #00ced1;
+    transform: translateY(0px);
+  }
+  25% {
+    text-shadow: 0 0 12px #00ced1;
+    transform: translateY(-1px);
+  }
+  50% {
+    text-shadow: 0 0 15px #00ced1;
+    transform: translateY(0px);
+  }
+  75% {
+    text-shadow: 0 0 12px #00ced1;
+    transform: translateY(1px);
+  }
+}
+
+/* تأثير الشفق القطبي للأسماء */
+span.effect-aurora {
+  animation: usernameAurora 6s ease-in-out infinite;
+  text-shadow: 0 0 10px #9b59b6;
+}
+
+@keyframes usernameAurora {
+  0%, 100% {
+    text-shadow: 0 0 10px #9b59b6;
+    filter: hue-rotate(0deg);
+  }
+  25% {
+    text-shadow: 0 0 15px #e74c3c;
+    filter: hue-rotate(90deg);
+  }
+  50% {
+    text-shadow: 0 0 20px #3498db;
+    filter: hue-rotate(180deg);
+  }
+  75% {
+    text-shadow: 0 0 15px #2ecc71;
+    filter: hue-rotate(270deg);
+  }
+}
+
+/* تأثير البلور للأسماء */
+span.effect-crystal {
+  animation: usernameCrystal 3s ease-in-out infinite;
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
+}
+
+@keyframes usernameCrystal {
+  0%, 100% {
+    text-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
+    filter: brightness(1);
+  }
+  50% {
+    text-shadow: 0 0 15px rgba(255, 255, 255, 1), 0 0 25px rgba(255, 255, 255, 0.6);
+    filter: brightness(1.2);
+  }
+}
+
+/* تأثير نبضات القلب للأسماء */
+span.effect-heartbeat {
+  animation: usernameHeartbeat 1.5s ease-in-out infinite;
+}
+
+@keyframes usernameHeartbeat {
+  0%, 50%, 100% {
+    transform: scale(1);
+  }
+  25% {
+    transform: scale(1.1);
+  }
+  37% {
+    transform: scale(1.05);
+  }
+}
+
+/* تأثير قوس قزح للأسماء */
+span.effect-rainbow {
+  animation: usernameRainbow 4s linear infinite;
+  background: linear-gradient(45deg, #ff0000, #ff8000, #ffff00, #80ff00, #00ff00, #00ff80, #00ffff, #0080ff, #0000ff, #8000ff, #ff00ff, #ff0080);
+  background-size: 400% 400%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* دعم التدرجات اللونية لأسماء المستخدمين */
+span[style*="background-clip: text"] {
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  color: transparent !important;
+  font-weight: bold;
+}
+
+/* دعم Safari للتدرجات */
+@supports (-webkit-background-clip: text) {
+  span[style*="background-clip: text"] {
+    -webkit-background-clip: text;
+    color: transparent;
+  }
+}
+
+@keyframes usernameRainbow {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 100% 50%;
+  }
+}
+
+/* تأثير النجوم للأسماء */
+span.effect-stars {
+  animation: usernameStars 3s ease-in-out infinite;
+  text-shadow: 0 0 10px currentColor;
+}
+
+@keyframes usernameStars {
+  0%, 100% {
+    text-shadow: 0 0 10px currentColor;
+    filter: brightness(1);
+  }
+  50% {
+    text-shadow: 0 0 20px currentColor, 0 0 30px currentColor;
+    filter: brightness(1.3);
+  }
+}
+
+/* تأثير الثلج للأسماء */
+span.effect-snow {
+  animation: usernameSnow 4s ease-in-out infinite;
+  text-shadow: 0 0 8px rgba(135, 206, 235, 0.8);
+}
+
+@keyframes usernameSnow {
+  0%, 100% {
+    text-shadow: 0 0 8px rgba(135, 206, 235, 0.8);
+    filter: brightness(1);
+  }
+  50% {
+    text-shadow: 0 0 15px rgba(135, 206, 235, 1), 0 0 25px rgba(255, 255, 255, 0.6);
+    filter: brightness(1.2);
+  }
+}
+
 .effect-snow::before {
   content: '❄️ ❄️ ❄️';
   position: absolute;
