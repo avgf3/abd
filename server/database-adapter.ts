@@ -96,17 +96,28 @@ export async function initializeDatabase(): Promise<boolean> {
       String(process.env.USE_PGBOUNCER || '').toLowerCase() === 'true';
 
     // إعدادات المجمع والقيم الافتراضية الآمنة
-    // ملاحظة: القيم الكبيرة تؤدي لاستنزاف اتصالات القاعدة عند استخدام Cluster/PM2
-    // - عند وجود PgBouncer: اجعل max صغيراً لكل عملية (مثلاً 10-20)
-    // - بدون PgBouncer: اجعل max أقل (مثلاً 5-10)
-    const defaultMax = isPgBouncer ? 20 : 5;
+    // دعم وضع "بدون حدود" عبر متغيرات البيئة التالية: DB_NO_LIMITS / DB_UNLIMITED / NO_DB_LIMITS
+    const noLimitsFlag = String(
+      process.env.DB_NO_LIMITS || process.env.DB_UNLIMITED || process.env.NO_DB_LIMITS || ''
+    )
+      .toLowerCase()
+      .trim();
+    const noLimits = ['1', 'true', 'yes', 'on', 'unlimited', 'nolimit', 'no-limits'].includes(
+      noLimitsFlag
+    );
+
+    // ملاحظة: القيم الكبيرة قد تستنزف اتصالات القاعدة بدون PgBouncer
+    // - مع PgBouncer (transaction pooling): يمكن رفع max كثيراً بأمان
+    // - بدون PgBouncer: نجعل max متوسطاً لتفادي استنزاف max_connections على الخادم
+    const defaultMax = noLimits ? (isPgBouncer ? 1000 : 50) : isPgBouncer ? 20 : 5;
     const poolMax = Number(process.env.DB_POOL_MAX || process.env.POOL_MAX || defaultMax);
-    const poolMin = Number(process.env.DB_POOL_MIN || 0);
-    const idleTimeout = Number(process.env.DB_IDLE_TIMEOUT || 60); // ثوانٍ
-    const maxLifetime = Number(process.env.DB_MAX_LIFETIME || 60 * 30); // ثوانٍ
+    const poolMin = noLimits ? 0 : Number(process.env.DB_POOL_MIN || 0);
+    // لمنع انقطاع الاتصال: 0 يعني تعطيل المهلة في postgres.js
+    const idleTimeout = noLimits ? 0 : Number(process.env.DB_IDLE_TIMEOUT || 60); // ثوانٍ
+    const maxLifetime = noLimits ? 0 : Number(process.env.DB_MAX_LIFETIME || 60 * 30); // ثوانٍ
     const connectTimeout = Number(process.env.DB_CONNECT_TIMEOUT || 30); // ثوانٍ
-    const retryDelayMs = Number(process.env.DB_RETRY_DELAY_MS || 1000);
-    const maxAttempts = Number(process.env.DB_MAX_ATTEMPTS || 3);
+    const retryDelayMs = Number(process.env.DB_RETRY_DELAY_MS || (noLimits ? 500 : 1000));
+    const maxAttempts = Number(process.env.DB_MAX_ATTEMPTS || (noLimits ? 10 : 3));
 
     const client = postgres(connectionString, {
       ssl: sslRequired ? 'require' : undefined,
@@ -121,7 +132,8 @@ export async function initializeDatabase(): Promise<boolean> {
       idle_timeout: idleTimeout,
       max_lifetime: maxLifetime,
       connect_timeout: connectTimeout,
-      // حدود المجمع - مرفوعة لدعم 8000 عميل عبر PgBouncer
+      // حدود المجمع
+      // في وضع noLimits نسمح بقيم كبيرة (خصوصاً مع PgBouncer)
       max: Math.max(1, poolMax),
       min: Math.max(0, Math.min(poolMin, poolMax)),
       // إعدادات إعادة المحاولة
@@ -158,8 +170,8 @@ export async function initializeDatabase(): Promise<boolean> {
 
     try {
       console.warn(
-        `🗄️ Database pool configured - max=${poolMax}, min=${poolMin}, ` +
-        `ssl=${sslRequired ? 'require' : 'disabled'}, pgbouncer=${isPgBouncer}`
+        `🗄️ Database pool configured - max=${poolMax}, min=${poolMin}, idle_timeout=${idleTimeout}, max_lifetime=${maxLifetime}, ` +
+        `ssl=${sslRequired ? 'require' : 'disabled'}, pgbouncer=${isPgBouncer}, no_limits=${noLimits}`
       );
     } catch {}
 

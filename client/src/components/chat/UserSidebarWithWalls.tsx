@@ -39,6 +39,7 @@ import {
   getFinalUsernameColor,
   getUserListItemStyles,
   getUserListItemClasses,
+  getUsernameDisplayStyle,
 } from '@/utils/themeUtils';
 import { formatTimeAgo } from '@/utils/timeUtils';
 
@@ -588,15 +589,18 @@ export default function UnifiedSidebar({
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 min-w-0 flex-1">
-                      <span
-                        className="ac-user-name transition-colors duration-300 truncate"
-                        style={{
-                          color: getFinalUsernameColor(user),
-                        }}
-                        title={user.username}
-                      >
-                        {user.username}
-                      </span>
+                      {(() => {
+                        const uds = getUsernameDisplayStyle(user);
+                        return (
+                          <span
+                            className={`ac-user-name transition-colors duration-300 truncate ${uds.className || ''}`}
+                            style={uds.style}
+                            title={user.username}
+                          >
+                            {user.username}
+                          </span>
+                        );
+                      })()}
                       {user.isMuted && <span className="text-yellow-400 text-xs flex-shrink-0">🔇</span>}
                     </div>
                     <div className="flex items-center gap-1">
