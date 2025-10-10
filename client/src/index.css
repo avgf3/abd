@@ -532,7 +532,7 @@ img, video, canvas, iframe {
 .ac-nameplate {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 2px; /* تقليل المسافة من 6px إلى 2px */
   padding: 2px 8px;
   border-radius: 9999px;
   line-height: 1;
