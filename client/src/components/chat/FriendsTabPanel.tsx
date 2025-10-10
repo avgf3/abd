@@ -22,6 +22,7 @@ import {
   getFinalUsernameColor,
   getUserListItemStyles,
   getUserListItemClasses,
+  getUsernameDisplayStyle,
 } from '@/utils/themeUtils';
 import { formatTimeAgo, getStatusColor } from '@/utils/timeUtils';
 
@@ -371,21 +372,18 @@ export default function FriendsTabPanel({
                         <div className="flex-1">
                           <div className="flex items-center justify-between gap-2">
                             <div className="flex items-center gap-2">
-                              <span
-                                className="text-base font-medium transition-all duration-300"
-                                style={{
-                                  color: getFinalUsernameColor(friend),
-                                  textShadow: getFinalUsernameColor(friend)
-                                    ? `0 0 10px ${getFinalUsernameColor(friend)}40`
-                                    : 'none',
-                                  filter: getFinalUsernameColor(friend)
-                                    ? 'drop-shadow(0 0 3px rgba(255,255,255,0.3))'
-                                    : 'none',
-                                }}
-                                title={friend.username}
-                              >
-                                {friend.username}
-                              </span>
+                              {(() => {
+                                const uds = getUsernameDisplayStyle(friend);
+                                return (
+                                  <span
+                                    className={`text-base font-medium transition-all duration-300 ${uds.className || ''}`}
+                                    style={uds.style}
+                                    title={friend.username}
+                                  >
+                                    {friend.username}
+                                  </span>
+                                );
+                              })()}
                               {/* إشارة المكتوم */}
                               {friend.isMuted && (
                                 <span className="text-yellow-400 text-xs">🔇</span>
