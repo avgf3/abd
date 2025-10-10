@@ -352,7 +352,7 @@ export default function MessagesPanel({
                   {conversations.map(({ user, lastMessage, unreadCount }) => (
                     <div key={user.id} className="relative -mx-4">
                       <div
-                        className={`flex items-center gap-3 px-4 py-0.5 rounded-none border-b border-gray-200 transition-all duration-200 cursor-pointer w-full ${getUserListItemClasses(user) || 'hover:bg-gray-50'}`}
+                        className={`flex items-center gap-2 py-1.5 px-3 rounded-none border-b border-border/20 transition-colors duration-200 cursor-pointer w-full ${getUserListItemClasses(user) || 'hover:bg-primary/10'}`}
                         style={getUserListItemStyles(user)}
                         onClick={() => {
                           try {
@@ -392,7 +392,7 @@ export default function MessagesPanel({
                             {(() => {
                               const uds = getUsernameDisplayStyle(user);
                               return (
-                                <span className={`text-base font-medium transition-all duration-300 truncate flex-shrink-0`} title={user.username}>
+                                <span className={`text-sm font-medium transition-all duration-300 truncate flex-shrink-0`} title={user.username}>
                                   <span className={`${uds.className || ''}`} style={uds.style}>
                                     {user.username}
                                   </span>

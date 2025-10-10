@@ -570,15 +570,15 @@ export default function UnifiedSidebar({
               showModerationActions={isModerator}
             >
               <div
-                className={`flex items-center gap-2 py-0.5 px-1 rounded-none border-b border-border transition-colors duration-200 cursor-pointer w-full ${getUserListItemClasses(user)} hover:bg-accent/10`}
+                className={`flex items-center gap-2 py-1.5 px-3 rounded-none border-b border-border/20 transition-colors duration-200 cursor-pointer w-full ${getUserListItemClasses(user)} hover:bg-primary/10`}
                 style={getUserListItemStyles(user)}
                 onClick={(e) => handleUserClick(e as any, user)}
               >
                 {/* حاوية الصورة - حجم ثابت مع محاذاة مركزية */}
                 <div style={{ 
                   marginLeft: 4, 
-                  width: hasFrame ? 54 : 46,  // تقليل العرض للمستخدمين بدون إطار
-                  height: hasFrame ? 54 : 46, // تقليل الارتفاع للمستخدمين بدون إطار
+                  width: hasFrame ? 54 : 46,  // الحفاظ على الأحجام الأصلية
+                  height: hasFrame ? 54 : 46, // الحفاظ على الأحجام الأصلية
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -593,7 +593,7 @@ export default function UnifiedSidebar({
                         const uds = getUsernameDisplayStyle(user);
                         return (
                           <span
-                            className={`ac-user-name transition-colors duration-300 truncate ${uds.className || ''}`}
+                            className={`ac-user-name text-sm font-medium transition-colors duration-300 truncate ${uds.className || ''}`}
                             style={uds.style}
                             title={user.username}
                           >

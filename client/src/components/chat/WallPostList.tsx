@@ -151,7 +151,7 @@ export default function WallPostList({
                       const uds = getUsernameDisplayStyle(displayUser);
                       return (
                         <div
-                          className={`font-bold text-base ${onUserClick ? 'cursor-pointer hover:underline' : ''}`}
+                          className={`font-bold text-sm ${onUserClick ? 'cursor-pointer hover:underline' : ''}`}
                           onClick={(e) => {
                             if (!onUserClick) return;
                             const targetUser = usersData[post.userId] || {
