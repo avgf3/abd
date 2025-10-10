@@ -1351,6 +1351,22 @@ span.effect-rainbow {
   color: transparent;
 }
 
+/* دعم التدرجات اللونية لأسماء المستخدمين */
+span[style*="background-clip: text"] {
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  color: transparent !important;
+  font-weight: bold;
+}
+
+/* دعم Safari للتدرجات */
+@supports (-webkit-background-clip: text) {
+  span[style*="background-clip: text"] {
+    -webkit-background-clip: text;
+    color: transparent;
+  }
+}
+
 @keyframes usernameRainbow {
   0% {
     background-position: 0% 50%;
