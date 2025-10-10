@@ -3000,7 +3000,7 @@ export default function ProfileModal({
                   🖼️ تغيير الغلاف
                 </button>
                 
-                {/* التصميم: وصف الشعار في الأعلى + التاج والأيقونة بجانب الاسم أسفله */}
+                {/* التصميم: وضع التاج والأيقونة بجانب الوصف أعلى الاسم */}
                 <div style={{
                   position: 'absolute',
                   bottom: '70px',
@@ -3008,7 +3008,7 @@ export default function ProfileModal({
                   display: 'grid',
                   gridTemplateColumns: 'auto 20px 20px',
                   gridTemplateRows: 'auto auto',
-                  gridTemplateAreas: '"role role role" "name badge icon"',
+                  gridTemplateAreas: '"role badge icon" "name name name"',
                   columnGap: '6px',
                   rowGap: '4px',
                   alignItems: 'center',
@@ -3040,14 +3040,14 @@ export default function ProfileModal({
                   >
                     <bdi>{localUser?.username || 'اسم المستخدم'}</bdi>
                   </h3>
-                  {/* شارة الدور (التاج) */}
+                  {/* شارة الدور (التاج/المستوى) بجانب الوصف */}
                   <span style={{ gridArea: 'badge', lineHeight: 0, display: 'flex', alignItems: 'center' }}>
                     {getUserLevelIcon(localUser, 18)}
                   </span>
                   {/* الأيقونة */}
                   <img src="/icons/lead-icon.png" alt="icon"
                        style={{ width: 18, height: 18, gridArea: 'icon' }} />
-                  {/* وصف الشعار تحت الاسم */}
+                  {/* وصف الشعار أعلى الاسم */}
                   {(localUser?.userType === 'owner' || localUser?.userType === 'admin' || localUser?.userType === 'moderator') && (
                     <span style={{ 
                       gridArea: 'role', 
@@ -3084,7 +3084,7 @@ export default function ProfileModal({
                   display: 'grid',
                   gridTemplateColumns: 'auto 20px 20px',
                   gridTemplateRows: 'auto auto',
-                  gridTemplateAreas: '"role role role" "name badge icon"',
+                  gridTemplateAreas: '"role badge icon" "name name name"',
                   columnGap: '6px',
                   rowGap: '4px',
                   alignItems: 'center',
@@ -3115,6 +3115,7 @@ export default function ProfileModal({
                   >
                     <bdi>{localUser?.username || 'اسم المستخدم'}</bdi>
                   </h3>
+                  {/* شارة الدور (التاج/المستوى) بجانب الوصف */}
                   <span style={{ gridArea: 'badge', lineHeight: 0, display: 'flex', alignItems: 'center' }}>
                     {getUserLevelIcon(localUser, 18)}
                   </span>
@@ -3152,7 +3153,7 @@ export default function ProfileModal({
                   display: 'grid',
                   gridTemplateColumns: 'auto 20px 20px',
                   gridTemplateRows: 'auto auto',
-                  gridTemplateAreas: '"role role role" "name badge icon"',
+                  gridTemplateAreas: '"role badge icon" "name name name"',
                   columnGap: '6px',
                   rowGap: '4px',
                   alignItems: 'center',
@@ -3182,6 +3183,7 @@ export default function ProfileModal({
                   >
                     <bdi>{localUser?.username || 'اسم المستخدم'}</bdi>
                   </h3>
+                  {/* شارة الدور (التاج/المستوى) بجانب الوصف */}
                   <span style={{ gridArea: 'badge', lineHeight: 0, display: 'flex', alignItems: 'center' }}>
                     {getUserLevelIcon(localUser, 18)}
                   </span>
