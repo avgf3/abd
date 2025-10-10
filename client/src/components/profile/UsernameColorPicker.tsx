@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser } from '@/types/chat';
+import { getUsernameDisplayStyle } from '@/utils/themeUtils';
 
 interface UsernameColorPickerProps {
   currentUser: ChatUser;
@@ -57,7 +58,7 @@ const USERNAME_COLORS = [
   { name: 'ماجنتا متوهج', value: '#FF00FF', bg: 'bg-fuchsia-500' }, // Glowing Magenta
 ];
 
-// ألوان تدرجية خاصة بالمشرفين - من ملف ProfileModal
+// ألوان تدرجية خاصة بالمشرفين - نفس الألوان من ProfileModal
 const MODERATOR_GRADIENT_COLORS = [
   {
     name: 'البرتقالي البني',
@@ -98,6 +99,67 @@ const MODERATOR_GRADIENT_COLORS = [
     name: 'أعماق المحيط',
     value: 'linear-gradient(135deg, #667eea, #764ba2, #f093fb, #667eea)',
     emoji: '🌊',
+  },
+  // ألوان متدرجة إضافية جديدة
+  {
+    name: 'الذهبي الملكي',
+    value: 'linear-gradient(135deg, #FFD700 0%, #FFC125 25%, #FFB90F 50%, #CDAD00 75%, #B8860B 100%)',
+    emoji: '👑',
+  },
+  {
+    name: 'الفضي اللامع',
+    value: 'linear-gradient(135deg, #C0C0C0 0%, #D3D3D3 25%, #E5E5E5 50%, #F5F5F5 75%, #FFFFFF 100%)',
+    emoji: '💎',
+  },
+  {
+    name: 'النحاسي البرونزي',
+    value: 'linear-gradient(135deg, #B87333 0%, #CD7F32 25%, #D2691E 50%, #DAA520 75%, #F4A460 100%)',
+    emoji: '🥉',
+  },
+  {
+    name: 'الأخضر الزمردي',
+    value: 'linear-gradient(135deg, #006400 0%, #228B22 25%, #32CD32 50%, #00FF00 75%, #7FFF00 100%)',
+    emoji: '💚',
+  },
+  {
+    name: 'الأزرق السماوي',
+    value: 'linear-gradient(135deg, #000080 0%, #0000CD 25%, #4169E1 50%, #1E90FF 75%, #87CEEB 100%)',
+    emoji: '💙',
+  },
+  {
+    name: 'القرمزي العنابي',
+    value: 'linear-gradient(135deg, #8B0000 0%, #DC143C 25%, #FF0000 50%, #FF6347 75%, #FFA07A 100%)',
+    emoji: '🍷',
+  },
+  {
+    name: 'النيون الكهربائي',
+    value: 'linear-gradient(135deg, #FF1493 0%, #FF00FF 20%, #00FFFF 40%, #00FF00 60%, #FFFF00 80%, #FF4500 100%)',
+    emoji: '⚡',
+  },
+  {
+    name: 'الباستيل الناعم',
+    value: 'linear-gradient(135deg, #FFB6C1 0%, #FFC0CB 20%, #FFE4E1 40%, #E6E6FA 60%, #D8BFD8 80%, #DDA0DD 100%)',
+    emoji: '🌸',
+  },
+  {
+    name: 'الكوني المجري',
+    value: 'linear-gradient(135deg, #000033 0%, #000066 20%, #330066 40%, #660099 60%, #9933CC 80%, #CC66FF 100%)',
+    emoji: '🌌',
+  },
+  {
+    name: 'اللهب الأزرق',
+    value: 'linear-gradient(135deg, #00008B 0%, #0000FF 25%, #1E90FF 50%, #00BFFF 75%, #87CEFA 100%)',
+    emoji: '💧',
+  },
+  {
+    name: 'الجليد المتجمد',
+    value: 'linear-gradient(135deg, #F0F8FF 0%, #E0FFFF 25%, #B0E0E6 50%, #87CEEB 75%, #4682B4 100%)',
+    emoji: '❄️',
+  },
+  {
+    name: 'الصحراء الذهبية',
+    value: 'linear-gradient(135deg, #8B4513 0%, #A0522D 25%, #D2691E 50%, #DEB887 75%, #F5DEB3 100%)',
+    emoji: '🏜️',
   },
 ];
 
@@ -202,8 +264,16 @@ export default function UsernameColorPicker({
     setSelectedColor(color);
     setSelectedGradient(''); // إزالة التدرج عند اختيار لون عادي
     setSelectedEffect('none'); // إزالة التأثير عند اختيار لون عادي
+    
     // تحديث محلي فوري
-    try { onUserFieldsUpdate?.({ usernameColor: color, usernameGradient: null, usernameEffect: null }); } catch {}
+    try { 
+      onUserFieldsUpdate?.({ 
+        usernameColor: color, 
+        usernameGradient: null, 
+        usernameEffect: null 
+      }); 
+    } catch {}
+    
     setIsLoading(true);
 
     try {
@@ -217,7 +287,9 @@ export default function UsernameColorPicker({
       });
 
       const updated = (result as any)?.user ?? result;
-      onColorUpdate((updated as any)?.usernameColor || color);
+      
+      // تحديث اللون بشكل صحيح
+      onColorUpdate(color);
 
       toast({
         title: 'تم بنجاح',
@@ -225,6 +297,8 @@ export default function UsernameColorPicker({
         variant: 'default',
       });
     } catch (error: any) {
+      // إرجاع اللون السابق في حالة الخطأ
+      setSelectedColor(currentUser.usernameColor || '#4A90E2');
       toast({
         title: 'خطأ',
         description: error.message || 'فشل في تحديث لون الاسم',
@@ -325,24 +399,14 @@ export default function UsernameColorPicker({
     // محاكاة بيانات المستخدم للمعاينة
     const previewUser = {
       ...currentUser,
-      usernameColor: selectedColor,
-      usernameGradient: selectedGradient,
-      usernameEffect: selectedEffect,
+      usernameColor: selectedColor || currentUser.usernameColor,
+      usernameGradient: selectedGradient || currentUser.usernameGradient,
+      usernameEffect: selectedEffect !== 'none' ? selectedEffect : currentUser.usernameEffect,
     };
     
-    if (selectedGradient) {
-      return {
-        background: selectedGradient,
-        backgroundClip: 'text',
-        WebkitBackgroundClip: 'text',
-        color: 'transparent',
-        fontWeight: 'bold',
-      };
-    }
-    return {
-      color: selectedColor,
-      fontWeight: 'bold',
-    };
+    // استخدام نفس الدالة المستخدمة في العرض الفعلي
+    const { style } = getUsernameDisplayStyle(previewUser);
+    return style;
   };
 
   return (
@@ -355,7 +419,16 @@ export default function UsernameColorPicker({
           معاينة:{' '}
           <span 
             style={getPreviewStyle()}
-            className={selectedEffect !== 'none' ? selectedEffect : ''}
+            className={(() => {
+              const previewUser = {
+                ...currentUser,
+                usernameColor: selectedColor || currentUser.usernameColor,
+                usernameGradient: selectedGradient || currentUser.usernameGradient,
+                usernameEffect: selectedEffect !== 'none' ? selectedEffect : currentUser.usernameEffect,
+              };
+              const { className } = getUsernameDisplayStyle(previewUser);
+              return className;
+            })()}
           >
             {currentUser.username}
           </span>

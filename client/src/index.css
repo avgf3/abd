@@ -1356,7 +1356,9 @@ span[style*="background-clip: text"] {
   -webkit-background-clip: text !important;
   background-clip: text !important;
   color: transparent !important;
-  font-weight: bold;
+  font-weight: 800 !important; /* زيادة الوزن لوضوح أكبر */
+  text-shadow: none !important; /* إزالة الظلال للتدرجات */
+  -webkit-text-stroke: 0.5px rgba(0, 0, 0, 0.1); /* إضافة حدود خفيفة للوضوح */
 }
 
 /* دعم Safari للتدرجات */
@@ -1365,6 +1367,14 @@ span[style*="background-clip: text"] {
     -webkit-background-clip: text;
     color: transparent;
   }
+}
+
+/* تحسين وضوح الأسماء العادية */
+.ac-user-name {
+  font-weight: 800 !important; /* زيادة الوزن */
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 @keyframes usernameRainbow {
@@ -1407,6 +1417,53 @@ span.effect-snow {
   50% {
     text-shadow: 0 0 15px rgba(135, 206, 235, 1), 0 0 25px rgba(255, 255, 255, 0.6);
     filter: brightness(1.2);
+  }
+}
+
+/* تأثير المغناطيس للأسماء */
+span.effect-magnetic {
+  animation: usernameMagnetic 3s ease-in-out infinite;
+}
+
+@keyframes usernameMagnetic {
+  0%, 100% {
+    transform: translateY(0) rotateZ(0deg);
+  }
+  25% {
+    transform: translateY(-2px) rotateZ(-1deg);
+  }
+  75% {
+    transform: translateY(2px) rotateZ(1deg);
+  }
+}
+
+/* تأثير الكهرباء للأسماء */
+span.effect-electric {
+  animation: usernameElectric 2s ease-in-out infinite;
+  text-shadow: 0 0 5px #00D4FF, 0 0 10px #00D4FF;
+}
+
+@keyframes usernameElectric {
+  0%, 100% {
+    text-shadow: 0 0 5px #00D4FF, 0 0 10px #00D4FF;
+  }
+  50% {
+    text-shadow: 0 0 10px #00D4FF, 0 0 20px #00D4FF, 0 0 30px #00D4FF;
+  }
+}
+
+/* تأثير الظل للأسماء */
+span.effect-shadow {
+  animation: usernameShadow 3s ease-in-out infinite;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+@keyframes usernameShadow {
+  0%, 100% {
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+  }
+  50% {
+    text-shadow: 4px 4px 8px rgba(0, 0, 0, 0.7);
   }
 }
 
