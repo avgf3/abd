@@ -160,8 +160,8 @@ export const getFinalUsernameColor = (user: any): string => {
     }
   }
   
-  // إذا لم يكن له لون مخصص صالح، استخدم اللون الافتراضي الأزرق
-  return '#4A90E2';
+  // إذا لم يكن له لون مخصص صالح، استخدم لون الثيم الافتراضي
+  return 'var(--primary-solid)';
 };
 
 // دالة جديدة لدعم التدرجات والتأثيرات للمشرفين
@@ -176,7 +176,8 @@ export const getUsernameDisplayStyle = (user: any): { style: React.CSSProperties
         backgroundClip: 'text',
         WebkitBackgroundClip: 'text',
         color: 'transparent',
-        fontWeight: 800, // زيادة الوزن للوضوح
+        fontFamily: "'Cairo', Arial, sans-serif",
+        fontWeight: 700,
         display: 'inline-block', // مطلوب للتدرجات
         lineHeight: 1.2,
       },
@@ -189,7 +190,8 @@ export const getUsernameDisplayStyle = (user: any): { style: React.CSSProperties
     return {
       style: {
         color: getFinalUsernameColor(user),
-        fontWeight: 800, // زيادة الوزن للوضوح
+        fontFamily: "'Cairo', Arial, sans-serif",
+        fontWeight: 700,
         display: 'inline-block',
         lineHeight: 1.2,
       },
@@ -202,7 +204,8 @@ export const getUsernameDisplayStyle = (user: any): { style: React.CSSProperties
   return {
     style: {
       color: finalColor,
-      fontWeight: 700, // وزن عادي للأعضاء
+      fontFamily: "'Cairo', Arial, sans-serif",
+      fontWeight: 700,
       display: 'inline-block',
       lineHeight: 1.2,
     },

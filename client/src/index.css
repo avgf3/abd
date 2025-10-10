@@ -1371,7 +1371,9 @@ span[style*="background-clip: text"] {
 
 /* تحسين وضوح الأسماء العادية */
 .ac-user-name {
-  font-weight: 800 !important; /* زيادة الوزن */
+  font-family: 'Cairo', Arial, sans-serif;
+  font-weight: 700;
+  color: var(--primary-solid);
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
