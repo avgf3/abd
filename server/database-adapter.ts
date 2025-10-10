@@ -45,7 +45,7 @@ export function getDatabaseStatus(): DatabaseStatus {
 export async function checkDatabaseHealth(): Promise<boolean> {
   try {
     if (!dbAdapter.client) return false;
-    const timeoutMs = Number(process.env.DB_HEALTH_TIMEOUT_MS || 2000);
+    const timeoutMs = Number(process.env.DB_HEALTH_TIMEOUT_MS || 5000);
     return await new Promise<boolean>((resolve) => {
       const timer = setTimeout(() => resolve(false), timeoutMs);
       (async () => {
@@ -53,13 +53,88 @@ export async function checkDatabaseHealth(): Promise<boolean> {
           await dbAdapter.client`select 1 as ok`;
           clearTimeout(timer);
           resolve(true);
-        } catch {
+        } catch (error: any) {
           clearTimeout(timer);
+          console.warn('📊 Database health check failed:', {
+            message: error?.message || 'Unknown error',
+            code: error?.code || 'UNKNOWN'
+          });
           resolve(false);
         }
       })();
     });
   } catch {
+    return false;
+  }
+}
+
+/**
+ * Get detailed connection pool status
+ */
+export function getConnectionPoolStatus() {
+  try {
+    if (!dbAdapter.client) {
+      return {
+        status: 'disconnected',
+        total: 0,
+        idle: 0,
+        active: 0
+      };
+    }
+
+    // Note: postgres.js doesn't expose pool stats directly
+    // This is a placeholder for monitoring
+    return {
+      status: 'connected',
+      client: !!dbAdapter.client,
+      db: !!dbAdapter.db
+    };
+  } catch (error) {
+    console.error('Error getting pool status:', error);
+    return {
+      status: 'error',
+      error: (error as any)?.message || 'Unknown error'
+    };
+  }
+}
+
+/**
+ * Attempt to recover database connection
+ */
+export async function recoverDatabaseConnection(): Promise<boolean> {
+  console.log('🔄 Attempting database connection recovery...');
+  
+  try {
+    // Close existing connection if any
+    if (dbAdapter.client) {
+      try {
+        await dbAdapter.client.end();
+      } catch (e) {
+        console.warn('Warning during connection cleanup:', (e as any)?.message);
+      }
+    }
+    
+    // Reset adapter state
+    dbAdapter.client = null;
+    dbAdapter.db = null;
+    db = null;
+    dbType = 'disabled';
+    
+    // Wait a moment before reconnecting
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    // Attempt to reinitialize
+    const recovered = await initializeDatabase();
+    
+    if (recovered) {
+      console.log('✅ Database connection recovered successfully');
+    } else {
+      console.error('❌ Database connection recovery failed');
+    }
+    
+    return recovered;
+  } catch (error) {
+    console.error('❌ Database recovery error:', (error as any)?.message || error);
     return false;
   }
 }
@@ -109,15 +184,16 @@ export async function initializeDatabase(): Promise<boolean> {
     // ملاحظة: القيم الكبيرة قد تستنزف اتصالات القاعدة بدون PgBouncer
     // - مع PgBouncer (transaction pooling): يمكن رفع max كثيراً بأمان
     // - بدون PgBouncer: نجعل max متوسطاً لتفادي استنزاف max_connections على الخادم
-    const defaultMax = noLimits ? (isPgBouncer ? 1000 : 50) : isPgBouncer ? 20 : 5;
+    // Enhanced defaults to handle connection pool exhaustion better
+    const defaultMax = noLimits ? (isPgBouncer ? 1000 : 100) : isPgBouncer ? 50 : 15;
     const poolMax = Number(process.env.DB_POOL_MAX || process.env.POOL_MAX || defaultMax);
-    const poolMin = noLimits ? 0 : Number(process.env.DB_POOL_MIN || 0);
+    const poolMin = noLimits ? 0 : Number(process.env.DB_POOL_MIN || 2);
     // لمنع انقطاع الاتصال: 0 يعني تعطيل المهلة في postgres.js
-    const idleTimeout = noLimits ? 0 : Number(process.env.DB_IDLE_TIMEOUT || 60); // ثوانٍ
-    const maxLifetime = noLimits ? 0 : Number(process.env.DB_MAX_LIFETIME || 60 * 30); // ثوانٍ
-    const connectTimeout = Number(process.env.DB_CONNECT_TIMEOUT || 30); // ثوانٍ
-    const retryDelayMs = Number(process.env.DB_RETRY_DELAY_MS || (noLimits ? 500 : 1000));
-    const maxAttempts = Number(process.env.DB_MAX_ATTEMPTS || (noLimits ? 10 : 5));
+    const idleTimeout = noLimits ? 0 : Number(process.env.DB_IDLE_TIMEOUT || 300); // ثوانٍ - increased from 60
+    const maxLifetime = noLimits ? 0 : Number(process.env.DB_MAX_LIFETIME || 60 * 60); // ثوانٍ - increased from 30 min to 1 hour
+    const connectTimeout = Number(process.env.DB_CONNECT_TIMEOUT || 60); // ثوانٍ - increased from 30
+    const retryDelayMs = Number(process.env.DB_RETRY_DELAY_MS || (noLimits ? 500 : 2000));
+    const maxAttempts = Number(process.env.DB_MAX_ATTEMPTS || (noLimits ? 10 : 8));
 
     const client = postgres(connectionString, {
       ssl: sslRequired ? 'require' : undefined,
@@ -139,6 +215,22 @@ export async function initializeDatabase(): Promise<boolean> {
       // إعدادات إعادة المحاولة
       retry_delay: retryDelayMs,
       max_attempts: maxAttempts,
+      // Enhanced connection management
+      transform: {
+        undefined: null, // Handle undefined values properly
+      },
+      // Connection error handling
+      onclose: (connection_id: number) => {
+        console.warn(`🔌 Database connection ${connection_id} closed`);
+      },
+      // Handle connection errors gracefully
+      onerror: (error: Error) => {
+        console.error('🚨 Database connection error:', {
+          message: error.message,
+          code: (error as any).code,
+          severity: (error as any).severity
+        });
+      },
     });
 
     const drizzleDb = drizzle(client, { schema, logger: false });
@@ -167,6 +259,9 @@ export async function initializeDatabase(): Promise<boolean> {
     dbAdapter.client = client as any;
     dbAdapter.db = drizzleDb as any;
     db = drizzleDb as any;
+
+    // Start connection monitoring
+    startConnectionMonitoring();
 
     try {
       console.warn(
@@ -601,6 +696,52 @@ export async function ensureMessageTextStylingColumns(): Promise<void> {
   } catch (e) {
     console.error('❌ خطأ في ضمان أعمدة text styling للرسائل:', (e as any)?.message || e);
   }
+}
+
+/**
+ * Start monitoring database connections and attempt recovery if needed
+ */
+let connectionMonitorInterval: NodeJS.Timeout | null = null;
+
+function startConnectionMonitoring(): void {
+  // Don't start multiple monitors
+  if (connectionMonitorInterval) {
+    clearInterval(connectionMonitorInterval);
+  }
+
+  const monitorIntervalMs = Number(process.env.DB_MONITOR_INTERVAL_MS || 30000); // 30 seconds
+  
+  connectionMonitorInterval = setInterval(async () => {
+    try {
+      const isHealthy = await checkDatabaseHealth();
+      
+      if (!isHealthy && dbType !== 'disabled') {
+        console.warn('🚨 Database health check failed, attempting recovery...');
+        
+        // Attempt recovery
+        const recovered = await recoverDatabaseConnection();
+        
+        if (!recovered) {
+          console.error('❌ Database recovery failed. Application may experience issues.');
+        }
+      }
+    } catch (error) {
+      console.error('Error in connection monitoring:', (error as any)?.message);
+    }
+  }, monitorIntervalMs);
+
+  // Clean up on process exit
+  process.on('SIGTERM', () => {
+    if (connectionMonitorInterval) {
+      clearInterval(connectionMonitorInterval);
+    }
+  });
+
+  process.on('SIGINT', () => {
+    if (connectionMonitorInterval) {
+      clearInterval(connectionMonitorInterval);
+    }
+  });
 }
 
 // دالة لضمان وجود جدول البوتات

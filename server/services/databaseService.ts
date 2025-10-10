@@ -3,6 +3,7 @@ import { sql, eq, desc, asc, and, or, like, count, isNull, gte, lt, inArray, gt 
 import * as schema from '../../shared/schema';
 import { dbAdapter, dbType } from '../database-adapter';
 import { withTimeout, safeDbOperation } from '../utils/database-timeout';
+import { withDatabaseErrorHandling, handleDatabaseError } from '../utils/database-error-handler';
 
 // Type definitions for database operations
 export interface User {
@@ -171,7 +172,7 @@ export class DatabaseService {
   async getUserById(id: number): Promise<User | null> {
     if (!this.isConnected()) return null;
 
-    return safeDbOperation(
+    return withDatabaseErrorHandling(
       async () => {
         if (this.type === 'postgresql') {
           const result = await withTimeout(
@@ -180,7 +181,7 @@ export class DatabaseService {
               .from(schema.users)
               .where(eq(schema.users.id, id))
               .limit(1),
-            { timeout: 8000, retries: 1 }
+            { timeout: 8000, retries: 3, exponentialBackoff: true }
           );
           return result?.[0] || null;
         } else {
@@ -188,8 +189,8 @@ export class DatabaseService {
           return null;
         }
       },
-      null,
-      { timeout: 8000 }
+      `getUserById(${id})`,
+      3
     );
   }
 
@@ -325,7 +326,7 @@ export class DatabaseService {
       return await this.getUserById(id);
     }
 
-    return safeDbOperation(
+    return withDatabaseErrorHandling(
       async () => {
         if (this.type === 'postgresql') {
           const result = await withTimeout(
@@ -334,7 +335,7 @@ export class DatabaseService {
               .set(validUpdates)
               .where(eq(schema.users.id, id))
               .returning(),
-            { timeout: 8000, retries: 1 }
+            { timeout: 8000, retries: 3, exponentialBackoff: true }
           );
           return result?.[0] || null;
         } else {
@@ -342,8 +343,8 @@ export class DatabaseService {
           return null;
         }
       },
-      null,
-      { timeout: 8000 }
+      `updateUser(${id})`,
+      3
     );
   }
 

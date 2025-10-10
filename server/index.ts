@@ -5,6 +5,7 @@ import express, { type Request, Response, NextFunction } from 'express';
 import compression from 'compression';
 
 import { initializeSystem } from './database-setup';
+import { startupDatabase, validateDatabaseConfig, logDatabaseConfig } from './utils/database-startup';
 import { registerRoutes } from './routes';
 import { setupSecurity } from './security';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
@@ -319,12 +320,29 @@ app.get('/api/health', async (req, res) => {
 // Initialize database and start server
 async function startServer() {
   try {
-    // تهيئة النظام (قاعدة البيانات + البيانات الافتراضية)
-    const systemInitialized = await initializeSystem();
-
-    if (systemInitialized) {
-      } else {
-      console.warn('⚠️ تم بدء الخادم مع تحذيرات في تهيئة النظام');
+    // Log database configuration for debugging
+    logDatabaseConfig();
+    
+    // Validate database configuration
+    const configValidation = validateDatabaseConfig();
+    if (!configValidation.valid) {
+      console.error('❌ Database configuration issues:', configValidation.issues);
+      // Continue anyway, but log issues
+    }
+    
+    // Enhanced database startup with retry logic
+    console.log('🚀 Starting enhanced database initialization...');
+    const startupResult = await startupDatabase(5);
+    
+    if (startupResult.success) {
+      console.log('✅ Database startup successful:', startupResult.message);
+    } else {
+      console.error('❌ Database startup failed:', startupResult.message);
+      if (startupResult.retryAfter) {
+        console.log(`💡 Suggested retry after: ${startupResult.retryAfter}ms`);
+      }
+      // Continue server startup even if database fails (graceful degradation)
+      console.warn('⚠️ Starting server without database connection');
     }
 
     // Register routes and get the server
