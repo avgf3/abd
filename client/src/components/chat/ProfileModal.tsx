@@ -2948,14 +2948,15 @@ export default function ProfileModal({
             style={{
               backgroundImage: (() => {
                 const bannerSrc = getProfileBannerSrcLocal();
-                if (bannerSrc) return `url(${bannerSrc})`;
-                const avatarSrc = getProfileImageSrcLocal();
-                return avatarSrc ? `url(${avatarSrc})` : 'none';
+                return bannerSrc ? `url(${bannerSrc})` : 'none';
               })(),
               backgroundSize: 'cover',
               backgroundPosition: (() => {
-                const hasBanner = !!getProfileBannerSrcLocal();
-                return hasBanner ? 'center center' : 'top center';
+                const type = (localUser as any)?.userType;
+                const isModerator = type === 'owner' || type === 'admin' || type === 'moderator';
+                const lvl = Number((localUser as any)?.level || 1);
+                const canUploadBanner = isModerator || lvl >= 20;
+                return canUploadBanner ? 'center center' : 'top center';
               })(),
               backgroundRepeat: 'no-repeat',
             }}
