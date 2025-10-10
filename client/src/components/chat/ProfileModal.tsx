@@ -3021,8 +3021,8 @@ export default function ProfileModal({
                   {/* وصف الشعار في الأعلى */}
                   {(localUser?.userType === 'owner' || localUser?.userType === 'admin' || localUser?.userType === 'moderator') && (
                     <span style={{ 
-                      gridArea: 'name', 
-                      fontSize: '20px', 
+                      gridArea: 'role', 
+                      fontSize: '14px', 
                       fontWeight: 700, 
                       whiteSpace: 'nowrap', 
                       textAlign: 'start',
@@ -3044,12 +3044,12 @@ export default function ProfileModal({
                   {/* الأيقونة */}
                   <img src="/icons/lead-icon.png" alt="icon"
                        style={{ width: 18, height: 18, gridArea: 'icon' }} />
-                  {/* الاسم تحت وصف الشعار */}
+                  {/* الاسم في الأعلى */}
                   <h3
                     style={{
-                      gridArea: 'role',
+                      gridArea: 'name',
                       margin: 0,
-                      fontSize: '14px',
+                      fontSize: '20px',
                       fontWeight: 'bold',
                       color: getFinalUsernameColor(localUser || {}),
                       textShadow: '0 2px 4px rgba(0,0,0,0.5)',
@@ -3096,8 +3096,8 @@ export default function ProfileModal({
                 }}>
                   {(localUser?.userType === 'owner' || localUser?.userType === 'admin' || localUser?.userType === 'moderator') && (
                     <span style={{ 
-                      gridArea: 'name', 
-                      fontSize: '20px', 
+                      gridArea: 'role', 
+                      fontSize: '14px', 
                       fontWeight: 700, 
                       whiteSpace: 'nowrap', 
                       textAlign: 'start',
@@ -3119,9 +3119,9 @@ export default function ProfileModal({
                        style={{ width: 18, height: 18, gridArea: 'icon' }} />
                   <h3
                     style={{
-                      gridArea: 'role',
+                      gridArea: 'name',
                       margin: 0,
-                      fontSize: '14px',
+                      fontSize: '20px',
                       fontWeight: 'bold',
                       color: getFinalUsernameColor(localUser || {}),
                       textShadow: '0 2px 4px rgba(0,0,0,0.5)',
