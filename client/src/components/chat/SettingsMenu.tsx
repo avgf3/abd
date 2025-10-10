@@ -67,7 +67,7 @@ export default function SettingsMenu({
                 if (hasNp || hasEffect) {
                   return (
                     <span className={`ac-nameplate ${effectClasses}`} style={np}>
-                      <span className="ac-name">{currentUser.username}</span>
+                      <span className="ac-name" style={{ color: getFinalUsernameColor(currentUser) }}>{currentUser.username}</span>
                       <span className="ac-mark">〰</span>
                     </span>
                   );

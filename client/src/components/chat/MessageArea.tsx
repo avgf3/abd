@@ -769,7 +769,9 @@ export default function MessageArea({
                                       title={message.sender?.username}
                                     >
                                       <span className="ac-nameplate" style={np}>
-                                        <span className="ac-name">{message.sender?.username || '...'}</span>
+                                        <span className="ac-name" style={{ color: getFinalUsernameColor(message.sender) }}>
+                                          {message.sender?.username || '...'}
+                                        </span>
                                         <span className="ac-mark">〰</span>
                                       </span>
                                     </button>
@@ -905,7 +907,9 @@ export default function MessageArea({
                                       title={message.sender?.username}
                                     >
                                       <span className="ac-nameplate" style={np}>
-                                        <span className="ac-name">{message.sender?.username || '...'}</span>
+                                        <span className="ac-name" style={{ color: getFinalUsernameColor(message.sender) }}>
+                                          {message.sender?.username || '...'}
+                                        </span>
                                         <span className="ac-mark">〰</span>
                                       </span>
                                     </button>
