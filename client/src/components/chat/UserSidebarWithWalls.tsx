@@ -575,12 +575,16 @@ export default function UnifiedSidebar({
                 onClick={(e) => handleUserClick(e as any, user)}
               >
                 {/* حاوية الصورة - حجم ثابت مع محاذاة مركزية */}
-                <div className="w-8 h-8 rounded-lg overflow-hidden flex-shrink-0 bg-muted" style={{ 
+                <div style={{ 
+                  marginLeft: 4, 
+                  width: hasFrame ? 54 : 46,  // الحفاظ على الأحجام الأصلية
+                  height: hasFrame ? 54 : 46, // الحفاظ على الأحجام الأصلية
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center'
+                  justifyContent: 'center',
+                  flexShrink: 0
                 }}>
-                  <ProfileImage user={user} size="small" pixelSize={32} className="" hideRoleBadgeOverlay={true} />
+                  <ProfileImage user={user} size="small" pixelSize={36} className="" hideRoleBadgeOverlay={true} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2">
