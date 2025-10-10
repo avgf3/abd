@@ -117,11 +117,11 @@ export async function initializeDatabase(): Promise<boolean> {
     const maxLifetime = noLimits ? 0 : Number(process.env.DB_MAX_LIFETIME || 60 * 30); // ثوانٍ
     const connectTimeout = Number(process.env.DB_CONNECT_TIMEOUT || 30); // ثوانٍ
     const retryDelayMs = Number(process.env.DB_RETRY_DELAY_MS || (noLimits ? 500 : 1000));
-    const maxAttempts = Number(process.env.DB_MAX_ATTEMPTS || (noLimits ? 10 : 3));
+    const maxAttempts = Number(process.env.DB_MAX_ATTEMPTS || (noLimits ? 10 : 5));
 
     const client = postgres(connectionString, {
       ssl: sslRequired ? 'require' : undefined,
-      prepare: true,
+      prepare: isPgBouncer ? false : true,
       onnotice: () => {},
       fetch_types: false,
       types: false,

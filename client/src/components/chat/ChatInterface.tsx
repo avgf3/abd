@@ -1092,18 +1092,18 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
         {activeView !== 'hidden' && (
           <div
             className={`${
-              isMobile 
+              isMobile && typeof window !== 'undefined' && window.innerWidth <= 768
                 ? 'fixed top-0 left-0 right-0 bottom-0 z-40 bg-background/95 backdrop-blur-md' 
                 : activeView === 'walls' ? 'w-full sm:w-96' : activeView === 'friends' ? 'w-full sm:w-80' : 'w-full sm:w-64'
             } max-w-full sm:shrink-0 transition-all duration-300 min-h-0 flex flex-col`}
             style={{ 
-              maxHeight: isMobile ? '100dvh' : 'calc(100dvh - var(--app-header-height) - var(--app-footer-height))',
-              paddingTop: isMobile ? 'var(--app-header-height)' : '0',
-              paddingBottom: isMobile ? 'var(--app-footer-height)' : '0'
+              maxHeight: (isMobile && typeof window !== 'undefined' && window.innerWidth <= 768) ? '100dvh' : 'calc(100dvh - var(--app-header-height) - var(--app-footer-height))',
+              paddingTop: (isMobile && typeof window !== 'undefined' && window.innerWidth <= 768) ? 'var(--app-header-height)' : '0',
+              paddingBottom: (isMobile && typeof window !== 'undefined' && window.innerWidth <= 768) ? 'var(--app-footer-height)' : '0'
             }}
           >
             {/* زر إغلاق للجوال */}
-            {isMobile && (
+            {isMobile && typeof window !== 'undefined' && window.innerWidth <= 768 && (
               <div className="flex justify-between items-center p-4 border-b border-border">
                 <h2 className="text-lg font-semibold">
                   {activeView === 'walls' && 'الحائط'}
