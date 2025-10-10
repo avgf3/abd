@@ -546,6 +546,151 @@ export async function ensureWallPostsUserProfileFrameColumn(): Promise<void> {
   }
 }
 
+// Ensure username styling columns (gradient/effect) exist on users and wall_posts,
+// and backfill sensible defaults to avoid UI inconsistencies if migrations didn't run
+export async function ensureUsernameStylingColumns(): Promise<void> {
+  try {
+    if (!dbAdapter.client) return;
+
+    // Add columns on users
+    await dbAdapter.client.unsafe(`
+      ALTER TABLE IF EXISTS users
+        ADD COLUMN IF NOT EXISTS username_gradient TEXT;
+    `);
+    await dbAdapter.client.unsafe(`
+      ALTER TABLE IF EXISTS users
+        ADD COLUMN IF NOT EXISTS username_effect TEXT;
+    `);
+
+    // Add columns on wall_posts
+    await dbAdapter.client.unsafe(`
+      ALTER TABLE IF EXISTS wall_posts
+        ADD COLUMN IF NOT EXISTS username_gradient TEXT;
+    `);
+    await dbAdapter.client.unsafe(`
+      ALTER TABLE IF EXISTS wall_posts
+        ADD COLUMN IF NOT EXISTS username_effect TEXT;
+    `);
+
+    // Ensure username_color default and clean invalid values on wall_posts
+    await dbAdapter.client.unsafe(`
+      ALTER TABLE IF EXISTS wall_posts
+        ALTER COLUMN username_color SET DEFAULT '#4A90E2';
+    `);
+    await dbAdapter.client.unsafe(`
+      UPDATE wall_posts
+      SET username_color = '#4A90E2'
+      WHERE username_color IS NULL
+         OR username_color = ''
+         OR username_color = 'null'
+         OR username_color = 'undefined'
+         OR LOWER(username_color) IN ('#ffffff', '#fff', 'white');
+    `);
+
+    // Copy staff gradients/effects from users into existing posts when missing
+    await dbAdapter.client.unsafe(`
+      UPDATE wall_posts AS wp
+      SET username_gradient = u.username_gradient,
+          username_effect = u.username_effect
+      FROM users AS u
+      WHERE wp.user_id = u.id
+        AND u.user_type IN ('admin','owner','moderator')
+        AND (wp.username_gradient IS NULL OR wp.username_gradient = '')
+        AND u.username_gradient IS NOT NULL;
+    `);
+  } catch (e) {
+    console.warn('⚠️ تعذر ضمان أعمدة/بيانات أنماط أسماء المستخدمين:', (e as any)?.message || e);
+  }
+}
+
+// Ensure wall tables exist with all required columns even if migrations failed to run
+export async function ensureWallTables(): Promise<void> {
+  try {
+    if (!dbAdapter.client) return;
+
+    // wall_posts table
+    await dbAdapter.client.unsafe(`
+      CREATE TABLE IF NOT EXISTS wall_posts (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        username TEXT NOT NULL,
+        user_role TEXT NOT NULL,
+        user_gender TEXT,
+        user_level INTEGER DEFAULT 1,
+        content TEXT,
+        image_url TEXT,
+        type TEXT NOT NULL DEFAULT 'public',
+        timestamp TIMESTAMP DEFAULT NOW(),
+        user_profile_image TEXT,
+        user_profile_frame TEXT,
+        username_color TEXT DEFAULT '#4A90E2',
+        username_gradient TEXT,
+        username_effect TEXT,
+        total_likes INTEGER DEFAULT 0,
+        total_dislikes INTEGER DEFAULT 0,
+        total_hearts INTEGER DEFAULT 0,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+
+    // helpful indexes
+    await dbAdapter.client.unsafe(`
+      CREATE INDEX IF NOT EXISTS idx_wall_posts_user_id ON wall_posts(user_id);
+    `);
+    await dbAdapter.client.unsafe(`
+      CREATE INDEX IF NOT EXISTS idx_wall_posts_created_at ON wall_posts(created_at DESC);
+    `);
+
+    // wall_reactions table
+    await dbAdapter.client.unsafe(`
+      CREATE TABLE IF NOT EXISTS wall_reactions (
+        id SERIAL PRIMARY KEY,
+        post_id INTEGER NOT NULL REFERENCES wall_posts(id) ON DELETE CASCADE,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        username TEXT NOT NULL,
+        type TEXT NOT NULL,
+        timestamp TIMESTAMP DEFAULT NOW(),
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+    await dbAdapter.client.unsafe(`
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_wall_reactions_unique ON wall_reactions(post_id, user_id);
+    `);
+    await dbAdapter.client.unsafe(`
+      CREATE INDEX IF NOT EXISTS idx_wall_reactions_post ON wall_reactions(post_id);
+    `);
+    await dbAdapter.client.unsafe(`
+      CREATE INDEX IF NOT EXISTS idx_wall_reactions_user ON wall_reactions(user_id);
+    `);
+  } catch (e) {
+    console.warn('⚠️ تعذر ضمان جداول الحائط:', (e as any)?.message || e);
+  }
+}
+
+// Ensure VIP users table exists so /api/vip works reliably
+export async function ensureVipUsersTable(): Promise<void> {
+  try {
+    if (!dbAdapter.client) return;
+    await dbAdapter.client.unsafe(`
+      CREATE TABLE IF NOT EXISTS vip_users (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+    await dbAdapter.client.unsafe(`
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_vip_users_user_unique ON vip_users(user_id);
+    `);
+    await dbAdapter.client.unsafe(`
+      CREATE INDEX IF NOT EXISTS idx_vip_users_created_at ON vip_users(created_at DESC);
+    `);
+  } catch (e) {
+    console.warn('⚠️ تعذر ضمان جدول vip_users:', (e as any)?.message || e);
+  }
+}
+
 // Ensure message text styling columns exist on messages table
 export async function ensureMessageTextStylingColumns(): Promise<void> {
   try {

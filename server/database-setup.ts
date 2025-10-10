@@ -28,6 +28,8 @@ import { ensureUsernameColorDefaultBlue } from './database-adapter';
 import { ensureMessageTextStylingColumns } from './database-adapter';
 import { ensureUserProfileFrameColumn } from './database-adapter';
 import { ensureWallPostsUserProfileFrameColumn } from './database-adapter';
+import { ensureWallTables, ensureVipUsersTable } from './database-adapter';
+import { ensureUsernameStylingColumns } from './database-adapter';
 import { optimizeDatabaseIndexes } from './utils/database-optimization';
 
 // إعادة تصدير دالة التهيئة من المحول
@@ -284,6 +286,27 @@ export async function initializeSystem(): Promise<boolean> {
       await ensureWallPostsUserProfileFrameColumn();
     } catch (e) {
       console.warn('⚠️ تعذر ضمان عمود user_profile_frame في wall_posts:', (e as any)?.message || e);
+    }
+
+    // ضمان أعمدة وتطهير بيانات أنماط أسماء المستخدمين (users & wall_posts)
+    try {
+      await ensureUsernameStylingColumns();
+    } catch (e) {
+      console.warn('⚠️ تعذر ضمان أعمدة/بيانات أنماط أسماء المستخدمين:', (e as any)?.message || e);
+    }
+
+    // ضمان جداول الحائط الأساسية في حال غابت الهجرات
+    try {
+      await ensureWallTables();
+    } catch (e) {
+      console.warn('⚠️ تعذر ضمان جداول الحائط:', (e as any)?.message || e);
+    }
+
+    // ضمان جدول VIP لعمل تبويب الاثرياء بثبات
+    try {
+      await ensureVipUsersTable();
+    } catch (e) {
+      console.warn('⚠️ تعذر ضمان جدول vip_users:', (e as any)?.message || e);
     }
 
     // ضمان وجود أعمدة chat_lock في جدول الغرف

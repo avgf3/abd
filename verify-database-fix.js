@@ -1,4 +1,79 @@
 #!/usr/bin/env node
+/*
+  Quick verification script to ensure required columns for walls and VIP/rich view exist
+  and that username colors are sane. Safe to run multiple times.
+*/
+import 'dotenv/config';
+import { dbAdapter, initializeDatabase } from './server/database-adapter.js';
+
+async function main() {
+  const ok = await initializeDatabase();
+  if (!ok || !dbAdapter.client) {
+    console.error('Database not connected. Set DATABASE_URL and try again.');
+    process.exit(1);
+  }
+  const sql = dbAdapter.client;
+
+  const checks = [
+    {
+      name: 'users.username_gradient',
+      query: `SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='username_gradient'`,
+    },
+    {
+      name: 'users.username_effect',
+      query: `SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='username_effect'`,
+    },
+    {
+      name: 'wall_posts.username_gradient',
+      query: `SELECT 1 FROM information_schema.columns WHERE table_name='wall_posts' AND column_name='username_gradient'`,
+    },
+    {
+      name: 'wall_posts.username_effect',
+      query: `SELECT 1 FROM information_schema.columns WHERE table_name='wall_posts' AND column_name='username_effect'`,
+    },
+    {
+      name: 'wall_posts.user_profile_frame',
+      query: `SELECT 1 FROM information_schema.columns WHERE table_name='wall_posts' AND column_name='user_profile_frame'`,
+    },
+    {
+      name: 'vip_users table',
+      query: `SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='vip_users'`,
+    },
+  ];
+
+  const results = [];
+  for (const c of checks) {
+    try {
+      const rows = await sql.unsafe(c.query);
+      const exists = Array.isArray(rows) ? rows.length > 0 : !!rows?.[0];
+      results.push({ name: c.name, ok: exists });
+    } catch (e) {
+      results.push({ name: c.name, ok: false, error: String(e?.message || e) });
+    }
+  }
+
+  // Sample counts after backfill
+  let invalidWallColors = 0;
+  try {
+    const rows = await sql.unsafe(`SELECT COUNT(*)::int AS c FROM wall_posts WHERE username_color IS NULL OR username_color='' OR username_color='null' OR username_color='undefined' OR LOWER(username_color) IN ('#ffffff','#fff','white')`);
+    invalidWallColors = Number(rows?.[0]?.c || 0);
+  } catch {}
+
+  console.log('Verification results:');
+  for (const r of results) {
+    console.log(`- ${r.ok ? '✅' : '❌'} ${r.name}${r.error ? ' - ' + r.error : ''}`);
+  }
+  console.log(`- Invalid wall_posts.username_color after backfill: ${invalidWallColors}`);
+
+  process.exit(0);
+}
+
+main().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});
+
+#!/usr/bin/env node
 
 import postgres from 'postgres';
 import dotenv from 'dotenv';
