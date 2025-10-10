@@ -138,32 +138,15 @@ const gradientToTransparent = (gradient: string, opacity: number): string => {
   return newGradient;
 };
 
-// دالة لحصول على لون الاسم النهائي (يعتمد على usernameColor ونوع المستخدم)
+// دالة لحصول على لون الاسم النهائي (يعتمد على usernameColor المخصص فقط)
 export const getFinalUsernameColor = (user: any): string => {
-  // إذا كان للمستخدم لون مخصص، استخدمه
+  // استخدام اللون المخصص للمستخدم فقط
   const color = user && user.usernameColor ? String(user.usernameColor) : '';
   const cleaned = sanitizeHexColor(color, '');
   if (cleaned) return cleaned;
   
-  // إذا لم يكن له لون مخصص، استخدم لون حسب نوع المستخدم
-  if (user && user.userType) {
-    switch (user.userType) {
-      case 'owner':
-        return '#FFD700'; // ذهبي للمالك
-      case 'admin':
-        return '#9B59B6'; // بنفسجي للمشرف العام
-      case 'moderator':
-        return '#4A90E2'; // أزرق للمشرف
-      case 'member':
-        return '#2ECC71'; // أخضر للعضو
-      case 'guest':
-        return '#95A5A6'; // رمادي للزائر
-      default:
-        return '#000000';
-    }
-  }
-  
-  return '#000000';
+  // إذا لم يكن له لون مخصص، استخدم اللون الافتراضي الأزرق
+  return '#4A90E2';
 };
 
 // دالة جديدة لدعم التدرجات والتأثيرات للمشرفين
