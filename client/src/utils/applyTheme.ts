@@ -197,6 +197,12 @@ export function applyThemeById(themeId: string, persist: boolean = false) {
     finalCssVars['--tab-active-bg-end'] = 'transparent';
   }
 
+  // For default theme only: make top/bottom nav bars black like berryCool
+  if (themeId === 'default') {
+    finalCssVars['--nav-background'] = '#000000';
+    // Keep other areas/tints controlled via CSS scoping to app header/footer only
+  }
+
   // Special styles for berryCool theme
   if (themeId === 'berryCool') {
     // Wall posts background - pure black for berryCool
