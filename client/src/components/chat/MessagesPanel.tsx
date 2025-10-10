@@ -352,7 +352,7 @@ export default function MessagesPanel({
                   {conversations.map(({ user, lastMessage, unreadCount }) => (
                     <div key={user.id} className="relative -mx-4">
                       <div
-                        className={`flex items-center gap-2 py-0.5 px-1 rounded-none border-b border-border transition-all duration-200 cursor-pointer w-full ${getUserListItemClasses(user) || 'hover:bg-accent/10'}`}
+                        className={`flex items-center gap-2 py-0.5 px-1 rounded-none border-b border-border transition-colors duration-200 cursor-pointer w-full ${getUserListItemClasses(user) || 'hover:bg-accent/10'}`}
                         style={getUserListItemStyles(user)}
                         onClick={() => {
                           try {
