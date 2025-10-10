@@ -2884,14 +2884,14 @@ li::before {
 
 /* App bars with safe area handling */
 .app-header {
-  background-color: var(--background-solid, rgba(15, 23, 42, 0.98));
+  background-color: var(--nav-background, var(--background-solid, rgba(15, 23, 42, 0.98)));
   -webkit-backdrop-filter: blur(16px) saturate(180%);
   backdrop-filter: blur(16px) saturate(180%);
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .app-footer {
-  background-color: var(--background-solid, rgba(15, 23, 42, 0.98));
+  background-color: var(--nav-background, var(--background-solid, rgba(15, 23, 42, 0.98)));
   background-image: linear-gradient(135deg,
     var(--nav-tint-start, rgba(255, 255, 255, 0.06)) 0%,
     var(--nav-tint-end, rgba(255, 255, 255, 0.03)) 100%
@@ -2899,6 +2899,14 @@ li::before {
   -webkit-backdrop-filter: blur(16px) saturate(180%);
   backdrop-filter: blur(16px) saturate(180%);
   border-top: 1px solid var(--nav-border, rgba(255, 255, 255, 0.08));
+}
+
+/* Limit berryCool-like nav styling to header/footer only for default theme */
+[data-theme-id="default"] .app-header,
+[data-theme-id="default"] .app-footer {
+  --nav-tint-start: transparent;
+  --nav-tint-end: transparent;
+  --nav-border: rgba(255, 255, 255, 0.08);
 }
 
 .safe-area-top {
