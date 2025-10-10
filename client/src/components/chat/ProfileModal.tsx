@@ -2947,26 +2947,14 @@ export default function ProfileModal({
             className="profile-cover"
             style={{
               backgroundImage: (() => {
-                const canHaveBanner = (() => {
-                  const type = (localUser as any)?.userType;
-                  const isModerator = type === 'owner' || type === 'admin' || type === 'moderator';
-                  const lvl = Number((localUser as any)?.level || 1);
-                  return isModerator || lvl >= 20;
-                })();
-                const bannerSrc = canHaveBanner ? getProfileBannerSrcLocal() : '';
+                const bannerSrc = getProfileBannerSrcLocal();
                 if (bannerSrc) return `url(${bannerSrc})`;
                 const avatarSrc = getProfileImageSrcLocal();
                 return avatarSrc ? `url(${avatarSrc})` : 'none';
               })(),
               backgroundSize: 'cover',
               backgroundPosition: (() => {
-                const canHaveBanner = (() => {
-                  const type = (localUser as any)?.userType;
-                  const isModerator = type === 'owner' || type === 'admin' || type === 'moderator';
-                  const lvl = Number((localUser as any)?.level || 1);
-                  return isModerator || lvl >= 20;
-                })();
-                const hasBanner = canHaveBanner && !!getProfileBannerSrcLocal();
+                const hasBanner = !!getProfileBannerSrcLocal();
                 return hasBanner ? 'center center' : 'top center';
               })(),
               backgroundRepeat: 'no-repeat',
