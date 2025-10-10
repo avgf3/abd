@@ -570,21 +570,17 @@ export default function UnifiedSidebar({
               showModerationActions={isModerator}
             >
               <div
-                className={`flex items-center gap-2 py-0.5 px-1 rounded-none border-b border-border transition-colors duration-200 cursor-pointer w-full ${getUserListItemClasses(user)} hover:bg-accent/10`}
+                className={`flex items-center gap-2 py-1.5 px-3 rounded-none border-b border-border/20 transition-colors duration-200 cursor-pointer w-full ${getUserListItemClasses(user)} hover:bg-primary/10`}
                 style={getUserListItemStyles(user)}
                 onClick={(e) => handleUserClick(e as any, user)}
               >
                 {/* حاوية الصورة - حجم ثابت مع محاذاة مركزية */}
-                <div style={{ 
-                  marginLeft: 4, 
-                  width: hasFrame ? 54 : 46,  // تقليل العرض للمستخدمين بدون إطار
-                  height: hasFrame ? 54 : 46, // تقليل الارتفاع للمستخدمين بدون إطار
+                <div className="w-8 h-8 rounded-lg overflow-hidden flex-shrink-0 bg-muted" style={{ 
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0
+                  justifyContent: 'center'
                 }}>
-                  <ProfileImage user={user} size="small" pixelSize={36} className="" hideRoleBadgeOverlay={true} />
+                  <ProfileImage user={user} size="small" pixelSize={32} className="" hideRoleBadgeOverlay={true} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2">

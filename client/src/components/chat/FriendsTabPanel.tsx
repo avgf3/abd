@@ -359,7 +359,7 @@ export default function FriendsTabPanel({
                       showModerationActions={isModerator}
                     >
                       <div
-                        className={`flex items-center gap-2 p-2 px-4 rounded-none border-b border-gray-200 transition-all duration-200 cursor-pointer w-full ${getUserListItemClasses(friend) || 'hover:bg-gray-50'}`}
+                        className={`flex items-center gap-2 py-1.5 px-3 rounded-none border-b border-border/20 transition-colors duration-200 cursor-pointer w-full ${getUserListItemClasses(friend) || 'hover:bg-primary/10'}`}
                         style={getUserListItemStyles(friend)}
                         onClick={(e) => onStartPrivateChat(friend)}
                       >
