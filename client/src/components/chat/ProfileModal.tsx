@@ -3218,8 +3218,8 @@ export default function ProfileModal({
                       alignItems: 'center',
                       gap: '4px'
                     }}>
-                      {localUser?.userType === 'owner' && '⭐ Owner'}
-                      {localUser?.userType === 'admin' && '⭐ Admin'}
+                      {localUser?.userType === 'owner' && 'Owner'}
+                      {localUser?.userType === 'admin' && 'Admin'}
                       {localUser?.userType === 'moderator' && 'Moderator'}
                     </span>
                   )}
