@@ -775,7 +775,6 @@ export default function MessageArea({
                                             <span className={`ac-name ${uds.className || ''}`} style={uds.style}>
                                               {message.sender?.username || '...'}
                                             </span>
-                                            <span className="ac-mark">〰</span>
                                           </span>
                                         );
                                       })()}
@@ -918,7 +917,6 @@ export default function MessageArea({
                                             <span className={`ac-name ${uds.className || ''}`} style={uds.style}>
                                               {message.sender?.username || '...'}
                                             </span>
-                                            <span className="ac-mark">〰</span>
                                           </span>
                                         );
                                       })()}

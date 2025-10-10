@@ -68,7 +68,6 @@ export default function SettingsMenu({
                   return (
                     <span className={`ac-nameplate ${effectClasses}`} style={np}>
                       <span className="ac-name" style={{ color: getFinalUsernameColor(currentUser) }}>{currentUser.username}</span>
-                      <span className="ac-mark">〰</span>
                     </span>
                   );
                 }
