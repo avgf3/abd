@@ -7,6 +7,7 @@ import {
   getUserListItemStyles,
   getUserNameplateStyles,
   getUserListItemClasses,
+  getUsernameDisplayStyle,
 } from '@/utils/themeUtils';
 
 interface SettingsMenuProps {
@@ -71,8 +72,9 @@ export default function SettingsMenu({
                     </span>
                   );
                 }
+                const uds = getUsernameDisplayStyle(currentUser);
                 return (
-                  <span className="font-semibold" style={{ color: getFinalUsernameColor(currentUser) }}>
+                  <span className={`font-semibold ${uds.className || ''}`} style={uds.style}>
                     {currentUser.username}
                   </span>
                 );

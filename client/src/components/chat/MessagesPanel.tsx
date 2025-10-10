@@ -14,7 +14,7 @@ import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser } from '@/types/chat';
 import { formatMessagePreview, getPmLastOpened, setPmLastOpened } from '@/utils/messageUtils';
 import { formatTime } from '@/utils/timeUtils';
-import { getFinalUsernameColor, getUserListItemStyles, getUserListItemClasses } from '@/utils/themeUtils';
+import { getFinalUsernameColor, getUserListItemStyles, getUserListItemClasses, getUsernameDisplayStyle } from '@/utils/themeUtils';
 import { userCache, getCachedUserWithMerge, setCachedUser } from '@/utils/userCacheManager';
 
 interface MessagesPanelProps {
@@ -389,20 +389,17 @@ export default function MessagesPanel({
                         </div>
                         <div className="flex-1 min-w-0 flex flex-col justify-center">
                           <div className="flex items-center justify-between gap-2 w-full">
-                            <span
-                              className="text-base font-medium transition-all duration-300 truncate flex-shrink-0"
-                              style={{
-                                color: getFinalUsernameColor(user),
-                                textShadow: getFinalUsernameColor(user)
-                                  ? `0 0 10px ${getFinalUsernameColor(user)}40`
-                                  : 'none',
-                                filter: getFinalUsernameColor(user)
-                                  ? 'drop-shadow(0 0 3px rgba(255,255,255,0.3))'
-                                  : 'none',
-                              }}
-                            >
-                              {user.username}
-                            </span>
+                            {(() => {
+                              const uds = getUsernameDisplayStyle(user);
+                              return (
+                                <span
+                                  className={`text-base font-medium transition-all duration-300 truncate flex-shrink-0 ${uds.className || ''}`}
+                                  style={uds.style}
+                                >
+                                  {user.username}
+                                </span>
+                              );
+                            })()}
                             <div className="flex items-center gap-2 flex-shrink-0">
                               <UserRoleBadge user={user} size={20} />
                               <span className="text-xs text-foreground/60 whitespace-nowrap">

@@ -1160,6 +1160,7 @@ export const useChat = () => {
               if ((updatedUser as any).isHidden === true) {
                 dispatch({ type: 'REMOVE_ONLINE_USER', payload: updatedUser.id });
               } else {
+                // تأكد من تمرير حقول تدرج وتأثير الاسم إلى الواجهة
                 dispatch({ type: 'UPSERT_ONLINE_USER', payload: updatedUser });
               }
             }
