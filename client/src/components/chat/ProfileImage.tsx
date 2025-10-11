@@ -89,7 +89,7 @@ export default function ProfileImage({
     // الحاوية يجب أن تكون أكبر لاستيعاب الإطار (نفس النسبة المستخدمة في VipAvatar)
     const containerSize = px * 1.35;
     const imageTopWithinContainer = (containerSize - px) / 2; // موضع أعلى الصورة داخل الحاوية
-    const overlayTopPx = imageTopWithinContainer; // نثبت أسفل التاج عند أعلى الصورة تماماً
+    const overlayTopPx = imageTopWithinContainer; // موضع التاج ليلامس أعلى الصورة مباشرة
     const overlayWidthPx = Math.round(px);
     return (
       <div className={`relative inline-block ${className || ''}`} onClick={onClick} style={{ width: containerSize, height: containerSize }}>
@@ -103,7 +103,7 @@ export default function ProfileImage({
             style={{ 
               top: overlayTopPx, 
               width: overlayWidthPx, 
-              transform: 'translate(-50%, -100%)',
+              transform: 'translate(-50%, -50%)',
               backgroundColor: 'transparent',
               background: 'transparent'
             }}
@@ -151,7 +151,7 @@ export default function ProfileImage({
             style={{ 
               top: overlayTopPx, 
               width: overlayWidthPx, 
-              transform: 'translate(-50%, -100%)',
+              transform: 'translate(-50%, -50%)',
               backgroundColor: 'transparent',
               background: 'transparent'
             }}
