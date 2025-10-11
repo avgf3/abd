@@ -18,9 +18,10 @@ export interface User {
   profileTags?: Array<{
     type: string;
     text: string;
-    color: string;
+    color?: string;
     bgColor?: string;
     icon?: string;
+    image?: string;
   }>;
   avatarHash?: string;
   avatarVersion?: number;

@@ -134,14 +134,17 @@ export default function TagsManagement({
               {userTags.map((tag, index) => (
                 <div
                   key={index}
-                  className="flex items-center gap-1 px-3 py-1 rounded-full text-white text-sm font-bold shadow-lg"
-                  style={{ backgroundColor: tag.color }}
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-100 border text-sm font-medium shadow-sm"
                 >
-                  {tag.icon && <span>{tag.icon}</span>}
-                  <span>{tag.text}</span>
+                  {tag.image ? (
+                    <img src={tag.image} alt={tag.text} className="w-5 h-5 object-contain" />
+                  ) : (
+                    tag.icon && <span>{tag.icon}</span>
+                  )}
+                  <span className="text-gray-800">{tag.text}</span>
                   <button
                     onClick={() => handleRemoveTag(index)}
-                    className="ml-1 hover:bg-white/20 rounded-full p-0.5 transition-colors"
+                    className="ml-1 hover:bg-red-100 text-red-500 rounded-full p-0.5 transition-colors"
                   >
                     <X size={12} />
                   </button>
@@ -165,10 +168,14 @@ export default function TagsManagement({
                 variant="outline"
                 size="sm"
                 onClick={() => handleAddPredefinedTag(key)}
-                className="flex items-center gap-2 justify-start"
+                className="flex items-center gap-2 justify-start h-12"
                 disabled={userTags.some(userTag => userTag.type === key)}
               >
-                {tag.icon && <span>{tag.icon}</span>}
+                {tag.image ? (
+                  <img src={tag.image} alt={tag.text} className="w-6 h-6 object-contain" />
+                ) : (
+                  tag.icon && <span>{tag.icon}</span>
+                )}
                 <span>{tag.text}</span>
               </Button>
             ))}

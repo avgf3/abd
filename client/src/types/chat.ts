@@ -19,9 +19,10 @@ export interface ChatUser {
   profileTags?: Array<{
     type: string;
     text: string;
-    color: string;
+    color?: string;
     bgColor?: string;
     icon?: string;
+    image?: string;
   }>;
   status?: string;
   gender?: string; // تغيير: جعل النوع اختيارياً وقابلاً لأي نص لضمان التوافق

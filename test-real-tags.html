@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار التاجات الفعلية</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            margin: 0;
+            padding: 40px 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 48px;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .subtitle {
+            text-align: center;
+            font-size: 20px;
+            margin-bottom: 50px;
+            opacity: 0.9;
+        }
+
+        .demo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 50px;
+        }
+
+        .demo-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .profile-container {
+            position: relative;
+            display: inline-block;
+            margin: 20px auto;
+        }
+
+        .profile-image {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            object-fit: cover;
+        }
+
+        /* تاجات البروفايل - الصور الفعلية */
+        .profile-tags {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .profile-tag-image {
+            width: 24px;
+            height: 24px;
+            object-fit: contain;
+            transition: transform 0.2s ease;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+        }
+
+        .profile-tag-image:hover {
+            transform: scale(1.1);
+        }
+
+        .username {
+            font-size: 18px;
+            font-weight: bold;
+            margin-top: 15px;
+            margin-bottom: 5px;
+        }
+
+        .user-info {
+            font-size: 14px;
+            opacity: 0.8;
+        }
+
+        .tags-showcase {
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 10px;
+        }
+
+        .tags-showcase h3 {
+            margin-bottom: 20px;
+            font-size: 18px;
+            text-align: center;
+        }
+
+        .tags-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .tag-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            padding: 15px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            transition: transform 0.2s ease;
+        }
+
+        .tag-item:hover {
+            transform: translateY(-2px);
+            background: rgba(255,255,255,0.15);
+        }
+
+        .tag-item img {
+            width: 32px;
+            height: 32px;
+            object-fit: contain;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+        }
+
+        .tag-item span {
+            font-size: 12px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .success-message {
+            background: rgba(34, 197, 94, 0.2);
+            border: 2px solid #22c55e;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 30px;
+            text-align: center;
+        }
+
+        .success-message h3 {
+            color: #4ade80;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏷️ التاجات الفعلية المُحملة</h1>
+        <p class="subtitle">الآن نستخدم الصور الفعلية التي أرسلتها!</p>
+
+        <div class="demo-grid">
+            <!-- مستخدم مع تاج واحد -->
+            <div class="demo-card">
+                <div class="profile-container">
+                    <img src="https://ui-avatars.com/api/?name=Ahmed&background=4299e1&color=fff&size=120" 
+                         alt="Ahmed" class="profile-image">
+                    <div class="profile-tags">
+                        <img src="/tags/tag1.png" alt="Tag 1" class="profile-tag-image" title="Tag 1">
+                    </div>
+                </div>
+                <div class="username">أحمد محمد</div>
+                <div class="user-info">مع التاج الأول</div>
+            </div>
+
+            <!-- مستخدم مع تاجين -->
+            <div class="demo-card">
+                <div class="profile-container">
+                    <img src="https://ui-avatars.com/api/?name=Sara&background=ec4899&color=fff&size=120" 
+                         alt="Sara" class="profile-image">
+                    <div class="profile-tags">
+                        <img src="/tags/tag2.png" alt="Tag 2" class="profile-tag-image" title="Tag 2">
+                        <img src="/tags/tag3.png" alt="Tag 3" class="profile-tag-image" title="Tag 3">
+                    </div>
+                </div>
+                <div class="username">سارة أحمد</div>
+                <div class="user-info">مع تاجين</div>
+            </div>
+
+            <!-- مستخدم مع ثلاثة تاجات -->
+            <div class="demo-card">
+                <div class="profile-container">
+                    <img src="https://ui-avatars.com/api/?name=Omar&background=10b981&color=fff&size=120" 
+                         alt="Omar" class="profile-image">
+                    <div class="profile-tags">
+                        <img src="/tags/tag4.png" alt="Tag 4" class="profile-tag-image" title="Tag 4">
+                        <img src="/tags/tag5.png" alt="Tag 5" class="profile-tag-image" title="Tag 5">
+                        <img src="/tags/tag6.png" alt="Tag 6" class="profile-tag-image" title="Tag 6">
+                    </div>
+                </div>
+                <div class="username">عمر خالد</div>
+                <div class="user-info">مع ثلاثة تاجات</div>
+            </div>
+
+            <!-- مستخدم مع التاج السابع -->
+            <div class="demo-card">
+                <div class="profile-container">
+                    <img src="https://ui-avatars.com/api/?name=Layla&background=8b5cf6&color=fff&size=120" 
+                         alt="Layla" class="profile-image">
+                    <div class="profile-tags">
+                        <img src="/tags/tag7.png" alt="Tag 7" class="profile-tag-image" title="Tag 7">
+                    </div>
+                </div>
+                <div class="username">ليلى محمود</div>
+                <div class="user-info">مع التاج السابع</div>
+            </div>
+        </div>
+
+        <!-- عرض جميع التاجات -->
+        <div class="demo-card">
+            <div class="tags-showcase">
+                <h3>🏷️ جميع التاجات المُحملة (7 تاجات)</h3>
+                
+                <div class="tags-grid">
+                    <div class="tag-item">
+                        <img src="/tags/tag1.png" alt="Tag 1">
+                        <span>Tag 1</span>
+                    </div>
+                    <div class="tag-item">
+                        <img src="/tags/tag2.png" alt="Tag 2">
+                        <span>Tag 2</span>
+                    </div>
+                    <div class="tag-item">
+                        <img src="/tags/tag3.png" alt="Tag 3">
+                        <span>Tag 3</span>
+                    </div>
+                    <div class="tag-item">
+                        <img src="/tags/tag4.png" alt="Tag 4">
+                        <span>Tag 4</span>
+                    </div>
+                    <div class="tag-item">
+                        <img src="/tags/tag5.png" alt="Tag 5">
+                        <span>Tag 5</span>
+                    </div>
+                    <div class="tag-item">
+                        <img src="/tags/tag6.png" alt="Tag 6">
+                        <span>Tag 6</span>
+                    </div>
+                    <div class="tag-item">
+                        <img src="/tags/tag7.png" alt="Tag 7">
+                        <span>Tag 7</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="success-message">
+            <h3>✅ تم تحديث النظام بنجاح!</h3>
+            <p>الآن النظام يستخدم الصور الفعلية التي أرسلتها بدلاً من الألوان والأيقونات</p>
+            <ul style="text-align: right; display: inline-block; margin: 15px 0;">
+                <li>✅ تم تحميل 7 صور تاجات من الروابط</li>
+                <li>✅ تم تحديث مكون ProfileTags ليدعم الصور</li>
+                <li>✅ تم تحديث واجهة الإدارة لعرض الصور</li>
+                <li>✅ التاجات تظهر فوق الصورة الشخصية مباشرة</li>
+                <li>✅ دعم أحجام مختلفة (20px, 24px, 28px)</li>
+                <li>✅ تأثيرات hover وظلال جميلة</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // تحقق من تحميل الصور
+        document.addEventListener('DOMContentLoaded', function() {
+            const images = document.querySelectorAll('img[src^="/tags/"]');
+            let loadedCount = 0;
+            
+            images.forEach(img => {
+                img.onload = function() {
+                    loadedCount++;
+                    console.log(`تم تحميل ${img.src} - (${loadedCount}/${images.length})`);
+                };
+                
+                img.onerror = function() {
+                    console.error(`فشل في تحميل ${img.src}`);
+                    this.style.border = '2px solid red';
+                };
+            });
+        });
+    </script>
+</body>
+</html>

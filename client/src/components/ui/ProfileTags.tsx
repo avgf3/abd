@@ -3,9 +3,10 @@ import React from 'react';
 export interface ProfileTag {
   type: string;
   text: string;
-  color: string;
+  color?: string;
   bgColor?: string;
   icon?: string;
+  image?: string; // مسار الصورة للتاج
 }
 
 interface ProfileTagsProps {
@@ -31,36 +32,58 @@ export default function ProfileTags({ tags, size = 'medium', className = '' }: P
 
   return (
     <div className={`absolute -top-1 -right-1 z-10 flex flex-col ${containerClasses[size]} ${className}`}>
-      {tags.slice(0, 3).map((tag, index) => (
-        <div
-          key={`${tag.type}-${index}`}
-          className={`
-            ${sizeClasses[size]}
-            inline-flex items-center justify-center
-            rounded-full font-bold
-            shadow-lg border border-white/20
-            backdrop-blur-sm
-            transition-all duration-200 hover:scale-105
-            whitespace-nowrap
-          `}
-          style={{
-            backgroundColor: tag.bgColor || tag.color || '#3B82F6',
-            color: '#FFFFFF',
-            textShadow: '0 1px 2px rgba(0,0,0,0.5)',
-            boxShadow: `0 2px 8px ${tag.color || '#3B82F6'}40, inset 0 1px 0 rgba(255,255,255,0.2)`,
-          }}
-          title={tag.text}
-        >
-          {tag.icon && (
-            <span className="mr-1" style={{ fontSize: size === 'small' ? '8px' : size === 'large' ? '10px' : '9px' }}>
-              {tag.icon}
+      {tags.slice(0, 3).map((tag, index) => {
+        // إذا كان التاج يحتوي على صورة، استخدم الصورة
+        if (tag.image) {
+          const imageSize = size === 'small' ? 20 : size === 'large' ? 28 : 24;
+          return (
+            <img
+              key={`${tag.type}-${index}`}
+              src={tag.image}
+              alt={tag.text || tag.type}
+              className="transition-all duration-200 hover:scale-105 drop-shadow-lg"
+              style={{
+                width: imageSize,
+                height: imageSize,
+                objectFit: 'contain',
+              }}
+              title={tag.text || tag.type}
+            />
+          );
+        }
+        
+        // إذا لم تكن هناك صورة، استخدم النمط القديم
+        return (
+          <div
+            key={`${tag.type}-${index}`}
+            className={`
+              ${sizeClasses[size]}
+              inline-flex items-center justify-center
+              rounded-full font-bold
+              shadow-lg border border-white/20
+              backdrop-blur-sm
+              transition-all duration-200 hover:scale-105
+              whitespace-nowrap
+            `}
+            style={{
+              backgroundColor: tag.bgColor || tag.color || '#3B82F6',
+              color: '#FFFFFF',
+              textShadow: '0 1px 2px rgba(0,0,0,0.5)',
+              boxShadow: `0 2px 8px ${tag.color || '#3B82F6'}40, inset 0 1px 0 rgba(255,255,255,0.2)`,
+            }}
+            title={tag.text}
+          >
+            {tag.icon && (
+              <span className="mr-1" style={{ fontSize: size === 'small' ? '8px' : size === 'large' ? '10px' : '9px' }}>
+                {tag.icon}
+              </span>
+            )}
+            <span className="font-extrabold tracking-wide">
+              {tag.text}
             </span>
-          )}
-          <span className="font-extrabold tracking-wide">
-            {tag.text}
-          </span>
-        </div>
-      ))}
+          </div>
+        );
+      })}
       
       {tags.length > 3 && (
         <div
@@ -82,76 +105,41 @@ export default function ProfileTags({ tags, size = 'medium', className = '' }: P
   );
 }
 
-// تاجات محددة مسبقاً
+// تاجات محددة مسبقاً - باستخدام الصور الفعلية
 export const PREDEFINED_TAGS: Record<string, ProfileTag> = {
-  vip: {
-    type: 'vip',
-    text: 'VIP',
-    color: '#FFD700',
-    bgColor: 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)',
-    icon: '👑'
+  tag1: {
+    type: 'tag1',
+    text: 'Tag 1',
+    image: '/tags/tag1.png'
   },
-  premium: {
-    type: 'premium',
-    text: 'Premium',
-    color: '#FF6B6B',
-    bgColor: 'linear-gradient(135deg, #FF6B6B 0%, #FF5252 100%)',
-    icon: '⭐'
+  tag2: {
+    type: 'tag2',
+    text: 'Tag 2', 
+    image: '/tags/tag2.png'
   },
-  admin: {
-    type: 'admin',
-    text: 'Admin',
-    color: '#8B5CF6',
-    bgColor: 'linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%)',
-    icon: '🛡️'
+  tag3: {
+    type: 'tag3',
+    text: 'Tag 3',
+    image: '/tags/tag3.png'
   },
-  moderator: {
-    type: 'moderator',
-    text: 'Mod',
-    color: '#10B981',
-    bgColor: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
-    icon: '🔨'
+  tag4: {
+    type: 'tag4',
+    text: 'Tag 4',
+    image: '/tags/tag4.png'
   },
-  verified: {
-    type: 'verified',
-    text: 'Verified',
-    color: '#3B82F6',
-    bgColor: 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)',
-    icon: '✓'
+  tag5: {
+    type: 'tag5',
+    text: 'Tag 5',
+    image: '/tags/tag5.png'
   },
-  new: {
-    type: 'new',
-    text: 'New',
-    color: '#06D6A0',
-    bgColor: 'linear-gradient(135deg, #06D6A0 0%, #048A81 100%)',
-    icon: '🆕'
+  tag6: {
+    type: 'tag6',
+    text: 'Tag 6',
+    image: '/tags/tag6.png'
   },
-  hot: {
-    type: 'hot',
-    text: 'Hot',
-    color: '#FF4757',
-    bgColor: 'linear-gradient(135deg, #FF4757 0%, #FF3742 100%)',
-    icon: '🔥'
-  },
-  top: {
-    type: 'top',
-    text: 'Top',
-    color: '#FFA726',
-    bgColor: 'linear-gradient(135deg, #FFA726 0%, #FF9800 100%)',
-    icon: '🏆'
-  },
-  star: {
-    type: 'star',
-    text: 'Star',
-    color: '#FFEB3B',
-    bgColor: 'linear-gradient(135deg, #FFEB3B 0%, #FFC107 100%)',
-    icon: '⭐'
-  },
-  diamond: {
-    type: 'diamond',
-    text: 'Diamond',
-    color: '#E1F5FE',
-    bgColor: 'linear-gradient(135deg, #81D4FA 0%, #29B6F6 100%)',
-    icon: '💎'
+  tag7: {
+    type: 'tag7',
+    text: 'Tag 7',
+    image: '/tags/tag7.png'
   }
 };
