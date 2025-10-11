@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="100" height="60" viewBox="0 0 100 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="emerald" x1="0" y1="0" x2="0" y2="60" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#D1FAE5"/>
+      <stop offset="0.55" stop-color="#6EE7B7"/>
+      <stop offset="1" stop-color="#10B981"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Minimal crest with diamond -->
+  <path d="M8 50 C 18 40, 26 28, 50 22 C 74 28, 82 40, 92 50 L 92 60 L 8 60 Z" fill="url(#emerald)"/>
+  <!-- Central diamond -->
+  <path d="M50 28 L58 36 L50 44 L42 36 Z" fill="#ECFDF5" fill-opacity="0.9"/>
+  <path d="M50 30 L56 36 L50 42 L44 36 Z" fill="#065F46" fill-opacity="0.48"/>
+  <!-- Base plate shading -->
+  <rect x="8" y="52" width="84" height="8" rx="2" fill="#065F46" fill-opacity="0.22"/>
+</svg>
