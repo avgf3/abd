@@ -4882,6 +4882,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       profileBackgroundColor: sanitized.profileBackgroundColor,
       profileEffect: sanitized.profileEffect,
       profileFrame: sanitized.profileFrame, // إضافة إطار البروفايل
+      profileTags: sanitized.profileTags, // إضافة تاجات البروفايل
       isOnline: sanitized.isOnline,
       lastSeen: sanitized.lastSeen,
       currentRoom: sanitized.currentRoom,

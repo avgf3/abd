@@ -2,6 +2,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser } from '@/types/chat';
+import TagsManagement from '@/components/chat/admin/TagsManagement';
 
 interface UserPopupProps {
   user: ChatUser;
@@ -254,6 +255,27 @@ export default function UserPopup({
                 >
                   إزالة
                 </button>
+              </div>
+            </>
+          )}
+
+          {/* إدارة التاجات - للمالك والمشرفين فقط */}
+          {(currentUser.userType === 'owner' || currentUser.userType === 'admin') && (
+            <>
+              <div className="border-t border-gray-300 my-2"></div>
+              <div className="px-2 py-2">
+                <h4 className="text-sm font-semibold mb-2 text-gray-700">إدارة التاجات</h4>
+                <TagsManagement
+                  userId={user.id}
+                  username={user.username}
+                  currentTags={user.profileTags || []}
+                  onTagsUpdate={(tags) => {
+                    // تحديث التاجات في الواجهة
+                    if (user.profileTags !== undefined) {
+                      user.profileTags = tags;
+                    }
+                  }}
+                />
               </div>
             </>
           )}

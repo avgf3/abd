@@ -15,6 +15,13 @@ export interface User {
   profileBanner?: string;
   profileBackgroundColor: string;
   profileFrame?: string;
+  profileTags?: Array<{
+    type: string;
+    text: string;
+    color: string;
+    bgColor?: string;
+    icon?: string;
+  }>;
   avatarHash?: string;
   avatarVersion?: number;
   status?: string;
@@ -609,6 +616,7 @@ export class DatabaseService {
             profileBackgroundColor: schema.users.profileBackgroundColor,
             profileEffect: schema.users.profileEffect,
             profileFrame: (schema.users as any).profileFrame,
+            profileTags: (schema.users as any).profileTags,
             usernameColor: schema.users.usernameColor,
             // تضمين تدرج وتأثير اسم المستخدم لعرضها في واجهة الأثرياء
             usernameGradient: (schema.users as any).usernameGradient,
@@ -691,6 +699,7 @@ export class DatabaseService {
             profileBackgroundColor: schema.users.profileBackgroundColor,
             profileEffect: schema.users.profileEffect,
             profileFrame: (schema.users as any).profileFrame,
+            profileTags: (schema.users as any).profileTags,
             usernameColor: schema.users.usernameColor,
             // تضمين تدرج وتأثير اسم المستخدم لعرضها أثناء الترشيح والإضافة
             usernameGradient: (schema.users as any).usernameGradient,
