@@ -1,7 +1,7 @@
 <!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>اختبار التاج فوق الصورة</title><style>
 .container { position: relative; display: inline-block; margin: 16px; }
 .img { display:block; border-radius:9999px; object-fit:cover; background:#0b1220; }
-.tag { position:absolute; left:50%; transform:translate(-50%, -100%); pointer-events:none; z-index:4; }
+.tag { position:absolute; left:50%; transform:translate(-50%, -100%); pointer-events:none; z-index:4; background:transparent; }
 /* مثال 1: مع إطار (حاوية أكبر 1.35×) */
 #with-frame { --px:56; --container: calc(var(--px) * 1.35); width: calc(var(--container) * 1px); height: calc(var(--container) * 1px); }
 #with-frame .img { width: calc(var(--px) * 1px); height: calc(var(--px) * 1px); position:absolute; top: calc((var(--container) - var(--px)) / 2 * 1px); left:50%; transform:translateX(-50%); }

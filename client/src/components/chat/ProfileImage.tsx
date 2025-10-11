@@ -100,7 +100,13 @@ export default function ProfileImage({
             alt="tag"
             className="profile-tag-overlay"
             aria-hidden="true"
-            style={{ top: overlayTopPx, width: overlayWidthPx, transform: 'translate(-50%, -100%)' }}
+            style={{ 
+              top: overlayTopPx, 
+              width: overlayWidthPx, 
+              transform: 'translate(-50%, -100%)',
+              backgroundColor: 'transparent',
+              background: 'transparent'
+            }}
             onError={(e: any) => { try { e.currentTarget.style.display = 'none'; } catch {} }}
           />
         )}
@@ -142,7 +148,13 @@ export default function ProfileImage({
             alt="tag"
             className="profile-tag-overlay"
             aria-hidden="true"
-            style={{ top: overlayTopPx, width: overlayWidthPx, transform: 'translate(-50%, -100%)' }}
+            style={{ 
+              top: overlayTopPx, 
+              width: overlayWidthPx, 
+              transform: 'translate(-50%, -100%)',
+              backgroundColor: 'transparent',
+              background: 'transparent'
+            }}
             onError={(e: any) => { try { e.currentTarget.style.display = 'none'; } catch {} }}
           />
         );
