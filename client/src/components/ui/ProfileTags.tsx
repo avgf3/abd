@@ -105,41 +105,41 @@ export default function ProfileTags({ tags, size = 'medium', className = '' }: P
   );
 }
 
-// تاجات محددة مسبقاً - باستخدام الصور الفعلية
+// تاجات محددة مسبقاً - مؤقتة حتى يتم رفع الصور الفعلية
 export const PREDEFINED_TAGS: Record<string, ProfileTag> = {
-  tag1: {
-    type: 'tag1',
-    text: 'Tag 1',
-    image: '/tags/tag1.png'
+  vip: {
+    type: 'vip',
+    text: 'VIP',
+    image: '/tags/tag1.svg'
   },
-  tag2: {
-    type: 'tag2',
-    text: 'Tag 2', 
-    image: '/tags/tag2.png'
+  premium: {
+    type: 'premium',
+    text: 'Premium', 
+    image: '/tags/tag2.svg'
   },
-  tag3: {
-    type: 'tag3',
-    text: 'Tag 3',
-    image: '/tags/tag3.jpg'
+  admin: {
+    type: 'admin',
+    text: 'Admin',
+    image: '/tags/tag3.svg'
   },
-  tag4: {
-    type: 'tag4',
-    text: 'Tag 4',
-    image: '/tags/tag4.png'
+  moderator: {
+    type: 'moderator',
+    text: 'Moderator',
+    image: '/tags/tag4.svg'
   },
-  tag5: {
-    type: 'tag5',
-    text: 'Tag 5',
-    image: '/tags/tag5.png'
+  verified: {
+    type: 'verified',
+    text: 'Verified',
+    image: '/tags/tag5.svg'
   },
-  tag6: {
-    type: 'tag6',
-    text: 'Tag 6',
-    image: '/tags/tag6.png'
+  hot: {
+    type: 'hot',
+    text: 'Hot',
+    image: '/tags/tag6.svg'
   },
-  tag7: {
-    type: 'tag7',
-    text: 'Tag 7',
-    image: '/tags/tag7.png'
+  top: {
+    type: 'top',
+    text: 'Top',
+    image: '/tags/tag7.svg'
   }
 };
