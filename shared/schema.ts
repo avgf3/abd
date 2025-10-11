@@ -49,6 +49,8 @@ export const users = pgTable('users', {
   profileEffect: text('profile_effect').default('none'), // تأثير البروفايل
   // إطار صورة البروفايل (مسار ثابت داخل public/frames أو اسم معرف إطار)
   profileFrame: text('profile_frame'),
+  // تاجات البروفايل - JSON array للتاجات المتعددة
+  profileTags: jsonb('profile_tags').default('[]'), // مثل: [{"type": "vip", "color": "#FFD700", "text": "VIP"}, {"type": "premium", "color": "#FF6B6B", "text": "Premium"}]
   points: integer('points').default(0), // نقاط المستخدم الحالية
   level: integer('level').default(1), // مستوى المستخدم
   totalPoints: integer('total_points').default(0), // إجمالي النقاط التي كسبها المستخدم

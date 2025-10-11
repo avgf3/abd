@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار التاجات SVG</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            margin: 0;
+            padding: 40px 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 48px;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .subtitle {
+            text-align: center;
+            font-size: 20px;
+            margin-bottom: 50px;
+            opacity: 0.9;
+        }
+
+        .demo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 50px;
+        }
+
+        .demo-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .profile-container {
+            position: relative;
+            display: inline-block;
+            margin: 20px auto;
+        }
+
+        .profile-image {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            object-fit: cover;
+        }
+
+        /* تاجات البروفايل - SVG */
+        .profile-tags {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .profile-tag-svg {
+            width: 24px;
+            height: 24px;
+            transition: transform 0.2s ease;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+        }
+
+        .profile-tag-svg:hover {
+            transform: scale(1.1);
+        }
+
+        .username {
+            font-size: 18px;
+            font-weight: bold;
+            margin-top: 15px;
+            margin-bottom: 5px;
+        }
+
+        .user-info {
+            font-size: 14px;
+            opacity: 0.8;
+        }
+
+        .tags-showcase {
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 10px;
+        }
+
+        .tags-showcase h3 {
+            margin-bottom: 20px;
+            font-size: 18px;
+            text-align: center;
+        }
+
+        .tags-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .tag-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            padding: 15px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            transition: transform 0.2s ease;
+        }
+
+        .tag-item:hover {
+            transform: translateY(-2px);
+            background: rgba(255,255,255,0.15);
+        }
+
+        .tag-item svg {
+            width: 32px;
+            height: 32px;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+        }
+
+        .tag-item span {
+            font-size: 12px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .info-message {
+            background: rgba(59, 130, 246, 0.2);
+            border: 2px solid #3b82f6;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 30px;
+            text-align: center;
+        }
+
+        .info-message h3 {
+            color: #60a5fa;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏷️ التاجات SVG المؤقتة</h1>
+        <p class="subtitle">تاجات مؤقتة حتى يتم رفع الصور الفعلية</p>
+
+        <div class="demo-grid">
+            <!-- مستخدم VIP -->
+            <div class="demo-card">
+                <div class="profile-container">
+                    <img src="https://ui-avatars.com/api/?name=Ahmed&background=4299e1&color=fff&size=120" 
+                         alt="Ahmed" class="profile-image">
+                    <div class="profile-tags">
+                        <svg class="profile-tag-svg" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="12" cy="12" r="10" fill="#FFD700" stroke="#FFA500" stroke-width="2"/>
+                            <text x="12" y="16" text-anchor="middle" fill="#FFA500" font-family="Arial" font-size="10" font-weight="bold">VIP</text>
+                        </svg>
+                    </div>
+                </div>
+                <div class="username">أحمد محمد</div>
+                <div class="user-info">عضو VIP</div>
+            </div>
+
+            <!-- مستخدم Premium -->
+            <div class="demo-card">
+                <div class="profile-container">
+                    <img src="https://ui-avatars.com/api/?name=Sara&background=ec4899&color=fff&size=120" 
+                         alt="Sara" class="profile-image">
+                    <div class="profile-tags">
+                        <svg class="profile-tag-svg" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="12" cy="12" r="10" fill="#FF6B6B" stroke="#FF5252" stroke-width="2"/>
+                            <text x="12" y="16" text-anchor="middle" fill="white" font-family="Arial" font-size="8" font-weight="bold">PREMIUM</text>
+                        </svg>
+                        <svg class="profile-tag-svg" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="12" cy="12" r="10" fill="#FF4757" stroke="#FF3742" stroke-width="2"/>
+                            <text x="12" y="16" text-anchor="middle" fill="white" font-family="Arial" font-size="10" font-weight="bold">HOT</text>
+                        </svg>
+                    </div>
+                </div>
+                <div class="username">سارة أحمد</div>
+                <div class="user-info">عضو Premium نشط</div>
+            </div>
+
+            <!-- مشرف -->
+            <div class="demo-card">
+                <div class="profile-container">
+                    <img src="https://ui-avatars.com/api/?name=Omar&background=10b981&color=fff&size=120" 
+                         alt="Omar" class="profile-image">
+                    <div class="profile-tags">
+                        <svg class="profile-tag-svg" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="12" cy="12" r="10" fill="#8B5CF6" stroke="#7C3AED" stroke-width="2"/>
+                            <text x="12" y="16" text-anchor="middle" fill="white" font-family="Arial" font-size="9" font-weight="bold">ADMIN</text>
+                        </svg>
+                        <svg class="profile-tag-svg" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="12" cy="12" r="10" fill="#3B82F6" stroke="#2563EB" stroke-width="2"/>
+                            <text x="12" y="16" text-anchor="middle" fill="white" font-family="Arial" font-size="8" font-weight="bold">VERIFIED</text>
+                        </svg>
+                    </div>
+                </div>
+                <div class="username">عمر خالد</div>
+                <div class="user-info">مشرف الموقع</div>
+            </div>
+        </div>
+
+        <!-- عرض جميع التاجات -->
+        <div class="demo-card">
+            <div class="tags-showcase">
+                <h3>🏷️ جميع التاجات المتاحة (7 تاجات SVG)</h3>
+                
+                <div class="tags-grid">
+                    <div class="tag-item">
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="12" cy="12" r="10" fill="#FFD700" stroke="#FFA500" stroke-width="2"/>
+                            <text x="12" y="16" text-anchor="middle" fill="#FFA500" font-family="Arial" font-size="10" font-weight="bold">VIP</text>
+                        </svg>
+                        <span>VIP</span>
+                    </div>
+                    <div class="tag-item">
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="12" cy="12" r="10" fill="#FF6B6B" stroke="#FF5252" stroke-width="2"/>
+                            <text x="12" y="16" text-anchor="middle" fill="white" font-family="Arial" font-size="8" font-weight="bold">PREMIUM</text>
+                        </svg>
+                        <span>Premium</span>
+                    </div>
+                    <div class="tag-item">
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="12" cy="12" r="10" fill="#8B5CF6" stroke="#7C3AED" stroke-width="2"/>
+                            <text x="12" y="16" text-anchor="middle" fill="white" font-family="Arial" font-size="9" font-weight="bold">ADMIN</text>
+                        </svg>
+                        <span>Admin</span>
+                    </div>
+                    <div class="tag-item">
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="12" cy="12" r="10" fill="#10B981" stroke="#059669" stroke-width="2"/>
+                            <text x="12" y="16" text-anchor="middle" fill="white" font-family="Arial" font-size="10" font-weight="bold">MOD</text>
+                        </svg>
+                        <span>Moderator</span>
+                    </div>
+                    <div class="tag-item">
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="12" cy="12" r="10" fill="#3B82F6" stroke="#2563EB" stroke-width="2"/>
+                            <text x="12" y="16" text-anchor="middle" fill="white" font-family="Arial" font-size="8" font-weight="bold">VERIFIED</text>
+                        </svg>
+                        <span>Verified</span>
+                    </div>
+                    <div class="tag-item">
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="12" cy="12" r="10" fill="#FF4757" stroke="#FF3742" stroke-width="2"/>
+                            <text x="12" y="16" text-anchor="middle" fill="white" font-family="Arial" font-size="10" font-weight="bold">HOT</text>
+                        </svg>
+                        <span>Hot</span>
+                    </div>
+                    <div class="tag-item">
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="12" cy="12" r="10" fill="#FFA726" stroke="#FF9800" stroke-width="2"/>
+                            <text x="12" y="16" text-anchor="middle" fill="white" font-family="Arial" font-size="10" font-weight="bold">TOP</text>
+                        </svg>
+                        <span>Top</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="info-message">
+            <h3>ℹ️ ملاحظة مهمة</h3>
+            <p>هذه تاجات SVG مؤقتة تم إنشاؤها لأن الروابط التي أرسلتها لا تعمل مباشرة.</p>
+            <p><strong>لاستخدام الصور الفعلية:</strong></p>
+            <ul style="text-align: right; display: inline-block; margin: 15px 0;">
+                <li>ارفع الصور مباشرة إلى مجلد <code>/client/public/tags/</code></li>
+                <li>أو أرسل روابط مباشرة للصور (تنتهي بـ .jpg أو .png)</li>
+                <li>سأقوم بتحديث النظام فوراً ليستخدم الصور الفعلية</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

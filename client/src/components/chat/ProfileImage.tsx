@@ -4,6 +4,7 @@ import { getUserLevelIcon } from '@/components/chat/UserRoleBadge';
 import type { ChatUser } from '@/types/chat';
 import { getImageSrc } from '@/utils/imageUtils';
 import VipAvatar from '@/components/ui/VipAvatar';
+import ProfileTags from '@/components/ui/ProfileTags';
 
 interface ProfileImageProps {
   user: ChatUser;
@@ -15,6 +16,8 @@ interface ProfileImageProps {
   hideRoleBadgeOverlay?: boolean;
   // تعطيل عرض إطار الصورة في سياقات معينة (مثل الرسائل)
   disableFrame?: boolean;
+  // تعطيل عرض التاجات
+  disableTags?: boolean;
 }
 
 export default function ProfileImage({
@@ -25,6 +28,7 @@ export default function ProfileImage({
   onClick,
   hideRoleBadgeOverlay = false,
   disableFrame = false,
+  disableTags = false,
 }: ProfileImageProps) {
   const sizeClasses = {
     small: 'w-9 h-9',
@@ -79,6 +83,12 @@ export default function ProfileImage({
     return (
       <div className={`relative inline-block ${className || ''}`} onClick={onClick} style={{ width: containerSize, height: containerSize }}>
         <VipAvatar src={imageSrc} alt={`صورة ${user.username}`} size={px} frame={frameIndex as any} />
+        {!disableTags && user.profileTags && user.profileTags.length > 0 && (
+          <ProfileTags 
+            tags={user.profileTags} 
+            size={size === 'small' ? 'small' : size === 'large' ? 'large' : 'medium'} 
+          />
+        )}
       </div>
     );
   }
@@ -106,6 +116,12 @@ export default function ProfileImage({
           }
         }}
       />
+      {!disableTags && user.profileTags && user.profileTags.length > 0 && (
+        <ProfileTags 
+          tags={user.profileTags} 
+          size={size === 'small' ? 'small' : size === 'large' ? 'large' : 'medium'} 
+        />
+      )}
     </div>
   );
 }

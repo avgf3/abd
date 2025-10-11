@@ -16,6 +16,14 @@ export interface ChatUser {
   profileEffect?: string;
   // إطار البروفايل (اسم/مسار ثابت محفوظ)
   profileFrame?: string;
+  profileTags?: Array<{
+    type: string;
+    text: string;
+    color?: string;
+    bgColor?: string;
+    icon?: string;
+    image?: string;
+  }>;
   status?: string;
   gender?: string; // تغيير: جعل النوع اختيارياً وقابلاً لأي نص لضمان التوافق
   age?: number;

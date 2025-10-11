@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار تاجات البروفايل</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            margin: 0;
+            padding: 40px 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 48px;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .subtitle {
+            text-align: center;
+            font-size: 20px;
+            margin-bottom: 50px;
+            opacity: 0.9;
+        }
+
+        .demo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 50px;
+        }
+
+        .demo-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .profile-container {
+            position: relative;
+            display: inline-block;
+            margin: 20px auto;
+        }
+
+        .profile-image {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            object-fit: cover;
+        }
+
+        /* تاجات البروفايل */
+        .profile-tags {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .profile-tag {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: bold;
+            color: white;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.2);
+            backdrop-filter: blur(4px);
+            transition: transform 0.2s ease;
+            min-height: 18px;
+            white-space: nowrap;
+        }
+
+        .profile-tag:hover {
+            transform: scale(1.05);
+        }
+
+        .profile-tag .icon {
+            margin-left: 4px;
+            font-size: 9px;
+        }
+
+        /* ألوان التاجات */
+        .tag-vip { background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%); }
+        .tag-premium { background: linear-gradient(135deg, #FF6B6B 0%, #FF5252 100%); }
+        .tag-admin { background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%); }
+        .tag-moderator { background: linear-gradient(135deg, #10B981 0%, #059669 100%); }
+        .tag-verified { background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%); }
+        .tag-new { background: linear-gradient(135deg, #06D6A0 0%, #048A81 100%); }
+        .tag-hot { background: linear-gradient(135deg, #FF4757 0%, #FF3742 100%); }
+        .tag-top { background: linear-gradient(135deg, #FFA726 0%, #FF9800 100%); }
+        .tag-star { background: linear-gradient(135deg, #FFEB3B 0%, #FFC107 100%); }
+        .tag-diamond { background: linear-gradient(135deg, #81D4FA 0%, #29B6F6 100%); }
+
+        .username {
+            font-size: 18px;
+            font-weight: bold;
+            margin-top: 15px;
+            margin-bottom: 5px;
+        }
+
+        .user-info {
+            font-size: 14px;
+            opacity: 0.8;
+        }
+
+        .tags-list {
+            margin-top: 20px;
+            padding: 20px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 10px;
+        }
+
+        .tags-list h3 {
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+
+        .tag-demo {
+            display: inline-block;
+            margin: 3px;
+        }
+
+        @keyframes glow {
+            0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.2); }
+            50% { box-shadow: 0 4px 16px rgba(255,255,255,0.3), inset 0 1px 0 rgba(255,255,255,0.4); }
+        }
+
+        .profile-tag.animated {
+            animation: glow 2s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏷️ تاجات البروفايل الجديدة</h1>
+        <p class="subtitle">نظام تاجات احترافي يظهر فوق الصور الشخصية مباشرة</p>
+
+        <div class="demo-grid">
+            <!-- مستخدم VIP -->
+            <div class="demo-card">
+                <div class="profile-container">
+                    <img src="https://ui-avatars.com/api/?name=Ahmed&background=4299e1&color=fff&size=120" 
+                         alt="Ahmed" class="profile-image">
+                    <div class="profile-tags">
+                        <div class="profile-tag tag-vip animated">
+                            <span class="icon">👑</span>
+                            <span>VIP</span>
+                        </div>
+                        <div class="profile-tag tag-verified">
+                            <span class="icon">✓</span>
+                            <span>Verified</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="username">أحمد محمد</div>
+                <div class="user-info">عضو VIP مميز</div>
+            </div>
+
+            <!-- مستخدم Premium -->
+            <div class="demo-card">
+                <div class="profile-container">
+                    <img src="https://ui-avatars.com/api/?name=Sara&background=ec4899&color=fff&size=120" 
+                         alt="Sara" class="profile-image">
+                    <div class="profile-tags">
+                        <div class="profile-tag tag-premium">
+                            <span class="icon">⭐</span>
+                            <span>Premium</span>
+                        </div>
+                        <div class="profile-tag tag-hot">
+                            <span class="icon">🔥</span>
+                            <span>Hot</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="username">سارة أحمد</div>
+                <div class="user-info">عضو Premium نشط</div>
+            </div>
+
+            <!-- مشرف -->
+            <div class="demo-card">
+                <div class="profile-container">
+                    <img src="https://ui-avatars.com/api/?name=Omar&background=10b981&color=fff&size=120" 
+                         alt="Omar" class="profile-image">
+                    <div class="profile-tags">
+                        <div class="profile-tag tag-admin">
+                            <span class="icon">🛡️</span>
+                            <span>Admin</span>
+                        </div>
+                        <div class="profile-tag tag-top">
+                            <span class="icon">🏆</span>
+                            <span>Top</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="username">عمر خالد</div>
+                <div class="user-info">مشرف الموقع</div>
+            </div>
+
+            <!-- مستخدم جديد -->
+            <div class="demo-card">
+                <div class="profile-container">
+                    <img src="https://ui-avatars.com/api/?name=Layla&background=8b5cf6&color=fff&size=120" 
+                         alt="Layla" class="profile-image">
+                    <div class="profile-tags">
+                        <div class="profile-tag tag-new">
+                            <span class="icon">🆕</span>
+                            <span>New</span>
+                        </div>
+                        <div class="profile-tag tag-star">
+                            <span class="icon">⭐</span>
+                            <span>Star</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="username">ليلى محمود</div>
+                <div class="user-info">عضو جديد واعد</div>
+            </div>
+
+            <!-- مستخدم Diamond -->
+            <div class="demo-card">
+                <div class="profile-container">
+                    <img src="https://ui-avatars.com/api/?name=Khalid&background=f59e0b&color=fff&size=120" 
+                         alt="Khalid" class="profile-image">
+                    <div class="profile-tags">
+                        <div class="profile-tag tag-diamond animated">
+                            <span class="icon">💎</span>
+                            <span>Diamond</span>
+                        </div>
+                        <div class="profile-tag tag-verified">
+                            <span class="icon">✓</span>
+                            <span>Verified</span>
+                        </div>
+                        <div class="profile-tag tag-top">
+                            <span class="icon">🏆</span>
+                            <span>Top</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="username">خالد عبدالله</div>
+                <div class="user-info">عضو Diamond نخبة</div>
+            </div>
+
+            <!-- مراقب -->
+            <div class="demo-card">
+                <div class="profile-container">
+                    <img src="https://ui-avatars.com/api/?name=Nour&background=06d6a0&color=fff&size=120" 
+                         alt="Nour" class="profile-image">
+                    <div class="profile-tags">
+                        <div class="profile-tag tag-moderator">
+                            <span class="icon">🔨</span>
+                            <span>Mod</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="username">نور الهدى</div>
+                <div class="user-info">مراقب القسم</div>
+            </div>
+        </div>
+
+        <!-- قائمة جميع التاجات المتاحة -->
+        <div class="demo-card">
+            <div class="tags-list">
+                <h3>🏷️ جميع التاجات المتاحة:</h3>
+                
+                <div class="tag-demo">
+                    <div class="profile-tag tag-vip">
+                        <span class="icon">👑</span>
+                        <span>VIP</span>
+                    </div>
+                </div>
+                
+                <div class="tag-demo">
+                    <div class="profile-tag tag-premium">
+                        <span class="icon">⭐</span>
+                        <span>Premium</span>
+                    </div>
+                </div>
+                
+                <div class="tag-demo">
+                    <div class="profile-tag tag-admin">
+                        <span class="icon">🛡️</span>
+                        <span>Admin</span>
+                    </div>
+                </div>
+                
+                <div class="tag-demo">
+                    <div class="profile-tag tag-moderator">
+                        <span class="icon">🔨</span>
+                        <span>Mod</span>
+                    </div>
+                </div>
+                
+                <div class="tag-demo">
+                    <div class="profile-tag tag-verified">
+                        <span class="icon">✓</span>
+                        <span>Verified</span>
+                    </div>
+                </div>
+                
+                <div class="tag-demo">
+                    <div class="profile-tag tag-new">
+                        <span class="icon">🆕</span>
+                        <span>New</span>
+                    </div>
+                </div>
+                
+                <div class="tag-demo">
+                    <div class="profile-tag tag-hot">
+                        <span class="icon">🔥</span>
+                        <span>Hot</span>
+                    </div>
+                </div>
+                
+                <div class="tag-demo">
+                    <div class="profile-tag tag-top">
+                        <span class="icon">🏆</span>
+                        <span>Top</span>
+                    </div>
+                </div>
+                
+                <div class="tag-demo">
+                    <div class="profile-tag tag-star">
+                        <span class="icon">⭐</span>
+                        <span>Star</span>
+                    </div>
+                </div>
+                
+                <div class="tag-demo">
+                    <div class="profile-tag tag-diamond">
+                        <span class="icon">💎</span>
+                        <span>Diamond</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div style="text-align: center; margin-top: 40px; padding: 20px; background: rgba(0,0,0,0.2); border-radius: 10px;">
+            <h3>✅ المميزات المنفذة:</h3>
+            <ul style="text-align: right; display: inline-block; margin: 0;">
+                <li>✅ 10 تاجات محددة مسبقاً مع ألوان وأيقونات</li>
+                <li>✅ إمكانية إضافة تاجات مخصصة</li>
+                <li>✅ عرض التاجات فوق الصورة الشخصية مباشرة</li>
+                <li>✅ دعم عدة تاجات لنفس المستخدم</li>
+                <li>✅ واجهة إدارة للمالك والمشرفين</li>
+                <li>✅ تأثيرات بصرية جميلة مع gradients</li>
+                <li>✅ تخزين في قاعدة البيانات كـ JSON</li>
+                <li>✅ دعم الأيقونات والألوان المخصصة</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>
