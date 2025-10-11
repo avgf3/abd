@@ -1791,6 +1791,23 @@ li > * > div.effect-snow {
   justify-content: center;
   /* الإطار الخارجي (الحاوية) */
 }
+
+/* ===== Profile Tag overlay (top crown/badge above avatar) ===== */
+.profile-tag-overlay {
+  position: absolute;
+  top: -18%; /* يعلو أعلى الصورة ليظهر فوق الحافة بدقة */
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60%; /* نسبة مرنة لضمان التطابق مع مختلف الأحجام */
+  height: auto;
+  z-index: 4; /* فوق الإطار والصورة */
+  pointer-events: none;
+}
+
+/* عندما تكون داخل vip-frame ذات الحاوية الأكبر (1.35x) نضمن المحاذاة */
+.vip-frame.base .profile-tag-overlay {
+  top: calc(-0.18 * 100%);
+}
 .vip-frame-inner {
   position: relative;
   width: 100%;

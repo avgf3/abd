@@ -16,6 +16,8 @@ export interface ChatUser {
   profileEffect?: string;
   // إطار البروفايل (اسم/مسار ثابت محفوظ)
   profileFrame?: string;
+  // تاج البروفايل (اسم/مسار محفوظ داخل /tags أو معرّف)
+  profileTag?: string;
   status?: string;
   gender?: string; // تغيير: جعل النوع اختيارياً وقابلاً لأي نص لضمان التوافق
   age?: number;
@@ -109,6 +111,8 @@ export interface WallPost {
   totalDislikes: number;
   totalHearts: number;
   userProfileImage?: string;
+  // تاج المستخدم وقت النشر لعرضه دون جلب إضافي
+  userProfileTag?: string;
   usernameColor?: string;
 }
 

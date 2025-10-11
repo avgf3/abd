@@ -49,6 +49,8 @@ export const users = pgTable('users', {
   profileEffect: text('profile_effect').default('none'), // تأثير البروفايل
   // إطار صورة البروفايل (مسار ثابت داخل public/frames أو اسم معرف إطار)
   profileFrame: text('profile_frame'),
+  // تاج البروفايل (مسار ثابت داخل public/tags أو اسم معرف تاج)
+  profileTag: text('profile_tag'),
   points: integer('points').default(0), // نقاط المستخدم الحالية
   level: integer('level').default(1), // مستوى المستخدم
   totalPoints: integer('total_points').default(0), // إجمالي النقاط التي كسبها المستخدم
@@ -287,6 +289,8 @@ export const wallPosts = pgTable('wall_posts', {
   userProfileImage: text('user_profile_image'),
   // إطار المستخدم وقت إنشاء المنشور لضمان عرضه بدون جلب إضافي
   userProfileFrame: text('user_profile_frame'),
+  // تاج المستخدم وقت إنشاء المنشور لضمان عرضه بدون جلب إضافي
+  userProfileTag: text('user_profile_tag'),
   usernameColor: text('username_color').default('#4A90E2'),
   usernameGradient: text('username_gradient'), // تدرج لوني لاسم المستخدم (للمشرفين)
   usernameEffect: text('username_effect'), // تأثير حركي لاسم المستخدم (للمشرفين)

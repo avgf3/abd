@@ -105,6 +105,7 @@ export default function WallPostList({
                   {(() => {
                     const userFromCache = usersData[post.userId];
                     const frameFromPost = (post as any)?.userProfileFrame as string | undefined;
+                    const tagFromPost = (post as any)?.userProfileTag as string | undefined;
                     const effectiveUser: ChatUser = (userFromCache
                       ? { ...userFromCache }
                       : {
@@ -120,6 +121,9 @@ export default function WallPostList({
                         }) as ChatUser;
                     if (!('profileFrame' in (effectiveUser as any)) && frameFromPost) {
                       (effectiveUser as any).profileFrame = frameFromPost;
+                    }
+                    if (!('profileTag' in (effectiveUser as any)) && tagFromPost) {
+                      (effectiveUser as any).profileTag = tagFromPost;
                     }
                     const hasFrame = Boolean((effectiveUser as any)?.profileFrame);
                     const containerSize = hasFrame ? 54 : 40; // 40px image, 54px with frame

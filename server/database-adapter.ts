@@ -555,6 +555,35 @@ export async function ensureWallPostsUserProfileFrameColumn(): Promise<void> {
   }
 }
 
+// Ensure profile_tag column exists for avatar tags
+export async function ensureUserProfileTagColumn(): Promise<void> {
+  try {
+    if (!dbAdapter.client) return;
+    await dbAdapter.client.unsafe(`
+      ALTER TABLE IF EXISTS users
+        ADD COLUMN IF NOT EXISTS profile_tag TEXT;
+    `);
+  } catch (e) {
+    console.warn('⚠️ تعذر ضمان عمود profile_tag:', (e as any)?.message || e);
+  }
+}
+
+// Ensure wall_posts has user_profile_tag column used by feeds
+export async function ensureWallPostsUserProfileTagColumn(): Promise<void> {
+  try {
+    if (!dbAdapter.client) return;
+    await dbAdapter.client.unsafe(`
+      ALTER TABLE wall_posts
+        ADD COLUMN IF NOT EXISTS user_profile_tag TEXT;
+    `);
+  } catch (e) {
+    console.warn(
+      '⚠️ تعذر ضمان عمود user_profile_tag في wall_posts:',
+      (e as any)?.message || e
+    );
+  }
+}
+
 // Ensure message text styling columns exist on messages table
 export async function ensureMessageTextStylingColumns(): Promise<void> {
   try {

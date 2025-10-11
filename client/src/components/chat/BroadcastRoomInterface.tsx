@@ -1007,21 +1007,6 @@ export default function BroadcastRoomInterface({
           }}
         >
         </audio>
-            
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => setIsInfoCollapsed((v) => !v)}
-              title={isInfoCollapsed ? 'عرض التفاصيل' : 'إخفاء التفاصيل'}
-            >
-              {isInfoCollapsed ? (
-                <ChevronDown className="w-4 h-4" />
-              ) : (
-                <ChevronUp className="w-4 h-4" />
-              )}
-            </Button>
-          </div>
-        </div>
       </div>
 
       {/* لوحة التفاصيل القابلة للطي */}
