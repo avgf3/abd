@@ -70,7 +70,7 @@ export default function KickCountdown({ isVisible, onClose, durationMinutes }: K
             الوقت.
           </p>
 
-          <Badge variant="destructive" className="bg-red-700">
+          <Badge variant="destructive" className="text-red-700">
             طرد مؤقت - {durationMinutes} دقيقة
           </Badge>
 

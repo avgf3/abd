@@ -2271,10 +2271,6 @@ li > * > div.effect-snow {
 
 /* Modern Badge */
 .modern-badge {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 20px;
   padding: 6px 14px;
   font-size: 12px;
   font-weight: 600;
@@ -2285,9 +2281,7 @@ li > * > div.effect-snow {
 }
 
 .modern-badge:hover {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.08) 100%);
   transform: translateY(-1px);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
 
 /* Modern Divider */
@@ -2469,9 +2463,6 @@ li > * > div.effect-snow {
   min-width: 26px;
   height: 22px;
   padding: 0 8px;
-  border-radius: 999px;
-  background: linear-gradient(135deg, rgba(255,255,255,0.14), rgba(255,255,255,0.06));
-  border: 1px solid rgba(255,255,255,0.18);
   color: #fff;
   font-weight: 700;
   font-size: 12px;

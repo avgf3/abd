@@ -161,19 +161,19 @@ export default function PromoteUserPanel({
     switch (userType) {
       case 'owner':
         return (
-          <Badge variant="destructive" className="bg-red-600">
+          <Badge variant="destructive" className="text-red-600">
             مالك
           </Badge>
         );
       case 'admin':
         return (
-          <Badge variant="default" className="bg-blue-600">
+          <Badge variant="default" className="text-blue-600">
             إدمن
           </Badge>
         );
       case 'moderator':
         return (
-          <Badge variant="default" className="bg-green-600">
+          <Badge variant="default" className="text-green-600">
             مشرف
           </Badge>
         );
