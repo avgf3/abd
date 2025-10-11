@@ -28,11 +28,9 @@ export function LevelBadge({
   if (compact) {
     return (
       <span
-        className="inline-flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full"
+        className="inline-flex items-center gap-1 text-xs font-medium px-2 py-1"
         style={{
-          backgroundColor: `${levelColor}20`,
           color: levelColor,
-          border: `1px solid ${levelColor}40`,
         }}
       >
         {levelIcon}

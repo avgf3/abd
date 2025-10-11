@@ -296,7 +296,7 @@ export default function FriendsTabPanel({
           <UserPlus className="w-4 h-4 ml-2" />
           الطلبات
           {incomingRequests.length > 0 && (
-            <Badge className="absolute -top-1 -right-1 text-destructive bg-destructive/10 border-destructive/30 text-xs min-w-[20px] h-5">
+            <Badge className="absolute -top-1 -right-1 text-destructive text-xs min-w-[20px] h-5">
               {incomingRequests.length}
             </Badge>
           )}

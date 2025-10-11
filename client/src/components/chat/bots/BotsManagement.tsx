@@ -372,13 +372,13 @@ export default function BotsManagement({ currentUser }: BotsManagementProps) {
   const getBotTypeColor = (type: string) => {
     switch (type) {
       case 'system':
-        return 'bg-blue-100 text-blue-800';
+        return 'text-blue-800';
       case 'chat':
-        return 'bg-green-100 text-green-800';
+        return 'text-green-800';
       case 'moderator':
-        return 'bg-purple-100 text-purple-800';
+        return 'text-purple-800';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'text-gray-800';
     }
   };
 
@@ -479,9 +479,9 @@ export default function BotsManagement({ currentUser }: BotsManagementProps) {
                             <span className="font-medium" style={{ color: bot.usernameColor }}>{bot.username}</span>
                             <Badge className={getBotTypeColor(bot.botType)}>{getBotTypeName(bot.botType)}</Badge>
                             {bot.isActive ? (
-                              <Badge className="bg-green-100 text-green-800">نشط</Badge>
+                              <Badge className="text-green-800">نشط</Badge>
                             ) : (
-                              <Badge className="bg-gray-100 text-gray-800">معطل</Badge>
+                              <Badge className="text-gray-800">معطل</Badge>
                             )}
                           </div>
                           <span className="text-xs text-gray-500">{bot.status}</span>
