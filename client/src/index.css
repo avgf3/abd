@@ -1802,6 +1802,13 @@ li > * > div.effect-snow {
   height: auto;
   z-index: 4; /* فوق الإطار والصورة */
   pointer-events: none;
+  background: transparent !important; /* خلفية شفافة لمنع ظهور خلفية بيضاء */
+  background-color: transparent !important; /* تأكيد إضافي للشفافية */
+  /* إضافات لضمان الشفافية الكاملة */
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
 }
 
 /* عندما تكون داخل vip-frame ذات الحاوية الأكبر (1.35x) نضمن المحاذاة */
