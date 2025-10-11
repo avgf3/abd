@@ -120,7 +120,7 @@ export const PREDEFINED_TAGS: Record<string, ProfileTag> = {
   tag3: {
     type: 'tag3',
     text: 'Tag 3',
-    image: '/tags/tag3.png'
+    image: '/tags/tag3.jpg'
   },
   tag4: {
     type: 'tag4',

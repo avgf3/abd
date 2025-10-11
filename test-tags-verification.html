@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>التحقق من التاجات</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #1a1a2e;
+            color: white;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .tag-test {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin: 15px 0;
+            padding: 15px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+        }
+        .tag-image {
+            width: 32px;
+            height: 32px;
+            object-fit: contain;
+            border: 2px solid transparent;
+        }
+        .tag-image.loaded {
+            border-color: #22c55e;
+        }
+        .tag-image.error {
+            border-color: #ef4444;
+            background: #fee;
+        }
+        .tag-info {
+            flex: 1;
+        }
+        .status {
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .status.success { background: #22c55e; color: white; }
+        .status.error { background: #ef4444; color: white; }
+        .status.loading { background: #eab308; color: white; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 التحقق من تحميل التاجات</h1>
+        
+        <div id="tags-container">
+            <!-- سيتم ملء هذا بـ JavaScript -->
+        </div>
+        
+        <div id="summary" style="margin-top: 30px; padding: 20px; background: rgba(255,255,255,0.1); border-radius: 10px;">
+            <h3>📊 الملخص:</h3>
+            <p id="summary-text">جاري التحقق...</p>
+        </div>
+    </div>
+
+    <script>
+        const tags = [
+            { name: 'Tag 1', path: '/tags/tag1.png', type: 'PNG' },
+            { name: 'Tag 2', path: '/tags/tag2.png', type: 'PNG' },
+            { name: 'Tag 3', path: '/tags/tag3.jpg', type: 'JPEG' },
+            { name: 'Tag 4', path: '/tags/tag4.png', type: 'PNG' },
+            { name: 'Tag 5', path: '/tags/tag5.png', type: 'PNG' },
+            { name: 'Tag 6', path: '/tags/tag6.png', type: 'PNG' },
+            { name: 'Tag 7', path: '/tags/tag7.png', type: 'PNG' }
+        ];
+
+        let loadedCount = 0;
+        let errorCount = 0;
+
+        function updateSummary() {
+            const total = tags.length;
+            const pending = total - loadedCount - errorCount;
+            
+            document.getElementById('summary-text').innerHTML = `
+                <strong>إجمالي التاجات:</strong> ${total}<br>
+                <strong style="color: #22c55e;">تم تحميلها بنجاح:</strong> ${loadedCount}<br>
+                <strong style="color: #ef4444;">فشل في التحميل:</strong> ${errorCount}<br>
+                <strong style="color: #eab308;">قيد التحميل:</strong> ${pending}
+            `;
+        }
+
+        function createTagTest(tag) {
+            const div = document.createElement('div');
+            div.className = 'tag-test';
+            div.innerHTML = `
+                <img src="${tag.path}" alt="${tag.name}" class="tag-image" id="img-${tag.name.replace(' ', '')}">
+                <div class="tag-info">
+                    <strong>${tag.name}</strong><br>
+                    <small>${tag.path} (${tag.type})</small>
+                </div>
+                <div class="status loading" id="status-${tag.name.replace(' ', '')}">جاري التحميل...</div>
+            `;
+            
+            const img = div.querySelector('.tag-image');
+            const status = div.querySelector('.status');
+            
+            img.onload = function() {
+                img.classList.add('loaded');
+                status.textContent = '✅ تم التحميل';
+                status.className = 'status success';
+                loadedCount++;
+                updateSummary();
+            };
+            
+            img.onerror = function() {
+                img.classList.add('error');
+                status.textContent = '❌ فشل التحميل';
+                status.className = 'status error';
+                errorCount++;
+                updateSummary();
+            };
+            
+            return div;
+        }
+
+        // إنشاء اختبارات التاجات
+        const container = document.getElementById('tags-container');
+        tags.forEach(tag => {
+            container.appendChild(createTagTest(tag));
+        });
+
+        updateSummary();
+    </script>
+</body>
+</html>
