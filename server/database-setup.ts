@@ -28,6 +28,8 @@ import { ensureUsernameColorDefaultBlue } from './database-adapter';
 import { ensureMessageTextStylingColumns } from './database-adapter';
 import { ensureUserProfileFrameColumn } from './database-adapter';
 import { ensureWallPostsUserProfileFrameColumn } from './database-adapter';
+import { ensureUserProfileTagColumn } from './database-adapter';
+import { ensureWallPostsUserProfileTagColumn } from './database-adapter';
 import { optimizeDatabaseIndexes } from './utils/database-optimization';
 
 // إعادة تصدير دالة التهيئة من المحول
@@ -284,6 +286,20 @@ export async function initializeSystem(): Promise<boolean> {
       await ensureWallPostsUserProfileFrameColumn();
     } catch (e) {
       console.warn('⚠️ تعذر ضمان عمود user_profile_frame في wall_posts:', (e as any)?.message || e);
+    }
+
+    // ضمان عمود تاج البروفايل
+    try {
+      await ensureUserProfileTagColumn();
+    } catch (e) {
+      console.warn('⚠️ تعذر ضمان عمود profile_tag:', (e as any)?.message || e);
+    }
+
+    // ضمان عمود تاج المستخدم داخل منشورات الحائط (user_profile_tag)
+    try {
+      await ensureWallPostsUserProfileTagColumn();
+    } catch (e) {
+      console.warn('⚠️ تعذر ضمان عمود user_profile_tag في wall_posts:', (e as any)?.message || e);
     }
 
     // ضمان وجود أعمدة chat_lock في جدول الغرف

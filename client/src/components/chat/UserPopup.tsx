@@ -31,6 +31,7 @@ export default function UserPopup({
   const { toast } = useToast();
   const canSetFrame =
     currentUser && currentUser.userType === 'owner' && currentUser.id !== user.id;
+  const canSetTag = canSetFrame;
 
   const handleAddFrame = async (frameIndex: number) => {
     if (!currentUser || !canSetFrame) return;
@@ -43,6 +44,23 @@ export default function UserPopup({
       onClose?.();
     } catch (e) {
       toast({ title: 'خطأ', description: 'تعذر تعيين الإطار', variant: 'destructive' });
+    }
+  };
+
+  const handleAddTag = async (tagIndex: number) => {
+    if (!currentUser || !canSetTag) return;
+    try {
+      const body: any = {};
+      if (tagIndex > 0) body.profileTag = `tag${tagIndex}.webp`;
+      else body.profileTag = null;
+      await apiRequest(`/api/users/${user.id}`, {
+        method: 'PUT',
+        body,
+      });
+      toast({ title: 'تم', description: `${tagIndex > 0 ? `تم تعيين تاج ${tagIndex}` : 'تمت إزالة التاج'} لـ ${user.username}` });
+      onClose?.();
+    } catch (e) {
+      toast({ title: 'خطأ', description: 'تعذر تعيين التاج', variant: 'destructive' });
     }
   };
 
@@ -253,6 +271,26 @@ export default function UserPopup({
                   title="إزالة الإطار"
                 >
                   إزالة
+                </button>
+              </div>
+              <div className="px-2 py-1 text-xs text-gray-500">إضافة تاج:</div>
+              <div className="flex flex-wrap gap-1 px-2 pb-1">
+                {[1,2,3,4,5,6,7,8,9,10,11,12].map((i) => (
+                  <button
+                    key={`tag-${i}`}
+                    onClick={() => handleAddTag(i)}
+                    className="px-2 py-1 rounded bg-gray-100 hover:bg-gray-200 text-xs"
+                    title={`تاج ${i}`}
+                  >
+                    تاج {i}
+                  </button>
+                ))}
+                <button
+                  onClick={() => handleAddTag(0 as any)}
+                  className="px-2 py-1 rounded bg-gray-100 hover:bg-gray-200 text-xs"
+                  title="إزالة التاج"
+                >
+                  إزالة التاج
                 </button>
               </div>
             </>

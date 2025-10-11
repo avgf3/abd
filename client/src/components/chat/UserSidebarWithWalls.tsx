@@ -798,6 +798,7 @@ export default function UnifiedSidebar({
                         <div className="flex items-center gap-3">
                           {(() => {
                             const frameFromPost = (post as any)?.userProfileFrame as string | undefined;
+                            const tagFromPost = (post as any)?.userProfileTag as string | undefined;
                             const effectiveUser: ChatUser = {
                               id: post.userId,
                               username: post.username,
@@ -806,6 +807,7 @@ export default function UnifiedSidebar({
                               usernameColor: post.usernameColor,
                             } as ChatUser;
                             if (frameFromPost) (effectiveUser as any).profileFrame = frameFromPost;
+                            if (tagFromPost) (effectiveUser as any).profileTag = tagFromPost;
                             const hasFrame = Boolean((effectiveUser as any)?.profileFrame);
                             const containerSize = hasFrame ? 43 : 32;
                             return (
@@ -949,6 +951,7 @@ export default function UnifiedSidebar({
                         <div className="flex items-center gap-3">
                           {(() => {
                             const frameFromPost = (post as any)?.userProfileFrame as string | undefined;
+                            const tagFromPost = (post as any)?.userProfileTag as string | undefined;
                             const effectiveUser: ChatUser = {
                               id: post.userId,
                               username: post.username,
@@ -957,6 +960,7 @@ export default function UnifiedSidebar({
                               usernameColor: post.usernameColor,
                             } as ChatUser;
                             if (frameFromPost) (effectiveUser as any).profileFrame = frameFromPost;
+                            if (tagFromPost) (effectiveUser as any).profileTag = tagFromPost;
                             const hasFrame = Boolean((effectiveUser as any)?.profileFrame);
                             const containerSize = hasFrame ? 43 : 32;
                             return (

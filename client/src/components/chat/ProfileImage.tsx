@@ -61,6 +61,18 @@ export default function ProfileImage({
   }, [user.profileImage, (user as any)?.avatarHash, (user as any)?.avatarVersion]);
 
   const frameName = (user as any)?.profileFrame as string | undefined;
+  const tagName = (user as any)?.profileTag as string | undefined;
+  const tagSrc: string | undefined = (() => {
+    if (!tagName) return undefined;
+    const str = String(tagName);
+    if (str.startsWith('data:') || str.startsWith('/') || str.includes('/')) return str;
+    const m = str.match(/(\d+)/);
+    if (m && Number.isFinite(parseInt(m[1]))) {
+      const n = Math.max(1, Math.min(50, parseInt(m[1])));
+      return `/tags/tag${n}.webp`;
+    }
+    return `/tags/${str}`;
+  })();
   const frameIndex = (() => {
     if (!frameName) return undefined;
     const match = String(frameName).match(/(\d+)/);
@@ -76,9 +88,22 @@ export default function ProfileImage({
     const px = pixelSize ?? (size === 'small' ? 36 : size === 'large' ? 72 : 56);
     // الحاوية يجب أن تكون أكبر لاستيعاب الإطار (نفس النسبة المستخدمة في VipAvatar)
     const containerSize = px * 1.35;
+    const imageTopWithinContainer = (containerSize - px) / 2; // موضع أعلى الصورة داخل الحاوية
+    const overlayTopPx = imageTopWithinContainer; // نثبت أسفل التاج عند أعلى الصورة تماماً
+    const overlayWidthPx = Math.round(px);
     return (
       <div className={`relative inline-block ${className || ''}`} onClick={onClick} style={{ width: containerSize, height: containerSize }}>
         <VipAvatar src={imageSrc} alt={`صورة ${user.username}`} size={px} frame={frameIndex as any} />
+        {tagSrc && (
+          <img
+            src={tagSrc}
+            alt="tag"
+            className="profile-tag-overlay"
+            aria-hidden="true"
+            style={{ top: overlayTopPx, width: overlayWidthPx, transform: 'translate(-50%, -100%)' }}
+            onError={(e: any) => { try { e.currentTarget.style.display = 'none'; } catch {} }}
+          />
+        )}
       </div>
     );
   }
@@ -106,6 +131,22 @@ export default function ProfileImage({
           }
         }}
       />
+      {(() => {
+        if (!tagSrc) return null;
+        const basePx = pixelSize ?? (size === 'small' ? 36 : size === 'large' ? 72 : 56);
+        const overlayTopPx = 0; // أعلى الحاوية يطابق أعلى الصورة هنا
+        const overlayWidthPx = Math.round(basePx);
+        return (
+          <img
+            src={tagSrc}
+            alt="tag"
+            className="profile-tag-overlay"
+            aria-hidden="true"
+            style={{ top: overlayTopPx, width: overlayWidthPx, transform: 'translate(-50%, -100%)' }}
+            onError={(e: any) => { try { e.currentTarget.style.display = 'none'; } catch {} }}
+          />
+        );
+      })()}
     </div>
   );
 }

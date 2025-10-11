@@ -328,6 +328,7 @@ export async function createWallPost(postData: any): Promise<any> {
           timestamp: postData.timestamp ?? new Date(),
           userProfileImage: postData.userProfileImage ?? null,
           userProfileFrame: postData.userProfileFrame ?? null,
+          userProfileTag: postData.userProfileTag ?? null,
           usernameColor: postData.usernameColor ?? null,
           // تخزين تدرج وتأثير الاسم لحظة النشر لعرض متسق لاحقاً
           usernameGradient: postData.usernameGradient ?? null,
