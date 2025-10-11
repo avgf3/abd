@@ -89,8 +89,8 @@ export default function ProfileImage({
     // الحاوية يجب أن تكون أكبر لاستيعاب الإطار (نفس النسبة المستخدمة في VipAvatar)
     const containerSize = px * 1.35;
     const imageTopWithinContainer = (containerSize - px) / 2; // موضع أعلى الصورة داخل الحاوية
-    const overlayTopPx = imageTopWithinContainer; // نثبت أسفل التاج عند أعلى الصورة تماماً
-    const overlayWidthPx = Math.round(px);
+    const overlayTopPx = imageTopWithinContainer; // مرجع أعلى الصورة داخل الحاوية
+    const overlayWidthPx = Math.round(px * 0.6); // عرض التاج ~60% من عرض الصورة
     return (
       <div className={`relative inline-block ${className || ''}`} onClick={onClick} style={{ width: containerSize, height: containerSize }}>
         <VipAvatar src={imageSrc} alt={`صورة ${user.username}`} size={px} frame={frameIndex as any} />
@@ -100,12 +100,13 @@ export default function ProfileImage({
             alt="tag"
             className="profile-tag-overlay"
             aria-hidden="true"
-            style={{ 
-              top: overlayTopPx, 
-              width: overlayWidthPx, 
+            style={{
+              top: overlayTopPx,
+              width: overlayWidthPx,
+              // محاذاة حرفية: أسفل التاج يلامس أعلى الصورة تماماً
               transform: 'translate(-50%, -100%)',
               backgroundColor: 'transparent',
-              background: 'transparent'
+              background: 'transparent',
             }}
             onError={(e: any) => { try { e.currentTarget.style.display = 'none'; } catch {} }}
           />
@@ -141,19 +142,20 @@ export default function ProfileImage({
         if (!tagSrc) return null;
         const basePx = pixelSize ?? (size === 'small' ? 36 : size === 'large' ? 72 : 56);
         const overlayTopPx = 0; // أعلى الحاوية يطابق أعلى الصورة هنا
-        const overlayWidthPx = Math.round(basePx);
+        const overlayWidthPx = Math.round(basePx * 0.6); // عرض التاج ~60% من عرض الصورة
         return (
           <img
             src={tagSrc}
             alt="tag"
             className="profile-tag-overlay"
             aria-hidden="true"
-            style={{ 
-              top: overlayTopPx, 
-              width: overlayWidthPx, 
+            style={{
+              top: overlayTopPx,
+              width: overlayWidthPx,
+              // محاذاة حرفية: أسفل التاج يلامس أعلى الصورة تماماً
               transform: 'translate(-50%, -100%)',
               backgroundColor: 'transparent',
-              background: 'transparent'
+              background: 'transparent',
             }}
             onError={(e: any) => { try { e.currentTarget.style.display = 'none'; } catch {} }}
           />
