@@ -1,5 +1,5 @@
 import Redis from 'ioredis';
-import { RedisStore } from 'connect-redis';
+import RedisStore from 'connect-redis';
 
 let redisClient: Redis | null = null;
 let sessionStore: any = null;
