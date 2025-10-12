@@ -117,13 +117,13 @@ export async function initializeDatabase(): Promise<boolean> {
     // ملاحظة: القيم الكبيرة قد تستنزف اتصالات القاعدة بدون PgBouncer
     // - مع PgBouncer (transaction pooling): يمكن رفع max كثيراً بأمان
     // - بدون PgBouncer: نجعل max متوسطاً لتفادي استنزاف max_connections على الخادم
-    // مع PgBouncer ننصح بـ ~50 اتصال فقط من Node.js، والذي يكفي لأكثر من 8K مستخدم WebSocket
-    const defaultMax = noLimits ? (isPgBouncer ? 1000 : 50) : isPgBouncer ? 50 : 5;
+    // تحسين: تقليل عدد الاتصالات الافتراضية لتجنب مشكلة "Max client connections reached"
+    const defaultMax = noLimits ? (isPgBouncer ? 200 : 25) : isPgBouncer ? 25 : 3;
     const poolMax = Number(process.env.DB_POOL_MAX || process.env.POOL_MAX || defaultMax);
     const poolMin = noLimits ? 0 : Number(process.env.DB_POOL_MIN || 0);
-    // لمنع انقطاع الاتصال: 0 يعني تعطيل المهلة في postgres.js
-    const idleTimeout = noLimits ? 0 : Number(process.env.DB_IDLE_TIMEOUT || 60); // ثوانٍ
-    const maxLifetime = noLimits ? 0 : Number(process.env.DB_MAX_LIFETIME || 60 * 30); // ثوانٍ
+    // تقليل مهلات الاتصال لتحرير الاتصالات بشكل أسرع
+    const idleTimeout = noLimits ? 0 : Number(process.env.DB_IDLE_TIMEOUT || 30); // ثوانٍ
+    const maxLifetime = noLimits ? 0 : Number(process.env.DB_MAX_LIFETIME || 60 * 15); // ثوانٍ
     const connectTimeout = Number(process.env.DB_CONNECT_TIMEOUT || 30); // ثوانٍ
     const retryDelayMs = Number(process.env.DB_RETRY_DELAY_MS || (noLimits ? 500 : 1000));
     const maxAttempts = Number(process.env.DB_MAX_ATTEMPTS || (noLimits ? 10 : 5));
@@ -148,6 +148,16 @@ export async function initializeDatabase(): Promise<boolean> {
       // إعدادات إعادة المحاولة
       retry_delay: retryDelayMs,
       max_attempts: maxAttempts,
+      // تحسينات إضافية لإدارة الاتصالات
+      transform: {
+        undefined: null
+      },
+      // معالج لمراقبة أخطاء الاتصال
+      onclose: () => {
+        console.warn('⚠️ قاعدة البيانات غير متاحة، محاولة إعادة الاتصال...');
+      },
+      // تقليل timeout للاستعلامات الفردية
+      timeout: 10,
     });
 
     const drizzleDb = drizzle(client, { schema, logger: false });

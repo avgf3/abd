@@ -334,7 +334,7 @@ export class DatabaseService {
               .set(validUpdates)
               .where(eq(schema.users.id, id))
               .returning(),
-            { timeout: 8000, retries: 1 }
+            { timeout: 5000, retries: 1 } // تقليل المهلة الزمنية
           );
           return result?.[0] || null;
         } else {
@@ -343,7 +343,35 @@ export class DatabaseService {
         }
       },
       null,
-      { timeout: 8000 }
+      { timeout: 5000 } // تقليل المهلة الزمنية
+    );
+  }
+
+  // دالة جديدة لتحديث lastSeen بشكل مجمع لتقليل استهلاك الاتصالات
+  async updateUsersLastSeen(userIds: number[], lastSeen: Date): Promise<void> {
+    if (!this.isConnected() || userIds.length === 0) return;
+
+    return safeDbOperation(
+      async () => {
+        if (this.type === 'postgresql') {
+          // استخدام postgres.js للتحديث المجمع الأكثر كفاءة
+          await withTimeout(
+            async () => {
+              const { dbAdapter } = await import('../database-adapter');
+              if (dbAdapter.client) {
+                await dbAdapter.client`
+                  UPDATE users 
+                  SET last_seen = ${lastSeen} 
+                  WHERE id = ANY(${userIds})
+                `;
+              }
+            },
+            { timeout: 3000, retries: 1 }
+          );
+        }
+      },
+      undefined,
+      { timeout: 3000 }
     );
   }
 

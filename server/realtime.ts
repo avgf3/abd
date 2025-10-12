@@ -1690,23 +1690,48 @@ export function stopBotUpdater() {
 async function updateLastSeenForConnectedUsers() {
   try {
     const now = new Date();
-    const updatePromises: Promise<void>[] = [];
+    const connectedUserIds: number[] = [];
     
-    // تحديث lastSeen لجميع المستخدمين المتصلين
+    // جمع معرفات المستخدمين المتصلين
     for (const [userId, entry] of connectedUsers.entries()) {
       if (entry.sockets.size > 0) { // المستخدم متصل
-        updatePromises.push(
-          storage
-            .updateUser(userId, { lastSeen: now })
-            .then(() => {})
-            .catch((error) => {
-              console.error(`خطأ في تحديث lastSeen للمستخدم ${userId}:`, error);
-            })
-        );
+        connectedUserIds.push(userId);
       }
     }
     
-    await Promise.all(updatePromises);
+    if (connectedUserIds.length === 0) return;
+    
+    // استخدام التحديث المجمع الأكثر كفاءة لتقليل استهلاك اتصالات قاعدة البيانات
+    const BATCH_SIZE = 50; // تحديث 50 مستخدم في كل مرة باستخدام استعلام واحد
+    
+    for (let i = 0; i < connectedUserIds.length; i += BATCH_SIZE) {
+      const batch = connectedUserIds.slice(i, i + BATCH_SIZE);
+      
+      try {
+        // استخدام الدالة الجديدة للتحديث المجمع
+        if (storage.updateUsersLastSeen) {
+          await storage.updateUsersLastSeen(batch, now);
+        } else {
+          // Fallback للطريقة القديمة إذا لم تكن الدالة الجديدة متاحة
+          const batchPromises = batch.map(userId =>
+            storage
+              .updateUser(userId, { lastSeen: now })
+              .then(() => {})
+              .catch((error) => {
+                console.error(`خطأ في تحديث lastSeen للمستخدم ${userId}:`, error);
+              })
+          );
+          await Promise.all(batchPromises);
+        }
+        
+        // انتظار قصير بين المجموعات لتقليل الضغط
+        if (i + BATCH_SIZE < connectedUserIds.length) {
+          await new Promise(resolve => setTimeout(resolve, 50));
+        }
+      } catch (error) {
+        console.error('خطأ في معالجة مجموعة تحديث lastSeen:', error);
+      }
+    }
     // بث userUpdated بشكل خفيف لإبلاغ الواجهة بالتحديث الدوري لـ lastSeen مع تضمين isHidden من قاعدة البيانات
     try {
       if (ioInstance) {
@@ -1748,8 +1773,8 @@ export function startLastSeenUpdater() {
     clearInterval(lastSeenUpdateInterval);
   }
   
-  // تحديث كل دقيقة (60000 ms)
-  lastSeenUpdateInterval = setInterval(updateLastSeenForConnectedUsers, 60000);
+  // تحديث كل 30 ثانية (30000 ms) لتوزيع الحمل بشكل أفضل
+  lastSeenUpdateInterval = setInterval(updateLastSeenForConnectedUsers, 30000);
   }
 
 // إيقاف نظام التحديث الدوري
