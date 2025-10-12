@@ -78,7 +78,7 @@ export default function ProfileImage({
     const match = String(frameName).match(/(\d+)/);
     if (match) {
       const n = parseInt(match[1]);
-      if (Number.isFinite(n)) return (Math.max(1, Math.min(10, n)) as any);
+      if (Number.isFinite(n)) return (Math.max(1, Math.min(12, n)) as any);
     }
     return undefined;
   })();

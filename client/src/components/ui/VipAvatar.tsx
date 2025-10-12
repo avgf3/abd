@@ -6,7 +6,7 @@ interface VipAvatarProps {
   src: string;
   alt?: string;
   size?: number; // pixels
-  frame?: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
+  frame?: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12;
   className?: string;
 }
 
@@ -43,8 +43,8 @@ export default function VipAvatar({
     height: imageSize,
   };
 
-  // Use image-based overlay for frames 1..9 if available
-  const frameImage = frame >= 1 && frame <= 9 ? `/frames/frame${frame}.webp` : undefined;
+  // Use image-based overlay for frames 1..12 if available
+  const frameImage = frame >= 1 && frame <= 12 ? `/frames/frame${frame}.webp` : undefined;
   const hasImageOverlay = Boolean(frameImage);
 
   return (
