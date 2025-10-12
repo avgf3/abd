@@ -749,7 +749,9 @@ export default function BroadcastRoomInterface({
         if (pc) {
           await pc.setRemoteDescription(new RTCSessionDescription(payload.sdp));
         }
-      } catch (err) {}
+      } catch (err) {
+        console.error('❌ فشل في تعيين remote description:', err);
+      }
     };
     const handleIce = async (payload: any) => {
       try {

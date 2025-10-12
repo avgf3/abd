@@ -127,6 +127,14 @@ class UserCacheManager {
   /**
    * الحصول على بيانات مستخدم من الكاش
    */
+  /**
+   * الحصول على اسم المستخدم من الكاش
+   */
+  getUsername(userId: number, fallback?: string): string {
+    const user = this.getUser(userId);
+    return user?.username || fallback || `User ${userId}`;
+  }
+
   getUser(userId: number): CachedUser | null {
     const cached = this.memoryCache.get(userId);
     if (!cached) return null;

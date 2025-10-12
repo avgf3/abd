@@ -32,7 +32,9 @@ export const playMentionSound = () => {
     // تشغيل الصوت لمدة 300ms
     oscillator.start(audioContext.currentTime);
     oscillator.stop(audioContext.currentTime + 0.3);
-  } catch (error) {}
+  } catch (error) {
+    // Mention sound failed - silent fail for user experience
+  }
 };
 
 // البحث عن المناشين في النص

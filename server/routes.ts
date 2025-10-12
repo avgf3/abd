@@ -4609,8 +4609,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // فحص الملفات الثابتة
       try {
-        const fs = require('fs');
-        const path = require('path');
         const crownSvgPath = path.join(process.cwd(), 'client', 'public', 'svgs', 'crown.svg');
         if (fs.existsSync(crownSvgPath)) {
           healthCheck.services.static_files = 'healthy';

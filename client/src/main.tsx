@@ -11,7 +11,7 @@ import { apiRequest } from '@/lib/queryClient';
 try {
   let keepAliveAudioEl: HTMLAudioElement | null = null;
   let keepAliveUrl: string | null = null;
-  let keepAliveAudioCtx: (AudioContext | (Window & typeof globalThis)['webkitAudioContext']) | null = null;
+  let keepAliveAudioCtx: AudioContext | null = null;
   let keepAliveCleanup: (() => void) | null = null;
 
   const createSilentWavUrl = (seconds = 1, sampleRate = 8000): string => {

@@ -31,6 +31,8 @@ export interface ChatUser {
   deviceId?: string;
   ignoredUsers: number[];
   profileEffect?: string;
+  profileFrame?: string; // إطار البروفايل
+  profileTag?: string; // تاج البروفايل
   points?: number;
   level?: number;
   totalPoints?: number;
