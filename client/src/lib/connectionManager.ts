@@ -228,8 +228,10 @@ export function createDefaultConnectionManager(opts: Partial<ConnectionManagerCo
     // errorReportUrl: undefined, // opt-in only if server endpoint implemented
     speedVisibleMs: 1500,
     speedHiddenMs: 4000,
-    failuresBeforeHardReload: 25,
-    hardReloadOnServerAck: true,
+    // لا تقم بعمل إعادة تحميل قسرية بعد الفشل؛ دع التطبيق يحاول تلقائياً
+    failuresBeforeHardReload: Number.POSITIVE_INFINITY,
+    // لا تعيد التحميل نهائياً بناءً على رد الخادم على تقارير الأخطاء
+    hardReloadOnServerAck: false,
     ...opts,
   });
 }

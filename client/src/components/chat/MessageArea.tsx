@@ -90,12 +90,35 @@ export default function MessageArea({
   const inputRef = useRef<HTMLInputElement>(null);
   const virtuosoRef = useRef<VirtuosoHandle>(null);
   const prevMessagesLenRef = useRef<number>(0);
+  const restoringScrollRef = useRef<boolean>(false);
   // مقدار إزاحة الكيبورد أسفل الشاشة (iOS) لترك مساحة أسفل قائمة الرسائل
   const [keyboardInset, setKeyboardInset] = useState<number>(0);
 
   // State for improved scroll behavior
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
+
+  // مفاتيح التخزين المحلية لمواضع التمرير لكل غرفة
+  const getScrollKey = useCallback(() => `room_scroll_${currentRoomId}`, [currentRoomId]);
+
+  // حفظ موضع التمرير الحالي بشكل مخثث
+  const saveScrollPosition = useCallback((top: number) => {
+    try {
+      const key = getScrollKey();
+      localStorage.setItem(key, String(Math.max(0, Math.floor(top))));
+    } catch {}
+  }, [getScrollKey]);
+
+  // استرجاع موضع التمرير المحفوظ لهذه الغرفة
+  const loadScrollPosition = useCallback((): number | null => {
+    try {
+      const key = getScrollKey();
+      const v = localStorage.getItem(key);
+      return v ? Math.max(0, parseInt(v, 10) || 0) : null;
+    } catch {
+      return null;
+    }
+  }, [getScrollKey]);
 
   // YouTube modal state
   const [youtubeModal, setYoutubeModal] = useState<{ open: boolean; videoId: string | null }>({
@@ -272,6 +295,49 @@ export default function MessageArea({
     setIsAtBottom(atBottom);
     if (atBottom) setUnreadCount(0);
   }, []);
+
+  // حفظ موضع التمرير كل 200ms أثناء التمرير
+  useEffect(() => {
+    const container = document.querySelector('.react-virtuoso-scroller') as HTMLElement | null;
+    if (!container) return;
+    let last = 0;
+    const onScroll = () => {
+      if (restoringScrollRef.current) return; // لا تحفظ أثناء الاسترجاع
+      const now = Date.now();
+      if (now - last < 200) return;
+      last = now;
+      try {
+        saveScrollPosition(container.scrollTop || 0);
+      } catch {}
+    };
+    container.addEventListener('scroll', onScroll, { passive: true });
+    return () => {
+      try { container.removeEventListener('scroll', onScroll); } catch {}
+    };
+  }, [currentRoomId, saveScrollPosition]);
+
+  // عند تغيير الغرفة: حاول استرجاع موضع التمرير المخزن
+  useEffect(() => {
+    try {
+      const saved = loadScrollPosition();
+      if (saved != null && virtuosoRef.current) {
+        restoringScrollRef.current = true;
+        // استخدم scrollTo لتحديد موضع البكسل بدقة
+        // react-virtuoso يعرّض scrollTo عبر getScrollTop API غير رسمي: نستخدم scrollToIndex كبديل تقريبي ثم نضبط لاحقاً
+        // سنستخدم requestAnimationFrame لتطبيق الضبط بعد التصيير
+        const apply = () => {
+          try {
+            (virtuosoRef.current as any)?.scrollTo?.({ top: saved, behavior: 'auto' });
+          } catch {}
+          // مهلة قصيرة لإلغاء علامة الاسترجاع
+          setTimeout(() => { restoringScrollRef.current = false; }, 50);
+        };
+        requestAnimationFrame(apply);
+      }
+    } catch {}
+    // لا تضف اعتماديات الرسائل هنا كي لا يُعاد الاسترجاع كل مرة
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentRoomId]);
 
   const handleScrollDownClick = useCallback(() => {
     scrollToBottom('smooth');
@@ -710,6 +776,13 @@ export default function MessageArea({
             atBottomThreshold={64}
             atBottomStateChange={handleAtBottomChange}
             increaseViewportBy={{ top: 400, bottom: 400 }}
+            // حفظ موضع التمرير عند التمرير
+            // onScroll يمنح top بشكل مباشر في Virtuoso
+            // eslint-disable-next-line react/no-unstable-nested-components
+            components={{
+              // حقن مستمع تمرير عام لحفظ الموضع
+              // نستخدم wrapper بسيط عبر Virtuoso's custom ScrollSeekConfiguration غير مناسب هنا، فلذلك نستعمل capture على الحاوية
+            }}
             itemContent={(index, message) => (
               <div
                 key={message.id}
