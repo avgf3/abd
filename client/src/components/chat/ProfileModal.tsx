@@ -2217,7 +2217,7 @@ export default function ProfileModal({
           background-size: cover;
           background-position: center center;
           background-repeat: no-repeat;
-          overflow: hidden;
+          overflow: visible; /* ✅ السماح للتاج بالظهور فوق الصورة بدون قص */
           border-radius: 0;
         }
 
@@ -2251,7 +2251,7 @@ export default function ProfileModal({
           border-radius: 9999px; /* دائري بالكامل */
           overflow: visible; /* السماح للإطار بالظهور خارج الحدود */
           position: absolute;
-          top: calc(100% - 195px); /* رفع الصورة للأعلى قليلاً */
+          top: calc(100% - 205px); /* ✅ رفع الصورة أكثر لإظهار التاج كاملاً */
           right: 10px; /* نقل الصورة لأقصى اليمين */
           background-color: transparent;
           box-shadow: none; /* إزالة الظل من الـ container */
@@ -2890,7 +2890,7 @@ export default function ProfileModal({
           .profile-avatar {
             width: 160px;
             height: 160px;
-            top: calc(100% - 175px); /* رفع الصورة للأعلى قليلاً على الجوال */
+            top: calc(100% - 185px); /* ✅ رفع الصورة أكثر لإظهار التاج كاملاً على الجوال */
             right: 10px; /* نقل الصورة لأقصى اليمين على الجوال */
             border-radius: 12px; /* زوايا مدورة قليلاً للأجهزة المحمولة */
             z-index: 10; /* جعل الصورة تتعدى الزر */

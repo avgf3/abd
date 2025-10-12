@@ -1,0 +1,30 @@
+=== الملفات التي تم تعديلها ===
+
+1. client/src/components/chat/ProfileImage.tsx
+   - السطر 87-203: وظيفة TagOverlay
+   - التغيير: استبدال visibility بـ opacity + transition
+
+2. client/src/components/chat/ProfileModal.tsx
+   - السطر 2214-2222: CSS لـ profile-cover
+   - السطر 2248-2260: CSS لـ profile-avatar
+   - السطر 2890-2897: CSS لـ profile-avatar (جوال)
+   - التغيير: overflow: visible + رفع الصورة
+
+3. client/src/config/tagLayouts.ts
+   - كامل الملف
+   - التغيير: إعدادات لـ 50 تاج + تحسين القيم
+
+=== ملفات التوثيق الجديدة ===
+
+1. TAG_FIXES_SUMMARY.md (7.2KB)
+   - ملخص شامل للإصلاحات
+
+2. TAG_TESTING_CHECKLIST.md (8.8KB)
+   - قائمة اختبار تفصيلية
+
+3. QUICK_FIX_SUMMARY_AR.md (جديد)
+   - ملخص سريع بالعربية
+
+4. FILES_CHANGED.txt (هذا الملف)
+   - قائمة الملفات المعدلة
+
