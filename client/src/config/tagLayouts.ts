@@ -9,7 +9,7 @@ export type TagLayout = {
 export const DEFAULT_TAG_LAYOUT: TagLayout = {
   widthRatio: 1.08,
   xAdjustPx: 0,
-  yAdjustPx: 0,
+  yAdjustPx: -5,
   anchorY: 0.12,
   autoAnchor: true,
 };
@@ -28,18 +28,18 @@ export const TAG_LAYOUTS: Record<number, TagLayout> = {
   // 🔸 قاعدة قوسية خفيفة: anchorY متوسط (0.14-0.18)
   // 🔶 قاعدة قوسية عميقة: anchorY عالي (0.18-0.22)
   
-  1:  { widthRatio: 1.10, xAdjustPx: 0, yAdjustPx: 0, anchorY: 0.15, autoAnchor: true }, // تاج كلاسيكي - قوس متوسط
-  2:  { widthRatio: 1.12, xAdjustPx: 0, yAdjustPx: 0, anchorY: 0.16, autoAnchor: true }, // تاج ملكي - قوس عميق
-  3:  { widthRatio: 1.08, xAdjustPx: 0, yAdjustPx: 0, anchorY: 0.14, autoAnchor: true }, // تاج رفيع - قوس خفيف
-  4:  { widthRatio: 1.14, xAdjustPx: 0, yAdjustPx: 0, anchorY: 0.18, autoAnchor: true }, // تاج فخم - قوس عميق
-  5:  { widthRatio: 1.09, xAdjustPx: 0, yAdjustPx: 0, anchorY: 0.15, autoAnchor: true }, // تاج أنيق - قوس متوسط
-  6:  { widthRatio: 1.15, xAdjustPx: 0, yAdjustPx: 0, anchorY: 0.20, autoAnchor: true }, // تاج إمبراطوري - قوس عميق جداً
-  7:  { widthRatio: 1.11, xAdjustPx: 0, yAdjustPx: 0, anchorY: 0.16, autoAnchor: true }, // تاج ذهبي - قوس متوسط
-  8:  { widthRatio: 1.10, xAdjustPx: 0, yAdjustPx: 0, anchorY: 0.15, autoAnchor: true }, // تاج نبيل - قوس متوسط
-  9:  { widthRatio: 1.13, xAdjustPx: 0, yAdjustPx: 0, anchorY: 0.17, autoAnchor: true }, // تاج راقي - قوس عميق
-  10: { widthRatio: 1.07, xAdjustPx: 0, yAdjustPx: 0, anchorY: 0.13, autoAnchor: true }, // تاج بسيط - قوس خفيف
-  11: { widthRatio: 1.09, xAdjustPx: 0, yAdjustPx: 0, anchorY: 0.14, autoAnchor: true }, // تاج عصري - قوس خفيف
-  12: { widthRatio: 1.12, xAdjustPx: 0, yAdjustPx: 0, anchorY: 0.16, autoAnchor: true }, // تاج ملكي ثاني - قوس عميق
+  1:  { widthRatio: 1.10, xAdjustPx: 0, yAdjustPx: -5, anchorY: 0.15, autoAnchor: true }, // تاج كلاسيكي - قوس متوسط
+  2:  { widthRatio: 1.12, xAdjustPx: 0, yAdjustPx: -5, anchorY: 0.16, autoAnchor: true }, // تاج ملكي - قوس عميق
+  3:  { widthRatio: 1.08, xAdjustPx: 0, yAdjustPx: -5, anchorY: 0.14, autoAnchor: true }, // تاج رفيع - قوس خفيف
+  4:  { widthRatio: 1.14, xAdjustPx: 0, yAdjustPx: -5, anchorY: 0.18, autoAnchor: true }, // تاج فخم - قوس عميق
+  5:  { widthRatio: 1.09, xAdjustPx: 0, yAdjustPx: -5, anchorY: 0.15, autoAnchor: true }, // تاج أنيق - قوس متوسط
+  6:  { widthRatio: 1.15, xAdjustPx: 0, yAdjustPx: -5, anchorY: 0.20, autoAnchor: true }, // تاج إمبراطوري - قوس عميق جداً
+  7:  { widthRatio: 1.11, xAdjustPx: 0, yAdjustPx: -5, anchorY: 0.16, autoAnchor: true }, // تاج ذهبي - قوس متوسط
+  8:  { widthRatio: 1.10, xAdjustPx: 0, yAdjustPx: -5, anchorY: 0.15, autoAnchor: true }, // تاج نبيل - قوس متوسط
+  9:  { widthRatio: 1.13, xAdjustPx: 0, yAdjustPx: -5, anchorY: 0.17, autoAnchor: true }, // تاج راقي - قوس عميق
+  10: { widthRatio: 1.07, xAdjustPx: 0, yAdjustPx: -5, anchorY: 0.13, autoAnchor: true }, // تاج بسيط - قوس خفيف
+  11: { widthRatio: 1.09, xAdjustPx: 0, yAdjustPx: -5, anchorY: 0.14, autoAnchor: true }, // تاج عصري - قوس خفيف
+  12: { widthRatio: 1.12, xAdjustPx: 0, yAdjustPx: -5, anchorY: 0.16, autoAnchor: true }, // تاج ملكي ثاني - قوس عميق
 };
 
 export function getTagLayout(tagNumber?: number): TagLayout {

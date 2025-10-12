@@ -2197,7 +2197,7 @@ export default function ProfileModal({
           width: 100%;
           max-width: 520px;
           border-radius: 0;
-          overflow: hidden;
+          overflow: visible;
           background: var(--card-bg);
           box-shadow: 0 8px 32px rgba(0,0,0,0.8);
           position: relative;
@@ -2217,6 +2217,8 @@ export default function ProfileModal({
           background-size: cover;
           background-position: center center;
           background-repeat: no-repeat;
+          overflow: hidden;
+          border-radius: 0;
         }
 
         .change-cover-btn {
