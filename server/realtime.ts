@@ -845,10 +845,10 @@ export function setupRealtime(httpServer: HttpServer): IOServer<ClientToServerEv
       ? ['polling']
       : ['websocket', 'polling'],
     allowEIO3: true,
-    // 🚀 أوقات استجابة ذكية وسريعة مثل المواقع الناجحة
-    pingTimeout: 15000, // مهلة قصيرة للكشف السريع عن انقطاع الاتصال
-    pingInterval: 5000, // ping سريع كل 5 ثواني للاستجابة الفورية
-    upgradeTimeout: 45000, // زيادة timeout للترقية لدعم الاتصالات البطيئة
+    // 🚀 أوقات استجابة متوازنة ومستقرة
+    pingTimeout: 30000, // 30 ثانية - مهلة معقولة للكشف عن انقطاع الاتصال
+    pingInterval: 10000, // ping كل 10 ثواني - متوازن
+    upgradeTimeout: 20000, // 20 ثانية للترقية - كافي ومعقول
     allowUpgrades: (process?.env?.SOCKET_IO_POLLING_ONLY !== 'true'),
     cookie: false,
     serveClient: false,

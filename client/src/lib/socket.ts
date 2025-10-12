@@ -262,6 +262,87 @@ function attachCoreListeners(socket: Socket) {
       localStorage.setItem('socket_network_offline', Date.now().toString());
     } catch {}
   });
+
+  // 🔥 معالجة ذكية لتغيير رؤية الصفحة (العودة من الخلفية)
+  let wasHidden = false;
+  let reconnectOnVisibilityTimer: NodeJS.Timeout | null = null;
+  
+  const handleVisibilityChange = () => {
+    try {
+      if (document.hidden) {
+        // الصفحة أصبحت مخفية (ذهب للخلفية)
+        wasHidden = true;
+        localStorage.setItem('socket_page_hidden', Date.now().toString());
+      } else if (wasHidden) {
+        // الصفحة عادت للظهور بعد إخفاء (عاد من الخلفية)
+        wasHidden = false;
+        localStorage.setItem('socket_page_visible', Date.now().toString());
+        
+        // إلغاء أي مؤقت سابق
+        if (reconnectOnVisibilityTimer) {
+          clearTimeout(reconnectOnVisibilityTimer);
+        }
+        
+        // فحص الاتصال بعد تأخير قصير
+        reconnectOnVisibilityTimer = setTimeout(() => {
+          if (!socket.connected && !isManualDisconnect) {
+            try {
+              console.log('🔄 إعادة اتصال بعد العودة من الخلفية');
+              socket.connect();
+            } catch (error) {
+              console.warn('فشل في إعادة الاتصال بعد العودة من الخلفية:', error);
+            }
+          }
+        }, 500); // نصف ثانية تأخير
+      }
+    } catch (error) {
+      console.warn('خطأ في معالجة تغيير رؤية الصفحة:', error);
+    }
+  };
+
+  // تسجيل مستمع تغيير الرؤية
+  document.addEventListener('visibilitychange', handleVisibilityChange);
+  
+  // معالجة إضافية للمتصفحات القديمة
+  window.addEventListener('focus', () => {
+    if (wasHidden && !socket.connected && !isManualDisconnect) {
+      try {
+        socket.connect();
+      } catch {}
+    }
+  });
+
+  // 🔥 معالجة خاصة لإعادة التحميل/التنقل
+  window.addEventListener('beforeunload', () => {
+    isManualDisconnect = true;
+    try {
+      localStorage.setItem('socket_manual_disconnect', Date.now().toString());
+    } catch {}
+  });
+
+  // 🔥 معالجة العودة من صفحة أخرى (pageshow)
+  window.addEventListener('pageshow', (event) => {
+    try {
+      // إذا كانت الصفحة من الكاش (bfcache)
+      if (event.persisted) {
+        localStorage.setItem('socket_page_from_cache', Date.now().toString());
+        
+        // فحص الاتصال بعد العودة من الكاش
+        setTimeout(() => {
+          if (!socket.connected && !isManualDisconnect) {
+            try {
+              console.log('🔄 إعادة اتصال بعد العودة من الكاش');
+              socket.connect();
+            } catch (error) {
+              console.warn('فشل في إعادة الاتصال بعد العودة من الكاش:', error);
+            }
+          }
+        }, 300);
+      }
+    } catch (error) {
+      console.warn('خطأ في معالجة pageshow:', error);
+    }
+  });
 }
 
 export function getSocket(): Socket {
@@ -296,26 +377,29 @@ export function getSocket(): Socket {
   
   socketInstance = io(serverUrl, {
     path: '/socket.io',
-    // 🚀 إعدادات ذكية مثل المواقع الناجحة
+    // 🚀 إعدادات محسّنة للاستقرار
     transports: ['websocket', 'polling'],
     upgrade: true,
-    rememberUpgrade: true, // تذكر الترقية الناجحة
+    rememberUpgrade: true,
     autoConnect: false,
     reconnection: true,
-    // 🔥 إعادة اتصال لانهائية وذكية مثل المواقع الناجحة
-    reconnectionAttempts: Infinity, // لا يستسلم أبداً!
-    reconnectionDelay: 200, // بداية سريعة جداً
-    reconnectionDelayMax: 2000, // حد أقصى منخفض للسرعة
-    randomizationFactor: 0.1, // عشوائية قليلة للسرعة
-    // 🔥 أوقات استجابة سريعة جداً
-    timeout: 8000, // مهلة قصيرة للكشف السريع عن المشاكل
+    // 🔥 إعدادات إعادة اتصال متوازنة ومستقرة
+    reconnectionAttempts: 10, // حد معقول لمنع الحلقات اللانهائية
+    reconnectionDelay: 1000, // ثانية واحدة - متوازن
+    reconnectionDelayMax: 10000, // 10 ثواني - يعطي وقت كافي
+    randomizationFactor: 0.3, // عشوائية أكبر لتجنب thundering herd
+    // 🔥 مهلات محسّنة للاتصالات البطيئة
+    timeout: 25000, // 25 ثانية - يدعم الاتصالات البطيئة
     forceNew: false,
     withCredentials: true,
     auth: { deviceId, token: sessionForHandshake?.token },
     extraHeaders: { 'x-device-id': deviceId },
-    // 🔥 إعدادات محسّنة للاستقرار الذكي
-    closeOnBeforeunload: false, // لا تغلق عند إعادة التحميل
+    // 🔥 إعدادات محسّنة للاستقرار
+    closeOnBeforeunload: true, // إغلاق نظيف عند إعادة التحميل
     forceBase64: false,
+    // 🔥 إعدادات إضافية للاستقرار
+    upgrade: true,
+    rememberUpgrade: true,
     // 🔥 معلومات تشخيصية ذكية
     query: {
       deviceId,
