@@ -1813,10 +1813,12 @@ li > * > div.effect-snow {
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
   /* تعزيز الثبات البصري للحسابات الديناميكية */
-  will-change: transform;
+  will-change: transform, opacity;
   transform: translateZ(0);
-  contain: paint;
+  contain: layout style paint;
   transform-origin: 50% 100%;
+  /* منع أي قص للتاج داخل الحاوية في كل السياقات */
+  overflow: visible;
 }
 .vip-frame-inner {
   position: relative;

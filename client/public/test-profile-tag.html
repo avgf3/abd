@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>اختبار قص التاج في صفحة البروفايل</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { background:#0b1220; color:#fff; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; padding:16px; }
+    .card { width: 860px; max-width: 100%; margin: 0 auto; border:1px solid #223; border-radius:16px; overflow: visible; background: linear-gradient(135deg,#1a1a1a,#2d2d2d); box-shadow:0 10px 30px rgba(0,0,0,.4); }
+    .cover { position: relative; height: 268px; overflow: visible; border-radius:16px 16px 0 0; background: url('/svgs/star.svg') center/120px no-repeat, radial-gradient(1200px 400px at 70% -100px, rgba(255,255,255,.15), transparent 60%); }
+    .avatar { position: absolute; right: 10px; top: calc(100% - 205px); width:200px; height:200px; border-radius: 9999px; overflow: visible; z-index: 2; }
+    .avatar .img { position: relative; z-index:1; width: 148px; height: 148px; border-radius: 9999px; display:block; object-fit: cover; border:3px solid rgba(255,255,255,0.25); box-shadow:0 6px 18px rgba(0,0,0,.45); margin: 26px; background:#0b1220; }
+    .avatar .tag { position:absolute; left:50%; z-index:4; pointer-events:none; background:transparent; }
+    .body { padding: 16px; }
+    .row { display:flex; gap:12px; align-items:center; }
+    .box { width: 260px; height: 260px; border:1px dashed #345; border-radius:12px; display:flex; align-items:center; justify-content:center; position:relative; overflow: visible; background: rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body>
+  <h1 style="margin:0 0 10px">اختبار قص التاج في صفحة البروفايل</h1>
+  <p style="opacity:.85; margin:0 0 16px">الهدف: التأكد أن التاج لا يُقص من الأعلى وأن موضعه ثابت بلا ذبذبة.</p>
+
+  <div class="card" id="profile-card">
+    <div class="cover"></div>
+    <div class="avatar" id="profile-avatar">
+      <img class="img" alt="avatar" src="/default_avatar.svg" />
+      <img class="tag" id="profile-tag" alt="tag" src="/tags/tag4.webp" />
+    </div>
+    <div class="body">
+      <div class="row">
+        <div class="box">
+          <div class="avatar" style="position:relative; right:unset; top:unset;">
+            <img class="img" alt="avatar" src="/default_avatar.svg" />
+            <img class="tag" id="standalone-tag-56" alt="tag" src="/tags/tag4.webp" />
+          </div>
+        </div>
+        <div class="box">
+          <div class="avatar" style="position:relative; right:unset; top:unset;">
+            <img class="img" alt="avatar" src="/default_avatar.svg" style="width: 224px; height:224px; margin: 18px;" />
+            <img class="tag" id="standalone-tag-112" alt="tag" src="/tags/tag9.webp" />
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // نفس خوارزمية التموضع في الكود الفعلي
+    const DEFAULT = { widthRatio: 1.10, xAdjustPx: 0, yAdjustPx: -6, anchorY: 0.14, autoAnchor: true };
+    const LAYOUTS = {
+      4: { widthRatio: 1.15, xAdjustPx: 0, yAdjustPx: -6, anchorY: 0.19, autoAnchor: true },
+      9: { widthRatio: 1.14, xAdjustPx: 0, yAdjustPx: -6, anchorY: 0.18, autoAnchor: true },
+    };
+
+    function detectBottomGap(img, scale) {
+      try {
+        const c = document.createElement('canvas');
+        c.width = img.naturalWidth; c.height = img.naturalHeight;
+        const ctx = c.getContext('2d'); if (!ctx) return 0;
+        ctx.clearRect(0,0,c.width,c.height); ctx.drawImage(img,0,0);
+        const alphaThreshold = 12;
+        for (let y = c.height - 1; y >= 0; y--) {
+          const row = ctx.getImageData(0, y, c.width, 1).data;
+          let opaque = false;
+          for (let x = 0; x < c.width; x++) { if (row[x*4+3] > alphaThreshold) { opaque = true; break; } }
+          if (opaque) return (c.height - 1 - y) * scale;
+        }
+        return 0;
+      } catch { return 0; }
+    }
+
+    function placeTag(imgEl, tagEl, basePx, cfg) {
+      const minCoverRatio = 1.06, maxCoverRatio = 1.18;
+      const targetRatio = cfg.widthRatio || minCoverRatio;
+      const clampedRatio = Math.min(Math.max(targetRatio, minCoverRatio), maxCoverRatio);
+      const overlayWidthPx = Math.round(basePx * clampedRatio);
+      tagEl.style.width = overlayWidthPx + 'px';
+      tagEl.style.top = (Math.round((imgEl.parentElement.offsetHeight - basePx) / 2)) + 'px';
+      tagEl.style.marginLeft = (cfg.xAdjustPx || 0) + 'px';
+      const onload = () => {
+        const scale = overlayWidthPx / tagEl.naturalWidth;
+        const tagRenderedHeight = tagEl.naturalHeight * scale;
+        const bottomGapPx = cfg.autoAnchor ? detectBottomGap(tagEl, scale) : 0;
+        const tagVisibleHeight = tagRenderedHeight - bottomGapPx;
+        const anchorDepth = Math.max(0, Math.min(1, cfg.anchorY || 0)) * tagVisibleHeight;
+        const totalOffset = Math.max(0, tagVisibleHeight - anchorDepth + (cfg.yAdjustPx || 0));
+        tagEl.style.transform = `translate(-50%, calc(-100% + ${Math.round(totalOffset)}px))`;
+        tagEl.style.opacity = '1';
+      };
+      tagEl.style.opacity = '0';
+      if (tagEl.complete) onload();
+      tagEl.addEventListener('load', onload, { once: true });
+    }
+
+    // الملف الشخصي الفعلي
+    (function initProfile() {
+      const avatar = document.getElementById('profile-avatar');
+      const basePx = 148; // داخل الحاوية 200px مع حواف
+      const img = avatar.querySelector('.img');
+      const tag = document.getElementById('profile-tag');
+      tag.loading = 'eager';
+      placeTag(img, tag, basePx, LAYOUTS[4] || DEFAULT);
+    })();
+
+    // حالتا اختبار مستقلتان
+    (function initStandalone() {
+      const base56 = 148; // نفس الصورة الافتراضية في الصندوق الأول
+      const tag56 = document.getElementById('standalone-tag-56');
+      placeTag(tag56.previousElementSibling, tag56, base56, LAYOUTS[4] || DEFAULT);
+
+      const base112 = 224; // الصورة الأكبر في الصندوق الثاني
+      const tag112 = document.getElementById('standalone-tag-112');
+      placeTag(tag112.previousElementSibling, tag112, base112, LAYOUTS[9] || DEFAULT);
+    })();
+  </script>
+</body>
+</html>
