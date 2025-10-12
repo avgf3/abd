@@ -39,6 +39,25 @@
     </style>
   </head>
   <body>
+    <!-- SVG Filter لإزالة الخلفية البيضاء من التاجات -->
+    <svg style="position: absolute; width: 0; height: 0; overflow: hidden;">
+      <defs>
+        <filter id="removeWhiteBg">
+          <!-- تحويل الصورة إلى مصفوفة ألوان -->
+          <feColorMatrix type="matrix" values="
+            1 0 0 0 0
+            0 1 0 0 0
+            0 0 1 0 0
+            -1 -1 -1 2 0
+          "/>
+          <!-- إزالة البكسلات البيضاء والرمادية -->
+          <feComponentTransfer>
+            <feFuncA type="discrete" tableValues="0 1 1 1 1 1 1 1 1 1"/>
+          </feComponentTransfer>
+        </filter>
+      </defs>
+    </svg>
+    
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
