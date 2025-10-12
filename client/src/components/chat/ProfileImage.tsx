@@ -141,10 +141,23 @@ export default function ProfileImage({
           }
         }
 
-        // نجعل أسفل الجزء المرئي من التاج يلامس أعلى الصورة،
-        // ثم نضيف مقدار الدخول المطلوب داخل الصورة (anchorY) مع أي ضبط يدوي (yAdjustPx).
-        const anchorFromLayout = Math.max(0, Math.min(1, tagLayout.anchorY ?? 0)) * tagRenderedHeight;
-        const totalOffset = Math.max(0, tagRenderedHeight - bottomGapPx + (tagLayout.yAdjustPx || 0) + anchorFromLayout);
+        // الحساب الاحترافي الجديد:
+        // 1. tagRenderedHeight = الارتفاع الكامل للتاج بعد التكبير
+        // 2. bottomGapPx = الشفافية في الأسفل (يجب إزالتها)
+        // 3. anchorY = نسبة من الارتفاع المرئي تدخل في الصورة (0 = يلامس، 0.2 = 20% يدخل)
+        // 4. yAdjustPx = ضبط يدوي نهائي (موجب = ينزل، سالب = يرتفع)
+        
+        // الارتفاع المرئي للتاج (بدون الشفافية السفلية)
+        const tagVisibleHeight = tagRenderedHeight - bottomGapPx;
+        
+        // مقدار الدخول المطلوب في الصورة (نسبة من الارتفاع المرئي)
+        const anchorDepth = Math.max(0, Math.min(1, tagLayout.anchorY ?? 0)) * tagVisibleHeight;
+        
+        // المعادلة النهائية البسيطة:
+        // - نبدأ من الارتفاع المرئي (tagVisibleHeight)
+        // - نطرح مقدار الدخول (anchorDepth) لو أردنا أن يدخل
+        // - نضيف الضبط اليدوي (yAdjustPx)
+        const totalOffset = Math.max(0, tagVisibleHeight - anchorDepth + (tagLayout.yAdjustPx || 0));
 
         if (!cancelled) {
           setAnchorOffsetPx(Math.round(totalOffset));
