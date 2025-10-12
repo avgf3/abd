@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="100" height="60" viewBox="0 0 100 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="azure" x1="0" y1="0" x2="0" y2="60" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#DBEAFE"/>
+      <stop offset="0.5" stop-color="#60A5FA"/>
+      <stop offset="1" stop-color="#2563EB"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Curved diadem-style crown -->
+  <path d="M8 52 C 18 44, 32 26, 50 26 C 68 26, 82 44, 92 52 L 92 60 L 8 60 Z" fill="url(#azure)"/>
+  <!-- Center spire -->
+  <path d="M46 26 L50 14 L54 26 Z" fill="#93C5FD"/>
+  <!-- Side spires -->
+  <path d="M28 34 L32 24 L36 34 Z" fill="#BFDBFE"/>
+  <path d="M64 34 L68 24 L72 34 Z" fill="#BFDBFE"/>
+  <!-- Base plate shading -->
+  <rect x="8" y="52" width="84" height="8" rx="2" fill="#1E3A8A" fill-opacity="0.22"/>
+  <!-- Sparkles -->
+  <path d="M20 22 L21.5 24.8 L24.5 26 L21.5 27.2 L20 30 L18.5 27.2 L15.5 26 L18.5 24.8 Z" fill="#FFFFFF" fill-opacity="0.8"/>
+  <path d="M80 22 L81.5 24.6 L84.2 25.8 L81.5 27 L80 29.8 L78.5 27 L75.8 25.8 L78.5 24.6 Z" fill="#FFFFFF" fill-opacity="0.7"/>
+</svg>

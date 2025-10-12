@@ -11,14 +11,77 @@
 #no-frame .img { width: 100%; height: 100%; }
 #no-frame .tag { top: 0; width: 100%; height:auto; }
 .note { font:14px sans-serif; color:#444; margin-top:6px; text-align:center; }
+.row { display:flex; align-items:flex-start; gap:24px; flex-wrap:wrap; }
+.card { border:1px solid #e5e7eb; border-radius:12px; padding:12px; }
+.hint { font:12px sans-serif; color:#666; text-align:center; margin-top:8px; }
 </style></head><body>
-<div class="container" id="with-frame">
-  <img class="img" src="/default_avatar.svg" alt="avatar">
-  <img class="tag" src="/tags/tag1.webp" alt="tag">
+<div class="row">
+  <div class="card">
+    <div class="container" id="with-frame">
+      <img class="img" src="/default_avatar.svg" alt="avatar">
+      <img class="tag" src="/tags/tag13.svg" alt="tag 13">
+    </div>
+    <div class="hint">تاج 13 — مع إطار (1.35×)</div>
+  </div>
+  <div class="card">
+    <div class="container" id="no-frame">
+      <img class="img" src="/default_avatar.svg" alt="avatar">
+      <img class="tag" src="/tags/tag13.svg" alt="tag 13">
+    </div>
+    <div class="hint">تاج 13 — بدون إطار</div>
+  </div>
 </div>
-<div class="container" id="no-frame">
-  <img class="img" src="/default_avatar.svg" alt="avatar">
-  <img class="tag" src="/tags/tag2.webp" alt="tag">
+
+<div class="row">
+  <div class="card">
+    <div class="container" id="with-frame">
+      <img class="img" src="/default_avatar.svg" alt="avatar">
+      <img class="tag" src="/tags/tag14.svg" alt="tag 14">
+    </div>
+    <div class="hint">تاج 14 — مع إطار</div>
+  </div>
+  <div class="card">
+    <div class="container" id="no-frame">
+      <img class="img" src="/default_avatar.svg" alt="avatar">
+      <img class="tag" src="/tags/tag14.svg" alt="tag 14">
+    </div>
+    <div class="hint">تاج 14 — بدون إطار</div>
+  </div>
 </div>
-<div class="note">يسار: مع إطار (1.35×) — يمين: بدون إطار. يجب أن يلامس التاج أعلى الصورة تماماً.</div>
+
+<div class="row">
+  <div class="card">
+    <div class="container" id="with-frame">
+      <img class="img" src="/default_avatar.svg" alt="avatar">
+      <img class="tag" src="/tags/tag15.svg" alt="tag 15">
+    </div>
+    <div class="hint">تاج 15 — مع إطار</div>
+  </div>
+  <div class="card">
+    <div class="container" id="no-frame">
+      <img class="img" src="/default_avatar.svg" alt="avatar">
+      <img class="tag" src="/tags/tag15.svg" alt="tag 15">
+    </div>
+    <div class="hint">تاج 15 — بدون إطار</div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="card">
+    <div class="container" id="with-frame">
+      <img class="img" src="/default_avatar.svg" alt="avatar">
+      <img class="tag" src="/tags/tag16.svg" alt="tag 16">
+    </div>
+    <div class="hint">تاج 16 — مع إطار</div>
+  </div>
+  <div class="card">
+    <div class="container" id="no-frame">
+      <img class="img" src="/default_avatar.svg" alt="avatar">
+      <img class="tag" src="/tags/tag16.svg" alt="tag 16">
+    </div>
+    <div class="hint">تاج 16 — بدون إطار</div>
+  </div>
+</div>
+
+<div class="note">المحاذاة: يجب أن يلامس أسفل التاج أعلى الصورة تماماً في كلا الوضعين.</div>
 </body></html>
