@@ -177,5 +177,20 @@
   },
   "optionalDependencies": {
     "bufferutil": "^4.0.8"
-  }
+  },
+  "description": "",
+  "main": "apply-bots-migration.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/avgf3/abd.git"
+  },
+  "keywords": [],
+  "author": "",
+  "bugs": {
+    "url": "https://github.com/avgf3/abd/issues"
+  },
+  "homepage": "https://github.com/avgf3/abd#readme"
 }
