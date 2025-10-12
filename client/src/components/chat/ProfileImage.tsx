@@ -95,7 +95,9 @@ export default function ProfileImage({
   }) {
     const imgRef = useRef<HTMLImageElement | null>(null);
     const [anchorOffsetPx, setAnchorOffsetPx] = useState<number>(tagLayout.yAdjustPx || 0);
-    const overlayWidthPx = Math.round(basePx * (tagLayout.widthRatio || 0.6));
+    // ضمان أن يغطي التاج داير أعلى الصورة: حد أدنى 1.06 من قطر الصورة
+    const minCoverRatio = 1.06;
+    const overlayWidthPx = Math.round(basePx * Math.max(tagLayout.widthRatio || minCoverRatio, minCoverRatio));
 
     useEffect(() => {
       const el = imgRef.current;
