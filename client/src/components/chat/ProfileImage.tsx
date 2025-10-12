@@ -135,13 +135,11 @@ export default function ProfileImage({
           }
         }
 
-        // الحساب الصحيح: التاج يجب أن يصل للصورة
+        // الحساب الصحيح: نجعل أسفل الجزء المرئي من التاج يلامس أعلى الصورة،
+        // ثم نضيف مقدار الدخول المطلوب داخل الصورة (anchorY) مع أي ضبط يدوي (yAdjustPx).
         const anchorFromLayout = Math.max(0, Math.min(1, tagLayout.anchorY ?? 0)) * tagRenderedHeight;
-        
-        // المعادلة المصححة: نبدأ من ارتفاع التاج الكامل ثم نطرح الشفافية
-        // totalOffset يجب أن يكون قريب من tagRenderedHeight حتى التاج يلامس الصورة
-        const totalOffset = tagRenderedHeight - bottomGapPx + (tagLayout.yAdjustPx || 0) + anchorFromLayout;
-        
+        const totalOffset = Math.max(0, bottomGapPx + anchorFromLayout + (tagLayout.yAdjustPx || 0));
+
         if (!cancelled) setAnchorOffsetPx(Math.round(totalOffset));
       };
 
