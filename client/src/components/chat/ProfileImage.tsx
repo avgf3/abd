@@ -78,7 +78,7 @@ export default function ProfileImage({
     const match = String(frameName).match(/(\d+)/);
     if (match) {
       const n = parseInt(match[1]);
-      if (Number.isFinite(n)) return (Math.max(1, Math.min(10, n)) as any);
+      if (Number.isFinite(n)) return (Math.max(1, Math.min(12, n)) as any);
     }
     return undefined;
   })();
@@ -90,7 +90,7 @@ export default function ProfileImage({
     const containerSize = px * 1.35;
     const imageTopWithinContainer = (containerSize - px) / 2; // موضع أعلى الصورة داخل الحاوية
     const overlayTopPx = imageTopWithinContainer; // مرجع أعلى الصورة داخل الحاوية
-    const overlayWidthPx = Math.round(px * 0.6); // عرض التاج ~60% من عرض الصورة
+    const overlayWidthPx = Math.round(px * 0.75); // عرض التاج ~75% من عرض الصورة
     return (
       <div className={`relative inline-block ${className || ''}`} onClick={onClick} style={{ width: containerSize, height: containerSize }}>
         <VipAvatar src={imageSrc} alt={`صورة ${user.username}`} size={px} frame={frameIndex as any} />
@@ -142,7 +142,7 @@ export default function ProfileImage({
         if (!tagSrc) return null;
         const basePx = pixelSize ?? (size === 'small' ? 36 : size === 'large' ? 72 : 56);
         const overlayTopPx = 0; // أعلى الحاوية يطابق أعلى الصورة هنا
-        const overlayWidthPx = Math.round(basePx * 0.6); // عرض التاج ~60% من عرض الصورة
+        const overlayWidthPx = Math.round(basePx * 0.75); // عرض التاج ~75% من عرض الصورة
         return (
           <img
             src={tagSrc}
