@@ -1,6 +1,6 @@
 import { QueryClientProvider } from '@tanstack/react-query';
 import { Switch, Route } from 'wouter';
-import { Suspense } from 'react';
+import { Suspense, useEffect } from 'react';
 
 import { queryClient } from './lib/queryClient';
 
@@ -312,6 +312,8 @@ function Router() {
 }
 
 function App() {
+  // تفعيل اعتراض الروابط على مستوى التطبيق
+  useGlobalAnchorInterception();
   return (
     <QueryClientProvider client={queryClient}>
       <UserProvider>
@@ -337,3 +339,60 @@ function App() {
 }
 
 export default App;
+
+// اعتراض نقرات الروابط وتحويلها إلى pushState بدون إعادة تحميل الصفحة
+// يُبقي التطبيق صفحة واحدة (SPA) حتى مع وجود <a href="...">
+function useGlobalAnchorInterception() {
+  useEffect(() => {
+    const onClick = (e: MouseEvent) => {
+      try {
+        // تجاهل الحالات التي لا ينبغي اعتراضها
+        if (e.defaultPrevented) return;
+        if ((e as any).button !== 0) return; // زر أيسر فقط
+        if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return; // فتح في تبويب جديد... الخ
+
+        const target = e.target as Element | null;
+        if (!target) return;
+        const anchor = (target as any).closest ? (target as any).closest('a') as HTMLAnchorElement | null : null;
+        if (!anchor) return;
+
+        // خصائص تمنع الاعتراض
+        if (anchor.hasAttribute('download')) return;
+        if (anchor.getAttribute('target') === '_blank') return;
+        const rel = (anchor.getAttribute('rel') || '').toLowerCase();
+        if (rel.includes('external') || rel.includes('noopener')) return;
+        if (anchor.dataset && (anchor as any).dataset.noSpa) return;
+
+        const hrefAttr = anchor.getAttribute('href') || '';
+        if (!hrefAttr || hrefAttr.startsWith('mailto:') || hrefAttr.startsWith('tel:') || hrefAttr.startsWith('javascript:')) return;
+
+        // أنشئ URL مطلق لفحص الأصل
+        const url = new URL(anchor.href, window.location.href);
+        const sameOrigin = url.origin === window.location.origin;
+        if (!sameOrigin) return; // روابط خارجية: دع المتصفح يتصرف
+
+        // إذا كان نفس المسار تماماً ولا تغير، لا تفعل شيئاً
+        const nextPath = `${url.pathname}${url.search}${url.hash}`;
+        const currPath = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+        if (nextPath === currPath) return;
+
+        // امنع السلوك الافتراضي ونفّذ انتقال SPA
+        e.preventDefault();
+        try {
+          window.history.pushState({}, '', nextPath);
+          // أبلغ الراوتر (wouter) عبر حدث popstate
+          window.dispatchEvent(new PopStateEvent('popstate'));
+        } catch {
+          // كحل أخير، استخدم التوجيه العادي
+          window.location.assign(nextPath);
+        }
+      } catch {}
+    };
+
+    document.addEventListener('click', onClick, true);
+    return () => document.removeEventListener('click', onClick, true);
+  }, []);
+}
+
+// فعّل الاعتراض على مستوى التطبيق
+useGlobalAnchorInterception();
