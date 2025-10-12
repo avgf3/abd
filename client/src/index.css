@@ -1809,11 +1809,49 @@ li > * > div.effect-snow {
   image-rendering: crisp-edges;
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
+  
+  /* فلاتر لإزالة الخلفية البيضاء/الرمادية من الصور */
+  /* طريقة 1: استخدام mix-blend-mode */
+  /* mix-blend-mode: multiply; - معطل مؤقتاً */
+  
+  /* طريقة 2: استخدام CSS filters قوية */
+  /* هذا الفلتر يحول الألوان البيضاء والرمادية الفاتحة إلى شفافة */
+  filter: 
+    /* زيادة التباين لجعل الألوان الداكنة أكثر وضوحاً */
+    contrast(1.5) 
+    /* تقليل السطوع قليلاً للتخلص من الرمادي الفاتح */
+    brightness(0.9)
+    /* إضافة drop-shadow لتحسين الوضوح */
+    drop-shadow(0 0 1px rgba(0,0,0,0.3));
+  
+  /* طريقة 3: استخدام backdrop-filter للخلفية */
+  backdrop-filter: contrast(2);
+  
+  /* منع أي خلفية من الظهور */
+  isolation: isolate;
 }
 
 /* عندما تكون داخل vip-frame ذات الحاوية الأكبر (1.35x) نضمن المحاذاة */
 .vip-frame.base .profile-tag-overlay {
   top: calc(-0.18 * 100%);
+}
+
+/* حل بديل للتاجات بخلفية داكنة - استخدام invert للصور ذات الخلفية البيضاء */
+.profile-tag-overlay.dark-bg {
+  filter: 
+    /* قلب الألوان لجعل الأبيض أسود والعكس */
+    invert(1)
+    /* ثم زيادة التباين للتخلص من الرمادي */
+    contrast(2)
+    /* ثم قلب مرة أخرى للحصول على الألوان الأصلية بدون خلفية */
+    invert(1)
+    /* إضافة ظل خفيف */
+    drop-shadow(0 1px 2px rgba(0,0,0,0.4));
+}
+
+/* SVG Filter لإزالة الخلفية البيضاء - يضاف في HTML */
+.tag-remove-white-bg {
+  filter: url(#removeWhiteBg);
 }
 .vip-frame-inner {
   position: relative;
