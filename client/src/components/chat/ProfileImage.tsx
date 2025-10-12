@@ -95,6 +95,7 @@ export default function ProfileImage({
   }) {
     const imgRef = useRef<HTMLImageElement | null>(null);
     const [anchorOffsetPx, setAnchorOffsetPx] = useState<number>(tagLayout.yAdjustPx || 0);
+    const [ready, setReady] = useState<boolean>(false);
     // ضمان أن يغطي التاج داير أعلى الصورة: حد أدنى 1.06 من قطر الصورة
     const minCoverRatio = 1.06;
     const overlayWidthPx = Math.round(basePx * Math.max(tagLayout.widthRatio || minCoverRatio, minCoverRatio));
@@ -142,7 +143,10 @@ export default function ProfileImage({
         const anchorFromLayout = Math.max(0, Math.min(1, tagLayout.anchorY ?? 0)) * tagRenderedHeight;
         const totalOffset = Math.max(0, bottomGapPx + anchorFromLayout + (tagLayout.yAdjustPx || 0));
 
-        if (!cancelled) setAnchorOffsetPx(Math.round(totalOffset));
+        if (!cancelled) {
+          setAnchorOffsetPx(Math.round(totalOffset));
+          setReady(true);
+        }
       };
 
       if (el.complete) compute();
@@ -168,6 +172,7 @@ export default function ProfileImage({
           marginLeft: tagLayout.xAdjustPx || 0,
           backgroundColor: 'transparent',
           background: 'transparent',
+          visibility: ready ? 'visible' : 'hidden',
         }}
         decoding="async"
         loading="lazy"
@@ -191,7 +196,9 @@ export default function ProfileImage({
     // الحاوية يجب أن تكون أكبر لاستيعاب الإطار (نفس النسبة المستخدمة في VipAvatar)
     const containerSize = px * 1.35;
     const imageTopWithinContainer = (containerSize - px) / 2; // موضع أعلى الصورة داخل الحاوية
-    const overlayTopPx = imageTopWithinContainer; // مرجع أعلى الصورة داخل الحاوية
+    // إزاحة عمودية بسيطة لإطارات محددة التي تبدو مرتفعة قليلاً في البروفايل فقط
+    const frameDownshift = (frameIndex === 7 || frameIndex === 8 || frameIndex === 9) ? Math.round(px * 0.02) : 0;
+    const overlayTopPx = imageTopWithinContainer + frameDownshift; // مرجع أعلى الصورة داخل الحاوية مع ضبط بسيط
     return (
       <div className={`relative inline-block ${className || ''}`} onClick={onClick} style={{ width: containerSize, height: containerSize }}>
         <VipAvatar src={imageSrc} alt={`صورة ${user.username}`} size={px} frame={frameIndex as any} />
