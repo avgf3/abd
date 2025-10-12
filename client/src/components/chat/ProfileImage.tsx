@@ -95,7 +95,7 @@ export default function ProfileImage({
   }) {
     const imgRef = useRef<HTMLImageElement | null>(null);
     const [anchorOffsetPx, setAnchorOffsetPx] = useState<number>(tagLayout.yAdjustPx || 0);
-    const [ready, setReady] = useState<boolean>(false);
+    const [opacity, setOpacity] = useState<number>(0);
     // ثبات تغطية التاج كرأس/طوق أعلى الصورة على كل الأحجام
     const minCoverRatio = 1.06;
     const maxCoverRatio = 1.18;
@@ -161,7 +161,10 @@ export default function ProfileImage({
 
         if (!cancelled) {
           setAnchorOffsetPx(Math.round(totalOffset));
-          setReady(true);
+          // تلاشي سلس بدلاً من ظهور مفاجئ لإزالة التذبذب
+          requestAnimationFrame(() => {
+            if (!cancelled) setOpacity(1);
+          });
         }
       };
 
@@ -188,8 +191,9 @@ export default function ProfileImage({
           marginLeft: tagLayout.xAdjustPx || 0,
           backgroundColor: 'transparent',
           background: 'transparent',
-          visibility: ready ? 'visible' : 'hidden',
-          willChange: 'transform',
+          opacity: opacity,
+          transition: 'opacity 0.2s ease-in-out',
+          willChange: 'transform, opacity',
           transformOrigin: '50% 100%',
         }}
         decoding="async"
