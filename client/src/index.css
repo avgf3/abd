@@ -1838,7 +1838,7 @@ li > * > div.effect-snow {
   bottom: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover; /* تغيير من contain إلى cover ليملأ الحاوية بالكامل */
+  object-fit: contain; /* منع أي قص أفقي/عمودي وضمان ثبات الحجم */
   border-radius: 9999px;
   pointer-events: none;
   z-index: 3;

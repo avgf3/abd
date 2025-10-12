@@ -3236,44 +3236,13 @@ export default function ProfileModal({
             )}
 
             <div className="profile-avatar">
-              {(() => {
-                // استخدام نفس منطق ProfileImage للتحقق من صحة الإطار
-                const frameName = localUser?.profileFrame as string | undefined;
-                if (!frameName) return false;
-                const match = String(frameName).match(/(\d+)/);
-                if (match) {
-                  const n = parseInt(match[1]);
-                  return Number.isFinite(n) && n >= 1 && n <= 10;
-                }
-                return false;
-              })() ? (
-                <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <ProfileImage 
-                    user={localUser} 
-                    pixelSize={135}
-                    hideRoleBadgeOverlay={true}
-                    disableFrame={false}
-                  />
-                </div>
-              ) : (
-                <div style={{ width: '100%', height: '100%', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <img
-                    src={getProfileImageSrcLocal()}
-                    alt="الصورة الشخصية"
-                    style={{
-                      width: '130px',
-                      height: '130px',
-                      objectFit: 'cover',
-                      display: 'block',
-                      transition: 'none',
-                      backfaceVisibility: 'hidden',
-                      transform: 'translateZ(0)',
-                      borderRadius: '9999px',
-                      boxShadow: '0 6px 20px rgba(0,0,0,0.3)'
-                    }}
-                  />
-                </div>
-              )}
+              <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <ProfileImage 
+                  user={localUser} 
+                  pixelSize={135}
+                  hideRoleBadgeOverlay={true}
+                />
+              </div>
             </div>
 
             {localUser?.id === currentUser?.id && 
