@@ -9,7 +9,7 @@ export default function EmojisPage() {
   const [, setLocation] = useLocation();
 
   const selected = useMemo(() => {
-    if (matchTab && paramsTab?.tab) return paramsTab.tab;
+    if (matchTab && paramsTab && 'tab' in paramsTab) return (paramsTab as any).tab;
     return 'classic';
   }, [matchTab, paramsTab]);
 

@@ -134,7 +134,6 @@ export async function initializeDatabase(): Promise<boolean> {
       prepare: isPgBouncer ? false : true,
       onnotice: () => {},
       fetch_types: false,
-      types: false,
       connection: {
         application_name: `chat-app:${process.pid}`,
       },
@@ -144,10 +143,6 @@ export async function initializeDatabase(): Promise<boolean> {
       connect_timeout: connectTimeout,
       // حدود المجمع
       max: Math.max(1, poolMax),
-      min: Math.max(0, Math.min(poolMin, poolMax)),
-      // إعدادات إعادة المحاولة
-      retry_delay: retryDelayMs,
-      max_attempts: maxAttempts,
     });
 
     const drizzleDb = drizzle(client, { schema, logger: false });

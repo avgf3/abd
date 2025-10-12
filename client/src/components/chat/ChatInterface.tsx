@@ -1165,11 +1165,8 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                       currentUser={chat.currentUser}
                       room={currentRoom}
                       onlineUsers={chat.onlineUsers}
-                      onSendMessage={(content, messageType, textColor, bold) => {
-                        // Get composer style values
-                        const finalTextColor = textColor || '#000000';
-                        const finalBold = bold || false;
-                        chat.sendMessage(content, messageType || 'text', undefined, chat.currentRoomId, finalTextColor, finalBold);
+                      onSendMessage={(content) => {
+                        chat.sendMessage(content, 'text', undefined, chat.currentRoomId);
                       }}
                       onTyping={(_isTyping) => chat.sendTyping()}
                       typingUsers={Array.from(chat.typingUsers)}

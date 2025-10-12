@@ -61,21 +61,21 @@ export default function CityChat() {
 
   // Enhanced debug logging
   // Test mode for Universal City System
-  const testMode = params?.city === 'test-universal-system';
+  const testMode = params && 'city' in params && (params as any).city === 'test-universal-system';
 
-  if (testMode) {
-    const cityPath = params ? `/${(params as any).country}/${(params as any).city}` : '/';
+  if (testMode && params) {
+    const cityPath = `/${(params as any).country}/${(params as any).city}`;
     return <UniversalCitySystem cityPath={cityPath} />;
   }
   
   // Get city data based on URL using the unified system
   let cityPath = '/';
 
-  if (params && typeof params === 'object' && params.country && params.city) {
-    cityPath = `/${params.country}/${params.city}`;
-  } else if (typeof params === 'object' && params[0] && params[1]) {
+  if (params && typeof params === 'object' && 'country' in params && 'city' in params) {
+    cityPath = `/${(params as any).country}/${(params as any).city}`;
+  } else if (params && typeof params === 'object' && 0 in params && 1 in params) {
     // Fallback for array-style params
-    cityPath = `/${params[0]}/${params[1]}`;
+    cityPath = `/${(params as any)[0]}/${(params as any)[1]}`;
   }
 
   const cityData = getCityByPath(cityPath);
@@ -215,8 +215,8 @@ export default function CityChat() {
             <div>⚡ match: {match ? 'true' : 'false'}</div>
             <div>📊 عدد المدن المتاحة: {getAllCities().length}</div>
             <div>🔍 هل المدينة موجودة في البيانات: {getAllCities().some(c => c.path === cityPath) ? 'نعم' : 'لا'}</div>
-            <div>🏛️ الدولة: {params?.country}</div>
-            <div>🏙️ عدد المدن في هذه الدولة: {getCitiesByCountry(params?.country || '').length}</div>
+            <div>🏛️ الدولة: {params && 'country' in params ? (params as any).country : 'غير محدد'}</div>
+            <div>🏙️ عدد المدن في هذه الدولة: {getCitiesByCountry(params && 'country' in params ? (params as any).country : '').length}</div>
           </div>
         </div>
       </div>
@@ -230,7 +230,7 @@ export default function CityChat() {
         {isRestoring ? (
           <div className="p-6 text-center">...جاري استعادة الجلسة</div>
         ) : showWelcome ? (
-          <CityWelcomeScreen onUserLogin={handleUserLogin} cityData={cityData} cityInfo={cityInfo} />
+          <CityWelcomeScreen onUserLogin={handleUserLogin} cityData={cityData} />
         ) : selectedRoomId ? (
           <ChatInterface chat={chat} onLogout={handleLogout} />
         ) : (
