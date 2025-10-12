@@ -73,6 +73,31 @@ export default function ProfileImage({
     }
     return `/tags/${str}`;
   })();
+  const tagNumber: number | undefined = (() => {
+    if (!tagName) return undefined;
+    const m = String(tagName).match(/(\d+)/);
+    if (!m) return undefined;
+    const n = parseInt(m[1], 10);
+    return Number.isFinite(n) ? n : undefined;
+  })();
+
+  type TagLayout = { widthRatio: number; xAdjustPx: number; yAdjustPx: number };
+  const DEFAULT_TAG_LAYOUT: TagLayout = { widthRatio: 0.6, xAdjustPx: 0, yAdjustPx: 0 };
+  const TAG_LAYOUTS: Record<number, TagLayout> = {
+    1: { widthRatio: 0.66, xAdjustPx: 0, yAdjustPx: 2 },
+    2: { widthRatio: 0.62, xAdjustPx: 0, yAdjustPx: 1 },
+    3: { widthRatio: 0.6, xAdjustPx: 0, yAdjustPx: 0 },
+    4: { widthRatio: 0.64, xAdjustPx: 0, yAdjustPx: 2 },
+    5: { widthRatio: 0.58, xAdjustPx: 0, yAdjustPx: 0 },
+    6: { widthRatio: 0.68, xAdjustPx: 0, yAdjustPx: 3 },
+    7: { widthRatio: 0.64, xAdjustPx: 0, yAdjustPx: 1 },
+    8: { widthRatio: 0.62, xAdjustPx: 0, yAdjustPx: 2 },
+    9: { widthRatio: 0.66, xAdjustPx: 0, yAdjustPx: 2 },
+    10: { widthRatio: 0.6, xAdjustPx: 0, yAdjustPx: 0 },
+    11: { widthRatio: 0.63, xAdjustPx: 0, yAdjustPx: 1 },
+    12: { widthRatio: 0.65, xAdjustPx: 0, yAdjustPx: 3 },
+  };
+  const tagLayout: TagLayout = (tagNumber && TAG_LAYOUTS[tagNumber]) || DEFAULT_TAG_LAYOUT;
   const frameIndex = (() => {
     if (!frameName) return undefined;
     const match = String(frameName).match(/(\d+)/);
@@ -90,7 +115,7 @@ export default function ProfileImage({
     const containerSize = px * 1.35;
     const imageTopWithinContainer = (containerSize - px) / 2; // موضع أعلى الصورة داخل الحاوية
     const overlayTopPx = imageTopWithinContainer; // مرجع أعلى الصورة داخل الحاوية
-    const overlayWidthPx = Math.round(px * 0.6); // عرض التاج ~60% من عرض الصورة
+    const overlayWidthPx = Math.round(px * tagLayout.widthRatio);
     return (
       <div className={`relative inline-block ${className || ''}`} onClick={onClick} style={{ width: containerSize, height: containerSize }}>
         <VipAvatar src={imageSrc} alt={`صورة ${user.username}`} size={px} frame={frameIndex as any} />
@@ -101,10 +126,11 @@ export default function ProfileImage({
             className="profile-tag-overlay"
             aria-hidden="true"
             style={{
-              top: overlayTopPx,
+              top: overlayTopPx + tagLayout.yAdjustPx,
               width: overlayWidthPx,
               // محاذاة حرفية: أسفل التاج يلامس أعلى الصورة تماماً
               transform: 'translate(-50%, -100%)',
+              marginLeft: tagLayout.xAdjustPx,
               backgroundColor: 'transparent',
               background: 'transparent',
             }}
@@ -142,7 +168,7 @@ export default function ProfileImage({
         if (!tagSrc) return null;
         const basePx = pixelSize ?? (size === 'small' ? 36 : size === 'large' ? 72 : 56);
         const overlayTopPx = 0; // أعلى الحاوية يطابق أعلى الصورة هنا
-        const overlayWidthPx = Math.round(basePx * 0.6); // عرض التاج ~60% من عرض الصورة
+        const overlayWidthPx = Math.round(basePx * tagLayout.widthRatio);
         return (
           <img
             src={tagSrc}
@@ -150,10 +176,11 @@ export default function ProfileImage({
             className="profile-tag-overlay"
             aria-hidden="true"
             style={{
-              top: overlayTopPx,
+              top: overlayTopPx + tagLayout.yAdjustPx,
               width: overlayWidthPx,
               // محاذاة حرفية: أسفل التاج يلامس أعلى الصورة تماماً
               transform: 'translate(-50%, -100%)',
+              marginLeft: tagLayout.xAdjustPx,
               backgroundColor: 'transparent',
               background: 'transparent',
             }}
