@@ -95,7 +95,9 @@ export default function ProfileImage({
   }) {
     const imgRef = useRef<HTMLImageElement | null>(null);
     const [anchorOffsetPx, setAnchorOffsetPx] = useState<number>(tagLayout.yAdjustPx || 0);
-    const overlayWidthPx = Math.round(basePx * (tagLayout.widthRatio || 0.6));
+    // ضمان أن يغطي التاج داير أعلى الصورة: حد أدنى 1.06 من قطر الصورة
+    const minCoverRatio = 1.06;
+    const overlayWidthPx = Math.round(basePx * Math.max(tagLayout.widthRatio || minCoverRatio, minCoverRatio));
 
     useEffect(() => {
       const el = imgRef.current;
@@ -135,13 +137,11 @@ export default function ProfileImage({
           }
         }
 
-        // الحساب الصحيح: التاج يجب أن يصل للصورة
+        // الحساب الصحيح: نجعل أسفل الجزء المرئي من التاج يلامس أعلى الصورة،
+        // ثم نضيف مقدار الدخول المطلوب داخل الصورة (anchorY) مع أي ضبط يدوي (yAdjustPx).
         const anchorFromLayout = Math.max(0, Math.min(1, tagLayout.anchorY ?? 0)) * tagRenderedHeight;
-        
-        // المعادلة المصححة: نبدأ من ارتفاع التاج الكامل ثم نطرح الشفافية
-        // totalOffset يجب أن يكون قريب من tagRenderedHeight حتى التاج يلامس الصورة
-        const totalOffset = tagRenderedHeight - bottomGapPx + (tagLayout.yAdjustPx || 0) + anchorFromLayout;
-        
+        const totalOffset = Math.max(0, bottomGapPx + anchorFromLayout + (tagLayout.yAdjustPx || 0));
+
         if (!cancelled) setAnchorOffsetPx(Math.round(totalOffset));
       };
 
@@ -202,37 +202,45 @@ export default function ProfileImage({
     );
   }
 
-  return (
-    <div className="relative inline-block" onClick={onClick} style={{ width: pixelSize ? pixelSize : undefined, height: pixelSize ? pixelSize : undefined }}>
-      <img
-        src={imageSrc}
-        alt={`صورة ${user.username}`}
-        className={`${sizeClasses[size]} rounded-full ring-[3px] ${borderColor} shadow-sm object-cover ${className}`}
-        style={{
-          width: pixelSize ? pixelSize : undefined,
-          height: pixelSize ? pixelSize : undefined,
-          transition: 'none',
-          backfaceVisibility: 'hidden',
-          transform: 'translateZ(0)',
-          display: 'block',
-        }}
-        loading="lazy"
-        decoding="async"
-        sizes={size === 'small' ? '36px' : size === 'large' ? '72px' : '56px'}
-        onError={(e: any) => {
-          if (e?.currentTarget && e.currentTarget.src !== '/default_avatar.svg') {
-            e.currentTarget.src = '/default_avatar.svg';
-          }
-        }}
-      />
-      {(() => {
-        if (!tagSrc) return null;
-        const basePx = pixelSize ?? (size === 'small' ? 36 : size === 'large' ? 72 : 56);
-        const overlayTopPx = 0; // أعلى الحاوية يطابق أعلى الصورة هنا
-        return (
-          <TagOverlay src={tagSrc} overlayTopPx={overlayTopPx} basePx={basePx} />
-        );
-      })()}
-    </div>
-  );
+  {
+    const px = pixelSize ?? (size === 'small' ? 36 : size === 'large' ? 72 : 56);
+    const containerSize = px * 1.35; // نفس حاوية إضافة الإطار
+    const imageTopWithinContainer = (containerSize - px) / 2;
+    const overlayTopPx = imageTopWithinContainer;
+
+    return (
+      <div
+        className={`relative inline-block ${className || ''}`}
+        onClick={onClick}
+        style={{ width: containerSize, height: containerSize }}
+      >
+        <div className="vip-frame-inner">
+          <img
+            src={imageSrc}
+            alt={`صورة ${user.username}`}
+            className={`rounded-full ring-[3px] ${borderColor} shadow-sm object-cover`}
+            style={{
+              width: px,
+              height: px,
+              transition: 'none',
+              backfaceVisibility: 'hidden',
+              transform: 'translateZ(0)',
+              display: 'block',
+            }}
+            loading="lazy"
+            decoding="async"
+            sizes={String(px) + 'px'}
+            onError={(e: any) => {
+              if (e?.currentTarget && e.currentTarget.src !== '/default_avatar.svg') {
+                e.currentTarget.src = '/default_avatar.svg';
+              }
+            }}
+          />
+        </div>
+        {tagSrc && (
+          <TagOverlay src={tagSrc} overlayTopPx={overlayTopPx} basePx={px} />
+        )}
+      </div>
+    );
+  }
 }
