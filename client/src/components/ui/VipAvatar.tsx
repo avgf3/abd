@@ -31,6 +31,10 @@ export default function VipAvatar({
   const containerStyle: React.CSSProperties & { ['--vip-spin-duration']?: string } = {
     width: frameSize,
     height: frameSize,
+    contain: 'layout paint style',
+    isolation: 'isolate',
+    backfaceVisibility: 'hidden',
+    transform: 'translateZ(0)',
     // تمرير مدة الدوران عبر متغير CSS
     ['--vip-spin-duration']: duration,
   };
@@ -38,6 +42,9 @@ export default function VipAvatar({
   const imgStyle: React.CSSProperties = {
     width: imageSize,
     height: imageSize,
+    willChange: 'transform',
+    backfaceVisibility: 'hidden',
+    transform: 'translateZ(0)',
   };
 
   // Use image-based overlay for frames 1..9 if available
