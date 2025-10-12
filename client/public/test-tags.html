@@ -1,24 +1,108 @@
-<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>اختبار التاج فوق الصورة</title><style>
-.container { position: relative; display: inline-block; margin: 16px; }
-.img { display:block; border-radius:9999px; object-fit:cover; background:#0b1220; }
-.tag { position:absolute; left:50%; transform:translate(-50%, -100%); pointer-events:none; z-index:4; background:transparent; }
-/* مثال 1: مع إطار (حاوية أكبر 1.35×) */
-#with-frame { --px:56; --container: calc(var(--px) * 1.35); width: calc(var(--container) * 1px); height: calc(var(--container) * 1px); }
-#with-frame .img { width: calc(var(--px) * 1px); height: calc(var(--px) * 1px); position:absolute; top: calc((var(--container) - var(--px)) / 2 * 1px); left:50%; transform:translateX(-50%); }
-#with-frame .tag { top: calc((var(--container) - var(--px)) / 2 * 1px); width: calc(var(--px) * 1px); height:auto; }
-/* مثال 2: بدون إطار */
-#no-frame { --px:56; width: calc(var(--px) * 1px); height: calc(var(--px) * 1px); }
-#no-frame .img { width: 100%; height: 100%; }
-#no-frame .tag { top: 0; width: 100%; height:auto; }
-.note { font:14px sans-serif; color:#444; margin-top:6px; text-align:center; }
-</style></head><body>
-<div class="container" id="with-frame">
-  <img class="img" src="/default_avatar.svg" alt="avatar">
-  <img class="tag" src="/tags/tag1.webp" alt="tag">
-</div>
-<div class="container" id="no-frame">
-  <img class="img" src="/default_avatar.svg" alt="avatar">
-  <img class="tag" src="/tags/tag2.webp" alt="tag">
-</div>
-<div class="note">يسار: مع إطار (1.35×) — يمين: بدون إطار. يجب أن يلامس التاج أعلى الصورة تماماً.</div>
-</body></html>
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>اختبار جميع التيجان (36/56/72) مع وبدون إطار</title>
+  <style>
+    body { font-family: Cairo, sans-serif; background:#0b1220; color:#e5e7eb; }
+    .grid { display:grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap:16px; padding:16px; }
+    .tile { background:#111827; border:1px solid #1f2937; border-radius:12px; padding:12px; }
+    .label { font-size:12px; color:#9ca3af; margin-top:8px; text-align:center; }
+    .avatar { position:relative; display:inline-block; }
+    .img { display:block; border-radius:9999px; object-fit:cover; background:#0b1220; }
+    .frame { position:absolute; inset:0; border-radius:9999px; pointer-events:none; }
+    .tag { position:absolute; left:50%; transform:translate(-50%, -100%); pointer-events:none; z-index:4; background:transparent; }
+    .row-title { grid-column: 1 / -1; font-weight:700; margin-top:8px; }
+    .note { font:14px sans-serif; color:#9ca3af; margin:10px 16px; }
+    @media (max-width: 1100px) { .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+    @media (max-width: 640px)  { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  </style>
+</head>
+<body>
+  <div class="note">يولّد هذا المستند معاينة لكل تاج (1–12) بأحجام 36/56/72 بكسل، مع وبدون إطار. يجب أن يلامس أسفل التاج أعلى الصورة تماماً.</div>
+  <div id="app" class="grid"></div>
+
+  <script>
+    // تكوين مطابقة للكود الفعلي في ProfileImage/getTagLayout
+    const TAG_LAYOUTS = {
+      1:{w:0.66,x:0,y:2}, 2:{w:0.62,x:0,y:1}, 3:{w:0.60,x:0,y:0}, 4:{w:0.64,x:0,y:2},
+      5:{w:0.58,x:0,y:0}, 6:{w:0.68,x:0,y:3}, 7:{w:0.64,x:0,y:1}, 8:{w:0.62,x:0,y:2},
+      9:{w:0.66,x:0,y:2}, 10:{w:0.60,x:0,y:0}, 11:{w:0.63,x:0,y:1}, 12:{w:0.65,x:0,y:3},
+    };
+    const sizes = [36,56,72];
+    const withFrame = [false, true];
+
+    function frameSrc(idx){ return `/frames/frame${idx}.webp`; }
+
+    const app = document.getElementById('app');
+    for (let tag=1; tag<=12; tag++){
+      for (const px of sizes){
+        for (const f of withFrame){
+          const tile = document.createElement('div');
+          tile.className = 'tile';
+          const a = document.createElement('div');
+          a.className = 'avatar';
+          const img = document.createElement('img');
+          img.src = '/default_avatar.svg';
+          img.alt = 'avatar';
+          img.className = 'img';
+          img.style.width = px+'px';
+          img.style.height = px+'px';
+
+          // إذا كان هناك إطار، نجعل الحاوية أكبر 1.35× ونوسّط الصورة
+          if (f){
+            const container = document.createElement('div');
+            container.style.position = 'relative';
+            const containerSize = Math.round(px*1.35);
+            container.style.width = containerSize+'px';
+            container.style.height = containerSize+'px';
+
+            img.style.position = 'absolute';
+            img.style.left = '50%';
+            img.style.transform = 'translateX(-50%)';
+            img.style.top = Math.round((containerSize - px)/2)+'px';
+
+            const frame = document.createElement('img');
+            frame.src = frameSrc(1);
+            frame.alt = 'frame';
+            frame.className = 'frame';
+
+            const t = document.createElement('img');
+            t.src = `/tags/tag${tag}.webp`;
+            t.alt = `tag${tag}`;
+            t.className = 'tag';
+            const cfg = TAG_LAYOUTS[tag] || {w:0.6,x:0,y:0};
+            t.style.top = Math.round((containerSize - px)/2 + cfg.y)+'px';
+            t.style.width = Math.round(px * cfg.w)+'px';
+            t.style.marginLeft = cfg.x+'px';
+
+            container.appendChild(img);
+            container.appendChild(frame);
+            container.appendChild(t);
+            a.appendChild(container);
+          } else {
+            const t = document.createElement('img');
+            t.src = `/tags/tag${tag}.webp`;
+            t.alt = `tag${tag}`;
+            t.className = 'tag';
+            const cfg = TAG_LAYOUTS[tag] || {w:0.6,x:0,y:0};
+            t.style.top = (0 + cfg.y)+'px';
+            t.style.width = Math.round(px * cfg.w)+'px';
+            t.style.marginLeft = cfg.x+'px';
+            a.appendChild(img);
+            a.appendChild(t);
+          }
+
+          const label = document.createElement('div');
+          label.className = 'label';
+          label.textContent = `Tag ${tag} — ${px}px ${f?'(frame)':'(no frame)'}`;
+          tile.appendChild(a);
+          tile.appendChild(label);
+          app.appendChild(tile);
+        }
+      }
+    }
+  </script>
+</body>
+</html>

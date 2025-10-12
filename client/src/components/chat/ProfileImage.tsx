@@ -1,9 +1,10 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { getUserLevelIcon } from '@/components/chat/UserRoleBadge';
 import type { ChatUser } from '@/types/chat';
 import { getImageSrc } from '@/utils/imageUtils';
 import VipAvatar from '@/components/ui/VipAvatar';
+import { getTagLayout } from '@/config/tagLayouts';
 
 interface ProfileImageProps {
   user: ChatUser;
@@ -73,6 +74,102 @@ export default function ProfileImage({
     }
     return `/tags/${str}`;
   })();
+  const tagNumber: number | undefined = (() => {
+    if (!tagName) return undefined;
+    const m = String(tagName).match(/(\d+)/);
+    if (!m) return undefined;
+    const n = parseInt(m[1], 10);
+    return Number.isFinite(n) ? n : undefined;
+  })();
+
+  const tagLayout = getTagLayout(tagNumber);
+
+  function TagOverlay({
+    src,
+    overlayTopPx,
+    basePx,
+  }: {
+    src: string;
+    overlayTopPx: number;
+    basePx: number;
+  }) {
+    const imgRef = useRef<HTMLImageElement | null>(null);
+    const [anchorOffsetPx, setAnchorOffsetPx] = useState<number>(tagLayout.yAdjustPx || 0);
+    const overlayWidthPx = Math.round(basePx * (tagLayout.widthRatio || 0.6));
+
+    useEffect(() => {
+      const el = imgRef.current;
+      if (!el) return;
+      let cancelled = false;
+
+      const compute = () => {
+        if (!el.naturalWidth || !el.naturalHeight) return;
+        const scale = overlayWidthPx / el.naturalWidth;
+        const tagRenderedHeight = el.naturalHeight * scale;
+
+        let bottomGapPx = 0;
+        if (tagLayout.autoAnchor) {
+          try {
+            const canvas = document.createElement('canvas');
+            canvas.width = el.naturalWidth;
+            canvas.height = el.naturalHeight;
+            const ctx = canvas.getContext('2d');
+            if (ctx) {
+              ctx.clearRect(0, 0, canvas.width, canvas.height);
+              ctx.drawImage(el, 0, 0);
+              const alphaThreshold = 12; // ~5% opacity
+              for (let y = canvas.height - 1; y >= 0; y--) {
+                const row = ctx.getImageData(0, y, canvas.width, 1).data;
+                let opaque = false;
+                for (let x = 0; x < canvas.width; x++) {
+                  if (row[x * 4 + 3] > alphaThreshold) { opaque = true; break; }
+                }
+                if (opaque) {
+                  bottomGapPx = (canvas.height - 1 - y) * scale;
+                  break;
+                }
+              }
+            }
+          } catch {
+            // ignore
+          }
+        }
+
+        const anchorFromLayout = Math.max(0, Math.min(1, tagLayout.anchorY ?? 0)) * tagRenderedHeight;
+        const totalOffset = (tagLayout.yAdjustPx || 0) + anchorFromLayout + bottomGapPx;
+        if (!cancelled) setAnchorOffsetPx(Math.round(totalOffset));
+      };
+
+      if (el.complete) compute();
+      el.addEventListener('load', compute);
+      return () => {
+        cancelled = true;
+        el.removeEventListener('load', compute);
+      };
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [src, overlayWidthPx, tagLayout.anchorY, tagLayout.autoAnchor, tagLayout.yAdjustPx]);
+
+    return (
+      <img
+        ref={imgRef}
+        src={src}
+        alt="tag"
+        className="profile-tag-overlay"
+        aria-hidden="true"
+        style={{
+          top: overlayTopPx,
+          width: overlayWidthPx,
+          transform: `translate(-50%, calc(-100% + ${anchorOffsetPx}px))`,
+          marginLeft: tagLayout.xAdjustPx || 0,
+          backgroundColor: 'transparent',
+          background: 'transparent',
+        }}
+        decoding="async"
+        loading="lazy"
+        onError={(e: any) => { try { e.currentTarget.style.display = 'none'; } catch {} }}
+      />
+    );
+  }
   const frameIndex = (() => {
     if (!frameName) return undefined;
     const match = String(frameName).match(/(\d+)/);
@@ -90,26 +187,11 @@ export default function ProfileImage({
     const containerSize = px * 1.35;
     const imageTopWithinContainer = (containerSize - px) / 2; // موضع أعلى الصورة داخل الحاوية
     const overlayTopPx = imageTopWithinContainer; // مرجع أعلى الصورة داخل الحاوية
-    const overlayWidthPx = Math.round(px * 0.6); // عرض التاج ~60% من عرض الصورة
     return (
       <div className={`relative inline-block ${className || ''}`} onClick={onClick} style={{ width: containerSize, height: containerSize }}>
         <VipAvatar src={imageSrc} alt={`صورة ${user.username}`} size={px} frame={frameIndex as any} />
         {tagSrc && (
-          <img
-            src={tagSrc}
-            alt="tag"
-            className="profile-tag-overlay"
-            aria-hidden="true"
-            style={{
-              top: overlayTopPx,
-              width: overlayWidthPx,
-              // محاذاة حرفية: أسفل التاج يلامس أعلى الصورة تماماً
-              transform: 'translate(-50%, -100%)',
-              backgroundColor: 'transparent',
-              background: 'transparent',
-            }}
-            onError={(e: any) => { try { e.currentTarget.style.display = 'none'; } catch {} }}
-          />
+          <TagOverlay src={tagSrc} overlayTopPx={overlayTopPx} basePx={px} />
         )}
       </div>
     );
@@ -142,23 +224,8 @@ export default function ProfileImage({
         if (!tagSrc) return null;
         const basePx = pixelSize ?? (size === 'small' ? 36 : size === 'large' ? 72 : 56);
         const overlayTopPx = 0; // أعلى الحاوية يطابق أعلى الصورة هنا
-        const overlayWidthPx = Math.round(basePx * 0.6); // عرض التاج ~60% من عرض الصورة
         return (
-          <img
-            src={tagSrc}
-            alt="tag"
-            className="profile-tag-overlay"
-            aria-hidden="true"
-            style={{
-              top: overlayTopPx,
-              width: overlayWidthPx,
-              // محاذاة حرفية: أسفل التاج يلامس أعلى الصورة تماماً
-              transform: 'translate(-50%, -100%)',
-              backgroundColor: 'transparent',
-              background: 'transparent',
-            }}
-            onError={(e: any) => { try { e.currentTarget.style.display = 'none'; } catch {} }}
-          />
+          <TagOverlay src={tagSrc} overlayTopPx={overlayTopPx} basePx={basePx} />
         );
       })()}
     </div>
