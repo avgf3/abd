@@ -1795,25 +1795,18 @@ li > * > div.effect-snow {
 /* ===== Profile Tag overlay (top crown/badge above avatar) ===== */
 .profile-tag-overlay {
   position: absolute;
-  top: -18%; /* يعلو أعلى الصورة ليظهر فوق الحافة بدقة */
+  /* top و transform يتم التحكم بهما من ProfileImage.tsx - لا تعدّل هنا */
   left: 50%;
-  transform: translateX(-50%);
-  width: 60%; /* نسبة مرنة لضمان التطابق مع مختلف الأحجام */
+  width: 60%; /* سيتم تجاوزه من inline styles */
   height: auto;
   z-index: 4; /* فوق الإطار والصورة */
   pointer-events: none;
-  background: transparent !important; /* خلفية شفافة لمنع ظهور خلفية بيضاء */
-  background-color: transparent !important; /* تأكيد إضافي للشفافية */
-  /* إضافات لضمان الشفافية الكاملة */
+  background: transparent !important;
+  background-color: transparent !important;
   image-rendering: -webkit-optimize-contrast;
   image-rendering: crisp-edges;
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
-}
-
-/* عندما تكون داخل vip-frame ذات الحاوية الأكبر (1.35x) نضمن المحاذاة */
-.vip-frame.base .profile-tag-overlay {
-  top: calc(-0.18 * 100%);
 }
 .vip-frame-inner {
   position: relative;

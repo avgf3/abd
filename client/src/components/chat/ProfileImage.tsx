@@ -135,8 +135,13 @@ export default function ProfileImage({
           }
         }
 
+        // الحساب الصحيح: التاج يجب أن يصل للصورة
         const anchorFromLayout = Math.max(0, Math.min(1, tagLayout.anchorY ?? 0)) * tagRenderedHeight;
-        const totalOffset = (tagLayout.yAdjustPx || 0) + anchorFromLayout + bottomGapPx;
+        
+        // المعادلة المصححة: نبدأ من ارتفاع التاج الكامل ثم نطرح الشفافية
+        // totalOffset يجب أن يكون قريب من tagRenderedHeight حتى التاج يلامس الصورة
+        const totalOffset = tagRenderedHeight - bottomGapPx + (tagLayout.yAdjustPx || 0) + anchorFromLayout;
+        
         if (!cancelled) setAnchorOffsetPx(Math.round(totalOffset));
       };
 
