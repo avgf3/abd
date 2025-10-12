@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🧪 اختبار شامل لنظام التيجان</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding: 20px;
+      direction: rtl;
+    }
+    
+    .container {
+      max-width: 1600px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 20px;
+      padding: 30px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+    
+    h1 {
+      text-align: center;
+      color: #667eea;
+      margin-bottom: 10px;
+      font-size: 2.5em;
+    }
+    
+    .subtitle {
+      text-align: center;
+      color: #666;
+      margin-bottom: 30px;
+      font-size: 1.1em;
+    }
+    
+    .controls {
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+      padding: 25px;
+      border-radius: 15px;
+      margin-bottom: 30px;
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      align-items: center;
+    }
+    
+    .control-group label {
+      font-weight: bold;
+      color: #333;
+      font-size: 0.95em;
+    }
+    
+    select, input[type="number"], input[type="range"] {
+      padding: 10px 15px;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      font-size: 1em;
+      background: white;
+    }
+    
+    input[type="range"] {
+      width: 150px;
+    }
+    
+    .size-buttons {
+      display: flex;
+      gap: 10px;
+    }
+    
+    .size-btn {
+      padding: 10px 20px;
+      border: 2px solid #667eea;
+      background: white;
+      color: #667eea;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: all 0.3s;
+    }
+    
+    .size-btn.active {
+      background: #667eea;
+      color: white;
+      transform: scale(1.05);
+    }
+    
+    .size-btn:hover {
+      background: #5568d3;
+      color: white;
+      border-color: #5568d3;
+    }
+    
+    .test-section {
+      margin-bottom: 40px;
+      background: #f8f9fa;
+      padding: 25px;
+      border-radius: 15px;
+      border: 3px solid #e0e0e0;
+    }
+    
+    .section-title {
+      font-size: 1.8em;
+      color: #667eea;
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 3px solid #667eea;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .tags-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 25px;
+      margin-top: 20px;
+    }
+    
+    .tag-test-card {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 15px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      transition: all 0.3s;
+      position: relative;
+    }
+    
+    .tag-test-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+    }
+    
+    .tag-label {
+      font-weight: bold;
+      color: #667eea;
+      font-size: 1.1em;
+    }
+    
+    .avatar-container {
+      position: relative;
+      display: inline-block;
+    }
+    
+    .avatar {
+      border-radius: 50%;
+      border: 3px solid #667eea;
+      object-fit: cover;
+      display: block;
+    }
+    
+    .tag-overlay {
+      position: absolute;
+      left: 50%;
+      top: 0;
+      transform-origin: 50% 100%;
+      pointer-events: none;
+      image-rendering: -webkit-optimize-contrast;
+      image-rendering: crisp-edges;
+    }
+    
+    .info-badge {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 0.85em;
+      text-align: center;
+    }
+    
+    .comparison-section {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 25px;
+      margin-top: 25px;
+    }
+    
+    .size-comparison-card {
+      background: white;
+      border-radius: 15px;
+      padding: 25px;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+    }
+    
+    .size-comparison-title {
+      font-size: 1.3em;
+      color: #667eea;
+      margin-bottom: 15px;
+      text-align: center;
+      font-weight: bold;
+    }
+    
+    .avatars-row {
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 15px;
+      padding: 20px 0;
+    }
+    
+    .stats-panel {
+      background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+      color: white;
+      padding: 25px;
+      border-radius: 15px;
+      margin-top: 30px;
+    }
+    
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 15px;
+      margin-top: 15px;
+    }
+    
+    .stat-item {
+      background: rgba(255,255,255,0.2);
+      padding: 15px;
+      border-radius: 10px;
+      text-align: center;
+    }
+    
+    .stat-number {
+      font-size: 2em;
+      font-weight: bold;
+      display: block;
+    }
+    
+    .stat-label {
+      font-size: 0.9em;
+      opacity: 0.9;
+    }
+    
+    .interactive-controls {
+      background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+      padding: 20px;
+      border-radius: 15px;
+      margin-top: 30px;
+    }
+    
+    .interactive-title {
+      color: white;
+      font-size: 1.5em;
+      margin-bottom: 15px;
+      text-align: center;
+      font-weight: bold;
+    }
+    
+    .slider-control {
+      background: rgba(255,255,255,0.9);
+      padding: 20px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      margin-bottom: 15px;
+    }
+    
+    .slider-label {
+      min-width: 150px;
+      font-weight: bold;
+      color: #333;
+    }
+    
+    .slider-value {
+      min-width: 80px;
+      text-align: center;
+      font-family: 'Courier New', monospace;
+      font-weight: bold;
+      color: #667eea;
+      font-size: 1.1em;
+    }
+    
+    input[type="range"] {
+      flex: 1;
+    }
+    
+    .reset-btn {
+      background: #ff6b6b;
+      color: white;
+      border: none;
+      padding: 12px 25px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 1em;
+      transition: all 0.3s;
+    }
+    
+    .reset-btn:hover {
+      background: #ee5a52;
+      transform: scale(1.05);
+    }
+
+    .context-test {
+      background: white;
+      padding: 25px;
+      border-radius: 12px;
+      margin-top: 20px;
+      border: 2px solid #e0e0e0;
+    }
+
+    .context-title {
+      font-size: 1.2em;
+      color: #667eea;
+      margin-bottom: 15px;
+      font-weight: bold;
+    }
+
+    .message-mockup {
+      display: flex;
+      align-items: start;
+      gap: 15px;
+      padding: 15px;
+      background: #f8f9fa;
+      border-radius: 10px;
+      margin-bottom: 15px;
+    }
+
+    .message-content {
+      flex: 1;
+    }
+
+    .username {
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 5px;
+    }
+
+    .message-text {
+      color: #666;
+      line-height: 1.5;
+    }
+
+    .profile-mockup {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding: 30px;
+      border-radius: 15px;
+      color: white;
+      text-align: center;
+      margin-bottom: 15px;
+    }
+
+    .profile-avatar-large {
+      margin: 0 auto 15px;
+    }
+
+    .profile-name {
+      font-size: 1.5em;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+
+    .profile-bio {
+      opacity: 0.9;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🧪 اختبار شامل لنظام التيجان</h1>
+    <p class="subtitle">اختبار احترافي شامل لجميع التيجان على جميع الأحجام والسياقات</p>
+    
+    <div class="controls">
+      <div class="control-group">
+        <label>التاج المراد اختباره:</label>
+        <select id="tagSelect">
+          <option value="all">جميع التيجان</option>
+          <option value="1">التاج #1 - كلاسيكي</option>
+          <option value="2">التاج #2 - ملكي</option>
+          <option value="3">التاج #3 - رفيع</option>
+          <option value="4">التاج #4 - فخم</option>
+          <option value="5">التاج #5 - أنيق</option>
+          <option value="6">التاج #6 - إمبراطوري</option>
+          <option value="7">التاج #7 - ذهبي</option>
+          <option value="8">التاج #8 - نبيل</option>
+          <option value="9">التاج #9 - راقي</option>
+          <option value="10">التاج #10 - بسيط</option>
+          <option value="11">التاج #11 - عصري</option>
+          <option value="12">التاج #12 - ملكي ثاني</option>
+        </select>
+      </div>
+      
+      <div class="control-group">
+        <label>حجم الأفاتار:</label>
+        <div class="size-buttons">
+          <button class="size-btn" data-size="36">صغير</button>
+          <button class="size-btn active" data-size="56">متوسط</button>
+          <button class="size-btn" data-size="72">كبير</button>
+          <button class="size-btn" data-size="100">ضخم</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Interactive Controls -->
+    <div class="interactive-controls">
+      <div class="interactive-title">⚙️ تحكم تفاعلي - ضبط القياسات مباشرة</div>
+      
+      <div class="slider-control">
+        <span class="slider-label">widthRatio (نسبة العرض):</span>
+        <input type="range" id="widthRatio" min="1.00" max="1.30" step="0.01" value="1.10">
+        <span class="slider-value" id="widthRatioValue">1.10</span>
+      </div>
+      
+      <div class="slider-control">
+        <span class="slider-label">anchorY (نسبة الدخول):</span>
+        <input type="range" id="anchorY" min="0.00" max="0.35" step="0.01" value="0.15">
+        <span class="slider-value" id="anchorYValue">0.15</span>
+      </div>
+      
+      <div class="slider-control">
+        <span class="slider-label">yAdjustPx (ضبط عمودي):</span>
+        <input type="range" id="yAdjustPx" min="-20" max="20" step="1" value="0">
+        <span class="slider-value" id="yAdjustPxValue">0px</span>
+      </div>
+      
+      <div style="text-align: center; margin-top: 15px;">
+        <button class="reset-btn" onclick="resetValues()">↺ إعادة تعيين القيم</button>
+      </div>
+    </div>
+
+    <!-- Test Section 1: All Sizes Comparison -->
+    <div class="test-section">
+      <div class="section-title">
+        <span>📏</span>
+        <span>اختبار جميع الأحجام</span>
+      </div>
+      <div class="comparison-section" id="allSizesComparison"></div>
+    </div>
+
+    <!-- Test Section 2: All Tags Grid -->
+    <div class="test-section">
+      <div class="section-title">
+        <span>👑</span>
+        <span>عرض جميع التيجان</span>
+      </div>
+      <div class="tags-grid" id="allTagsGrid"></div>
+    </div>
+
+    <!-- Test Section 3: Context Testing -->
+    <div class="test-section">
+      <div class="section-title">
+        <span>💬</span>
+        <span>اختبار في السياقات المختلفة</span>
+      </div>
+      
+      <!-- Chat Context -->
+      <div class="context-test">
+        <div class="context-title">📱 سياق المحادثة (Chat)</div>
+        <div class="message-mockup" id="chatContext"></div>
+      </div>
+
+      <!-- Profile Context -->
+      <div class="context-test">
+        <div class="context-title">👤 سياق البروفايل (Profile)</div>
+        <div class="profile-mockup" id="profileContext"></div>
+      </div>
+
+      <!-- Sidebar Context -->
+      <div class="context-test">
+        <div class="context-title">📋 سياق القائمة الجانبية (Sidebar)</div>
+        <div id="sidebarContext" style="display: flex; flex-direction: column; gap: 10px;"></div>
+      </div>
+    </div>
+
+    <!-- Stats Panel -->
+    <div class="stats-panel">
+      <h2>📊 إحصائيات الاختبار</h2>
+      <div class="stats-grid">
+        <div class="stat-item">
+          <span class="stat-number">12</span>
+          <span class="stat-label">تاج متاح</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-number">4</span>
+          <span class="stat-label">أحجام مختلفة</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-number">3</span>
+          <span class="stat-label">سياقات اختبار</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-number" id="testsCount">0</span>
+          <span class="stat-label">اختبار تم تنفيذه</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Tag configurations (same as tagLayouts.ts)
+    const TAG_CONFIGS = {
+      1:  { widthRatio: 1.10, xAdjustPx: 0, yAdjustPx: 0, anchorY: 0.15, autoAnchor: true },
+      2:  { widthRatio: 1.12, xAdjustPx: 0, yAdjustPx: 0, anchorY: 0.16, autoAnchor: true },
+      3:  { widthRatio: 1.08, xAdjustPx: 0, yAdjustPx: 0, anchorY: 0.14, autoAnchor: true },
+      4:  { widthRatio: 1.14, xAdjustPx: 0, yAdjustPx: 0, anchorY: 0.18, autoAnchor: true },
+      5:  { widthRatio: 1.09, xAdjustPx: 0, yAdjustPx: 0, anchorY: 0.15, autoAnchor: true },
+      6:  { widthRatio: 1.15, xAdjustPx: 0, yAdjustPx: 0, anchorY: 0.20, autoAnchor: true },
+      7:  { widthRatio: 1.11, xAdjustPx: 0, yAdjustPx: 0, anchorY: 0.16, autoAnchor: true },
+      8:  { widthRatio: 1.10, xAdjustPx: 0, yAdjustPx: 0, anchorY: 0.15, autoAnchor: true },
+      9:  { widthRatio: 1.13, xAdjustPx: 0, yAdjustPx: 0, anchorY: 0.17, autoAnchor: true },
+      10: { widthRatio: 1.07, xAdjustPx: 0, yAdjustPx: 0, anchorY: 0.13, autoAnchor: true },
+      11: { widthRatio: 1.09, xAdjustPx: 0, yAdjustPx: 0, anchorY: 0.14, autoAnchor: true },
+      12: { widthRatio: 1.12, xAdjustPx: 0, yAdjustPx: 0, anchorY: 0.16, autoAnchor: true },
+    };
+
+    let currentSize = 56;
+    let currentTag = 'all';
+    let testsCount = 0;
+    let manualConfig = null;
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => {
+      setupEventListeners();
+      renderAllTests();
+    });
+
+    function setupEventListeners() {
+      // Size buttons
+      document.querySelectorAll('.size-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.size-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          currentSize = parseInt(btn.dataset.size);
+          renderAllTests();
+        });
+      });
+
+      // Tag select
+      document.getElementById('tagSelect').addEventListener('change', (e) => {
+        currentTag = e.target.value;
+        renderAllTests();
+      });
+
+      // Sliders
+      ['widthRatio', 'anchorY', 'yAdjustPx'].forEach(id => {
+        const slider = document.getElementById(id);
+        const valueSpan = document.getElementById(id + 'Value');
+        
+        slider.addEventListener('input', (e) => {
+          const value = parseFloat(e.target.value);
+          valueSpan.textContent = id === 'yAdjustPx' ? value + 'px' : value.toFixed(2);
+          
+          manualConfig = {
+            widthRatio: parseFloat(document.getElementById('widthRatio').value),
+            anchorY: parseFloat(document.getElementById('anchorY').value),
+            yAdjustPx: parseInt(document.getElementById('yAdjustPx').value),
+          };
+          
+          renderAllTests();
+        });
+      });
+    }
+
+    function resetValues() {
+      document.getElementById('widthRatio').value = 1.10;
+      document.getElementById('widthRatioValue').textContent = '1.10';
+      document.getElementById('anchorY').value = 0.15;
+      document.getElementById('anchorYValue').textContent = '0.15';
+      document.getElementById('yAdjustPx').value = 0;
+      document.getElementById('yAdjustPxValue').textContent = '0px';
+      manualConfig = null;
+      renderAllTests();
+    }
+
+    function getConfig(tagNumber) {
+      if (manualConfig) return manualConfig;
+      return TAG_CONFIGS[tagNumber] || TAG_CONFIGS[1];
+    }
+
+    function createAvatarWithTag(tagNumber, size, showInfo = false) {
+      const config = getConfig(tagNumber);
+      const containerSize = size * 1.35;
+      const imageTopWithinContainer = (containerSize - size) / 2;
+      
+      const container = document.createElement('div');
+      container.className = 'avatar-container';
+      container.style.width = containerSize + 'px';
+      container.style.height = containerSize + 'px';
+      
+      // Avatar
+      const avatar = document.createElement('img');
+      avatar.className = 'avatar';
+      avatar.src = `https://i.pravatar.cc/150?img=${tagNumber}`;
+      avatar.style.width = size + 'px';
+      avatar.style.height = size + 'px';
+      avatar.style.position = 'absolute';
+      avatar.style.top = imageTopWithinContainer + 'px';
+      avatar.style.left = imageTopWithinContainer + 'px';
+      
+      // Tag overlay
+      const tag = document.createElement('img');
+      tag.className = 'tag-overlay';
+      tag.src = `client/public/tags/tag${tagNumber}.webp`;
+      
+      const tagWidthPx = Math.round(size * config.widthRatio);
+      tag.style.width = tagWidthPx + 'px';
+      tag.style.top = imageTopWithinContainer + 'px';
+      
+      // Simulate the calculation from ProfileImage.tsx
+      tag.onload = () => {
+        const scale = tagWidthPx / tag.naturalWidth;
+        const tagRenderedHeight = tag.naturalHeight * scale;
+        
+        // Simplified: assume 15% bottom gap for demo
+        const bottomGapPx = tagRenderedHeight * 0.15;
+        const tagVisibleHeight = tagRenderedHeight - bottomGapPx;
+        const anchorDepth = config.anchorY * tagVisibleHeight;
+        const totalOffset = Math.max(0, tagVisibleHeight - anchorDepth + config.yAdjustPx);
+        
+        tag.style.transform = `translate(-50%, calc(-100% + ${totalOffset}px))`;
+      };
+      
+      container.appendChild(avatar);
+      container.appendChild(tag);
+      
+      if (showInfo) {
+        const infoBadge = document.createElement('div');
+        infoBadge.className = 'info-badge';
+        infoBadge.textContent = `${size}px`;
+        infoBadge.style.position = 'absolute';
+        infoBadge.style.bottom = '-25px';
+        infoBadge.style.left = '50%';
+        infoBadge.style.transform = 'translateX(-50%)';
+        container.appendChild(infoBadge);
+      }
+      
+      testsCount++;
+      return container;
+    }
+
+    function renderAllTests() {
+      testsCount = 0;
+      
+      // All sizes comparison
+      renderAllSizesComparison();
+      
+      // All tags grid
+      renderAllTagsGrid();
+      
+      // Context tests
+      renderContextTests();
+      
+      // Update stats
+      document.getElementById('testsCount').textContent = testsCount;
+    }
+
+    function renderAllSizesComparison() {
+      const container = document.getElementById('allSizesComparison');
+      container.innerHTML = '';
+      
+      const sizes = [
+        { size: 36, label: 'صغير (36px)', desc: 'القوائم والرسائل' },
+        { size: 56, label: 'متوسط (56px)', desc: 'العرض الافتراضي' },
+        { size: 72, label: 'كبير (72px)', desc: 'البروفايل' },
+        { size: 100, label: 'ضخم (100px)', desc: 'الصفحة الرئيسية' }
+      ];
+      
+      const tagNumber = currentTag === 'all' ? 1 : parseInt(currentTag);
+      
+      sizes.forEach(({size, label, desc}) => {
+        const card = document.createElement('div');
+        card.className = 'size-comparison-card';
+        
+        const title = document.createElement('div');
+        title.className = 'size-comparison-title';
+        title.textContent = label;
+        
+        const description = document.createElement('div');
+        description.style.textAlign = 'center';
+        description.style.color = '#666';
+        description.style.fontSize = '0.9em';
+        description.style.marginBottom = '15px';
+        description.textContent = desc;
+        
+        const avatarsRow = document.createElement('div');
+        avatarsRow.className = 'avatars-row';
+        avatarsRow.appendChild(createAvatarWithTag(tagNumber, size, true));
+        
+        card.appendChild(title);
+        card.appendChild(description);
+        card.appendChild(avatarsRow);
+        container.appendChild(card);
+      });
+    }
+
+    function renderAllTagsGrid() {
+      const container = document.getElementById('allTagsGrid');
+      container.innerHTML = '';
+      
+      const tagsToShow = currentTag === 'all' ? 
+        Array.from({length: 12}, (_, i) => i + 1) : 
+        [parseInt(currentTag)];
+      
+      tagsToShow.forEach(tagNumber => {
+        const card = document.createElement('div');
+        card.className = 'tag-test-card';
+        
+        const label = document.createElement('div');
+        label.className = 'tag-label';
+        label.textContent = `التاج #${tagNumber}`;
+        
+        const avatar = createAvatarWithTag(tagNumber, currentSize);
+        
+        const config = getConfig(tagNumber);
+        const info = document.createElement('div');
+        info.className = 'info-badge';
+        info.innerHTML = `W: ${config.widthRatio.toFixed(2)}<br>A: ${config.anchorY.toFixed(2)}`;
+        
+        card.appendChild(label);
+        card.appendChild(avatar);
+        card.appendChild(info);
+        container.appendChild(card);
+      });
+    }
+
+    function renderContextTests() {
+      const tagNumber = currentTag === 'all' ? 1 : parseInt(currentTag);
+      
+      // Chat context
+      const chatContainer = document.getElementById('chatContext');
+      chatContainer.innerHTML = '';
+      chatContainer.appendChild(createAvatarWithTag(tagNumber, 48));
+      
+      const messageContent = document.createElement('div');
+      messageContent.className = 'message-content';
+      messageContent.innerHTML = `
+        <div class="username">مستخدم ${tagNumber}</div>
+        <div class="message-text">مرحباً! هذا اختبار لعرض التاج في سياق المحادثة 👋</div>
+      `;
+      chatContainer.appendChild(messageContent);
+      
+      // Profile context
+      const profileContainer = document.getElementById('profileContext');
+      profileContainer.innerHTML = '';
+      
+      const profileAvatarContainer = document.createElement('div');
+      profileAvatarContainer.className = 'profile-avatar-large';
+      profileAvatarContainer.appendChild(createAvatarWithTag(tagNumber, 100));
+      
+      profileContainer.appendChild(profileAvatarContainer);
+      profileContainer.innerHTML += `
+        <div class="profile-name">مستخدم ${tagNumber}</div>
+        <div class="profile-bio">هذا مثال على عرض التاج في صفحة البروفايل الشخصية</div>
+      `;
+      
+      // Sidebar context
+      const sidebarContainer = document.getElementById('sidebarContext');
+      sidebarContainer.innerHTML = '';
+      
+      for (let i = 0; i < 5; i++) {
+        const userItem = document.createElement('div');
+        userItem.style.display = 'flex';
+        userItem.style.alignItems = 'center';
+        userItem.style.gap = '12px';
+        userItem.style.padding = '12px';
+        userItem.style.background = 'white';
+        userItem.style.borderRadius = '10px';
+        userItem.style.border = '2px solid #e0e0e0';
+        
+        userItem.appendChild(createAvatarWithTag(tagNumber, 40));
+        
+        const userName = document.createElement('span');
+        userName.style.fontWeight = 'bold';
+        userName.style.color = '#333';
+        userName.textContent = `مستخدم ${i + 1}`;
+        
+        userItem.appendChild(userName);
+        sidebarContainer.appendChild(userItem);
+      }
+    }
+  </script>
+</body>
+</html>
