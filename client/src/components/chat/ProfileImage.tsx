@@ -96,9 +96,12 @@ export default function ProfileImage({
     const imgRef = useRef<HTMLImageElement | null>(null);
     const [anchorOffsetPx, setAnchorOffsetPx] = useState<number>(tagLayout.yAdjustPx || 0);
     const [ready, setReady] = useState<boolean>(false);
-    // ضمان أن يغطي التاج داير أعلى الصورة: حد أدنى 1.06 من قطر الصورة
+    // ثبات تغطية التاج كرأس/طوق أعلى الصورة على كل الأحجام
     const minCoverRatio = 1.06;
-    const overlayWidthPx = Math.round(basePx * Math.max(tagLayout.widthRatio || minCoverRatio, minCoverRatio));
+    const maxCoverRatio = 1.18;
+    const targetRatio = tagLayout.widthRatio || minCoverRatio;
+    const clampedRatio = Math.min(Math.max(targetRatio, minCoverRatio), maxCoverRatio);
+    const overlayWidthPx = Math.round(basePx * clampedRatio);
 
     useEffect(() => {
       const el = imgRef.current;
@@ -138,10 +141,10 @@ export default function ProfileImage({
           }
         }
 
-        // الحساب الصحيح: نجعل أسفل الجزء المرئي من التاج يلامس أعلى الصورة،
+        // نجعل أسفل الجزء المرئي من التاج يلامس أعلى الصورة،
         // ثم نضيف مقدار الدخول المطلوب داخل الصورة (anchorY) مع أي ضبط يدوي (yAdjustPx).
         const anchorFromLayout = Math.max(0, Math.min(1, tagLayout.anchorY ?? 0)) * tagRenderedHeight;
-        const totalOffset = Math.max(0, bottomGapPx + anchorFromLayout + (tagLayout.yAdjustPx || 0));
+        const totalOffset = Math.max(0, tagRenderedHeight - bottomGapPx + (tagLayout.yAdjustPx || 0) + anchorFromLayout);
 
         if (!cancelled) {
           setAnchorOffsetPx(Math.round(totalOffset));
@@ -173,6 +176,8 @@ export default function ProfileImage({
           backgroundColor: 'transparent',
           background: 'transparent',
           visibility: ready ? 'visible' : 'hidden',
+          willChange: 'transform',
+          transformOrigin: '50% 100%',
         }}
         decoding="async"
         loading="lazy"
@@ -200,7 +205,11 @@ export default function ProfileImage({
     const frameDownshift = (frameIndex === 7 || frameIndex === 8 || frameIndex === 9) ? Math.round(px * 0.02) : 0;
     const overlayTopPx = imageTopWithinContainer + frameDownshift; // مرجع أعلى الصورة داخل الحاوية مع ضبط بسيط
     return (
-      <div className={`relative inline-block ${className || ''}`} onClick={onClick} style={{ width: containerSize, height: containerSize }}>
+      <div
+        className={`relative inline-block ${className || ''}`}
+        onClick={onClick}
+        style={{ width: containerSize, height: containerSize, contain: 'layout paint style', isolation: 'isolate' }}
+      >
         <VipAvatar src={imageSrc} alt={`صورة ${user.username}`} size={px} frame={frameIndex as any} />
         {tagSrc && (
           <TagOverlay src={tagSrc} overlayTopPx={overlayTopPx} basePx={px} />
@@ -219,7 +228,7 @@ export default function ProfileImage({
       <div
         className={`relative inline-block ${className || ''}`}
         onClick={onClick}
-        style={{ width: containerSize, height: containerSize }}
+        style={{ width: containerSize, height: containerSize, contain: 'layout paint style', isolation: 'isolate' }}
       >
         <div className="vip-frame-inner">
           <img

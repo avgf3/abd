@@ -1790,6 +1790,11 @@ li > * > div.effect-snow {
   align-items: center;
   justify-content: center;
   /* الإطار الخارجي (الحاوية) */
+  /* ثبات كامل ومنع أي اهتزازات أو تأثيرات خارجية */
+  contain: layout paint style;
+  isolation: isolate;
+  backface-visibility: hidden;
+  transform: translateZ(0);
 }
 
 /* ===== Profile Tag overlay (top crown/badge above avatar) ===== */
@@ -1807,6 +1812,11 @@ li > * > div.effect-snow {
   image-rendering: crisp-edges;
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
+  /* تعزيز الثبات البصري للحسابات الديناميكية */
+  will-change: transform;
+  transform: translateZ(0);
+  contain: paint;
+  transform-origin: 50% 100%;
 }
 .vip-frame-inner {
   position: relative;
