@@ -1798,22 +1798,83 @@ li > * > div.effect-snow {
   top: -18%; /* يعلو أعلى الصورة ليظهر فوق الحافة بدقة */
   left: 50%;
   transform: translateX(-50%);
-  width: 60%; /* نسبة مرنة لضمان التطابق مع مختلف الأحجام */
+  width: 70%; /* حجم أكبر قليلاً ليظهر التاج بوضوح */
   height: auto;
   z-index: 4; /* فوق الإطار والصورة */
   pointer-events: none;
-  background: transparent !important; /* خلفية شفافة لمنع ظهور خلفية بيضاء */
-  background-color: transparent !important; /* تأكيد إضافي للشفافية */
-  /* إضافات لضمان الشفافية الكاملة */
+  background: transparent !important;
+  background-color: transparent !important;
   image-rendering: -webkit-optimize-contrast;
   image-rendering: crisp-edges;
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
 }
 
+/* ===== أحجام مخصصة لكل تاج من 1-12 ===== */
+/* التيجان الذهبية والفخمة - أكبر حجماً */
+.profile-tag-overlay[src*="tag1.webp"] {
+  width: 75%;
+  top: -20%;
+}
+
+.profile-tag-overlay[src*="tag2.webp"] {
+  width: 80%;
+  top: -22%;
+}
+
+.profile-tag-overlay[src*="tag3.webp"] {
+  width: 72%;
+  top: -19%;
+}
+
+.profile-tag-overlay[src*="tag4.webp"] {
+  width: 78%;
+  top: -21%;
+}
+
+.profile-tag-overlay[src*="tag5.webp"] {
+  width: 76%;
+  top: -20%;
+}
+
+.profile-tag-overlay[src*="tag6.webp"] {
+  width: 85%;
+  top: -23%;
+}
+
+.profile-tag-overlay[src*="tag7.webp"] {
+  width: 74%;
+  top: -19%;
+}
+
+.profile-tag-overlay[src*="tag8.webp"] {
+  width: 77%;
+  top: -20%;
+}
+
+.profile-tag-overlay[src*="tag9.webp"] {
+  width: 79%;
+  top: -21%;
+}
+
+.profile-tag-overlay[src*="tag10.webp"] {
+  width: 73%;
+  top: -19%;
+}
+
+.profile-tag-overlay[src*="tag11.webp"] {
+  width: 82%;
+  top: -22%;
+}
+
+.profile-tag-overlay[src*="tag12.webp"] {
+  width: 88%;
+  top: -24%;
+}
+
 /* عندما تكون داخل vip-frame ذات الحاوية الأكبر (1.35x) نضمن المحاذاة */
 .vip-frame.base .profile-tag-overlay {
-  top: calc(-0.18 * 100%);
+  top: calc(-0.20 * 100%);
 }
 .vip-frame-inner {
   position: relative;
