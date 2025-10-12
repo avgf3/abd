@@ -202,37 +202,45 @@ export default function ProfileImage({
     );
   }
 
-  return (
-    <div className="relative inline-block" onClick={onClick} style={{ width: pixelSize ? pixelSize : undefined, height: pixelSize ? pixelSize : undefined }}>
-      <img
-        src={imageSrc}
-        alt={`صورة ${user.username}`}
-        className={`${sizeClasses[size]} rounded-full ring-[3px] ${borderColor} shadow-sm object-cover ${className}`}
-        style={{
-          width: pixelSize ? pixelSize : undefined,
-          height: pixelSize ? pixelSize : undefined,
-          transition: 'none',
-          backfaceVisibility: 'hidden',
-          transform: 'translateZ(0)',
-          display: 'block',
-        }}
-        loading="lazy"
-        decoding="async"
-        sizes={size === 'small' ? '36px' : size === 'large' ? '72px' : '56px'}
-        onError={(e: any) => {
-          if (e?.currentTarget && e.currentTarget.src !== '/default_avatar.svg') {
-            e.currentTarget.src = '/default_avatar.svg';
-          }
-        }}
-      />
-      {(() => {
-        if (!tagSrc) return null;
-        const basePx = pixelSize ?? (size === 'small' ? 36 : size === 'large' ? 72 : 56);
-        const overlayTopPx = 0; // أعلى الحاوية يطابق أعلى الصورة هنا
-        return (
-          <TagOverlay src={tagSrc} overlayTopPx={overlayTopPx} basePx={basePx} />
-        );
-      })()}
-    </div>
-  );
+  {
+    const px = pixelSize ?? (size === 'small' ? 36 : size === 'large' ? 72 : 56);
+    const containerSize = px * 1.35; // نفس حاوية إضافة الإطار
+    const imageTopWithinContainer = (containerSize - px) / 2;
+    const overlayTopPx = imageTopWithinContainer;
+
+    return (
+      <div
+        className={`relative inline-block ${className || ''}`}
+        onClick={onClick}
+        style={{ width: containerSize, height: containerSize }}
+      >
+        <div className="vip-frame-inner">
+          <img
+            src={imageSrc}
+            alt={`صورة ${user.username}`}
+            className={`rounded-full ring-[3px] ${borderColor} shadow-sm object-cover`}
+            style={{
+              width: px,
+              height: px,
+              transition: 'none',
+              backfaceVisibility: 'hidden',
+              transform: 'translateZ(0)',
+              display: 'block',
+            }}
+            loading="lazy"
+            decoding="async"
+            sizes={String(px) + 'px'}
+            onError={(e: any) => {
+              if (e?.currentTarget && e.currentTarget.src !== '/default_avatar.svg') {
+                e.currentTarget.src = '/default_avatar.svg';
+              }
+            }}
+          />
+        </div>
+        {tagSrc && (
+          <TagOverlay src={tagSrc} overlayTopPx={overlayTopPx} basePx={px} />
+        )}
+      </div>
+    );
+  }
 }
