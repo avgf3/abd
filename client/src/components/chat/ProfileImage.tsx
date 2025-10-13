@@ -90,23 +90,23 @@ export default function ProfileImage({
   const PROFILE_DELTAS: Record<number, LayoutDelta> = {
     // 12: رفع قليلاً للأعلى
     12: { yAdjustDelta: -4 },
-    // 11: زوم زائد ومرتفع في الملف الشخصي
-    11: { widthRatioDelta: -0.05, yAdjustDelta: 4 },
+    // 11: إصلاح الزوم الزائد في الملف الشخصي (1.09 -> 1.01)
+    11: { widthRatioDelta: -0.08, yAdjustDelta: 4 },
     // 10: مضبوط هنا (التعديل للحاويات فقط)
-    // 9: زوم طولي في الملف الشخصي
-    9: { widthRatioDelta: -0.03 },
-    // 7: زوم عرضي + يحتاج تنزيل بسيط
-    7: { widthRatioDelta: -0.03, yAdjustDelta: 2 },
-    // 6: يحتاج تنزيل بسيط + تقليل عرض خفيف
-    6: { widthRatioDelta: -0.03, yAdjustDelta: 3 },
-    // 5: تنزيل بسيط + زوم خفيف
-    5: { widthRatioDelta: -0.02, yAdjustDelta: 2 },
-    // 4: زوم في الملف الشخصي
-    4: { widthRatioDelta: -0.03 },
-    // 3: زوم طولي
-    3: { widthRatioDelta: -0.02 },
-    // 2: زوم في الملف الشخصي
-    2: { widthRatioDelta: -0.02 },
+    // 9: إصلاح الزوم الطولي في الملف الشخصي (1.14 -> 1.06)
+    9: { widthRatioDelta: -0.08 },
+    // 7: إصلاح الزوم العرضي في الملف الشخصي (1.11 -> 1.04)
+    7: { widthRatioDelta: -0.07, yAdjustDelta: 2 },
+    // 6: إصلاح الزوم الكبير في الملف الشخصي (1.16 -> 1.06)
+    6: { widthRatioDelta: -0.10, yAdjustDelta: 3 },
+    // 5: إصلاح الزوم الخفيف في الملف الشخصي (1.09 -> 1.04)
+    5: { widthRatioDelta: -0.05, yAdjustDelta: 2 },
+    // 4: إصلاح الزوم الكبير في الملف الشخصي (1.15 -> 1.06)
+    4: { widthRatioDelta: -0.09 },
+    // 3: إصلاح الزوم الطولي (1.08 -> 1.03)
+    3: { widthRatioDelta: -0.05 },
+    // 2: إصلاح الزوم في الملف الشخصي (1.13 -> 1.06)
+    2: { widthRatioDelta: -0.07 },
   };
   const CONTAINER_DELTAS: Record<number, LayoutDelta> = {
     // 10: يحتاج تنزيل بسيط في الحاويات فقط
@@ -122,7 +122,7 @@ export default function ProfileImage({
   const baseLayout = getTagLayout(tagNumber);
   const tagLayout = useMemo(() => {
     const deltas = (context === 'profile' ? PROFILE_DELTAS : CONTAINER_DELTAS)[tagNumber ?? -1] || {};
-    const widthRatioMin = 1.04; // سماح بهامش أصغر قليلاً لبعض التصحيحات
+    const widthRatioMin = 1.01; // حد أدنى أقل للسماح بإصلاح الزوم في الملف الشخصي
     const widthRatioMax = 1.20;
     const widthRatio = Math.min(
       widthRatioMax,
@@ -204,11 +204,12 @@ export default function ProfileImage({
         // مقدار الدخول المطلوب في الصورة (نسبة من الارتفاع المرئي)
         const anchorDepth = Math.max(0, Math.min(1, tagLayout.anchorY ?? 0)) * tagVisibleHeight;
         
-        // المعادلة النهائية البسيطة:
+        // المعادلة المُصححة:
         // - نبدأ من الارتفاع المرئي (tagVisibleHeight)
         // - نطرح مقدار الدخول (anchorDepth) لو أردنا أن يدخل
         // - نضيف الضبط اليدوي (yAdjustPx)
-        const totalOffset = Math.max(0, tagVisibleHeight - anchorDepth + (tagLayout.yAdjustPx || 0));
+        // - إزالة Math.max(0, ...) للسماح بالقيم السالبة المطلوبة لرفع التاج
+        const totalOffset = tagVisibleHeight - anchorDepth + (tagLayout.yAdjustPx || 0);
 
         if (!cancelled) {
           setAnchorOffsetPx(Math.round(totalOffset));
