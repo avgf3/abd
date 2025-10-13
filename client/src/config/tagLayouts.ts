@@ -33,11 +33,11 @@ export const TAG_LAYOUTS: Record<number, TagLayout> = (() => {
     map[n] = { ...map[n], ...layout } as TagLayout;
   };
 
-  // تاج 1: ضبط حسب الصورة - يجلس على الرأس مباشرة
-  override(1,  { widthRatio: 1.10, yAdjustPx: 8, anchorY: 0.45 });
+  // تاج 1: تجربة أقوى - ينزل أكثر ويدخل أكثر في الصورة
+  override(1,  { widthRatio: 1.10, yAdjustPx: 15, anchorY: 0.65 });
   
-  // تاج 8: ضبط حسب الصورة - يجلس على الرأس مباشرة  
-  override(8,  { widthRatio: 1.10, yAdjustPx: 8, anchorY: 0.45 });
+  // تاج 8: تجربة أقوى - ينزل أكثر ويدخل أكثر في الصورة
+  override(8,  { widthRatio: 1.10, yAdjustPx: 15, anchorY: 0.65 });
 
   return map;
 })();
