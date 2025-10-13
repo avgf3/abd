@@ -279,6 +279,10 @@ export default function ProfileImage({
   const maxCoverRatio = context === 'profile' ? 1.12 : 1.18; // خفض الحد الأقصى للملف الشخصي
   const targetRatio = tagLayout.widthRatio || (context === 'profile' ? 1.08 : 1.08);
   const clampedRatio = Math.min(Math.max(targetRatio, minCoverRatio), maxCoverRatio);
+
+  // ⤵️ تصغير بعض التيجان إلى النصف داخل الملف الشخصي فقط
+  // الأرقام المتأثرة حسب طلب المستخدم: 2, 67, 345, 911
+  const tagHalfSizeScale = (context === 'profile' && [2, 67, 345, 911].includes(tagNumber ?? -1)) ? 0.5 : 1;
   const frameIndex = (() => {
     if (!frameName) return undefined;
     const match = String(frameName).match(/(\d+)/);
@@ -310,7 +314,7 @@ export default function ProfileImage({
             src={tagSrc}
             overlayTopPx={overlayTopPx}
             // نضرب basePx بالنسبة المضبوطة ثم نمرر الناتج ليستخدمه المكون الفرعي كما هو
-            basePx={Math.round(px * clampedRatio)}
+            basePx={Math.round(px * clampedRatio * tagHalfSizeScale)}
             anchorY={tagLayout.anchorY}
             yAdjustPx={tagLayout.yAdjustPx}
             xAdjustPx={tagLayout.xAdjustPx}
@@ -360,7 +364,7 @@ export default function ProfileImage({
           <TagOverlay
             src={tagSrc}
             overlayTopPx={overlayTopPx}
-            basePx={Math.round(px * clampedRatio)}
+            basePx={Math.round(px * clampedRatio * tagHalfSizeScale)}
             anchorY={tagLayout.anchorY}
             yAdjustPx={tagLayout.yAdjustPx}
             xAdjustPx={tagLayout.xAdjustPx}
