@@ -230,10 +230,10 @@ export default function ProfileImage({
   // إعدادات التاج من التخطيطات الموحدة
   const layout = getTagLayout(tagNumber);
   
-  // جميع التيجان تستخدم نفس المنطق البسيط مع استثناءات دقيقة
-  // تيجان 1 و 8 ذات قاعدة منحنية واضحة: نستخدم touchTop وفحص مركزي للشفافية لتجاهل الأطراف
-  const needsTouchTop = tagNumber === 1 || tagNumber === 8;
-  const scanCenterRatio = needsTouchTop ? 0.6 : 1;
+  // نظام موحّد: جميع التيجان تلامس أعلى الصورة تماماً
+  // نعتمد على فحص الشفافية السفلية لإزالة قاعدة القوس والموازاة بدقة
+  const needsTouchTop = true;
+  const scanCenterRatio = 0.7; // فحص مركزي لتجاهل الأطراف المقوّسة قدر الإمكان
   const frameIndex = (() => {
     if (!frameName) return undefined;
     const match = String(frameName).match(/(\d+)/);
@@ -265,6 +265,7 @@ export default function ProfileImage({
             src={tagSrc}
             overlayTopPx={overlayTopPx}
             basePx={Math.round(px * layout.widthRatio)}
+            // عند touchTop، يتم تجاهل anchorY لصالح الشفافية السفلية
             anchorY={layout.anchorY ?? DEFAULT_TAG_LAYOUT.anchorY!}
             yAdjustPx={layout.yAdjustPx}
             xAdjustPx={layout.xAdjustPx}
@@ -317,6 +318,7 @@ export default function ProfileImage({
             src={tagSrc}
             overlayTopPx={overlayTopPx}
             basePx={Math.round(px * layout.widthRatio)}
+            // عند touchTop، يتم تجاهل anchorY لصالح الشفافية السفلية
             anchorY={layout.anchorY ?? DEFAULT_TAG_LAYOUT.anchorY!}
             yAdjustPx={layout.yAdjustPx}
             xAdjustPx={layout.xAdjustPx}
