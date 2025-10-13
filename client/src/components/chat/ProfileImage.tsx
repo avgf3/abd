@@ -51,8 +51,8 @@ const TagOverlay = memo(function TagOverlay({
     const heightPx = naturalSize.h * scale;
     const anchor = heightPx * anchorY; // الجزء الذي يدخل فوق الرأس
     const bottomGapPx = autoAnchor ? Math.round(bottomGapRatio * heightPx) : 0;
-    // نضيف هامش الشفافية السفلي لتقريب التاج من أعلى الصورة دائماً
-    return Math.round(anchor + yAdjustPx + bottomGapPx);
+    // ملاحظة: يجب طرح هامش الشفافية السفلي لرفع التاج وإلغاء الفراغ الشفاف
+    return Math.round(anchor + yAdjustPx - bottomGapPx);
   })();
 
   return (
