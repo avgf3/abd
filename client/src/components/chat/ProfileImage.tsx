@@ -228,9 +228,10 @@ export default function ProfileImage({
   // إعدادات التاج من التخطيطات الموحدة
   const layout = getTagLayout(tagNumber);
   
-  // جميع التيجان تستخدم نفس المنطق البسيط
-  const needsTouchTop = false;
-  const scanCenterRatio = 1;
+  // جميع التيجان تستخدم نفس المنطق البسيط مع استثناءات دقيقة
+  // تيجان 1 و 8 ذات قاعدة منحنية واضحة: نستخدم touchTop وفحص مركزي للشفافية لتجاهل الأطراف
+  const needsTouchTop = tagNumber === 1 || tagNumber === 8;
+  const scanCenterRatio = needsTouchTop ? 0.6 : 1;
   const frameIndex = (() => {
     if (!frameName) return undefined;
     const match = String(frameName).match(/(\d+)/);
