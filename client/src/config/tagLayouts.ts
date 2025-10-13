@@ -46,25 +46,13 @@ export const TAG_LAYOUTS: Record<number, TagLayout> = (() => {
     override(n, { widthRatio: 1.10, yAdjustPx: 0, anchorY: 0.08 });
   });
 
-  // ===== ضبط تدريجي لباقي التيجان (13-50) وفق فئات تصميمية عامة =====
+  // ===== باقي التيجان (13-50) - افتراض أنها منحنية =====
   const applyRange = (from: number, to: number, layout: Partial<TagLayout>) => {
     for (let i = from; i <= to; i++) override(i, layout);
   };
 
-  // 13-18: بسيط/متوسط
-  applyRange(13, 18, { widthRatio: 1.10, yAdjustPx: -2, anchorY: 0.32 });
-  // 19-24: متوسط مع تفاصيل أكثر
-  applyRange(19, 24, { widthRatio: 1.10, yAdjustPx: -2, anchorY: 0.34 });
-  // 25-30: مزخرف خفيف
-  applyRange(25, 30, { widthRatio: 1.11, yAdjustPx: -2, anchorY: 0.36 });
-  // 31-36: مزخرف/ملكي متوسط
-  applyRange(31, 36, { widthRatio: 1.12, yAdjustPx: -3, anchorY: 0.38 });
-  // 37-42: ثقيل/ملكيات أو قواعد أعرض
-  applyRange(37, 42, { widthRatio: 1.12, yAdjustPx: -3, anchorY: 0.40 });
-  // 43-46: متقدم/فخم
-  applyRange(43, 46, { widthRatio: 1.12, yAdjustPx: -3, anchorY: 0.42 });
-  // 47-50: نخبوية/إمبراطورية
-  applyRange(47, 50, { widthRatio: 1.12, yAdjustPx: -3, anchorY: 0.45 });
+  // معظم التيجان العالية منحنية - مطابقة انحناء الرأس
+  applyRange(13, 50, { widthRatio: 1.10, yAdjustPx: -2, anchorY: 0.05 });
 
   return map;
 })();
