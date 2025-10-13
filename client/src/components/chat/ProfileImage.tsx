@@ -51,14 +51,24 @@ const TagOverlay = memo(function TagOverlay({
   const [bottomGapRatio, setBottomGapRatio] = useState<number>(0); // نسبة الشفافية من الأسفل
 
   const anchorFromImagePx = (() => {
-    // قبل تحميل أبعاد الصورة، لا نستطيع حساب الشفافية؛ نستخدم yAdjustPx فقط لتقليل الوميض
-    if (!naturalSize) return 0 + yAdjustPx;
+    // قبل تحميل صورة التاج، نستخدم yAdjustPx فقط كتقدير مبدئي
+    if (!naturalSize) return yAdjustPx;
+    
+    // حساب أبعاد التاج المعروض على الشاشة
     const scale = basePx / Math.max(1, naturalSize.w);
     const heightPx = naturalSize.h * scale;
+    
+    // حساب الشفافية السفلية تلقائياً (لرفع التاج)
     const bottomGapPx = autoAnchor ? Math.round(bottomGapRatio * heightPx) : 0;
-    // عند touchTop: نعادل القاعدة الشفافة حتى تلامس الحافة العليا للصورة تماماً
+    
+    // حساب مقدار دخول التاج في الصورة (anchorY)
+    // مثال: anchorY=0.3 يعني 30% من ارتفاع التاج يدخل في الصورة
     const anchor = touchTop ? bottomGapPx : Math.round(heightPx * anchorY);
-    // ملاحظة: يجب طرح هامش الشفافية السفلي لرفع التاج وإلغاء الفراغ الشفاف
+    
+    // الحساب النهائي:
+    // anchor: كم يدخل التاج في الصورة (موجب = للأسفل)
+    // yAdjustPx: ضبط يدوي إضافي (موجب = للأسفل، سالب = للأعلى)
+    // bottomGapPx: الشفافية السفلية (نطرحها لرفع التاج)
     return Math.round(anchor + yAdjustPx - bottomGapPx);
   })();
 
@@ -215,10 +225,11 @@ export default function ProfileImage({
     return Number.isFinite(n) ? n : undefined;
   })();
 
-  // إعدادات التاج تعتمد الآن على رقم التاج وتخطيطاته المقاسة
+  // إعدادات التاج من التخطيطات الموحدة
   const layout = getTagLayout(tagNumber);
-  // إزالة السلوك الخاص لتاجي 1 و8 لاستخدام نفس منطق تاج 2
-  const needsTouchTop = false; // تم إصلاح المشكلة بتوحيد الإعدادات
+  
+  // جميع التيجان تستخدم نفس المنطق البسيط
+  const needsTouchTop = false;
   const scanCenterRatio = 1;
   const frameIndex = (() => {
     if (!frameName) return undefined;
