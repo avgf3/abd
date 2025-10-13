@@ -18,6 +18,8 @@ export interface ChatUser {
   profileFrame?: string;
   // تاج البروفايل (اسم/مسار محفوظ داخل /tags أو معرّف)
   profileTag?: string;
+  // لقب البروفايل (صورة صغيرة تُعرض بدل أيقونة الدور/المستوى بجانب الاسم)
+  profileTitle?: string;
   status?: string;
   gender?: string; // تغيير: جعل النوع اختيارياً وقابلاً لأي نص لضمان التوافق
   age?: number;

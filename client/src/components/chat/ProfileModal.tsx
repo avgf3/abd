@@ -16,7 +16,7 @@ import {
   buildProfileBackgroundGradient,
   getUsernameDisplayStyle,
 } from '@/utils/themeUtils';
-import { getUserLevelIcon } from '@/components/chat/UserRoleBadge';
+import UserRoleBadge, { getUserLevelIcon } from '@/components/chat/UserRoleBadge';
 import ProfileImage from './ProfileImage';
 import { useStories } from '@/hooks/useStories';
 import { useRoomManager } from '@/hooks/useRoomManager';
@@ -3056,9 +3056,10 @@ export default function ProfileModal({
                       </h3>
                     );
                   })()}
-                  {/* شارة الدور (التاج/المستوى) بجانب الوصف */}
+                    {/* شارة الدور (التاج/المستوى أو لقب إن وُجد) بجانب الوصف */}
                   <span style={{ gridArea: 'badge', lineHeight: 0, display: 'flex', alignItems: 'center' }}>
-                    {getUserLevelIcon(localUser, 18)}
+                    {/* يستخدم UserRoleBadge المنطق الجديد الذي يستبدل الشعار باللقب عند توفره */}
+                    <UserRoleBadge user={localUser as any} size={18} />
                   </span>
                   {/* الأيقونة */}
                   <img src="/icons/lead-icon.png" alt="icon"

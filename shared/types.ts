@@ -33,6 +33,7 @@ export interface ChatUser {
   profileEffect?: string;
   profileFrame?: string; // إطار البروفايل
   profileTag?: string; // تاج البروفايل
+  profileTitle?: string; // لقب البروفايل (صورة بديلة لشعار الدور/المستوى)
   points?: number;
   level?: number;
   totalPoints?: number;

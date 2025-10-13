@@ -196,6 +196,35 @@ export default function UserRoleBadge({
   size = 20,
   hideGuestAndGender = false,
 }: UserRoleBadgeProps) {
+  // عرض لقب صورة بدلاً من أيقونة الدور/المستوى إذا كان محدداً
+  const titleSrc = (() => {
+    const t = (user as any)?.profileTitle as string | undefined;
+    if (!t) return undefined;
+    const s = String(t);
+    if (s.startsWith('data:') || s.startsWith('/') || s.includes('/')) return s;
+    // دعم ترقيم بسيط مثل title1.webp
+    const m = s.match(/(\d+)/);
+    if (m && Number.isFinite(parseInt(m[1], 10))) {
+      const n = Math.max(1, Math.min(100, parseInt(m[1], 10)));
+      return `/titles/title${n}.webp`;
+    }
+    return `/titles/${s}`;
+  })();
+
+  if (titleSrc) {
+    const w = size;
+    const h = size;
+    return (
+      <img
+        src={titleSrc}
+        alt="title"
+        style={{ width: w, height: h, display: 'inline', verticalAlign: 'middle', objectFit: 'contain' }}
+        onError={(e) => {
+          try { (e.target as HTMLImageElement).style.display = 'none'; } catch {}
+        }}
+      />
+    );
+  }
   // توحيد قيمة الجنس لدعم العربي والإنجليزي
   const normalizeGender = (g?: string): 'male' | 'female' | undefined => {
     if (!g) return undefined;

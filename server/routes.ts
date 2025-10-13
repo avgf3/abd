@@ -3391,6 +3391,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         'profileEffect',
         'profileFrame',
         'profileTag',
+        'profileTitle',
         'dmPrivacy',
         'profileMusicTitle',
         'profileMusicEnabled',
@@ -4412,6 +4413,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userProfileFrame: (user as any)?.profileFrame || null,
         // تمرير تاج البروفايل للحائط لعرضه مباشرةً
         userProfileTag: (user as any)?.profileTag || null,
+        // تمرير لقب البروفايل للحائط لعرضه مباشرةً
+        userProfileTitle: (user as any)?.profileTitle || null,
         usernameColor: user.usernameColor,
         usernameGradient: (user as any).usernameGradient,
         usernameEffect: (user as any).usernameEffect,
@@ -4915,6 +4918,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       usernameEffect: (sanitized as any).usernameEffect,
       profileBackgroundColor: sanitized.profileBackgroundColor,
       profileEffect: sanitized.profileEffect,
+      profileTitle: (sanitized as any).profileTitle || null,
       profileFrame: sanitized.profileFrame, // إضافة إطار البروفايل
       profileTag: (sanitized as any).profileTag, // إضافة تاج البروفايل
       isOnline: sanitized.isOnline,
