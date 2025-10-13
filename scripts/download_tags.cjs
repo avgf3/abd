@@ -1,22 +1,22 @@
 const https = require('https');
 const fs = require('fs');
 const path = require('path');
-const sharp = require('sharp');
+// No external image processing: save original bytes with original extension
 
+// New tag pages from ibb.co (8 items)
 const urls = [
-  'https://ibb.co/W4ddQ2K2',
-  'https://ibb.co/rGBZdKyB',
-  'https://ibb.co/4wmwZCvj',
-  'https://ibb.co/ZZPc6bx',
-  'https://ibb.co/TBJvG7Vd',
-  'https://ibb.co/DfMHmB29',
-  'https://ibb.co/zHfJGHNy',
-  'https://ibb.co/8nzZvkdf',
-  'https://ibb.co/yFnHR9nL',
-  'https://ibb.co/cSpLnxmw',
-  'https://ibb.co/QLypZyG',
-  'https://ibb.co/ymNPS2t6',
+  'https://ibb.co/7x6RKbzj',
+  'https://ibb.co/39dctkPV',
+  'https://ibb.co/8DykwnGt',
+  'https://ibb.co/hJX7PHmC',
+  'https://ibb.co/3YCgrnDf',
+  'https://ibb.co/wm1331p',
+  'https://ibb.co/Xk67SDwK',
+  'https://ibb.co/cKvFst48',
 ];
+
+// Save as tag13..tag20 using original extension (webp/png/jpg)
+const startIndex = 13;
 
 const outDir = path.join(process.cwd(), 'client', 'public', 'tags');
 
@@ -60,7 +60,7 @@ async function run() {
   let ok = 0;
   for (let i = 0; i < urls.length; i++) {
     const pageUrl = urls[i];
-    const outPath = path.join(outDir, `tag${i + 1}.webp`);
+    const outPath = path.join(outDir, `tag${startIndex + i}.webp`);
     try {
       process.stdout.write(`➡️  Fetching page ${i + 1}: ${pageUrl}\n`);
       const html = await fetchText(pageUrl);
@@ -68,9 +68,13 @@ async function run() {
       if (!imgUrl) throw new Error('og:image not found');
       process.stdout.write(`   ⤷ image: ${imgUrl}\n`);
       const imgBuf = await fetchBuffer(imgUrl);
-      const webpBuf = await sharp(imgBuf).webp({ quality: 92 }).toBuffer();
-      fs.writeFileSync(outPath, webpBuf);
-      process.stdout.write(`   ✅ Saved ${outPath}\n`);
+      // Determine extension from URL (default to .webp if not present)
+      const u = new URL(imgUrl);
+      const extMatch = (u.pathname.match(/\.(webp|png|jpg|jpeg)$/i) || [])[1];
+      const ext = (extMatch ? extMatch.toLowerCase() : 'webp');
+      const outPath = path.join(outDir, `tag${startIndex + i}.${ext}`);
+      fs.writeFileSync(outPath, imgBuf);
+      process.stdout.write(`   ✅ Saved ${outPath} (${imgBuf.length} bytes)\n`);
       ok++;
     } catch (e) {
       process.stderr.write(`   ❌ Failed for ${pageUrl}: ${e.message}\n`);

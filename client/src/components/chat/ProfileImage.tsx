@@ -1,4 +1,4 @@
-import { memo, useMemo, useState } from 'react';
+import { memo, useEffect, useMemo, useState } from 'react';
 
 import { getUserLevelIcon } from '@/components/chat/UserRoleBadge';
 import type { ChatUser } from '@/types/chat';
@@ -47,6 +47,12 @@ const TagOverlay = memo(function TagOverlay({
   scanCenterRatio = 1,
   touchTop = false,
 }: TagOverlayProps) {
+  const [imageSrc, setImageSrc] = useState<string>(src);
+  const [fallbackStep, setFallbackStep] = useState<number>(0);
+  useEffect(() => {
+    setImageSrc(src);
+    setFallbackStep(0);
+  }, [src]);
   const [naturalSize, setNaturalSize] = useState<{ w: number; h: number } | null>(null);
   const [bottomGapRatio, setBottomGapRatio] = useState<number>(0); // نسبة الشفافية من الأسفل
 
@@ -74,7 +80,7 @@ const TagOverlay = memo(function TagOverlay({
 
   return (
     <img
-      src={src}
+      src={imageSrc}
       alt="tag"
       className="profile-tag-overlay"
       aria-hidden="true"
@@ -145,7 +151,28 @@ const TagOverlay = memo(function TagOverlay({
           }
         } catch {}
       }}
-      onError={(e: any) => { try { e.currentTarget.style.display = 'none'; } catch {} }}
+      onError={(e: any) => {
+        try {
+          const cur = imageSrc || '';
+          // Fallback chain: .webp -> .png -> .jpg -> .jpeg -> hide
+          if (fallbackStep === 0 && /\.webp(\?.*)?$/.test(cur)) {
+            setImageSrc(cur.replace(/\.webp(\?.*)?$/i, '.png$1'));
+            setFallbackStep(1);
+            return;
+          }
+          if (fallbackStep === 1 && /\.png(\?.*)?$/.test(cur)) {
+            setImageSrc(cur.replace(/\.png(\?.*)?$/i, '.jpg$1'));
+            setFallbackStep(2);
+            return;
+          }
+          if (fallbackStep === 2 && /\.jpg(\?.*)?$/.test(cur)) {
+            setImageSrc(cur.replace(/\.jpg(\?.*)?$/i, '.jpeg$1'));
+            setFallbackStep(3);
+            return;
+          }
+          e.currentTarget.style.display = 'none';
+        } catch {}
+      }}
     />
   );
 }, (prev, next) => (
