@@ -42,7 +42,8 @@ const TagOverlay = memo(function TagOverlay({
   const [naturalSize, setNaturalSize] = useState<{ w: number; h: number } | null>(null);
 
   const anchorFromImagePx = (() => {
-    if (!naturalSize) return Math.round(basePx * 0.52) + yAdjustPx; //Fallback آمن قبل التحميل
+    // قبل تحميل أبعاد الصورة، اجعل التلامس دقيقاً دون أي اقتحام
+    if (!naturalSize) return 0 + yAdjustPx;
     const scale = basePx / Math.max(1, naturalSize.w);
     const heightPx = naturalSize.h * scale;
     const anchor = heightPx * anchorY; // الجزء الذي يدخل فوق الرأس
@@ -174,7 +175,8 @@ export default function ProfileImage({
     const imageTopWithinContainer = (containerSize - px) / 2; // موضع أعلى الصورة داخل الحاوية
     // إزاحة عمودية بسيطة لإطارات محددة التي تبدو مرتفعة قليلاً في البروفايل فقط
     const frameDownshift = (frameIndex === 7 || frameIndex === 8 || frameIndex === 9) ? Math.round(px * 0.02) : 0;
-    const overlayTopPx = imageTopWithinContainer + frameDownshift; // مرجع أعلى الصورة داخل الحاوية مع ضبط بسيط
+    // التاج يجب أن يلامس أعلى الصورة تماماً، دون التأثر بإزاحة الإطار
+    const overlayTopPx = imageTopWithinContainer; // تلامس مباشر مع أعلى الصورة
     return (
       <div
         className={`relative inline-block ${className || ''}`}
@@ -187,8 +189,8 @@ export default function ProfileImage({
             src={tagSrc}
             overlayTopPx={overlayTopPx}
             basePx={Math.round(px * layout.widthRatio)}
-            anchorY={layout.anchorY}
-            yAdjustPx={layout.yAdjustPx}
+            anchorY={0}
+            yAdjustPx={0}
             xAdjustPx={layout.xAdjustPx}
           />
         )}
@@ -236,8 +238,8 @@ export default function ProfileImage({
             src={tagSrc}
             overlayTopPx={overlayTopPx}
             basePx={Math.round(px * layout.widthRatio)}
-            anchorY={layout.anchorY}
-            yAdjustPx={layout.yAdjustPx}
+            anchorY={0}
+            yAdjustPx={0}
             xAdjustPx={layout.xAdjustPx}
           />
         )}
