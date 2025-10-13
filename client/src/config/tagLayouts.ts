@@ -9,7 +9,8 @@ export type TagLayout = {
 export const DEFAULT_TAG_LAYOUT: TagLayout = {
   widthRatio: 1.10,
   xAdjustPx: 0,
-  yAdjustPx: -8,
+  // تقليل الرفع الافتراضي قليلاً لمنع قصّ أعلى التاج في بعض السياقات
+  yAdjustPx: -6,
   anchorY: 0.14,
   autoAnchor: true,
 };

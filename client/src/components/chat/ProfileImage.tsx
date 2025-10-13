@@ -95,7 +95,7 @@ export default function ProfileImage({
   }) {
     const imgRef = useRef<HTMLImageElement | null>(null);
     const [anchorOffsetPx, setAnchorOffsetPx] = useState<number>(tagLayout.yAdjustPx || 0);
-    const [opacity, setOpacity] = useState<number>(0);
+    const [hasComputed, setHasComputed] = useState<boolean>(false);
     // ثبات تغطية التاج كرأس/طوق أعلى الصورة على كل الأحجام
     const minCoverRatio = 1.06;
     const maxCoverRatio = 1.18;
@@ -161,10 +161,7 @@ export default function ProfileImage({
 
         if (!cancelled) {
           setAnchorOffsetPx(Math.round(totalOffset));
-          // تلاشي سلس بدلاً من ظهور مفاجئ لإزالة التذبذب
-          requestAnimationFrame(() => {
-            if (!cancelled) setOpacity(1);
-          });
+          setHasComputed(true);
         }
       };
 
@@ -191,13 +188,13 @@ export default function ProfileImage({
           marginLeft: tagLayout.xAdjustPx || 0,
           backgroundColor: 'transparent',
           background: 'transparent',
-          opacity: opacity,
-          transition: 'opacity 0.2s ease-in-out',
+          opacity: hasComputed ? 1 : 0,
+          transition: hasComputed ? 'opacity 120ms ease-in-out' : 'none',
           willChange: 'transform, opacity',
           transformOrigin: '50% 100%',
         }}
         decoding="async"
-        loading="lazy"
+        loading="eager"
         onError={(e: any) => { try { e.currentTarget.style.display = 'none'; } catch {} }}
       />
     );
@@ -225,7 +222,7 @@ export default function ProfileImage({
       <div
         className={`relative inline-block ${className || ''}`}
         onClick={onClick}
-        style={{ width: containerSize, height: containerSize, contain: 'layout paint style', isolation: 'isolate' }}
+        style={{ width: containerSize, height: containerSize, contain: 'layout style', isolation: 'isolate', overflow: 'visible' }}
       >
         <VipAvatar src={imageSrc} alt={`صورة ${user.username}`} size={px} frame={frameIndex as any} />
         {tagSrc && (
@@ -245,7 +242,7 @@ export default function ProfileImage({
       <div
         className={`relative inline-block ${className || ''}`}
         onClick={onClick}
-        style={{ width: containerSize, height: containerSize, contain: 'layout paint style', isolation: 'isolate' }}
+        style={{ width: containerSize, height: containerSize, contain: 'layout style', isolation: 'isolate', overflow: 'visible' }}
       >
         <div className="vip-frame-inner">
           <img

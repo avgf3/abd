@@ -170,20 +170,20 @@
 
   <script>
     // التكوين الجديد المُحسّن - مطابق 100% للكود الفعلي
-    const TAG_LAYOUTS = {
-      1:  { widthRatio: 1.10, xAdjustPx: 0, yAdjustPx: 0,  anchorY: 0.12, autoAnchor: true },
-      2:  { widthRatio: 1.08, xAdjustPx: 0, yAdjustPx: 0,  anchorY: 0.12, autoAnchor: true },
-      3:  { widthRatio: 1.06, xAdjustPx: 0, yAdjustPx: 0,  anchorY: 0.11, autoAnchor: true },
-      4:  { widthRatio: 1.10, xAdjustPx: 0, yAdjustPx: 0,  anchorY: 0.13, autoAnchor: true },
-      5:  { widthRatio: 1.07, xAdjustPx: 0, yAdjustPx: 0,  anchorY: 0.12, autoAnchor: true },
-      6:  { widthRatio: 1.12, xAdjustPx: 0, yAdjustPx: 0,  anchorY: 0.15, autoAnchor: true },
-      7:  { widthRatio: 1.10, xAdjustPx: 0, yAdjustPx: 0,  anchorY: 0.13, autoAnchor: true },
-      8:  { widthRatio: 1.08, xAdjustPx: 0, yAdjustPx: 0,  anchorY: 0.12, autoAnchor: true },
-      9:  { widthRatio: 1.11, xAdjustPx: 0, yAdjustPx: 0,  anchorY: 0.14, autoAnchor: true },
-      10: { widthRatio: 1.06, xAdjustPx: 0, yAdjustPx: 0,  anchorY: 0.11, autoAnchor: true },
-      11: { widthRatio: 1.07, xAdjustPx: 0, yAdjustPx: 0,  anchorY: 0.12, autoAnchor: true },
-      12: { widthRatio: 1.10, xAdjustPx: 0, yAdjustPx: 0,  anchorY: 0.15, autoAnchor: true },
-    };
+      const TAG_LAYOUTS = {
+        1:  { widthRatio: 1.10, xAdjustPx: 0, yAdjustPx: -6, anchorY: 0.15, autoAnchor: true },
+        2:  { widthRatio: 1.13, xAdjustPx: 0, yAdjustPx: -6, anchorY: 0.17, autoAnchor: true },
+        3:  { widthRatio: 1.08, xAdjustPx: 0, yAdjustPx: -6, anchorY: 0.13, autoAnchor: true },
+        4:  { widthRatio: 1.15, xAdjustPx: 0, yAdjustPx: -6, anchorY: 0.19, autoAnchor: true },
+        5:  { widthRatio: 1.09, xAdjustPx: 0, yAdjustPx: -6, anchorY: 0.14, autoAnchor: true },
+        6:  { widthRatio: 1.16, xAdjustPx: 0, yAdjustPx: -6, anchorY: 0.20, autoAnchor: true },
+        7:  { widthRatio: 1.11, xAdjustPx: 0, yAdjustPx: -6, anchorY: 0.16, autoAnchor: true },
+        8:  { widthRatio: 1.10, xAdjustPx: 0, yAdjustPx: -6, anchorY: 0.15, autoAnchor: true },
+        9:  { widthRatio: 1.14, xAdjustPx: 0, yAdjustPx: -6, anchorY: 0.18, autoAnchor: true },
+        10: { widthRatio: 1.07, xAdjustPx: 0, yAdjustPx: -6, anchorY: 0.12, autoAnchor: true },
+        11: { widthRatio: 1.09, xAdjustPx: 0, yAdjustPx: -6, anchorY: 0.14, autoAnchor: true },
+        12: { widthRatio: 1.13, xAdjustPx: 0, yAdjustPx: -6, anchorY: 0.17, autoAnchor: true },
+      };
 
     const sizes = [36, 56, 72];
     const withFrame = [false, true];
@@ -337,10 +337,9 @@
           bottomGapPx = detectBottomGap(tagImg, scale);
         }
         
-        const anchorFromLayout = (cfg.anchorY || 0) * tagRenderedHeight;
-        
-        // المعادلة المصححة
-        const totalOffset = Math.max(0, tagRenderedHeight - bottomGapPx + (cfg.yAdjustPx || 0) + anchorFromLayout);
+        const tagVisibleHeight = tagRenderedHeight - bottomGapPx;
+        const anchorDepth = Math.max(0, Math.min(1, cfg.anchorY || 0)) * tagVisibleHeight;
+        const totalOffset = Math.max(0, tagVisibleHeight - anchorDepth + (cfg.yAdjustPx || 0));
         
         tagImg.style.transform = `translate(-50%, calc(-100% + ${totalOffset}px))`;
       };
