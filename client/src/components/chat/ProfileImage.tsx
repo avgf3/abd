@@ -29,6 +29,8 @@ type TagOverlayProps = {
   yAdjustPx?: number;
   xAdjustPx?: number;
   autoAnchor?: boolean;
+  // حد أقصى مسموح لتداخل التاج داخل الأفاتار (px)
+  maxIntrusionPx?: number;
 };
 
 // مكون التاج خارج ProfileImage لمنع تبديل الهوية والوميض، مع تحسينات استقرار
@@ -40,6 +42,7 @@ const TagOverlay = memo(function TagOverlay({
   yAdjustPx,
   xAdjustPx,
   autoAnchor,
+  maxIntrusionPx,
 }: TagOverlayProps) {
   const imgRef = useRef<HTMLImageElement | null>(null);
   const [anchorOffsetPx, setAnchorOffsetPx] = useState<number>(yAdjustPx || 0);
@@ -87,8 +90,15 @@ const TagOverlay = memo(function TagOverlay({
       const tagVisibleHeight = tagRenderedHeight - bottomGapPx;
       const depth = Math.max(0, Math.min(1, anchorY ?? 0)) * tagVisibleHeight;
       const totalOffset = tagVisibleHeight - depth + (yAdjustPx || 0);
+
+      // 🔒 منع دخول التاج داخل الصورة بأكثر من الحد المسموح
+      const maxIntrusion = Math.max(0, maxIntrusionPx || 0);
+      // موضع أسفل التاج المرئي بالنسبة لأعلى الصورة = -100% + anchorOffset + bottomGapPx
+      // حتى لا يتجاوز الحد، نقيد anchorOffset ≤ tagRenderedHeight + maxIntrusion - bottomGapPx
+      const maxAllowedAnchorOffset = Math.max(0, Math.min(tagRenderedHeight + maxIntrusion - bottomGapPx, tagRenderedHeight * 2));
+      const clampedOffset = Math.max(0, Math.min(totalOffset, maxAllowedAnchorOffset));
       if (!cancelled) {
-        setAnchorOffsetPx(Math.round(totalOffset));
+        setAnchorOffsetPx(Math.round(clampedOffset));
       }
     };
 
@@ -133,7 +143,8 @@ const TagOverlay = memo(function TagOverlay({
   prev.anchorY === next.anchorY &&
   prev.yAdjustPx === next.yAdjustPx &&
   prev.xAdjustPx === next.xAdjustPx &&
-  prev.autoAnchor === next.autoAnchor
+  prev.autoAnchor === next.autoAnchor &&
+  prev.maxIntrusionPx === next.maxIntrusionPx
 ));
 
 export default function ProfileImage({
@@ -314,6 +325,7 @@ export default function ProfileImage({
             yAdjustPx={tagLayout.yAdjustPx}
             xAdjustPx={tagLayout.xAdjustPx}
             autoAnchor={tagLayout.autoAnchor}
+            maxIntrusionPx={Math.round(px * (context === 'profile' ? 0.06 : 0.08))}
           />
         )}
       </div>
@@ -364,6 +376,7 @@ export default function ProfileImage({
             yAdjustPx={tagLayout.yAdjustPx}
             xAdjustPx={tagLayout.xAdjustPx}
             autoAnchor={tagLayout.autoAnchor}
+            maxIntrusionPx={Math.round(px * (context === 'profile' ? 0.06 : 0.08))}
           />
         )}
       </div>

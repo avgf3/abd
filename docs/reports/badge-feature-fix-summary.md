@@ -1,3 +1,24 @@
+## Tag (Crown) overlay refinements
+
+- Add max-intrusion clamp in `ProfileImage.tsx` to prevent tag entering avatar beyond 6–8% of diameter depending on context.
+- Lowered default and per-tag `anchorY` in `client/src/config/tagLayouts.ts` to respect new intrusion limits across tag personas.
+- Kept `autoAnchor` to read alpha bottom gap from the tag image and combined with explicit `yAdjustPx` for final stability.
+
+Key files touched:
+
+```1:6:client/src/components/chat/ProfileImage.tsx
+// ... added maxIntrusionPx clamp, passed from parent based on context
+```
+
+```1:6:client/src/config/tagLayouts.ts
+// ... reduced anchorY across tags, kept widthRatio, autoAnchor, yAdjustPx
+```
+
+Rationale:
+
+- Many tags visually overlapped too deeply inside the avatar; the clamp guarantees a professional, consistent top overlay.
+- `anchorY` lowered to match real tag bases (straight vs arched) and to interplay with the clamp without oscillations.
+
 # إصلاح خاصية شارات المستخدمين SVG
 
 ## المشكلة المكتشفة
