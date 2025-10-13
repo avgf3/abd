@@ -3342,6 +3342,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
+      // Normalize profileFrame: treat 0/empty/none as null, validate basic formats
+      if (Object.prototype.hasOwnProperty.call(normalizedUpdates, 'profileFrame')) {
+        const v = (normalizedUpdates as any).profileFrame;
+        if (
+          v === null ||
+          v === undefined ||
+          v === '' ||
+          v === 0 ||
+          v === '0' ||
+          String(v).toLowerCase() === 'null' ||
+          String(v).toLowerCase() === 'undefined' ||
+          String(v).toLowerCase() === 'none'
+        ) {
+          normalizedUpdates.profileFrame = null;
+        } else if (typeof v === 'string') {
+          const s = v.trim();
+          if (/^frame0(\.webp)?$/i.test(s)) {
+            normalizedUpdates.profileFrame = null;
+          } else {
+            const m = s.match(/^frame(\d+)\.webp$/i);
+            if (m) {
+              const n = parseInt(m[1], 10);
+              if (!Number.isFinite(n) || n < 1 || n > 50) {
+                normalizedUpdates.profileFrame = null;
+              }
+            }
+          }
+        } else if (typeof v === 'number') {
+          const n = v as number;
+          normalizedUpdates.profileFrame = n >= 1 && Number.isFinite(n) ? `frame${Math.min(50, n)}.webp` : null;
+        }
+      }
+
       // امنع تمرير قيم غير مسموحة: نبيح حقول معينة فقط
       const allowed = [
         'username',

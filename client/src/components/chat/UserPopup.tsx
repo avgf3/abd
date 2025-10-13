@@ -36,11 +36,23 @@ export default function UserPopup({
   const handleAddFrame = async (frameIndex: number) => {
     if (!currentUser || !canSetFrame) return;
     try {
+      const body: any = {};
+      if (Number(frameIndex) > 0) {
+        body.profileFrame = `frame${frameIndex}.webp`;
+      } else {
+        body.profileFrame = null; // إزالة الإطار بشكل صريح
+      }
       await apiRequest(`/api/users/${user.id}`, {
         method: 'PUT',
-        body: { profileFrame: `frame${frameIndex}.webp` },
+        body,
       });
-      toast({ title: 'تم', description: `تم تعيين إطار ${frameIndex} لـ ${user.username}` });
+      toast({
+        title: 'تم',
+        description:
+          Number(frameIndex) > 0
+            ? `تم تعيين إطار ${frameIndex} لـ ${user.username}`
+            : `تمت إزالة الإطار لـ ${user.username}`,
+      });
       onClose?.();
     } catch (e) {
       toast({ title: 'خطأ', description: 'تعذر تعيين الإطار', variant: 'destructive' });

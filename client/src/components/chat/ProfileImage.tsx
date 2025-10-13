@@ -282,11 +282,10 @@ export default function ProfileImage({
   const frameIndex = (() => {
     if (!frameName) return undefined;
     const match = String(frameName).match(/(\d+)/);
-    if (match) {
-      const n = parseInt(match[1]);
-      if (Number.isFinite(n)) return (Math.max(1, Math.min(10, n)) as any);
-    }
-    return undefined;
+    if (!match) return undefined;
+    const n = parseInt(match[1], 10);
+    if (!Number.isFinite(n) || n <= 0) return undefined; // تجاهل 0 أو قيم غير صالحة
+    return Math.min(10, n) as any;
   })();
 
   if (!disableFrame && frameName && frameIndex) {
