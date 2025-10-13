@@ -49,12 +49,12 @@ export const TAG_LAYOUTS: Record<number, TagLayout> = (() => {
   override(6,  { widthRatio: 1.10, yAdjustPx: -4, anchorY: 0.50 });
   // tag7: متوسط — إنزال بسيط وزيادة دخول القاعدة
   override(7,  { widthRatio: 1.11, yAdjustPx: -1, anchorY: 0.36 });
-  // tag8: بسيط — كان مرتفعاً قليلاً، خفّضناه بدرجة خفيفة
-  override(8,  { widthRatio: 1.10, yAdjustPx: 1, anchorY: 0.36 });
+  // tag8: بسيط — خفّضناه أكثر لأنه كان مرتفعاً للأعلى كثيراً
+  override(8,  { widthRatio: 1.10, yAdjustPx: 4, anchorY: 0.36 });
   // tag9: مزخرف
   override(9,  { widthRatio: 1.12, yAdjustPx: -3, anchorY: 0.38 });
-  // tag10: صغير — كان مرتفعاً بشكل ملحوظ، زيد الإنزال أكثر
-  override(10, { widthRatio: 1.08, yAdjustPx: 2,  anchorY: 0.40 });
+  // tag10: صغير — خفّضناه أكثر لأنه كان مرتفعاً للأعلى كثيراً
+  override(10, { widthRatio: 1.08, yAdjustPx: 5,  anchorY: 0.40 });
   // tag11: متوسط
   override(11, { widthRatio: 1.10, yAdjustPx: -2, anchorY: 0.33 });
   // tag12: كبير/ملكي ثاني
