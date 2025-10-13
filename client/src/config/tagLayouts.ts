@@ -29,36 +29,22 @@ export const TAG_LAYOUTS: Record<number, TagLayout> = (() => {
   // املأ الكل بالإعدادات الافتراضية أولاً
   for (let i = 1; i <= 50; i++) map[i] = { ...DEFAULT_TAG_LAYOUT };
 
-  // ===== ضبط يدوي دقيق لكل تاج معروف التصميم (1-12 وفق التحليل) =====
-  // ملاحظة: anchorY يحدد مقدار دخول قاعدة التاج داخل الصورة (0 = يلامس فقط، 0.5 = نصف التاج داخل الصورة)
+  // ===== تصنيف التيجان حسب النوع وتطبيق القواعد =====
   const override = (n: number, layout: Partial<TagLayout>) => {
     map[n] = { ...map[n], ...layout } as TagLayout;
   };
 
-  // tag1: مستقيم بسيط — دخول 8% بالضبط في الصورة
-  override(1,  { widthRatio: 1.10, yAdjustPx: 0, anchorY: 0.12 });
-  // tag2: ملكي أنيق
-  override(2,  { widthRatio: 1.10, yAdjustPx: -3, anchorY: 0.28 });
-  // tag3: رفيع بسيط
-  override(3,  { widthRatio: 1.06, yAdjustPx: -1, anchorY: 0.25 });
-  // tag4: مزخرف (قاعدة عريضة)
-  override(4,  { widthRatio: 1.12, yAdjustPx: -3, anchorY: 0.40 });
-  // tag5: ناعم متوسط
-  override(5,  { widthRatio: 1.10, yAdjustPx: -2, anchorY: 0.35 });
-  // tag6: ملكي ثقيل (حزام عريض)
-  override(6,  { widthRatio: 1.10, yAdjustPx: -4, anchorY: 0.50 });
-  // tag7: متوسط — إنزال بسيط وزيادة دخول القاعدة
-  override(7,  { widthRatio: 1.11, yAdjustPx: -1, anchorY: 0.36 });
-  // tag8: منحني — مطابقة انحناء الرأس بالضبط
-  override(8,  { widthRatio: 1.10, yAdjustPx: -2, anchorY: 0.05 });
-  // tag9: مزخرف
-  override(9,  { widthRatio: 1.12, yAdjustPx: -3, anchorY: 0.38 });
-  // tag10: صغير — خفّضناه أكثر لأنه كان مرتفعاً للأعلى كثيراً
-  override(10, { widthRatio: 1.08, yAdjustPx: 5,  anchorY: 0.40 });
-  // tag11: متوسط
-  override(11, { widthRatio: 1.10, yAdjustPx: -2, anchorY: 0.33 });
-  // tag12: كبير/ملكي ثاني
-  override(12, { widthRatio: 1.10, yAdjustPx: -3, anchorY: 0.48 });
+  // 🌙 التيجان المنحنية - مطابقة انحناء الرأس بالضبط
+  const curvedCrowns = [1, 2, 4, 6, 8, 9, 11, 12];
+  curvedCrowns.forEach(n => {
+    override(n, { widthRatio: 1.10, yAdjustPx: -2, anchorY: 0.05 });
+  });
+
+  // 📏 التيجان المستقيمة - دخول 8% بالضبط في الصورة  
+  const straightCrowns = [3, 5, 7, 10];
+  straightCrowns.forEach(n => {
+    override(n, { widthRatio: 1.10, yAdjustPx: 0, anchorY: 0.08 });
+  });
 
   // ===== ضبط تدريجي لباقي التيجان (13-50) وفق فئات تصميمية عامة =====
   const applyRange = (from: number, to: number, layout: Partial<TagLayout>) => {
