@@ -1800,25 +1800,36 @@ li > * > div.effect-snow {
 /* ===== Profile Tag overlay (top crown/badge above avatar) ===== */
 .profile-tag-overlay {
   position: absolute;
-  /* top و transform يتم التحكم بهما من ProfileImage.tsx - لا تعدّل هنا */
+  /* 🎯 الموضع والحجم يتم التحكم بهما بالكامل من ProfileImage.tsx */
   left: 50%;
-  width: 60%; /* سيتم تجاوزه من inline styles */
   height: auto;
   z-index: 4; /* فوق الإطار والصورة */
   pointer-events: none;
+  
+  /* 🎨 شفافية مثالية للخلفية */
   background: transparent !important;
   background-color: transparent !important;
+  
+  /* 🔧 تحسين جودة العرض */
   image-rendering: -webkit-optimize-contrast;
   image-rendering: crisp-edges;
+  
+  /* ⚡ تحسين الأداء والثبات */
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
-  /* تعزيز الثبات البصري للحسابات الديناميكية */
-  will-change: transform, opacity;
+  will-change: transform;
   transform: translateZ(0);
   contain: layout style paint;
+  
+  /* 📐 نقطة الارتكاز المثلى للتحويلات */
   transform-origin: 50% 100%;
-  /* منع أي قص للتاج داخل الحاوية في كل السياقات */
+  
+  /* 🎨 تحسينات بصرية احترافية */
   overflow: visible;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+  
+  /* 🔄 انتقالات سلسة */
+  transition: transform 120ms ease-out, opacity 120ms ease-in-out;
 }
 .vip-frame-inner {
   position: relative;

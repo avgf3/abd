@@ -89,7 +89,8 @@ const TagOverlay = memo(function TagOverlay({
 
       const tagVisibleHeight = tagRenderedHeight - bottomGapPx;
       const depth = Math.max(0, Math.min(1, anchorY ?? 0)) * tagVisibleHeight;
-      const totalOffset = tagVisibleHeight - depth + (yAdjustPx || 0);
+      // 🔧 إصلاح: bottomGapPx يجب أن يُطرح وليس يُجمع لرفع التاج وإزالة الشفافية
+      const totalOffset = tagVisibleHeight - depth + (yAdjustPx || 0) - bottomGapPx;
 
       // 🔒 منع دخول التاج داخل الصورة بأكثر من الحد المسموح
       const maxIntrusion = Math.max(0, maxIntrusionPx || 0);
@@ -215,51 +216,55 @@ export default function ProfileImage({
   // 🎯 إعدادات التاج المحسّنة الجديدة - موحدة ومتوازنة
   type LayoutDelta = { widthRatioDelta?: number; yAdjustDelta?: number; xAdjustDelta?: number; anchorDelta?: number };
   
-  // ✨ إعدادات محسّنة للملفات الشخصية - تحافظ على جمال التاج مع ضبط بسيط
+  // ✨ إعدادات محسّنة للملفات الشخصية - ضبط دقيق لكل تاج
   const PROFILE_DELTAS: Record<number, LayoutDelta> = {
-    // التيجان الأساسية - ضبط خفيف جداً للحفاظ على الجمال
-    1: { yAdjustDelta: -2 }, // تاج كلاسيكي - رفع بسيط
-    2: { yAdjustDelta: -2 }, // تاج ملكي - رفع بسيط
-    3: { yAdjustDelta: -1 }, // تاج رفيع - ضبط خفيف
-    4: { yAdjustDelta: -2 }, // تاج فخم - رفع بسيط
-    5: { yAdjustDelta: -1 }, // تاج أنيق - ضبط خفيف
-    6: { yAdjustDelta: -2 }, // تاج إمبراطوري - رفع بسيط
-    7: { yAdjustDelta: -1 }, // تاج ذهبي - ضبط خفيف
-    8: { yAdjustDelta: -2 }, // تاج نبيل - رفع بسيط
-    9: { yAdjustDelta: -1 }, // تاج راقي - ضبط خفيف
-    10: { yAdjustDelta: -2 }, // تاج بسيط - رفع بسيط
-    11: { yAdjustDelta: -1 }, // تاج عصري - ضبط خفيف
-    12: { yAdjustDelta: -2 }, // تاج ملكي ثاني - رفع بسيط
+    // التيجان الأساسية - ضبط مثالي للملامسة الطبيعية
+    1: { yAdjustDelta: 1 }, // تاج كلاسيكي - ضبط مثالي
+    2: { yAdjustDelta: 1 }, // تاج ملكي - ضبط مثالي
+    3: { yAdjustDelta: 0 }, // تاج رفيع - مثالي كما هو
+    4: { yAdjustDelta: 2 }, // تاج فخم - ضبط للحجم الكبير
+    5: { yAdjustDelta: 0 }, // تاج أنيق - مثالي كما هو
+    6: { yAdjustDelta: 2 }, // تاج إمبراطوري - ضبط للحجم الكبير
+    7: { yAdjustDelta: 1 }, // تاج ذهبي - ضبط مثالي
+    8: { yAdjustDelta: 1 }, // تاج نبيل - ضبط مثالي
+    9: { yAdjustDelta: 1 }, // تاج راقي - ضبط مثالي
+    10: { yAdjustDelta: 0 }, // تاج بسيط - مثالي كما هو
+    11: { yAdjustDelta: 0 }, // تاج عصري - مثالي كما هو
+    12: { yAdjustDelta: 1 }, // تاج ملكي ثاني - ضبط مثالي
     
-    // التيجان المتقدمة - نفس النمط المتوازن
-    13: { yAdjustDelta: -1 }, 14: { yAdjustDelta: -2 }, 15: { yAdjustDelta: -1 },
-    16: { yAdjustDelta: -2 }, 17: { yAdjustDelta: -1 }, 18: { yAdjustDelta: -2 },
-    19: { yAdjustDelta: -1 }, 20: { yAdjustDelta: -2 }, 21: { yAdjustDelta: -1 },
-    22: { yAdjustDelta: -2 }, 23: { yAdjustDelta: -1 }, 24: { yAdjustDelta: -2 },
+    // التيجان المتقدمة - متوازنة ومحسّنة
+    13: { yAdjustDelta: 1 }, 14: { yAdjustDelta: 1 }, 15: { yAdjustDelta: 1 },
+    16: { yAdjustDelta: 0 }, 17: { yAdjustDelta: 2 }, 18: { yAdjustDelta: 0 },
+    19: { yAdjustDelta: 1 }, 20: { yAdjustDelta: 1 }, 21: { yAdjustDelta: 1 },
+    22: { yAdjustDelta: 0 }, 23: { yAdjustDelta: 1 }, 24: { yAdjustDelta: 0 },
     
-    // التيجان النخبوية - ضبط دقيق للتيجان الكبيرة
-    25: { yAdjustDelta: -2 }, 26: { yAdjustDelta: -1 }, 27: { yAdjustDelta: -2 },
-    28: { yAdjustDelta: -1 }, 29: { yAdjustDelta: -2 }, 30: { yAdjustDelta: -1 },
-    31: { yAdjustDelta: -2 }, 32: { yAdjustDelta: -1 }, 33: { yAdjustDelta: -2 },
-    34: { yAdjustDelta: -1 }, 35: { yAdjustDelta: -2 }, 36: { yAdjustDelta: -1 },
+    // التيجان النخبوية - ضبط دقيق للتيجان المتقدمة
+    25: { yAdjustDelta: 2 }, 26: { yAdjustDelta: 1 }, 27: { yAdjustDelta: 1 },
+    28: { yAdjustDelta: 0 }, 29: { yAdjustDelta: 2 }, 30: { yAdjustDelta: 0 },
+    31: { yAdjustDelta: 1 }, 32: { yAdjustDelta: 1 }, 33: { yAdjustDelta: 0 },
+    34: { yAdjustDelta: 1 }, 35: { yAdjustDelta: 1 }, 36: { yAdjustDelta: 0 },
     
-    // التيجان الأسطورية - ضبط للتيجان الضخمة
-    37: { yAdjustDelta: -2 }, 38: { yAdjustDelta: -1 }, 39: { yAdjustDelta: -2 },
-    40: { yAdjustDelta: -1 }, 41: { yAdjustDelta: -3 }, 42: { yAdjustDelta: -2 },
-    43: { yAdjustDelta: -1 }, 44: { yAdjustDelta: -2 }, 45: { yAdjustDelta: -2 },
-    46: { yAdjustDelta: -1 }, 47: { yAdjustDelta: -2 }, 48: { yAdjustDelta: -1 },
-    49: { yAdjustDelta: -2 }, 50: { yAdjustDelta: -3 }, // التاج الأعظم - رفع إضافي
+    // التيجان الأسطورية - ضبط للتيجان الفخمة
+    37: { yAdjustDelta: 2 }, 38: { yAdjustDelta: 1 }, 39: { yAdjustDelta: 1 },
+    40: { yAdjustDelta: 0 }, 41: { yAdjustDelta: 2 }, 42: { yAdjustDelta: 1 },
+    43: { yAdjustDelta: 1 }, 44: { yAdjustDelta: 0 }, 45: { yAdjustDelta: 2 },
+    46: { yAdjustDelta: 0 }, 47: { yAdjustDelta: 1 }, 48: { yAdjustDelta: 1 },
+    49: { yAdjustDelta: 0 }, 50: { yAdjustDelta: 3 }, // التاج الأعظم - ضبط خاص
   };
   
-  // 🏠 إعدادات محسّنة للحاويات - تحسينات طفيفة لبعض التيجان
+  // 🏠 إعدادات محسّنة للحاويات - ضبط مثالي للسياقات المختلفة
   const CONTAINER_DELTAS: Record<number, LayoutDelta> = {
-    // تحسينات بسيطة لبعض التيجان في الحاويات فقط
-    6: { yAdjustDelta: 1 }, // تاج إمبراطوري - تنزيل خفيف
-    10: { yAdjustDelta: 1 }, // تاج بسيط - تنزيل خفيف
-    15: { yAdjustDelta: 1 }, // تاج بلاتيني - تنزيل خفيف
-    25: { yAdjustDelta: 1 }, // تاج الأساطير - تنزيل خفيف
-    41: { yAdjustDelta: 1 }, // تاج الكون - تنزيل خفيف
-    50: { yAdjustDelta: 1 }, // التاج الأعظم - تنزيل خفيف
+    // ضبط دقيق للتيجان في سياق الحاويات (الدردشة، القوائم، إلخ)
+    4: { yAdjustDelta: -1 }, // تاج فخم - رفع خفيف في الحاويات
+    6: { yAdjustDelta: -1 }, // تاج إمبراطوري - رفع خفيف في الحاويات
+    9: { yAdjustDelta: -1 }, // تاج راقي - رفع خفيف في الحاويات
+    17: { yAdjustDelta: -1 }, // تاج متقدم - رفع خفيف في الحاويات
+    25: { yAdjustDelta: -1 }, // تاج نخبوي - رفع خفيف في الحاويات
+    29: { yAdjustDelta: -1 }, // تاج متقدم - رفع خفيف في الحاويات
+    37: { yAdjustDelta: -1 }, // تاج أسطوري - رفع خفيف في الحاويات
+    41: { yAdjustDelta: -1 }, // تاج الكون - رفع خفيف في الحاويات
+    45: { yAdjustDelta: -1 }, // تاج عظيم - رفع خفيف في الحاويات
+    50: { yAdjustDelta: -2 }, // التاج الأعظم - ضبط خاص للحاويات
   };
 
   const baseLayout = getTagLayout(tagNumber);
@@ -285,10 +290,10 @@ export default function ProfileImage({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tagNumber, context, baseLayout.widthRatio, baseLayout.yAdjustPx, baseLayout.xAdjustPx, baseLayout.anchorY]);
 
-  // 👑 حساب حجم التاج المثالي - متوازن ومتناسق في كلا السياقين
-  const minCoverRatio = context === 'profile' ? 1.04 : 1.06; // خفض الحد الأدنى للملف الشخصي
-  const maxCoverRatio = context === 'profile' ? 1.12 : 1.18; // خفض الحد الأقصى للملف الشخصي
-  const targetRatio = tagLayout.widthRatio || (context === 'profile' ? 1.08 : 1.08);
+  // 👑 حساب حجم التاج المثالي - متوازن ومثالي للعرض الاحترافي
+  const minCoverRatio = context === 'profile' ? 1.03 : 1.05; // حد أدنى متوازن
+  const maxCoverRatio = context === 'profile' ? 1.15 : 1.16; // حد أقصى مثالي
+  const targetRatio = tagLayout.widthRatio || 1.08; // نسبة افتراضية متوازنة
   const clampedRatio = Math.min(Math.max(targetRatio, minCoverRatio), maxCoverRatio);
   const frameIndex = (() => {
     if (!frameName) return undefined;
@@ -325,7 +330,7 @@ export default function ProfileImage({
             yAdjustPx={tagLayout.yAdjustPx}
             xAdjustPx={tagLayout.xAdjustPx}
             autoAnchor={tagLayout.autoAnchor}
-            maxIntrusionPx={Math.round(px * (context === 'profile' ? 0.06 : 0.08))}
+            maxIntrusionPx={Math.round(px * (context === 'profile' ? 0.04 : 0.06))}
           />
         )}
       </div>
@@ -376,7 +381,7 @@ export default function ProfileImage({
             yAdjustPx={tagLayout.yAdjustPx}
             xAdjustPx={tagLayout.xAdjustPx}
             autoAnchor={tagLayout.autoAnchor}
-            maxIntrusionPx={Math.round(px * (context === 'profile' ? 0.06 : 0.08))}
+            maxIntrusionPx={Math.round(px * (context === 'profile' ? 0.04 : 0.06))}
           />
         )}
       </div>
