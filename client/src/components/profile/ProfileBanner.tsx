@@ -18,6 +18,7 @@ export default function ProfileBanner({ currentUser, onBannerUpdate }: ProfileBa
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [preview, setPreview] = useState<string | null>(null);
+  const [imageLoaded, setImageLoaded] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
@@ -120,25 +121,54 @@ export default function ProfileBanner({ currentUser, onBannerUpdate }: ProfileBa
   return (
     <div className="relative">
       {/* صورة البروفايل البانر */}
-      <div className="relative h-48 sm:h-56 md:h-64 rounded-2xl overflow-hidden bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 shadow-2xl border border-white/20 backdrop-blur-sm">
+      <div className="relative h-48 sm:h-56 md:h-64 rounded-2xl overflow-hidden banner-gradient-animation shadow-2xl border border-white/20 backdrop-blur-sm">
+        {/* طبقة تحسين التباين للنص */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent pointer-events-none z-10"></div>
         {preview ? (
-          <img src={preview} alt="معاينة صورة البانر" className="w-full h-full object-contain object-center" />
-        ) : currentUser?.profileBanner && currentUser.profileBanner !== '' ? (
-          <img
-            src={getBannerImageSrc(currentUser.profileBanner)}
-            alt="صورة البانر"
-            className="w-full h-full object-contain object-center"
+          <img 
+            src={preview} 
+            alt="معاينة صورة البانر" 
+            className="w-full h-full object-cover object-center transition-opacity duration-300" 
+            style={{
+              minHeight: '100%',
+              minWidth: '100%'
+            }}
           />
+        ) : currentUser?.profileBanner && currentUser.profileBanner !== '' ? (
+          <>
+            <img
+              src={getBannerImageSrc(currentUser.profileBanner)}
+              alt="صورة البانر"
+              className={`w-full h-full object-cover object-center transition-opacity duration-500 ${
+                imageLoaded ? 'banner-image-loaded' : 'banner-image-loading'
+              }`}
+              style={{
+                minHeight: '100%',
+                minWidth: '100%'
+              }}
+              loading="lazy"
+              decoding="async"
+              onLoad={() => setImageLoaded(true)}
+              onError={(e) => {
+                // في حالة فشل تحميل الصورة، نخفيها ونظهر الخلفية الافتراضية
+                e.currentTarget.style.display = 'none';
+                setImageLoaded(false);
+              }}
+            />
+            {!imageLoaded && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-8 h-8 border-4 border-white/30 border-t-white rounded-full animate-spin"></div>
+              </div>
+            )}
+          </>
         ) : (
           <div className="w-full h-full flex items-center justify-center text-white relative">
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-600/80 via-purple-600/80 to-pink-500/80 animate-gradient-x"></div>
-            <div className="absolute inset-0 bg-gradient-to-tr from-purple-400/20 via-pink-400/20 to-blue-400/20"></div>
             <div className="text-center relative z-10">
-              <div className="text-5xl mb-3 filter drop-shadow-lg animate-pulse">📸</div>
-              <p className="text-lg font-medium opacity-90 drop-shadow-md">إضافة صورة بانر</p>
-              <p className="text-sm opacity-70 mt-1">اضغط على الكاميرا أو الرفع</p>
+              <div className="text-6xl mb-4 filter drop-shadow-lg">🎨</div>
+              <p className="text-xl font-bold opacity-95 drop-shadow-md mb-2">اجعل ملفك مميزاً</p>
+              <p className="text-sm opacity-80 mb-1">أضف صورة غلاف احترافية</p>
+              <p className="text-xs opacity-60">للمشرفين والمستوى 20+</p>
             </div>
-            <div className="absolute inset-0 bg-black/5"></div>
           </div>
         )}
 
@@ -146,14 +176,14 @@ export default function ProfileBanner({ currentUser, onBannerUpdate }: ProfileBa
         {preview && (
           <button
             onClick={removePreview}
-            className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+            className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors z-20 shadow-lg"
           >
             <X size={16} />
           </button>
         )}
 
         {/* أزرار التحكم */}
-        <div className="absolute bottom-3 right-3 flex gap-3">
+        <div className="absolute bottom-3 right-3 flex gap-3 z-20">
           {/* زر الكاميرا */}
           {(() => {
             const isModerator = !!currentUser && ['owner', 'admin', 'moderator'].includes(currentUser.userType);
@@ -164,7 +194,7 @@ export default function ProfileBanner({ currentUser, onBannerUpdate }: ProfileBa
                 onClick={() => cameraInputRef.current?.click()}
                 disabled={uploading}
                 size="sm"
-                className="bg-white/20 backdrop-blur-md hover:bg-white/30 text-white border border-white/30 rounded-full w-10 h-10 p-0 shadow-lg transition-all duration-200 hover:scale-110"
+                className="bg-white/25 backdrop-blur-md hover:bg-white/40 text-white border border-white/40 rounded-full w-11 h-11 p-0 shadow-xl transition-all duration-300 hover:scale-110 hover:shadow-2xl"
               >
                 <Camera size={16} />
               </Button>
@@ -181,7 +211,7 @@ export default function ProfileBanner({ currentUser, onBannerUpdate }: ProfileBa
                 onClick={() => fileInputRef.current?.click()}
                 disabled={uploading}
                 size="sm"
-                className="bg-white/20 backdrop-blur-md hover:bg-white/30 text-white border border-white/30 rounded-full w-10 h-10 p-0 shadow-lg transition-all duration-200 hover:scale-110"
+                className="bg-white/25 backdrop-blur-md hover:bg-white/40 text-white border border-white/40 rounded-full w-11 h-11 p-0 shadow-xl transition-all duration-300 hover:scale-110 hover:shadow-2xl"
               >
                 <Upload size={16} />
               </Button>
