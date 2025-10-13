@@ -1,9 +1,10 @@
-import { memo, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useMemo, useState } from 'react';
 
 import { getUserLevelIcon } from '@/components/chat/UserRoleBadge';
 import type { ChatUser } from '@/types/chat';
 import { getImageSrc } from '@/utils/imageUtils';
 import VipAvatar from '@/components/ui/VipAvatar';
+import { getTagLayout } from '@/config/tagLayouts';
 // حذف الاعتماد على التخطيطات الديناميكية للتاج لتثبيت المقاسات والمواضع
 
 interface ProfileImageProps {
@@ -23,23 +24,30 @@ interface ProfileImageProps {
 type TagOverlayProps = {
   src: string;
   overlayTopPx: number;
-  basePx: number;
-  // إزاحة ثابتة كنسبة من عرض التاج المحسوب (بدون أي حسابات على أبعاد الصورة)
-  fixedOffsetRatio: number; // مثال: 0.52 يعني 52% من basePx
+  basePx: number; // عرض التاج النهائي بالبكسل (يعتمد على widthRatio)
+  anchorY?: number; // نسبة من ارتفاع التاج تدخل فوق الرأس
   yAdjustPx?: number;
   xAdjustPx?: number;
 };
 
-// مكون التاج ثابت تماماً بدون أي حسابات ديناميكية لتثبيت المقاسات ومنع الاهتزاز
+// مكون التاج مع احتساب الارتكاز بناءً على أبعاد الصورة الحقيقية لمواءمة محترفة
 const TagOverlay = memo(function TagOverlay({
   src,
   overlayTopPx,
   basePx,
-  fixedOffsetRatio,
-  yAdjustPx,
-  xAdjustPx,
+  anchorY = 0.08,
+  yAdjustPx = 0,
+  xAdjustPx = 0,
 }: TagOverlayProps) {
-  const anchorOffsetPx = Math.round(basePx * fixedOffsetRatio) + (yAdjustPx || 0);
+  const [naturalSize, setNaturalSize] = useState<{ w: number; h: number } | null>(null);
+
+  const anchorFromImagePx = (() => {
+    if (!naturalSize) return Math.round(basePx * 0.52) + yAdjustPx; //Fallback آمن قبل التحميل
+    const scale = basePx / Math.max(1, naturalSize.w);
+    const heightPx = naturalSize.h * scale;
+    const anchor = heightPx * anchorY; // الجزء الذي يدخل فوق الرأس
+    return Math.round(anchor + yAdjustPx);
+  })();
 
   return (
     <img
@@ -50,8 +58,8 @@ const TagOverlay = memo(function TagOverlay({
       style={{
         top: overlayTopPx,
         width: basePx,
-        transform: `translate(-50%, calc(-100% + ${anchorOffsetPx}px))`,
-        marginLeft: xAdjustPx || 0,
+        transform: `translate(-50%, calc(-100% + ${anchorFromImagePx}px))`,
+        marginLeft: xAdjustPx,
         backgroundColor: 'transparent',
         background: 'transparent',
         opacity: 1,
@@ -62,6 +70,14 @@ const TagOverlay = memo(function TagOverlay({
       decoding="async"
       loading="eager"
       draggable={false}
+      onLoad={(e: any) => {
+        try {
+          const img = e.currentTarget as HTMLImageElement;
+          if (img && img.naturalWidth && img.naturalHeight) {
+            setNaturalSize({ w: img.naturalWidth, h: img.naturalHeight });
+          }
+        } catch {}
+      }}
       onError={(e: any) => { try { e.currentTarget.style.display = 'none'; } catch {} }}
     />
   );
@@ -69,7 +85,7 @@ const TagOverlay = memo(function TagOverlay({
   prev.src === next.src &&
   prev.overlayTopPx === next.overlayTopPx &&
   prev.basePx === next.basePx &&
-  prev.fixedOffsetRatio === next.fixedOffsetRatio &&
+  prev.anchorY === next.anchorY &&
   prev.yAdjustPx === next.yAdjustPx &&
   prev.xAdjustPx === next.xAdjustPx
 ));
@@ -139,13 +155,8 @@ export default function ProfileImage({
     return Number.isFinite(n) ? n : undefined;
   })();
 
-  // 🎯 تثبيت إعدادات التاج نهائياً لمنع أي اهتزازات بين الشاشات والقوائم
-  const FIXED_TAG_WIDTH_RATIO = 1.10;       // نسبة عرض التاج إلى قطر الصورة
-  const FIXED_TAG_OFFSET_RATIO = 0.52;      // نسبة إزاحة أسفل التاج من عرضه النهائي
-  const FIXED_Y_ADJUST_PX = -2;             // رفع بسيط لتحقيق ملامسة مثالية
-  const FIXED_X_ADJUST_PX = 0;
-
-  const clampedRatio = FIXED_TAG_WIDTH_RATIO;
+  // إعدادات التاج تعتمد الآن على رقم التاج وتخطيطاته المقاسة
+  const layout = getTagLayout(tagNumber);
   const frameIndex = (() => {
     if (!frameName) return undefined;
     const match = String(frameName).match(/(\d+)/);
@@ -175,10 +186,10 @@ export default function ProfileImage({
           <TagOverlay
             src={tagSrc}
             overlayTopPx={overlayTopPx}
-            basePx={Math.round(px * clampedRatio)}
-            fixedOffsetRatio={FIXED_TAG_OFFSET_RATIO}
-            yAdjustPx={FIXED_Y_ADJUST_PX}
-            xAdjustPx={FIXED_X_ADJUST_PX}
+            basePx={Math.round(px * layout.widthRatio)}
+            anchorY={layout.anchorY}
+            yAdjustPx={layout.yAdjustPx}
+            xAdjustPx={layout.xAdjustPx}
           />
         )}
       </div>
@@ -224,10 +235,10 @@ export default function ProfileImage({
           <TagOverlay
             src={tagSrc}
             overlayTopPx={overlayTopPx}
-            basePx={Math.round(px * clampedRatio)}
-            fixedOffsetRatio={FIXED_TAG_OFFSET_RATIO}
-            yAdjustPx={FIXED_Y_ADJUST_PX}
-            xAdjustPx={FIXED_X_ADJUST_PX}
+            basePx={Math.round(px * layout.widthRatio)}
+            anchorY={layout.anchorY}
+            yAdjustPx={layout.yAdjustPx}
+            xAdjustPx={layout.xAdjustPx}
           />
         )}
       </div>
