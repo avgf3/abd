@@ -35,8 +35,8 @@ export const TAG_LAYOUTS: Record<number, TagLayout> = (() => {
     map[n] = { ...map[n], ...layout } as TagLayout;
   };
 
-  // tag1: كلاسيكي بسيط
-  override(1,  { widthRatio: 1.08, yAdjustPx: -2, anchorY: 0.30 });
+  // tag1: كلاسيكي بسيط — زيادة دخول القاعدة وضبط الحجم
+  override(1,  { widthRatio: 1.10, yAdjustPx: -1, anchorY: 0.35 });
   // tag2: ملكي أنيق
   override(2,  { widthRatio: 1.10, yAdjustPx: -3, anchorY: 0.28 });
   // tag3: رفيع بسيط
@@ -47,14 +47,14 @@ export const TAG_LAYOUTS: Record<number, TagLayout> = (() => {
   override(5,  { widthRatio: 1.10, yAdjustPx: -2, anchorY: 0.35 });
   // tag6: ملكي ثقيل (حزام عريض)
   override(6,  { widthRatio: 1.10, yAdjustPx: -4, anchorY: 0.50 });
-  // tag7: متوسط
-  override(7,  { widthRatio: 1.10, yAdjustPx: -2, anchorY: 0.32 });
-  // tag8: بسيط
-  override(8,  { widthRatio: 1.08, yAdjustPx: -2, anchorY: 0.30 });
+  // tag7: متوسط — إنزال بسيط وزيادة دخول القاعدة
+  override(7,  { widthRatio: 1.11, yAdjustPx: -1, anchorY: 0.36 });
+  // tag8: بسيط — إنزال بسيط ليتماشى مع باقي التيجان
+  override(8,  { widthRatio: 1.10, yAdjustPx: -1, anchorY: 0.34 });
   // tag9: مزخرف
   override(9,  { widthRatio: 1.12, yAdjustPx: -3, anchorY: 0.38 });
-  // tag10: صغير
-  override(10, { widthRatio: 1.06, yAdjustPx: -1, anchorY: 0.25 });
+  // tag10: صغير — إنزال واضح لأن السابق كان مرتفعاً
+  override(10, { widthRatio: 1.08, yAdjustPx: 0,  anchorY: 0.32 });
   // tag11: متوسط
   override(11, { widthRatio: 1.10, yAdjustPx: -2, anchorY: 0.33 });
   // tag12: كبير/ملكي ثاني
