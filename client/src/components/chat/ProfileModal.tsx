@@ -2214,8 +2214,8 @@ export default function ProfileModal({
         .profile-cover {
           position: relative;
           height: 268px; /* زيادة طفيفة لارتفاع الغلاف */
-          /* منع الزوم الزائد لصور الغلاف داخل المودال */
-          background-size: contain;
+          /* تغطية كاملة لصور الغلاف داخل المودال */
+          background-size: cover;
           background-position: center center;
           background-repeat: no-repeat;
           overflow: visible; /* ✅ السماح للتاج بالظهور فوق الصورة بدون قص */
@@ -2954,8 +2954,8 @@ export default function ProfileModal({
                 const bannerSrc = getProfileBannerSrcLocal();
                 return bannerSrc ? `url(${bannerSrc})` : 'none';
               })(),
-              // استخدام contain لمنع التكبير والقصّ، كما في صفحة البروفايل
-              backgroundSize: 'contain',
+              // استخدام cover للتغطية الكاملة لصورة الغلاف
+              backgroundSize: 'cover',
               backgroundPosition: (() => {
                 const bannerSrc = getProfileBannerSrcLocal();
                 if (!bannerSrc) return 'top center';
