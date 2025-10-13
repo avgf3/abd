@@ -35,8 +35,8 @@ export const TAG_LAYOUTS: Record<number, TagLayout> = (() => {
     map[n] = { ...map[n], ...layout } as TagLayout;
   };
 
-  // tag1: كلاسيكي بسيط — يعتمد على touchTop لتأمين ملامسة تامة دون دخول
-  override(1,  { widthRatio: 1.10, yAdjustPx: 0, anchorY: 0.18 });
+  // tag1: كلاسيكي بسيط — منزل للأسفل ليطابق موضع صورة الغلاف
+  override(1,  { widthRatio: 1.10, yAdjustPx: 8, anchorY: 0.18 });
   // tag2: ملكي أنيق
   override(2,  { widthRatio: 1.10, yAdjustPx: -3, anchorY: 0.28 });
   // tag3: رفيع بسيط
@@ -49,8 +49,8 @@ export const TAG_LAYOUTS: Record<number, TagLayout> = (() => {
   override(6,  { widthRatio: 1.10, yAdjustPx: -4, anchorY: 0.50 });
   // tag7: متوسط — إنزال بسيط وزيادة دخول القاعدة
   override(7,  { widthRatio: 1.11, yAdjustPx: -1, anchorY: 0.36 });
-  // tag8: بسيط — يعتمد على touchTop لتجاهل انحناء القاعدة
-  override(8,  { widthRatio: 1.10, yAdjustPx: 0, anchorY: 0.18 });
+  // tag8: بسيط — منزل للأسفل ليطابق موضع صورة الغلاف
+  override(8,  { widthRatio: 1.10, yAdjustPx: 8, anchorY: 0.18 });
   // tag9: مزخرف
   override(9,  { widthRatio: 1.12, yAdjustPx: -3, anchorY: 0.38 });
   // tag10: صغير — خفّضناه أكثر لأنه كان مرتفعاً للأعلى كثيراً
