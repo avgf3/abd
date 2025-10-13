@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>اختبار بصري — تاج 8 و 10</title>
+  <style>
+    :root {
+      --bg: #0b1220;
+      --panel: #111a2e;
+      --muted: #9bb0d3;
+      --text: #e6ecff;
+      --accent: #54a0ff;
+    }
+    html, body { margin:0; padding:0; background: var(--bg); color: var(--text); font-family: system-ui, -apple-system, Segoe UI, Roboto, Cairo, Noto Naskh Arabic UI, sans-serif; }
+    .wrap { max-width: 1100px; margin: 24px auto; padding: 16px; }
+    h1 { font-size: 20px; margin: 0 0 12px; }
+    p { color: var(--muted); margin: 8px 0 16px; line-height: 1.8; }
+
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .card { background: var(--panel); border-radius: 12px; padding: 16px; box-shadow: 0 6px 20px rgba(0,0,0,0.25); }
+    .title { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+    .title h2 { margin: 0; font-size: 16px; }
+    .title .meta { color: var(--muted); font-size: 12px; }
+
+    .row { display: flex; align-items: center; gap: 16px; padding: 12px 0; border-top: 1px solid rgba(255,255,255,0.06); }
+    .row:first-of-type { border-top: none; }
+
+    .avatar-wrap { position: relative; contain: layout style; isolation: isolate; overflow: visible; display: inline-block; }
+    .pic { display:block; border-radius: 9999px; object-fit: cover; background: #0b1220; box-shadow: 0 1px 2px rgba(0,0,0,0.2) inset; }
+
+    /* مطابق لـ index.css .profile-tag-overlay */
+    .profile-tag-overlay {
+      position: absolute;
+      left: 50%;
+      height: auto;
+      z-index: 4;
+      pointer-events: none;
+      background: transparent !important;
+      background-color: transparent !important;
+      image-rendering: -webkit-optimize-contrast;
+      image-rendering: crisp-edges;
+      -webkit-backface-visibility: hidden; backface-visibility: hidden;
+      will-change: auto; transform: translateZ(0);
+      contain: layout style paint;
+      transform-origin: 50% 100%;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+      transition: none !important;
+    }
+
+    .info { min-width: 220px; font-size: 12px; color: var(--muted); }
+    .kv { display:grid; grid-template-columns: auto 1fr; gap: 6px 10px; }
+    .kv b { color: var(--text); font-weight: 600; }
+    .badge { display:inline-block; padding: 2px 6px; border-radius: 9999px; background: rgba(84,160,255,0.15); color: #cfe3ff; font-size: 11px; }
+    .note { color: #ffd68a; font-size: 12px; margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>اختبار بصري — ضبط تاج 8 و 10</h1>
+    <p>
+      هذه الصفحة تطبّق نفس معادلة التموضع من الكود الفعلي، لعرض نتيجة تاج <b>8</b> و <b>10</b> على ثلاث قياسات للصورة: 36/56/72 بكسل.
+      الهدف: التأكد أن التاجين "نازلين" بما يكفي ليلبسوا الصورة بدون ما يكونوا مرتفعين فوقها.
+    </p>
+
+    <div class="grid">
+      <div class="card" id="card-8">
+        <div class="title">
+          <h2>تاج 8 <span class="badge">tag8.webp</span></h2>
+          <span class="meta" id="meta-8"></span>
+        </div>
+        <div id="rows-8"></div>
+      </div>
+      <div class="card" id="card-10">
+        <div class="title">
+          <h2>تاج 10 <span class="badge">tag10.webp</span></h2>
+          <span class="meta" id="meta-10"></span>
+        </div>
+        <div id="rows-10"></div>
+      </div>
+    </div>
+
+    <p class="note">ملاحظة: يتم حساب هامش الشفافية السفلي تلقائياً من صورة التاج (autoAnchor) عبر Canvas، تماماً مثل التطبيق.</p>
+  </div>
+
+  <script>
+    // نفس الحسبة المستخدمة داخل ProfileImage.tsx مع تبسيط العرض
+    const SIZES = [36, 56, 72];
+
+    // استنساخ مبسّط لتخطيطات tagLayouts.ts (القيم الحالية)
+    const TAG_LAYOUTS = {
+      8:  { widthRatio: 1.10, xAdjustPx: 0, yAdjustPx: 1, anchorY: 0.36, autoAnchor: true },
+      10: { widthRatio: 1.08, xAdjustPx: 0, yAdjustPx: 2, anchorY: 0.40, autoAnchor: true },
+    };
+
+    const AVATAR_SRC = '/default_avatar.svg';
+    const TAG_SRC = {
+      8: '/tags/tag8.webp',
+      10: '/tags/tag10.webp',
+    };
+
+    function createRow(tagNumber, px, layout, bottomGapRatio, naturalTagSize) {
+      const containerSize = Math.round(px * 1.35);
+      const imageTopWithinContainer = Math.round((containerSize - px) / 2);
+      const basePx = Math.round(px * layout.widthRatio);
+
+      // حساب anchorFromImagePx بنفس المنطق
+      const scale = basePx / Math.max(1, naturalTagSize.w);
+      const heightPx = naturalTagSize.h * scale;
+      const anchor = heightPx * (layout.anchorY ?? 0.08);
+      const bottomGapPx = (layout.autoAnchor ? Math.round(bottomGapRatio * heightPx) : 0);
+      const anchorFromImagePx = Math.round(anchor + (layout.yAdjustPx || 0) - bottomGapPx);
+
+      const row = document.createElement('div');
+      row.className = 'row';
+
+      const avatarWrap = document.createElement('div');
+      avatarWrap.className = 'avatar-wrap';
+      avatarWrap.style.width = containerSize + 'px';
+      avatarWrap.style.height = containerSize + 'px';
+
+      const img = document.createElement('img');
+      img.src = AVATAR_SRC;
+      img.className = 'pic';
+      img.alt = 'avatar';
+      img.width = px; img.height = px;
+      img.style.width = px + 'px'; img.style.height = px + 'px';
+      img.style.position = 'absolute';
+      img.style.top = imageTopWithinContainer + 'px';
+      img.style.left = (containerSize - px)/2 + 'px';
+
+      const tag = document.createElement('img');
+      tag.src = TAG_SRC[tagNumber];
+      tag.className = 'profile-tag-overlay';
+      tag.alt = 'tag';
+      tag.style.top = imageTopWithinContainer + 'px';
+      tag.style.width = basePx + 'px';
+      tag.style.transform = `translate(-50%, calc(-100% + ${anchorFromImagePx}px))`;
+      tag.style.marginLeft = (layout.xAdjustPx || 0) + 'px';
+
+      const info = document.createElement('div');
+      info.className = 'info';
+      info.innerHTML = `
+        <div class="kv">
+          <span>حجم الصورة</span><b>${px}px</b>
+          <span>container</span><b>${containerSize}px</b>
+          <span>basePx</span><b>${basePx}px</b>
+          <span>anchorY</span><b>${(layout.anchorY * 100).toFixed(1)}%</b>
+          <span>yAdjustPx</span><b>${layout.yAdjustPx || 0}px</b>
+          <span>bottomGap</span><b>${(bottomGapRatio * 100).toFixed(1)}%</b>
+          <span>translateY</span><b>-100% + ${anchorFromImagePx}px</b>
+        </div>
+      `;
+
+      avatarWrap.appendChild(img);
+      avatarWrap.appendChild(tag);
+      row.appendChild(avatarWrap);
+      row.appendChild(info);
+      return row;
+    }
+
+    async function measureBottomGapRatio(src) {
+      // مسح سريع لاستخراج نسبة الشفافية السفلية (مثل الكود الفعلي)
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => {
+          try {
+            const maxW = 96;
+            const scale = Math.min(1, maxW / img.naturalWidth);
+            const cw = Math.max(1, Math.floor(img.naturalWidth * scale));
+            const ch = Math.max(1, Math.floor(img.naturalHeight * scale));
+            const canvas = document.createElement('canvas');
+            canvas.width = cw; canvas.height = ch;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, cw, ch);
+            const { data } = ctx.getImageData(0, 0, cw, ch);
+            let gapRows = 0; const stride = 4; const stepX = Math.max(1, Math.floor(cw / 24));
+            scan: for (let y = ch - 1; y >= 0; y--) {
+              let rowTransparent = true;
+              for (let x = 0; x < cw; x += stepX) {
+                const alpha = data[(y * cw + x) * stride + 3];
+                if (alpha > 8) { rowTransparent = false; break; }
+              }
+              if (rowTransparent) gapRows++; else break scan;
+            }
+            const ratio = gapRows / ch;
+            resolve(Number.isFinite(ratio) ? Math.max(0, Math.min(0.5, ratio)) : 0);
+          } catch (e) {
+            resolve(0);
+          }
+        };
+        img.onerror = () => resolve(0);
+        img.src = src;
+      });
+    }
+
+    async function main() {
+      // حمّل صور التاجين لاستخراج أبعادهم الطبيعية أيضاً
+      const naturalSizes = {};
+      const bottomRatios = {};
+
+      await Promise.all([8,10].map(tagNumber => new Promise((resolve) => {
+        const img = new Image();
+        img.onload = async () => {
+          naturalSizes[tagNumber] = { w: img.naturalWidth, h: img.naturalHeight };
+          bottomRatios[tagNumber] = await measureBottomGapRatio(TAG_SRC[tagNumber]);
+          resolve();
+        };
+        img.onerror = () => { naturalSizes[tagNumber] = { w: 600, h: 400 }; bottomRatios[tagNumber] = 0; resolve(); };
+        img.src = TAG_SRC[tagNumber];
+      })));
+
+      // تعبئة البطاقات
+      [8,10].forEach((tagNumber) => {
+        const layout = TAG_LAYOUTS[tagNumber];
+        const metaEl = document.getElementById('meta-' + tagNumber);
+        metaEl.textContent = `widthRatio ${layout.widthRatio} • anchorY ${(layout.anchorY*100).toFixed(1)}% • yAdjust ${layout.yAdjustPx||0}px`;
+
+        const rowsEl = document.getElementById('rows-' + tagNumber);
+        rowsEl.innerHTML = '';
+        SIZES.forEach((px) => {
+          const row = createRow(tagNumber, px, layout, bottomRatios[tagNumber], naturalSizes[tagNumber]);
+          rowsEl.appendChild(row);
+        });
+      });
+    }
+
+    main();
+  </script>
+</body>
+</html>
