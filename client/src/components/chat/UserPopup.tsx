@@ -325,7 +325,7 @@ export default function UserPopup({
               </div>
               <div className="px-2 py-1 text-xs text-gray-500">إضافة لقب (يستبدل الشعار):</div>
               <div className="flex flex-wrap gap-1 px-2 pb-1">
-                {[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17].map((i) => (
+                {Array.from({ length: 30 }, (_, idx) => idx + 1).map((i) => (
                   <button
                     key={`title-${i}`}
                     onClick={() => handleSetTitle(i)}
