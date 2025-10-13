@@ -69,7 +69,9 @@ const TagOverlay = memo(function TagOverlay({
     // anchor: كم يدخل التاج في الصورة (موجب = للأسفل)
     // yAdjustPx: ضبط يدوي إضافي (موجب = للأسفل، سالب = للأعلى)
     // bottomGapPx: الشفافية السفلية (نطرحها لرفع التاج)
-    return Math.round(anchor + yAdjustPx - bottomGapPx);
+    // تثبيت الحد الأدنى عند 0 لمنع ابتعاد التاج عن الصورة (لا يسمح بقيم سالبة)
+    const computed = Math.round(anchor + yAdjustPx - bottomGapPx);
+    return Math.max(0, computed);
   })();
 
   return (
