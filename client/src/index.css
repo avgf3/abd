@@ -1817,7 +1817,7 @@ li > * > div.effect-snow {
   /* ⚡ تحسين الأداء والثبات */
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
-  will-change: transform;
+  will-change: auto;
   transform: translateZ(0);
   contain: layout style paint;
   
@@ -1828,8 +1828,8 @@ li > * > div.effect-snow {
   overflow: visible;
   filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
   
-  /* 🔄 انتقالات سلسة */
-  transition: transform 120ms ease-out, opacity 120ms ease-in-out;
+  /* 🔄 إلغاء أي انتقالات لمنع الاهتزاز */
+  transition: none !important;
 }
 .vip-frame-inner {
   position: relative;
