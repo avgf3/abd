@@ -219,52 +219,42 @@ export default function ProfileImage({
   // ✨ إعدادات محسّنة للملفات الشخصية - ضبط دقيق لكل تاج حسب المتطلبات الجديدة
   const PROFILE_DELTAS: Record<number, LayoutDelta> = {
     // التيجان الأساسية - ضبط مثالي للملامسة الطبيعية
-    1: { yAdjustDelta: 0 }, // تاج 1 - مثالي بالفعل (لا يحتاج تعديل)
-    2: { yAdjustDelta: -5 }, // تاج 2 - رفع من الأسفل (كان نازل جداً)
-    3: { yAdjustDelta: -5 }, // تاج 3 - رفع ومحاذاة القوس مع الإطار
-    4: { yAdjustDelta: -2 }, // تاج 4 - رفع قليلاً (ممتاز لكن يحتاج رفع طفيف)
-    5: { yAdjustDelta: -2 }, // تاج 5 - ضبط القوس مع أعلى الصورة ورفع
-    6: { yAdjustDelta: -2 }, // تاج 6 - رفع قليلاً
-    7: { yAdjustDelta: -1 }, // تاج 7 - ممتاز لكن يحتاج تصحيح الميلان
-    8: { yAdjustDelta: -2 }, // تاج 8 - رفع قليلاً (ممتاز لكن يحتاج رفع طفيف)
-    9: { yAdjustDelta: 3 }, // تاج 9 - رفع من الأسفل (كان منخفض جداً)
-    10: { yAdjustDelta: -2 }, // تاج 10 - تنزيل قليلاً (كان مرتفع جداً)
-    11: { yAdjustDelta: 1 }, // تاج 11 - تقليل التداخل (كان متداخل كثيراً)
-    12: { yAdjustDelta: 0 }, // تاج 12 - مثالي جداً (لا يحتاج تعديل)
+    1: { yAdjustDelta: 0 }, // تاج 1 - مثالي ✓ (لا تعديل)
+    2: { yAdjustDelta: 0 }, // تاج 2 - مثالي ✓ (لا تعديل)
+    3: { yAdjustDelta: 0 }, // تاج 3 - تم إصلاحه في tagLayouts
+    4: { yAdjustDelta: 0 }, // تاج 4 - مثالي ✓ (لا تعديل)
+    5: { yAdjustDelta: 0 }, // تاج 5 - تم إصلاحه في tagLayouts
+    6: { yAdjustDelta: 0 }, // تاج 6 - تم إصلاحه في tagLayouts
+    7: { yAdjustDelta: 0 }, // تاج 7 - تم إصلاحه في tagLayouts
+    8: { yAdjustDelta: 0 }, // تاج 8 - مثالي ✓ (لا تعديل)
+    9: { yAdjustDelta: 0 }, // تاج 9 - تم إصلاحه في tagLayouts
+    10: { yAdjustDelta: 0 }, // تاج 10 - تم إصلاحه في tagLayouts
+    11: { yAdjustDelta: 0 }, // تاج 11 - تم إصلاحه في tagLayouts
+    12: { yAdjustDelta: 0 }, // تاج 12 - مثالي ✓ (لا تعديل)
     
     // التيجان المتقدمة - متوازنة ومحسّنة
-    13: { yAdjustDelta: 1 }, 14: { yAdjustDelta: 1 }, 15: { yAdjustDelta: 1 },
-    16: { yAdjustDelta: 0 }, 17: { yAdjustDelta: 2 }, 18: { yAdjustDelta: 0 },
-    19: { yAdjustDelta: 1 }, 20: { yAdjustDelta: 1 }, 21: { yAdjustDelta: 1 },
-    22: { yAdjustDelta: 0 }, 23: { yAdjustDelta: 1 }, 24: { yAdjustDelta: 0 },
+    13: { yAdjustDelta: 0 }, 14: { yAdjustDelta: 0 }, 15: { yAdjustDelta: 0 },
+    16: { yAdjustDelta: 0 }, 17: { yAdjustDelta: 0 }, 18: { yAdjustDelta: 0 },
+    19: { yAdjustDelta: 0 }, 20: { yAdjustDelta: 0 }, 21: { yAdjustDelta: 0 },
+    22: { yAdjustDelta: 0 }, 23: { yAdjustDelta: 0 }, 24: { yAdjustDelta: 0 },
     
     // التيجان النخبوية - ضبط دقيق للتيجان المتقدمة
-    25: { yAdjustDelta: 2 }, 26: { yAdjustDelta: 1 }, 27: { yAdjustDelta: 1 },
-    28: { yAdjustDelta: 0 }, 29: { yAdjustDelta: 2 }, 30: { yAdjustDelta: 0 },
-    31: { yAdjustDelta: 1 }, 32: { yAdjustDelta: 1 }, 33: { yAdjustDelta: 0 },
-    34: { yAdjustDelta: 1 }, 35: { yAdjustDelta: 1 }, 36: { yAdjustDelta: 0 },
+    25: { yAdjustDelta: 0 }, 26: { yAdjustDelta: 0 }, 27: { yAdjustDelta: 0 },
+    28: { yAdjustDelta: 0 }, 29: { yAdjustDelta: 0 }, 30: { yAdjustDelta: 0 },
+    31: { yAdjustDelta: 0 }, 32: { yAdjustDelta: 0 }, 33: { yAdjustDelta: 0 },
+    34: { yAdjustDelta: 0 }, 35: { yAdjustDelta: 0 }, 36: { yAdjustDelta: 0 },
     
     // التيجان الأسطورية - ضبط للتيجان الفخمة
-    37: { yAdjustDelta: 2 }, 38: { yAdjustDelta: 1 }, 39: { yAdjustDelta: 1 },
-    40: { yAdjustDelta: 0 }, 41: { yAdjustDelta: 2 }, 42: { yAdjustDelta: 1 },
-    43: { yAdjustDelta: 1 }, 44: { yAdjustDelta: 0 }, 45: { yAdjustDelta: 2 },
-    46: { yAdjustDelta: 0 }, 47: { yAdjustDelta: 1 }, 48: { yAdjustDelta: 1 },
-    49: { yAdjustDelta: 0 }, 50: { yAdjustDelta: 3 }, // التاج الأعظم - ضبط خاص
+    37: { yAdjustDelta: 0 }, 38: { yAdjustDelta: 0 }, 39: { yAdjustDelta: 0 },
+    40: { yAdjustDelta: 0 }, 41: { yAdjustDelta: 0 }, 42: { yAdjustDelta: 0 },
+    43: { yAdjustDelta: 0 }, 44: { yAdjustDelta: 0 }, 45: { yAdjustDelta: 0 },
+    46: { yAdjustDelta: 0 }, 47: { yAdjustDelta: 0 }, 48: { yAdjustDelta: 0 },
+    49: { yAdjustDelta: 0 }, 50: { yAdjustDelta: 0 }, // التاج الأعظم - تم إصلاحه في tagLayouts
   };
   
-  // 🏠 إعدادات محسّنة للحاويات - ضبط مثالي للسياقات المختلفة
+  // 🏠 إعدادات محسّنة للحاويات - جميع الإعدادات موحدة في tagLayouts.ts
   const CONTAINER_DELTAS: Record<number, LayoutDelta> = {
-    // ضبط دقيق للتيجان في سياق الحاويات (الدردشة، القوائم، إلخ)
-    4: { yAdjustDelta: -1 }, // تاج فخم - رفع خفيف في الحاويات
-    6: { yAdjustDelta: -1 }, // تاج إمبراطوري - رفع خفيف في الحاويات
-    9: { yAdjustDelta: -1 }, // تاج راقي - رفع خفيف في الحاويات
-    17: { yAdjustDelta: -1 }, // تاج متقدم - رفع خفيف في الحاويات
-    25: { yAdjustDelta: -1 }, // تاج نخبوي - رفع خفيف في الحاويات
-    29: { yAdjustDelta: -1 }, // تاج متقدم - رفع خفيف في الحاويات
-    37: { yAdjustDelta: -1 }, // تاج أسطوري - رفع خفيف في الحاويات
-    41: { yAdjustDelta: -1 }, // تاج الكون - رفع خفيف في الحاويات
-    45: { yAdjustDelta: -1 }, // تاج عظيم - رفع خفيف في الحاويات
-    50: { yAdjustDelta: -2 }, // التاج الأعظم - ضبط خاص للحاويات
+    // جميع التيجان تستخدم الإعدادات الأساسية من tagLayouts.ts بدون تعديلات إضافية
   };
 
   const baseLayout = getTagLayout(tagNumber);
