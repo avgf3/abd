@@ -16,6 +16,8 @@ interface ProfileImageProps {
   hideRoleBadgeOverlay?: boolean;
   // تعطيل عرض إطار الصورة في سياقات معينة (مثل الرسائل)
   disableFrame?: boolean;
+  // سياق العرض لضبط التيجان بدقة بين الملف الشخصي والحاويات
+  context?: 'profile' | 'container';
 }
 
 export default function ProfileImage({
@@ -26,6 +28,7 @@ export default function ProfileImage({
   onClick,
   hideRoleBadgeOverlay = false,
   disableFrame = false,
+  context = 'container',
 }: ProfileImageProps) {
   const sizeClasses = {
     small: 'w-9 h-9',
@@ -82,7 +85,55 @@ export default function ProfileImage({
     return Number.isFinite(n) ? n : undefined;
   })();
 
-  const tagLayout = getTagLayout(tagNumber);
+  // تصحيحات دقيقة خاصة بالسياق لبعض التيجان المطلوبة
+  type LayoutDelta = { widthRatioDelta?: number; yAdjustDelta?: number; xAdjustDelta?: number; anchorDelta?: number };
+  const PROFILE_DELTAS: Record<number, LayoutDelta> = {
+    // 12: رفع قليلاً للأعلى
+    12: { yAdjustDelta: -4 },
+    // 11: زوم زائد ومرتفع في الملف الشخصي
+    11: { widthRatioDelta: -0.05, yAdjustDelta: 4 },
+    // 10: مضبوط هنا (التعديل للحاويات فقط)
+    // 9: زوم طولي في الملف الشخصي
+    9: { widthRatioDelta: -0.03 },
+    // 7: زوم عرضي + يحتاج تنزيل بسيط
+    7: { widthRatioDelta: -0.03, yAdjustDelta: 2 },
+    // 6: يحتاج تنزيل بسيط + تقليل عرض خفيف
+    6: { widthRatioDelta: -0.03, yAdjustDelta: 3 },
+    // 5: تنزيل بسيط + زوم خفيف
+    5: { widthRatioDelta: -0.02, yAdjustDelta: 2 },
+    // 4: زوم في الملف الشخصي
+    4: { widthRatioDelta: -0.03 },
+    // 3: زوم طولي
+    3: { widthRatioDelta: -0.02 },
+    // 2: زوم في الملف الشخصي
+    2: { widthRatioDelta: -0.02 },
+  };
+  const CONTAINER_DELTAS: Record<number, LayoutDelta> = {
+    // 10: يحتاج تنزيل بسيط في الحاويات فقط
+    10: { yAdjustDelta: 3 },
+    // 7: تنزيل بسيط أيضاً في الحاويات
+    7: { yAdjustDelta: 2 },
+    // 6: تنزيل بسيط في الحاويات
+    6: { yAdjustDelta: 3 },
+    // 5: تنزيل خفيف
+    5: { yAdjustDelta: 2 },
+  };
+
+  const baseLayout = getTagLayout(tagNumber);
+  const tagLayout = useMemo(() => {
+    const deltas = (context === 'profile' ? PROFILE_DELTAS : CONTAINER_DELTAS)[tagNumber ?? -1] || {};
+    const widthRatioMin = 1.04; // سماح بهامش أصغر قليلاً لبعض التصحيحات
+    const widthRatioMax = 1.20;
+    const widthRatio = Math.min(
+      widthRatioMax,
+      Math.max(widthRatioMin, (baseLayout.widthRatio || 1.1) + (deltas.widthRatioDelta || 0))
+    );
+    const yAdjustPx = Math.round((baseLayout.yAdjustPx || 0) + (deltas.yAdjustDelta || 0));
+    const xAdjustPx = Math.round((baseLayout.xAdjustPx || 0) + (deltas.xAdjustDelta || 0));
+    const anchorY = Math.min(0.24, Math.max(0, (baseLayout.anchorY || 0) + (deltas.anchorDelta || 0)));
+    return { ...baseLayout, widthRatio, yAdjustPx, xAdjustPx, anchorY } as const;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tagNumber, context, baseLayout.widthRatio, baseLayout.yAdjustPx, baseLayout.xAdjustPx, baseLayout.anchorY]);
 
   function TagOverlay({
     src,

@@ -3243,6 +3243,7 @@ export default function ProfileModal({
                   user={localUser} 
                   pixelSize={135}
                   hideRoleBadgeOverlay={true}
+                  context="profile"
                 />
               </div>
             </div>
