@@ -217,9 +217,9 @@ export default function ProfileImage({
 
   // إعدادات التاج تعتمد الآن على رقم التاج وتخطيطاته المقاسة
   const layout = getTagLayout(tagNumber);
-  // تاجا 1 و8 بحاجة لمحاذاة ملامسة للحافة العليا مع تجاهل انحناء القاعدة
-  const needsTouchTop = tagNumber === 1 || tagNumber === 8;
-  const scanCenterRatio = needsTouchTop ? 0.6 : 1;
+  // إزالة السلوك الخاص لتاجي 1 و8 لاستخدام نفس منطق تاج 2
+  const needsTouchTop = false; // تم إصلاح المشكلة بتوحيد الإعدادات
+  const scanCenterRatio = 1;
   const frameIndex = (() => {
     if (!frameName) return undefined;
     const match = String(frameName).match(/(\d+)/);
