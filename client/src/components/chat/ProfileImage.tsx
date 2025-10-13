@@ -85,52 +85,75 @@ export default function ProfileImage({
     return Number.isFinite(n) ? n : undefined;
   })();
 
-  // تصحيحات دقيقة خاصة بالسياق لبعض التيجان المطلوبة
+  // 🎯 إعدادات التاج المحسّنة الجديدة - موحدة ومتوازنة
   type LayoutDelta = { widthRatioDelta?: number; yAdjustDelta?: number; xAdjustDelta?: number; anchorDelta?: number };
+  
+  // ✨ إعدادات محسّنة للملفات الشخصية - تحافظ على جمال التاج مع ضبط بسيط
   const PROFILE_DELTAS: Record<number, LayoutDelta> = {
-    // 12: رفع قليلاً للأعلى
-    12: { yAdjustDelta: -4 },
-    // 11: إصلاح الزوم الزائد في الملف الشخصي (1.09 -> 1.01)
-    11: { widthRatioDelta: -0.08, yAdjustDelta: 4 },
-    // 10: مضبوط هنا (التعديل للحاويات فقط)
-    // 9: إصلاح الزوم الطولي في الملف الشخصي (1.14 -> 1.06)
-    9: { widthRatioDelta: -0.08 },
-    // 7: إصلاح الزوم العرضي في الملف الشخصي (1.11 -> 1.04)
-    7: { widthRatioDelta: -0.07, yAdjustDelta: 2 },
-    // 6: إصلاح الزوم الكبير في الملف الشخصي (1.16 -> 1.06)
-    6: { widthRatioDelta: -0.10, yAdjustDelta: 3 },
-    // 5: إصلاح الزوم الخفيف في الملف الشخصي (1.09 -> 1.04)
-    5: { widthRatioDelta: -0.05, yAdjustDelta: 2 },
-    // 4: إصلاح الزوم الكبير في الملف الشخصي (1.15 -> 1.06)
-    4: { widthRatioDelta: -0.09 },
-    // 3: إصلاح الزوم الطولي (1.08 -> 1.03)
-    3: { widthRatioDelta: -0.05 },
-    // 2: إصلاح الزوم في الملف الشخصي (1.13 -> 1.06)
-    2: { widthRatioDelta: -0.07 },
+    // التيجان الأساسية - ضبط خفيف جداً للحفاظ على الجمال
+    1: { yAdjustDelta: -2 }, // تاج كلاسيكي - رفع بسيط
+    2: { yAdjustDelta: -2 }, // تاج ملكي - رفع بسيط
+    3: { yAdjustDelta: -1 }, // تاج رفيع - ضبط خفيف
+    4: { yAdjustDelta: -2 }, // تاج فخم - رفع بسيط
+    5: { yAdjustDelta: -1 }, // تاج أنيق - ضبط خفيف
+    6: { yAdjustDelta: -2 }, // تاج إمبراطوري - رفع بسيط
+    7: { yAdjustDelta: -1 }, // تاج ذهبي - ضبط خفيف
+    8: { yAdjustDelta: -2 }, // تاج نبيل - رفع بسيط
+    9: { yAdjustDelta: -1 }, // تاج راقي - ضبط خفيف
+    10: { yAdjustDelta: -2 }, // تاج بسيط - رفع بسيط
+    11: { yAdjustDelta: -1 }, // تاج عصري - ضبط خفيف
+    12: { yAdjustDelta: -2 }, // تاج ملكي ثاني - رفع بسيط
+    
+    // التيجان المتقدمة - نفس النمط المتوازن
+    13: { yAdjustDelta: -1 }, 14: { yAdjustDelta: -2 }, 15: { yAdjustDelta: -1 },
+    16: { yAdjustDelta: -2 }, 17: { yAdjustDelta: -1 }, 18: { yAdjustDelta: -2 },
+    19: { yAdjustDelta: -1 }, 20: { yAdjustDelta: -2 }, 21: { yAdjustDelta: -1 },
+    22: { yAdjustDelta: -2 }, 23: { yAdjustDelta: -1 }, 24: { yAdjustDelta: -2 },
+    
+    // التيجان النخبوية - ضبط دقيق للتيجان الكبيرة
+    25: { yAdjustDelta: -2 }, 26: { yAdjustDelta: -1 }, 27: { yAdjustDelta: -2 },
+    28: { yAdjustDelta: -1 }, 29: { yAdjustDelta: -2 }, 30: { yAdjustDelta: -1 },
+    31: { yAdjustDelta: -2 }, 32: { yAdjustDelta: -1 }, 33: { yAdjustDelta: -2 },
+    34: { yAdjustDelta: -1 }, 35: { yAdjustDelta: -2 }, 36: { yAdjustDelta: -1 },
+    
+    // التيجان الأسطورية - ضبط للتيجان الضخمة
+    37: { yAdjustDelta: -2 }, 38: { yAdjustDelta: -1 }, 39: { yAdjustDelta: -2 },
+    40: { yAdjustDelta: -1 }, 41: { yAdjustDelta: -3 }, 42: { yAdjustDelta: -2 },
+    43: { yAdjustDelta: -1 }, 44: { yAdjustDelta: -2 }, 45: { yAdjustDelta: -2 },
+    46: { yAdjustDelta: -1 }, 47: { yAdjustDelta: -2 }, 48: { yAdjustDelta: -1 },
+    49: { yAdjustDelta: -2 }, 50: { yAdjustDelta: -3 }, // التاج الأعظم - رفع إضافي
   };
+  
+  // 🏠 إعدادات محسّنة للحاويات - تحسينات طفيفة لبعض التيجان
   const CONTAINER_DELTAS: Record<number, LayoutDelta> = {
-    // 10: يحتاج تنزيل بسيط في الحاويات فقط
-    10: { yAdjustDelta: 3 },
-    // 7: تنزيل بسيط أيضاً في الحاويات
-    7: { yAdjustDelta: 2 },
-    // 6: تنزيل بسيط في الحاويات
-    6: { yAdjustDelta: 3 },
-    // 5: تنزيل خفيف
-    5: { yAdjustDelta: 2 },
+    // تحسينات بسيطة لبعض التيجان في الحاويات فقط
+    6: { yAdjustDelta: 1 }, // تاج إمبراطوري - تنزيل خفيف
+    10: { yAdjustDelta: 1 }, // تاج بسيط - تنزيل خفيف
+    15: { yAdjustDelta: 1 }, // تاج بلاتيني - تنزيل خفيف
+    25: { yAdjustDelta: 1 }, // تاج الأساطير - تنزيل خفيف
+    41: { yAdjustDelta: 1 }, // تاج الكون - تنزيل خفيف
+    50: { yAdjustDelta: 1 }, // التاج الأعظم - تنزيل خفيف
   };
 
   const baseLayout = getTagLayout(tagNumber);
   const tagLayout = useMemo(() => {
     const deltas = (context === 'profile' ? PROFILE_DELTAS : CONTAINER_DELTAS)[tagNumber ?? -1] || {};
-    const widthRatioMin = 1.01; // حد أدنى أقل للسماح بإصلاح الزوم في الملف الشخصي
-    const widthRatioMax = 1.20;
+    
+    // 🎯 حدود محسّنة للحفاظ على جمال التاج في كلا السياقين
+    const widthRatioMin = 1.05; // حد أدنى معقول للحفاظ على وضوح التاج
+    const widthRatioMax = 1.18; // حد أقصى لمنع التاج من أن يصبح كبيراً جداً
+    
+    // 📏 حساب النسب بدقة - نحافظ على النسبة الأساسية ونضيف التعديل البسيط فقط
     const widthRatio = Math.min(
       widthRatioMax,
       Math.max(widthRatioMin, (baseLayout.widthRatio || 1.1) + (deltas.widthRatioDelta || 0))
     );
+    
+    // 📐 حساب المواضع بدقة مع ضبط السياق
     const yAdjustPx = Math.round((baseLayout.yAdjustPx || 0) + (deltas.yAdjustDelta || 0));
     const xAdjustPx = Math.round((baseLayout.xAdjustPx || 0) + (deltas.xAdjustDelta || 0));
     const anchorY = Math.min(0.24, Math.max(0, (baseLayout.anchorY || 0) + (deltas.anchorDelta || 0)));
+    
     return { ...baseLayout, widthRatio, yAdjustPx, xAdjustPx, anchorY } as const;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tagNumber, context, baseLayout.widthRatio, baseLayout.yAdjustPx, baseLayout.xAdjustPx, baseLayout.anchorY]);
@@ -147,10 +170,10 @@ export default function ProfileImage({
     const imgRef = useRef<HTMLImageElement | null>(null);
     const [anchorOffsetPx, setAnchorOffsetPx] = useState<number>(tagLayout.yAdjustPx || 0);
     const [hasComputed, setHasComputed] = useState<boolean>(false);
-    // ثبات تغطية التاج كرأس/طوق أعلى الصورة على كل الأحجام
-    const minCoverRatio = 1.06;
-    const maxCoverRatio = 1.18;
-    const targetRatio = tagLayout.widthRatio || minCoverRatio;
+    // 👑 حساب حجم التاج المثالي - متوازن ومتناسق في كلا السياقين
+    const minCoverRatio = context === 'profile' ? 1.08 : 1.06; // حد أدنى أعلى قليلاً للملفات الشخصية
+    const maxCoverRatio = context === 'profile' ? 1.16 : 1.18; // حد أقصى أقل قليلاً للملفات الشخصية
+    const targetRatio = tagLayout.widthRatio || (context === 'profile' ? 1.10 : 1.08);
     const clampedRatio = Math.min(Math.max(targetRatio, minCoverRatio), maxCoverRatio);
     const overlayWidthPx = Math.round(basePx * clampedRatio);
 
