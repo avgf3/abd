@@ -2263,7 +2263,7 @@ export default function ProfileModal({
           transform: scale(1.05);
         }
 
-        .profile-avatar img {
+        .profile-avatar img:not(.profile-tag-overlay) {
           width: 100%;
           height: 100%;
           object-fit: cover;
