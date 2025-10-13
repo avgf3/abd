@@ -47,6 +47,8 @@ export const users = pgTable('users', {
   usernameGradient: text('username_gradient'), // تدرج لوني لاسم المستخدم (للمشرفين)
   usernameEffect: text('username_effect'), // تأثير حركي لاسم المستخدم (للمشرفين)
   profileEffect: text('profile_effect').default('none'), // تأثير البروفايل
+  // لقب البروفايل (صورة تُعرض بدل أيقونة الدور/المستوى بجانب الاسم)
+  profileTitle: text('profile_title'),
   // إطار صورة البروفايل (مسار ثابت داخل public/frames أو اسم معرف إطار)
   profileFrame: text('profile_frame'),
   // تاج البروفايل (مسار ثابت داخل public/tags أو اسم معرف تاج)
@@ -291,6 +293,8 @@ export const wallPosts = pgTable('wall_posts', {
   userProfileFrame: text('user_profile_frame'),
   // تاج المستخدم وقت إنشاء المنشور لضمان عرضه بدون جلب إضافي
   userProfileTag: text('user_profile_tag'),
+  // لقب المستخدم وقت إنشاء المنشور لضمان عرضه بدون جلب إضافي
+  userProfileTitle: text('user_profile_title'),
   usernameColor: text('username_color').default('#4A90E2'),
   usernameGradient: text('username_gradient'), // تدرج لوني لاسم المستخدم (للمشرفين)
   usernameEffect: text('username_effect'), // تأثير حركي لاسم المستخدم (للمشرفين)

@@ -563,6 +563,19 @@ export async function ensureUserProfileTagColumn(): Promise<void> {
   }
 }
 
+// Ensure profile_title column exists for avatar title image
+export async function ensureUserProfileTitleColumn(): Promise<void> {
+  try {
+    if (!dbAdapter.client) return;
+    await dbAdapter.client.unsafe(`
+      ALTER TABLE IF EXISTS users
+        ADD COLUMN IF NOT EXISTS profile_title TEXT;
+    `);
+  } catch (e) {
+    console.warn('⚠️ تعذر ضمان عمود profile_title:', (e as any)?.message || e);
+  }
+}
+
 // Ensure wall_posts has user_profile_tag column used by feeds
 export async function ensureWallPostsUserProfileTagColumn(): Promise<void> {
   try {
@@ -574,6 +587,22 @@ export async function ensureWallPostsUserProfileTagColumn(): Promise<void> {
   } catch (e) {
     console.warn(
       '⚠️ تعذر ضمان عمود user_profile_tag في wall_posts:',
+      (e as any)?.message || e
+    );
+  }
+}
+
+// Ensure wall_posts has user_profile_title column used by feeds
+export async function ensureWallPostsUserProfileTitleColumn(): Promise<void> {
+  try {
+    if (!dbAdapter.client) return;
+    await dbAdapter.client.unsafe(`
+      ALTER TABLE wall_posts
+        ADD COLUMN IF NOT EXISTS user_profile_title TEXT;
+    `);
+  } catch (e) {
+    console.warn(
+      '⚠️ تعذر ضمان عمود user_profile_title في wall_posts:',
       (e as any)?.message || e
     );
   }

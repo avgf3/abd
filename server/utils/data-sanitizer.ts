@@ -135,6 +135,11 @@ export function sanitizeUserData(user: any): any {
     ...user,
     profileBackgroundColor: sanitizeProfileBackgroundColor(user.profileBackgroundColor),
     usernameColor: sanitizeHexColor(user.usernameColor, '#4A90E2'),
+    // لقب البروفايل: نُبقيه كنص بسيط (اسم ملف أو مسار ثابت)
+    profileTitle:
+      typeof user.profileTitle === 'string' && user.profileTitle.trim() !== ''
+        ? user.profileTitle.trim()
+        : null,
     // تمرير تدرج اسم المستخدم كما هو إذا كان نصاً صالحاً يبدأ بـ linear-gradient(
     usernameGradient:
       typeof user.usernameGradient === 'string' && user.usernameGradient.startsWith('linear-gradient(')

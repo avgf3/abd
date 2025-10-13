@@ -30,6 +30,7 @@ import { ensureUserProfileFrameColumn } from './database-adapter';
 import { ensureWallPostsUserProfileFrameColumn } from './database-adapter';
 import { ensureUserProfileTagColumn } from './database-adapter';
 import { ensureWallPostsUserProfileTagColumn } from './database-adapter';
+import { ensureUserProfileTitleColumn, ensureWallPostsUserProfileTitleColumn } from './database-adapter';
 import { optimizeDatabaseIndexes } from './utils/database-optimization';
 
 // إعادة تصدير دالة التهيئة من المحول
@@ -300,6 +301,20 @@ export async function initializeSystem(): Promise<boolean> {
       await ensureWallPostsUserProfileTagColumn();
     } catch (e) {
       console.warn('⚠️ تعذر ضمان عمود user_profile_tag في wall_posts:', (e as any)?.message || e);
+    }
+
+    // ضمان عمود لقب البروفايل
+    try {
+      await ensureUserProfileTitleColumn();
+    } catch (e) {
+      console.warn('⚠️ تعذر ضمان عمود profile_title:', (e as any)?.message || e);
+    }
+
+    // ضمان عمود لقب المستخدم داخل منشورات الحائط (user_profile_title)
+    try {
+      await ensureWallPostsUserProfileTitleColumn();
+    } catch (e) {
+      console.warn('⚠️ تعذر ضمان عمود user_profile_title في wall_posts:', (e as any)?.message || e);
     }
 
     // ضمان وجود أعمدة chat_lock في جدول الغرف

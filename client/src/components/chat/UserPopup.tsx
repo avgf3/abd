@@ -32,6 +32,7 @@ export default function UserPopup({
   const canSetFrame =
     currentUser && currentUser.userType === 'owner' && currentUser.id !== user.id;
   const canSetTag = canSetFrame;
+  const canSetTitle = canSetFrame;
 
   const handleAddFrame = async (frameIndex: number) => {
     if (!currentUser || !canSetFrame) return;
@@ -73,6 +74,23 @@ export default function UserPopup({
       onClose?.();
     } catch (e) {
       toast({ title: 'خطأ', description: 'تعذر تعيين التاج', variant: 'destructive' });
+    }
+  };
+
+  const handleSetTitle = async (titleIndex: number) => {
+    if (!currentUser || !canSetTitle) return;
+    try {
+      const body: any = {};
+      if (titleIndex > 0) body.profileTitle = `title${titleIndex}.webp`;
+      else body.profileTitle = null;
+      await apiRequest(`/api/users/${user.id}`, {
+        method: 'PUT',
+        body,
+      });
+      toast({ title: 'تم', description: `${titleIndex > 0 ? `تم تعيين لقب ${titleIndex}` : 'تمت إزالة اللقب'} لـ ${user.username}` });
+      onClose?.();
+    } catch (e) {
+      toast({ title: 'خطأ', description: 'تعذر تعيين اللقب', variant: 'destructive' });
     }
   };
 
@@ -303,6 +321,26 @@ export default function UserPopup({
                   title="إزالة التاج"
                 >
                   إزالة التاج
+                </button>
+              </div>
+              <div className="px-2 py-1 text-xs text-gray-500">إضافة لقب (يستبدل الشعار):</div>
+              <div className="flex flex-wrap gap-1 px-2 pb-1">
+                {[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17].map((i) => (
+                  <button
+                    key={`title-${i}`}
+                    onClick={() => handleSetTitle(i)}
+                    className="px-2 py-1 rounded bg-gray-100 hover:bg-gray-200 text-xs"
+                    title={`لقب ${i}`}
+                  >
+                    لقب {i}
+                  </button>
+                ))}
+                <button
+                  onClick={() => handleSetTitle(0 as any)}
+                  className="px-2 py-1 rounded bg-gray-100 hover:bg-gray-200 text-xs"
+                  title="إزالة اللقب"
+                >
+                  إزالة اللقب
                 </button>
               </div>
             </>
