@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>حاسبة التيجان الدقيقة 100%</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a1a2e;
+            color: #eee;
+            margin: 0;
+            padding: 20px;
+            direction: rtl;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: #16213e;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        h1 {
+            text-align: center;
+            color: #4fc3f7;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+        .crown-analyzer {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+        .crown-section {
+            background: #0f3460;
+            border-radius: 10px;
+            padding: 20px;
+            border: 2px solid #4fc3f7;
+        }
+        .crown-title {
+            font-size: 1.5em;
+            color: #4fc3f7;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .crown-display {
+            position: relative;
+            width: 200px;
+            height: 200px;
+            margin: 20px auto;
+            background: #1a1a2e;
+            border-radius: 50%;
+            border: 3px solid #4fc3f7;
+            overflow: visible;
+        }
+        .profile-pic {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
+            position: relative;
+        }
+        .crown-overlay {
+            position: absolute;
+            left: 50%;
+            top: 0;
+            transform-origin: 50% 100%;
+            z-index: 10;
+            pointer-events: none;
+        }
+        .measurements {
+            background: #0a2647;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+        .measurement-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 8px 0;
+            padding: 5px 0;
+            border-bottom: 1px solid #4fc3f7;
+        }
+        .controls {
+            margin: 20px 0;
+        }
+        .control-group {
+            margin: 15px 0;
+        }
+        .control-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #4fc3f7;
+            font-weight: bold;
+        }
+        .control-group input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #4fc3f7;
+            border-radius: 5px;
+            background: #1a1a2e;
+            color: #eee;
+            font-size: 16px;
+        }
+        .btn {
+            background: #4fc3f7;
+            color: #1a1a2e;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 16px;
+            margin: 10px 5px;
+            transition: all 0.3s;
+        }
+        .btn:hover {
+            background: #29b6f6;
+            transform: translateY(-2px);
+        }
+        .results {
+            background: #0f3460;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 30px;
+            border: 2px solid #4caf50;
+        }
+        .results h3 {
+            color: #4caf50;
+            margin-bottom: 20px;
+        }
+        .code-output {
+            background: #1a1a2e;
+            border-radius: 8px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            color: #4caf50;
+            border: 1px solid #4caf50;
+            white-space: pre-wrap;
+            margin: 10px 0;
+        }
+        canvas {
+            border: 1px solid #4fc3f7;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏆 حاسبة التيجان الدقيقة 100% 🏆</h1>
+        
+        <div class="crown-analyzer">
+            <!-- تاج رقم 1 -->
+            <div class="crown-section">
+                <div class="crown-title">👑 تاج رقم 1</div>
+                <div class="crown-display" id="crown1-display">
+                    <div class="profile-pic"></div>
+                    <img class="crown-overlay" id="crown1-img" src="/tags/tag1.webp" alt="تاج 1">
+                </div>
+                <div class="controls">
+                    <div class="control-group">
+                        <label>yAdjustPx:</label>
+                        <input type="number" id="crown1-y" value="0" step="0.5">
+                    </div>
+                    <div class="control-group">
+                        <label>anchorY:</label>
+                        <input type="number" id="crown1-anchor" value="0.35" step="0.01" min="0" max="1">
+                    </div>
+                    <div class="control-group">
+                        <label>widthRatio:</label>
+                        <input type="number" id="crown1-width" value="1.10" step="0.01" min="0.5" max="2">
+                    </div>
+                </div>
+                <div class="measurements" id="crown1-measurements"></div>
+            </div>
+
+            <!-- تاج رقم 8 -->
+            <div class="crown-section">
+                <div class="crown-title">👑 تاج رقم 8</div>
+                <div class="crown-display" id="crown8-display">
+                    <div class="profile-pic"></div>
+                    <img class="crown-overlay" id="crown8-img" src="/tags/tag8.webp" alt="تاج 8">
+                </div>
+                <div class="controls">
+                    <div class="control-group">
+                        <label>yAdjustPx:</label>
+                        <input type="number" id="crown8-y" value="0" step="0.5">
+                    </div>
+                    <div class="control-group">
+                        <label>anchorY:</label>
+                        <input type="number" id="crown8-anchor" value="0.35" step="0.01" min="0" max="1">
+                    </div>
+                    <div class="control-group">
+                        <label>widthRatio:</label>
+                        <input type="number" id="crown8-width" value="1.10" step="0.01" min="0.5" max="2">
+                    </div>
+                </div>
+                <div class="measurements" id="crown8-measurements"></div>
+            </div>
+        </div>
+
+        <div style="text-align: center;">
+            <button class="btn" onclick="analyzeCrowns()">🔍 تحليل التيجان</button>
+            <button class="btn" onclick="calculatePerfectFit()">⚡ حساب الموضع المثالي</button>
+            <button class="btn" onclick="generateCode()">💻 إنتاج الكود</button>
+        </div>
+
+        <div class="results" id="results" style="display: none;">
+            <h3>📊 النتائج والكود المُحسَّن:</h3>
+            <div id="analysis-output"></div>
+            <div class="code-output" id="code-output"></div>
+        </div>
+
+        <!-- Canvas مخفي لتحليل الصور -->
+        <canvas id="analysis-canvas" style="display: none;"></canvas>
+    </div>
+
+    <script>
+        // بيانات التيجان
+        const crowns = {
+            1: { img: null, naturalSize: null, transparentBottom: 0 },
+            8: { img: null, naturalSize: null, transparentBottom: 0 }
+        };
+
+        // تحميل الصور وتحليلها
+        function loadCrownImages() {
+            const crown1Img = document.getElementById('crown1-img');
+            const crown8Img = document.getElementById('crown8-img');
+
+            crown1Img.onload = () => analyzeCrownImage(1, crown1Img);
+            crown8Img.onload = () => analyzeCrownImage(8, crown8Img);
+
+            // إعادة تحميل إذا كانت محملة مسبقاً
+            if (crown1Img.complete) analyzeCrownImage(1, crown1Img);
+            if (crown8Img.complete) analyzeCrownImage(8, crown8Img);
+        }
+
+        // تحليل صورة التاج لحساب الشفافية السفلية
+        function analyzeCrownImage(crownNum, imgElement) {
+            const canvas = document.getElementById('analysis-canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // تصغير الصورة للتحليل السريع
+            const maxSize = 100;
+            const scale = Math.min(1, maxSize / Math.max(imgElement.naturalWidth, imgElement.naturalHeight));
+            const width = Math.floor(imgElement.naturalWidth * scale);
+            const height = Math.floor(imgElement.naturalHeight * scale);
+            
+            canvas.width = width;
+            canvas.height = height;
+            
+            ctx.drawImage(imgElement, 0, 0, width, height);
+            const imageData = ctx.getImageData(0, 0, width, height);
+            const data = imageData.data;
+            
+            // حساب الشفافية من الأسفل
+            let transparentRows = 0;
+            const stride = 4; // RGBA
+            
+            for (let y = height - 1; y >= 0; y--) {
+                let rowHasContent = false;
+                for (let x = 0; x < width; x += 2) { // فحص كل بكسل ثاني للسرعة
+                    const idx = (y * width + x) * stride + 3; // قناة الألفا
+                    if (data[idx] > 10) { // بكسل غير شفاف
+                        rowHasContent = true;
+                        break;
+                    }
+                }
+                if (!rowHasContent) {
+                    transparentRows++;
+                } else {
+                    break;
+                }
+            }
+            
+            const transparentRatio = transparentRows / height;
+            
+            // حفظ البيانات
+            crowns[crownNum] = {
+                img: imgElement,
+                naturalSize: { w: imgElement.naturalWidth, h: imgElement.naturalHeight },
+                transparentBottom: transparentRatio
+            };
+            
+            console.log(`تاج ${crownNum}: الأبعاد ${imgElement.naturalWidth}x${imgElement.naturalHeight}, شفافية سفلية: ${(transparentRatio * 100).toFixed(1)}%`);
+            
+            updateCrownDisplay(crownNum);
+        }
+
+        // تحديث عرض التاج
+        function updateCrownDisplay(crownNum) {
+            const yInput = document.getElementById(`crown${crownNum}-y`);
+            const anchorInput = document.getElementById(`crown${crownNum}-anchor`);
+            const widthInput = document.getElementById(`crown${crownNum}-width`);
+            const crownImg = document.getElementById(`crown${crownNum}-img`);
+            const measurements = document.getElementById(`crown${crownNum}-measurements`);
+            
+            const profileSize = 200; // حجم الصورة الشخصية في العرض
+            const yAdjust = parseFloat(yInput.value);
+            const anchorY = parseFloat(anchorInput.value);
+            const widthRatio = parseFloat(widthInput.value);
+            
+            // حساب أبعاد التاج
+            const crownWidth = profileSize * widthRatio;
+            const crownData = crowns[crownNum];
+            
+            if (crownData && crownData.naturalSize) {
+                const scale = crownWidth / crownData.naturalSize.w;
+                const crownHeight = crownData.naturalSize.h * scale;
+                const anchor = crownHeight * anchorY;
+                const bottomGap = crownData.transparentBottom * crownHeight;
+                const anchorFromImage = anchor + yAdjust - bottomGap;
+                
+                // تطبيق التحويل
+                crownImg.style.width = crownWidth + 'px';
+                crownImg.style.transform = `translate(-50%, calc(-100% + ${anchorFromImage}px))`;
+                
+                // عرض القياسات
+                measurements.innerHTML = `
+                    <div class="measurement-row">
+                        <span>عرض التاج:</span>
+                        <span>${crownWidth.toFixed(1)}px</span>
+                    </div>
+                    <div class="measurement-row">
+                        <span>ارتفاع التاج:</span>
+                        <span>${crownHeight.toFixed(1)}px</span>
+                    </div>
+                    <div class="measurement-row">
+                        <span>نقطة الارتكاز:</span>
+                        <span>${anchor.toFixed(1)}px</span>
+                    </div>
+                    <div class="measurement-row">
+                        <span>الشفافية السفلية:</span>
+                        <span>${bottomGap.toFixed(1)}px</span>
+                    </div>
+                    <div class="measurement-row">
+                        <span>الدخول في الصورة:</span>
+                        <span>${anchorFromImage.toFixed(1)}px</span>
+                    </div>
+                `;
+            }
+        }
+
+        // تحليل التيجان
+        function analyzeCrowns() {
+            updateCrownDisplay(1);
+            updateCrownDisplay(8);
+            
+            document.getElementById('results').style.display = 'block';
+            
+            const analysis = `
+🔍 تحليل التيجان المكتمل:
+
+تاج رقم 1:
+- الأبعاد الطبيعية: ${crowns[1].naturalSize?.w || 'غير محدد'} × ${crowns[1].naturalSize?.h || 'غير محدد'}
+- الشفافية السفلية: ${((crowns[1].transparentBottom || 0) * 100).toFixed(1)}%
+
+تاج رقم 8:
+- الأبعاد الطبيعية: ${crowns[8].naturalSize?.w || 'غير محدد'} × ${crowns[8].naturalSize?.h || 'غير محدد'}
+- الشفافية السفلية: ${((crowns[8].transparentBottom || 0) * 100).toFixed(1)}%
+            `;
+            
+            document.getElementById('analysis-output').innerText = analysis;
+        }
+
+        // حساب الموضع المثالي
+        function calculatePerfectFit() {
+            // هدف: التاج يجب أن يبدو كأنه يُلبس على الرأس
+            // نريد حوالي 25-30% من التاج يدخل في الصورة (منطقة الجبهة)
+            
+            const targetPenetration = 0.25; // 25% من التاج يدخل في الصورة
+            const profileSize = 56; // الحجم الافتراضي للصورة الشخصية
+            
+            for (let crownNum of [1, 8]) {
+                const crownData = crowns[crownNum];
+                if (!crownData.naturalSize) continue;
+                
+                const widthRatio = 1.10; // ثابت
+                const crownWidth = profileSize * widthRatio;
+                const scale = crownWidth / crownData.naturalSize.w;
+                const crownHeight = crownData.naturalSize.h * scale;
+                const bottomGap = crownData.transparentBottom * crownHeight;
+                
+                // نريد targetPenetration من التاج يدخل في الصورة
+                const desiredPenetration = crownHeight * targetPenetration;
+                
+                // حساب anchorY المطلوب
+                const requiredAnchor = desiredPenetration + bottomGap;
+                const anchorY = requiredAnchor / crownHeight;
+                
+                // yAdjustPx يمكن أن يكون صفر للبساطة
+                const yAdjustPx = 0;
+                
+                // تحديث الحقول
+                document.getElementById(`crown${crownNum}-y`).value = yAdjustPx;
+                document.getElementById(`crown${crownNum}-anchor`).value = anchorY.toFixed(3);
+                document.getElementById(`crown${crownNum}-width`).value = widthRatio;
+                
+                updateCrownDisplay(crownNum);
+            }
+            
+            analyzeCrowns();
+        }
+
+        // إنتاج الكود
+        function generateCode() {
+            const crown1Y = document.getElementById('crown1-y').value;
+            const crown1Anchor = document.getElementById('crown1-anchor').value;
+            const crown1Width = document.getElementById('crown1-width').value;
+            
+            const crown8Y = document.getElementById('crown8-y').value;
+            const crown8Anchor = document.getElementById('crown8-anchor').value;
+            const crown8Width = document.getElementById('crown8-width').value;
+            
+            const code = `// 🏆 إعدادات التيجان المُحسَّنة - حساب دقيق 100%
+override(1, { widthRatio: ${crown1Width}, yAdjustPx: ${crown1Y}, anchorY: ${crown1Anchor} });
+override(8, { widthRatio: ${crown8Width}, yAdjustPx: ${crown8Y}, anchorY: ${crown8Anchor} });
+
+// 📊 تفاصيل الحساب:
+// تاج 1: شفافية سفلية ${((crowns[1].transparentBottom || 0) * 100).toFixed(1)}%
+// تاج 8: شفافية سفلية ${((crowns[8].transparentBottom || 0) * 100).toFixed(1)}%
+// الهدف: 25% من التاج يدخل في الصورة لمظهر طبيعي`;
+            
+            document.getElementById('code-output').textContent = code;
+        }
+
+        // ربط الأحداث
+        document.addEventListener('DOMContentLoaded', function() {
+            loadCrownImages();
+            
+            // ربط أحداث التغيير
+            ['crown1-y', 'crown1-anchor', 'crown1-width'].forEach(id => {
+                document.getElementById(id).addEventListener('input', () => updateCrownDisplay(1));
+            });
+            
+            ['crown8-y', 'crown8-anchor', 'crown8-width'].forEach(id => {
+                document.getElementById(id).addEventListener('input', () => updateCrownDisplay(8));
+            });
+        });
+    </script>
+</body>
+</html>
