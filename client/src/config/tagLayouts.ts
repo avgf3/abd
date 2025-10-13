@@ -31,18 +31,18 @@ export const TAG_LAYOUTS: Record<number, TagLayout> = {
   // 🔶 قاعدة قوسية عميقة: anchorY عالي (0.18-0.22) - تيجان فخمة
   
   // ===== التيجان الرئيسية (1-12) - إعدادات محسّنة للملامسة المثلى =====
-  1:  { widthRatio: 1.08, xAdjustPx: 0, yAdjustPx: -2, anchorY: 0.08, autoAnchor: true }, // 👑 تاج كلاسيكي - متوازن ومثالي
-  2:  { widthRatio: 1.10, xAdjustPx: 0, yAdjustPx: -3, anchorY: 0.10, autoAnchor: true }, // 👑 تاج ملكي - أنيق ومضبوط
-  3:  { widthRatio: 1.06, xAdjustPx: 0, yAdjustPx: -1, anchorY: 0.06, autoAnchor: true }, // 👑 تاج رفيع - بسيط وجميل
-  4:  { widthRatio: 1.12, xAdjustPx: 0, yAdjustPx: -4, anchorY: 0.12, autoAnchor: true }, // 👑 تاج فخم - مهيب ومتوازن
-  5:  { widthRatio: 1.07, xAdjustPx: 0, yAdjustPx: -2, anchorY: 0.07, autoAnchor: true }, // 👑 تاج أنيق - رقيق ومميز
-  6:  { widthRatio: 1.14, xAdjustPx: 0, yAdjustPx: -5, anchorY: 0.14, autoAnchor: true }, // 👑 إمبراطوري - عظيم ومضبوط
-  7:  { widthRatio: 1.09, xAdjustPx: 0, yAdjustPx: -3, anchorY: 0.09, autoAnchor: true }, // 👑 ذهبي - لامع ومتوازن
-  8:  { widthRatio: 1.08, xAdjustPx: 0, yAdjustPx: -2, anchorY: 0.08, autoAnchor: true }, // 👑 نبيل - كلاسيكي مميز
-  9:  { widthRatio: 1.11, xAdjustPx: 0, yAdjustPx: -4, anchorY: 0.11, autoAnchor: true }, // 👑 راقي - أنيق وجذاب
-  10: { widthRatio: 1.05, xAdjustPx: 0, yAdjustPx: -1, anchorY: 0.05, autoAnchor: true }, // 👑 بسيط - نظيف ومرتب
-  11: { widthRatio: 1.07, xAdjustPx: 0, yAdjustPx: -2, anchorY: 0.07, autoAnchor: true }, // 👑 عصري - حديث ومتطور
-  12: { widthRatio: 1.10, xAdjustPx: 0, yAdjustPx: -3, anchorY: 0.10, autoAnchor: true }, // 👑 ملكي ثاني - فخم ومتوازن
+  1:  { widthRatio: 1.08, xAdjustPx: 0, yAdjustPx: -2, anchorY: 0.08, autoAnchor: true }, // 👑 تاج 1 - مثالي (لا يحتاج تعديل)
+  2:  { widthRatio: 1.10, xAdjustPx: 0, yAdjustPx: -8, anchorY: 0.10, autoAnchor: true }, // 👑 تاج 2 - رفع من الأسفل للأعلى
+  3:  { widthRatio: 1.06, xAdjustPx: 0, yAdjustPx: -6, anchorY: 0.12, autoAnchor: true }, // 👑 تاج 3 - رفع ومحاذاة القوس مع الإطار
+  4:  { widthRatio: 1.12, xAdjustPx: 0, yAdjustPx: -6, anchorY: 0.12, autoAnchor: true }, // 👑 تاج 4 - رفع قليلاً (ممتاز لكن يحتاج رفع)
+  5:  { widthRatio: 1.07, xAdjustPx: 0, yAdjustPx: -4, anchorY: 0.10, autoAnchor: true }, // 👑 تاج 5 - ضبط القوس مع أعلى الصورة ورفع
+  6:  { widthRatio: 1.14, xAdjustPx: 0, yAdjustPx: -7, anchorY: 0.14, autoAnchor: true }, // 👑 تاج 6 - رفع قليلاً
+  7:  { widthRatio: 1.09, xAdjustPx: -1, yAdjustPx: -4, anchorY: 0.09, autoAnchor: true }, // 👑 تاج 7 - تصحيح الميلان لليمين قليلاً
+  8:  { widthRatio: 1.08, xAdjustPx: 0, yAdjustPx: -4, anchorY: 0.08, autoAnchor: true }, // 👑 تاج 8 - رفع قليلاً (ممتاز لكن يحتاج رفع طفيف)
+  9:  { widthRatio: 1.11, xAdjustPx: 0, yAdjustPx: -1, anchorY: 0.11, autoAnchor: true }, // 👑 تاج 9 - رفع من الأسفل (كان منخفض جداً)
+  10: { widthRatio: 1.05, xAdjustPx: 0, yAdjustPx: -3, anchorY: 0.05, autoAnchor: true }, // 👑 تاج 10 - تنزيل من الأعلى (كان مرتفع جداً)
+  11: { widthRatio: 1.07, xAdjustPx: 0, yAdjustPx: -1, anchorY: 0.04, autoAnchor: true }, // 👑 تاج 11 - تقليل التداخل (كان متداخل كثيراً)
+  12: { widthRatio: 1.10, xAdjustPx: 0, yAdjustPx: -3, anchorY: 0.10, autoAnchor: true }, // 👑 تاج 12 - مثالي جداً (لا يحتاج تعديل)
   
   // ===== التيجان الإضافية (13-24) - متوازنة ومحسّنة =====
   13: { widthRatio: 1.09, xAdjustPx: 0, yAdjustPx: -3, anchorY: 0.09, autoAnchor: true },

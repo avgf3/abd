@@ -223,33 +223,36 @@
   </div>
 
   <script>
-    // محاكاة دقيقة للكود من tagLayouts.ts
+    // محاكاة دقيقة للكود المحدث من tagLayouts.ts
     const TAG_LAYOUTS = {
-      1:  { widthRatio: 1.10, xAdjustPx: 0, yAdjustPx: -8, anchorY: 0.15, autoAnchor: true },
-      2:  { widthRatio: 1.13, xAdjustPx: 0, yAdjustPx: -8, anchorY: 0.17, autoAnchor: true },
-      3:  { widthRatio: 1.08, xAdjustPx: 0, yAdjustPx: -8, anchorY: 0.13, autoAnchor: true },
-      4:  { widthRatio: 1.15, xAdjustPx: 0, yAdjustPx: -8, anchorY: 0.19, autoAnchor: true },
-      5:  { widthRatio: 1.09, xAdjustPx: 0, yAdjustPx: -8, anchorY: 0.14, autoAnchor: true },
-      6:  { widthRatio: 1.16, xAdjustPx: 0, yAdjustPx: -8, anchorY: 0.20, autoAnchor: true },
-      7:  { widthRatio: 1.11, xAdjustPx: 0, yAdjustPx: -8, anchorY: 0.16, autoAnchor: true },
-      8:  { widthRatio: 1.10, xAdjustPx: 0, yAdjustPx: -8, anchorY: 0.15, autoAnchor: true },
-      9:  { widthRatio: 1.14, xAdjustPx: 0, yAdjustPx: -8, anchorY: 0.18, autoAnchor: true },
-      10: { widthRatio: 1.07, xAdjustPx: 0, yAdjustPx: -8, anchorY: 0.12, autoAnchor: true },
-      11: { widthRatio: 1.09, xAdjustPx: 0, yAdjustPx: -8, anchorY: 0.14, autoAnchor: true },
-      12: { widthRatio: 1.13, xAdjustPx: 0, yAdjustPx: -8, anchorY: 0.17, autoAnchor: true }
+      1:  { widthRatio: 1.08, xAdjustPx: 0, yAdjustPx: -2, anchorY: 0.08, autoAnchor: true }, // مثالي
+      2:  { widthRatio: 1.10, xAdjustPx: 0, yAdjustPx: -8, anchorY: 0.10, autoAnchor: true }, // رفع من الأسفل
+      3:  { widthRatio: 1.06, xAdjustPx: 0, yAdjustPx: -6, anchorY: 0.12, autoAnchor: true }, // رفع ومحاذاة القوس
+      4:  { widthRatio: 1.12, xAdjustPx: 0, yAdjustPx: -6, anchorY: 0.12, autoAnchor: true }, // رفع قليلاً
+      5:  { widthRatio: 1.07, xAdjustPx: 0, yAdjustPx: -4, anchorY: 0.10, autoAnchor: true }, // ضبط القوس
+      6:  { widthRatio: 1.14, xAdjustPx: 0, yAdjustPx: -7, anchorY: 0.14, autoAnchor: true }, // رفع قليلاً
+      7:  { widthRatio: 1.09, xAdjustPx: -1, yAdjustPx: -4, anchorY: 0.09, autoAnchor: true }, // تصحيح الميلان
+      8:  { widthRatio: 1.08, xAdjustPx: 0, yAdjustPx: -4, anchorY: 0.08, autoAnchor: true }, // رفع قليلاً
+      9:  { widthRatio: 1.11, xAdjustPx: 0, yAdjustPx: -1, anchorY: 0.11, autoAnchor: true }, // رفع من الأسفل
+      10: { widthRatio: 1.05, xAdjustPx: 0, yAdjustPx: -3, anchorY: 0.05, autoAnchor: true }, // تنزيل قليلاً
+      11: { widthRatio: 1.07, xAdjustPx: 0, yAdjustPx: -1, anchorY: 0.04, autoAnchor: true }, // تقليل التداخل
+      12: { widthRatio: 1.10, xAdjustPx: 0, yAdjustPx: -3, anchorY: 0.10, autoAnchor: true }  // مثالي جداً
     };
     
-    // محاكاة PROFILE_DELTAS المُصححة
+    // محاكاة PROFILE_DELTAS المُصححة حسب المتطلبات الجديدة
     const PROFILE_DELTAS = {
-      2: { widthRatioDelta: -0.07 },
-      3: { widthRatioDelta: -0.05 },
-      4: { widthRatioDelta: -0.09 },
-      5: { widthRatioDelta: -0.05, yAdjustDelta: 2 },
-      6: { widthRatioDelta: -0.10, yAdjustDelta: 3 },
-      7: { widthRatioDelta: -0.07, yAdjustDelta: 2 },
-      9: { widthRatioDelta: -0.08 },
-      11: { widthRatioDelta: -0.08, yAdjustDelta: 4 },
-      12: { yAdjustDelta: -4 }
+      1: { yAdjustDelta: 0 },  // مثالي بالفعل
+      2: { yAdjustDelta: -5 }, // رفع من الأسفل
+      3: { yAdjustDelta: -5 }, // رفع ومحاذاة القوس
+      4: { yAdjustDelta: -2 }, // رفع قليلاً
+      5: { yAdjustDelta: -2 }, // ضبط القوس ورفع
+      6: { yAdjustDelta: -2 }, // رفع قليلاً
+      7: { yAdjustDelta: -1 }, // تصحيح الميلان
+      8: { yAdjustDelta: -2 }, // رفع قليلاً
+      9: { yAdjustDelta: 3 },  // رفع من الأسفل
+      10: { yAdjustDelta: -2 }, // تنزيل قليلاً
+      11: { yAdjustDelta: 1 },  // تقليل التداخل
+      12: { yAdjustDelta: 0 }   // مثالي جداً
     };
     
     // محاكاة CONTAINER_DELTAS
@@ -324,11 +327,14 @@
     }
     
     function getStatusInfo(tagNumber, context) {
-      const hasProfileDelta = PROFILE_DELTAS[tagNumber] && PROFILE_DELTAS[tagNumber].widthRatioDelta;
+      const hasProfileDelta = PROFILE_DELTAS[tagNumber];
       const hasContainerDelta = CONTAINER_DELTAS[tagNumber];
       
-      if (context === 'profile' && hasProfileDelta) {
-        return { class: 'fixed', text: 'مُصحح ✅', color: '#27ae60' };
+      // تحديد حالة التاج حسب التعديلات الجديدة
+      if (tagNumber === 1 || tagNumber === 12) {
+        return { class: 'fixed', text: 'مثالي ✨', color: '#27ae60' };
+      } else if (context === 'profile' && hasProfileDelta) {
+        return { class: 'fixed', text: 'مُصحح ✅', color: '#e74c3c' };
       } else if (context === 'container' && hasContainerDelta) {
         return { class: 'problem', text: 'محسّن ⚡', color: '#f39c12' };
       } else {
