@@ -229,7 +229,7 @@ export default function ProfileImage({
     8: { yAdjustDelta: 0 }, // تاج 8 - مثالي ✓ (لا تعديل)
     9: { yAdjustDelta: 0 }, // تاج 9 - تم إصلاحه في tagLayouts
     10: { yAdjustDelta: 0 }, // تاج 10 - تم إصلاحه في tagLayouts
-    11: { yAdjustDelta: 0 }, // تاج 11 - تم إصلاحه في tagLayouts
+    11: { yAdjustDelta: 0 }, // تاج 11 - تم إصلاح الموضع ليكون في الأعلى
     12: { yAdjustDelta: 0 }, // تاج 12 - مثالي ✓ (لا تعديل)
     
     // التيجان المتقدمة - متوازنة ومحسّنة

@@ -41,7 +41,7 @@ export const TAG_LAYOUTS: Record<number, TagLayout> = {
   8:  { widthRatio: 1.08, xAdjustPx: 0, yAdjustPx: -4, anchorY: 0.08, autoAnchor: true }, // 👑 تاج 8 - مثالي ✓ (لا تعديل)
   9:  { widthRatio: 1.11, xAdjustPx: 0, yAdjustPx: -6, anchorY: 0.09, autoAnchor: true }, // 👑 تاج 9 - تم رفعه من الأسفل
   10: { widthRatio: 1.05, xAdjustPx: 0, yAdjustPx: -6, anchorY: 0.04, autoAnchor: true }, // 👑 تاج 10 - تم ضبطه
-  11: { widthRatio: 1.07, xAdjustPx: 0, yAdjustPx: -5, anchorY: 0.03, autoAnchor: true }, // 👑 تاج 11 - تم تقليل التداخل
+  11: { widthRatio: 1.07, xAdjustPx: 0, yAdjustPx: -12, anchorY: 0.08, autoAnchor: true }, // 👑 تاج 11 - تم إصلاح الموضع ليكون في الأعلى
   12: { widthRatio: 1.10, xAdjustPx: 0, yAdjustPx: -3, anchorY: 0.10, autoAnchor: true }, // 👑 تاج 12 - مثالي ✓ (لا تعديل)
   
   // ===== التيجان الإضافية (13-24) - متوازنة ومحسّنة =====

@@ -67,8 +67,8 @@ const TestCrown11: React.FC = () => {
               <h3 className="font-semibold mb-2">إعدادات التاج:</h3>
               <ul className="text-sm space-y-1">
                 <li><strong>نسبة العرض:</strong> 1.07 (107% من حجم الصورة)</li>
-                <li><strong>الإزاحة العمودية:</strong> -5px (رفع للأعلى)</li>
-                <li><strong>نقطة الارتكاز:</strong> 0.03 (3% تداخل)</li>
+                <li><strong>الإزاحة العمودية:</strong> -12px (رفع قوي للأعلى)</li>
+                <li><strong>نقطة الارتكاز:</strong> 0.08 (8% تداخل متوازن)</li>
                 <li><strong>الحساب التلقائي:</strong> مفعل</li>
               </ul>
             </div>
