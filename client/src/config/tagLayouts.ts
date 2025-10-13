@@ -32,16 +32,16 @@ export const TAG_LAYOUTS: Record<number, TagLayout> = {
   
   // ===== التيجان الرئيسية (1-12) - إعدادات محسّنة للملامسة المثلى =====
   1:  { widthRatio: 1.08, xAdjustPx: 0, yAdjustPx: -2, anchorY: 0.08, autoAnchor: true }, // 👑 تاج 1 - مثالي ✓ (لا تعديل)
-  2:  { widthRatio: 1.10, xAdjustPx: 0, yAdjustPx: -8, anchorY: 0.10, autoAnchor: true }, // 👑 تاج 2 - مثالي ✓ (لا تعديل)
-  3:  { widthRatio: 1.06, xAdjustPx: 0, yAdjustPx: -10, anchorY: 0.10, autoAnchor: true }, // 👑 تاج 3 - تم رفعه للأعلى
-  4:  { widthRatio: 1.12, xAdjustPx: 0, yAdjustPx: -6, anchorY: 0.12, autoAnchor: true }, // 👑 تاج 4 - مثالي ✓ (لا تعديل)
+  2:  { widthRatio: 1.10, xAdjustPx: 0, yAdjustPx: -15, anchorY: 0.08, autoAnchor: true }, // 👑 تاج 2 - تم إصلاح الموضع ليكون في الأعلى
+  3:  { widthRatio: 1.06, xAdjustPx: 0, yAdjustPx: -18, anchorY: 0.08, autoAnchor: true }, // 👑 تاج 3 - تم إصلاح الموضع ليكون في الأعلى
+  4:  { widthRatio: 1.12, xAdjustPx: 0, yAdjustPx: -14, anchorY: 0.08, autoAnchor: true }, // 👑 تاج 4 - تم إصلاح الموضع ليكون في الأعلى
   5:  { widthRatio: 1.07, xAdjustPx: 0, yAdjustPx: -8, anchorY: 0.08, autoAnchor: true }, // 👑 تاج 5 - تم رفعه للأعلى
-  6:  { widthRatio: 1.14, xAdjustPx: 0, yAdjustPx: -10, anchorY: 0.12, autoAnchor: true }, // 👑 تاج 6 - تم رفعه للأعلى
+  6:  { widthRatio: 1.14, xAdjustPx: 0, yAdjustPx: -18, anchorY: 0.08, autoAnchor: true }, // 👑 تاج 6 - تم إصلاح الموضع ليكون في الأعلى
   7:  { widthRatio: 1.09, xAdjustPx: 0, yAdjustPx: -7, anchorY: 0.08, autoAnchor: true }, // 👑 تاج 7 - تم رفعه للأعلى
   8:  { widthRatio: 1.08, xAdjustPx: 0, yAdjustPx: -4, anchorY: 0.08, autoAnchor: true }, // 👑 تاج 8 - مثالي ✓ (لا تعديل)
-  9:  { widthRatio: 1.11, xAdjustPx: 0, yAdjustPx: -6, anchorY: 0.09, autoAnchor: true }, // 👑 تاج 9 - تم رفعه من الأسفل
+  9:  { widthRatio: 1.11, xAdjustPx: 0, yAdjustPx: -14, anchorY: 0.08, autoAnchor: true }, // 👑 تاج 9 - تم إصلاح الموضع ليكون في الأعلى
   10: { widthRatio: 1.05, xAdjustPx: 0, yAdjustPx: -6, anchorY: 0.04, autoAnchor: true }, // 👑 تاج 10 - تم ضبطه
-  11: { widthRatio: 1.07, xAdjustPx: 0, yAdjustPx: -5, anchorY: 0.03, autoAnchor: true }, // 👑 تاج 11 - تم تقليل التداخل
+  11: { widthRatio: 1.07, xAdjustPx: 0, yAdjustPx: -12, anchorY: 0.08, autoAnchor: true }, // 👑 تاج 11 - تم إصلاح الموضع ليكون في الأعلى
   12: { widthRatio: 1.10, xAdjustPx: 0, yAdjustPx: -3, anchorY: 0.10, autoAnchor: true }, // 👑 تاج 12 - مثالي ✓ (لا تعديل)
   
   // ===== التيجان الإضافية (13-24) - متوازنة ومحسّنة =====

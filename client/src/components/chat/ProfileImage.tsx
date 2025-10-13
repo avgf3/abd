@@ -220,16 +220,16 @@ export default function ProfileImage({
   const PROFILE_DELTAS: Record<number, LayoutDelta> = {
     // التيجان الأساسية - ضبط مثالي للملامسة الطبيعية
     1: { yAdjustDelta: 0 }, // تاج 1 - مثالي ✓ (لا تعديل)
-    2: { yAdjustDelta: 0 }, // تاج 2 - مثالي ✓ (لا تعديل)
-    3: { yAdjustDelta: 0 }, // تاج 3 - تم إصلاحه في tagLayouts
-    4: { yAdjustDelta: 0 }, // تاج 4 - مثالي ✓ (لا تعديل)
+    2: { yAdjustDelta: 0 }, // تاج 2 - تم إصلاح الموضع ليكون في الأعلى
+    3: { yAdjustDelta: 0 }, // تاج 3 - تم إصلاح الموضع ليكون في الأعلى
+    4: { yAdjustDelta: 0 }, // تاج 4 - تم إصلاح الموضع ليكون في الأعلى
     5: { yAdjustDelta: 0 }, // تاج 5 - تم إصلاحه في tagLayouts
-    6: { yAdjustDelta: 0 }, // تاج 6 - تم إصلاحه في tagLayouts
+    6: { yAdjustDelta: 0 }, // تاج 6 - تم إصلاح الموضع ليكون في الأعلى
     7: { yAdjustDelta: 0 }, // تاج 7 - تم إصلاحه في tagLayouts
     8: { yAdjustDelta: 0 }, // تاج 8 - مثالي ✓ (لا تعديل)
-    9: { yAdjustDelta: 0 }, // تاج 9 - تم إصلاحه في tagLayouts
+    9: { yAdjustDelta: 0 }, // تاج 9 - تم إصلاح الموضع ليكون في الأعلى
     10: { yAdjustDelta: 0 }, // تاج 10 - تم إصلاحه في tagLayouts
-    11: { yAdjustDelta: 0 }, // تاج 11 - تم إصلاحه في tagLayouts
+    11: { yAdjustDelta: 0 }, // تاج 11 - تم إصلاح الموضع ليكون في الأعلى
     12: { yAdjustDelta: 0 }, // تاج 12 - مثالي ✓ (لا تعديل)
     
     // التيجان المتقدمة - متوازنة ومحسّنة
