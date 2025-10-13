@@ -190,7 +190,7 @@ export default function ProfileImage({
             overlayTopPx={overlayTopPx}
             basePx={Math.round(px * layout.widthRatio)}
             anchorY={0}
-            yAdjustPx={0}
+            yAdjustPx={context === 'profile' ? layout.yAdjustPx : 0}
             xAdjustPx={layout.xAdjustPx}
           />
         )}
