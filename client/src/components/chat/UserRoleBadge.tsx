@@ -212,8 +212,8 @@ export default function UserRoleBadge({
   })();
 
   if (titleSrc) {
-    const w = size;
-    const h = size;
+    const w = size * 1.1;
+    const h = size * 1.1;
     return (
       <img
         src={titleSrc}
