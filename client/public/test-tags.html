@@ -99,8 +99,8 @@
 
     // استنساخ مبسّط لتخطيطات tagLayouts.ts (القيم المُصححة)
     const TAG_LAYOUTS = {
-      1:  { widthRatio: 1.10, xAdjustPx: 0, yAdjustPx: 0, anchorY: 0.18, autoAnchor: true },
-      8:  { widthRatio: 1.10, xAdjustPx: 0, yAdjustPx: 0, anchorY: 0.18, autoAnchor: true },
+      1:  { widthRatio: 1.10, xAdjustPx: 0, yAdjustPx: -2, anchorY: 0.45, autoAnchor: true },
+      8:  { widthRatio: 1.10, xAdjustPx: 0, yAdjustPx: -2, anchorY: 0.45, autoAnchor: true },
       10: { widthRatio: 1.08, xAdjustPx: 0, yAdjustPx: 5, anchorY: 0.40, autoAnchor: true },
     };
 
@@ -120,7 +120,7 @@
       const scale = basePx / Math.max(1, naturalTagSize.w);
       const heightPx = naturalTagSize.h * scale;
       const bottomGapPx = (layout.autoAnchor ? Math.round(bottomGapRatio * heightPx) : 0);
-      const isTouchTop = (tagNumber === 1 || tagNumber === 8);
+      const isTouchTop = false; // لم نعد نحتاج touchTop مع الإعدادات الجديدة
       const anchor = isTouchTop ? bottomGapPx : Math.round(heightPx * (layout.anchorY ?? 0.08));
       const anchorFromImagePx = Math.round(anchor + (layout.yAdjustPx || 0) - bottomGapPx);
 

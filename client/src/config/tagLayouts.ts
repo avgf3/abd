@@ -32,11 +32,11 @@ export const TAG_LAYOUTS: Record<number, TagLayout> = (() => {
 
   // ===== التيجان الأساسية (1-12) - ضبط دقيق بناءً على تصميم كل تاج =====
   
-  // التيجان البسيطة/الخفيفة - دخول أقل
-  override(1,  { anchorY: 0.30, yAdjustPx: 0 });   // تاج كلاسيكي بسيط
+  // التيجان البسيطة/الخفيفة - دخول متوسط لتبدو طبيعية
+  override(1,  { anchorY: 0.45, yAdjustPx: -2 });   // تاج كلاسيكي بسيط - يدخل أكثر
   override(2,  { anchorY: 0.30, yAdjustPx: 0 });   // تاج ملكي أنيق
   override(3,  { anchorY: 0.28, yAdjustPx: 0, widthRatio: 1.08 }); // تاج رفيع
-  override(8,  { anchorY: 0.30, yAdjustPx: 0 });   // تاج بسيط
+  override(8,  { anchorY: 0.45, yAdjustPx: -2 });   // تاج بسيط - يدخل أكثر
   
   // التيجان المتوسطة - دخول متوسط (الافتراضي)
   override(5,  { anchorY: 0.35, yAdjustPx: 0 });   // تاج ناعم

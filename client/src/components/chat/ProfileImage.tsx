@@ -228,7 +228,7 @@ export default function ProfileImage({
   // إعدادات التاج من التخطيطات الموحدة
   const layout = getTagLayout(tagNumber);
   
-  // جميع التيجان تستخدم نفس المنطق البسيط
+  // جميع التيجان تستخدم نفس المنطق البسيط - لا نحتاج touchTop بعد الآن
   const needsTouchTop = false;
   const scanCenterRatio = 1;
   const frameIndex = (() => {
