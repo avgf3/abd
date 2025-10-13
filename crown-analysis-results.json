@@ -1,0 +1,182 @@
+{
+  "1": {
+    "widthRatio": 1.1,
+    "yAdjustPx": 1,
+    "anchorY": 0.20000000000000004,
+    "expectedResult": {
+      "crownWidth": 61.60000000000001,
+      "crownHeight": 43.63333333333334,
+      "anchorPoint": 8.72666666666667,
+      "bottomGap": 7,
+      "finalPosition": 3,
+      "penetrationPx": 3,
+      "penetrationPercent": 6.875477463712756
+    },
+    "penetrationError": 0.4500000000000002
+  },
+  "2": {
+    "widthRatio": 1.1,
+    "yAdjustPx": 1,
+    "anchorY": 0.15,
+    "expectedResult": {
+      "crownWidth": 61.60000000000001,
+      "crownHeight": 43.348148148148155,
+      "anchorPoint": 6.5022222222222235,
+      "bottomGap": 5,
+      "finalPosition": 3,
+      "penetrationPx": 3,
+      "penetrationPercent": 6.920710868079288
+    },
+    "penetrationError": 0.1499999999999999
+  },
+  "3": {
+    "widthRatio": 1.1,
+    "yAdjustPx": 5,
+    "anchorY": 0.25000000000000006,
+    "expectedResult": {
+      "crownWidth": 61.60000000000001,
+      "crownHeight": 43.120000000000005,
+      "anchorPoint": 10.780000000000003,
+      "bottomGap": 9,
+      "finalPosition": 7,
+      "penetrationPx": 7,
+      "penetrationPercent": 16.233766233766232
+    },
+    "penetrationError": 0
+  },
+  "4": {
+    "widthRatio": 1.1,
+    "yAdjustPx": 1,
+    "anchorY": 0.15,
+    "expectedResult": {
+      "crownWidth": 61.60000000000001,
+      "crownHeight": 45.17333333333334,
+      "anchorPoint": 6.776000000000001,
+      "bottomGap": 5,
+      "finalPosition": 3,
+      "penetrationPx": 3,
+      "penetrationPercent": 6.641086186540732
+    },
+    "penetrationError": 0.2999999999999998
+  },
+  "5": {
+    "widthRatio": 1.1,
+    "yAdjustPx": 5,
+    "anchorY": 0.25000000000000006,
+    "expectedResult": {
+      "crownWidth": 61.60000000000001,
+      "crownHeight": 39.42400000000001,
+      "anchorPoint": 9.856000000000003,
+      "bottomGap": 7,
+      "finalPosition": 8,
+      "penetrationPx": 8,
+      "penetrationPercent": 20.29220779220779
+    },
+    "penetrationError": 0
+  },
+  "6": {
+    "widthRatio": 1.1,
+    "yAdjustPx": 1,
+    "anchorY": 0.12999999999999998,
+    "expectedResult": {
+      "crownWidth": 61.60000000000001,
+      "crownHeight": 52.800000000000004,
+      "anchorPoint": 6.863999999999999,
+      "bottomGap": 4,
+      "finalPosition": 4,
+      "penetrationPx": 4,
+      "penetrationPercent": 7.575757575757574
+    },
+    "penetrationError": 0.3999999999999999
+  },
+  "7": {
+    "widthRatio": 1.1,
+    "yAdjustPx": 5,
+    "anchorY": 0.2700000000000001,
+    "expectedResult": {
+      "crownWidth": 61.60000000000001,
+      "crownHeight": 40.173913043478265,
+      "anchorPoint": 10.846956521739134,
+      "bottomGap": 9,
+      "finalPosition": 7,
+      "penetrationPx": 7,
+      "penetrationPercent": 17.424242424242422
+    },
+    "penetrationError": 0.5
+  },
+  "8": {
+    "widthRatio": 1.1,
+    "yAdjustPx": 1,
+    "anchorY": 0.18000000000000002,
+    "expectedResult": {
+      "crownWidth": 61.60000000000001,
+      "crownHeight": 43.68000000000001,
+      "anchorPoint": 7.862400000000002,
+      "bottomGap": 7,
+      "finalPosition": 2,
+      "penetrationPx": 2,
+      "penetrationPercent": 4.578754578754578
+    },
+    "penetrationError": 0.33999999999999986
+  },
+  "9": {
+    "widthRatio": 1.1,
+    "yAdjustPx": 1,
+    "anchorY": 0.15,
+    "expectedResult": {
+      "crownWidth": 61.60000000000001,
+      "crownHeight": 44.60689655172414,
+      "anchorPoint": 6.691034482758621,
+      "bottomGap": 5,
+      "finalPosition": 3,
+      "penetrationPx": 3,
+      "penetrationPercent": 6.725417439703153
+    },
+    "penetrationError": 0.1499999999999999
+  },
+  "10": {
+    "widthRatio": 1.1,
+    "yAdjustPx": 5,
+    "anchorY": 0.2800000000000001,
+    "expectedResult": {
+      "crownWidth": 61.60000000000001,
+      "crownHeight": 42.14736842105263,
+      "anchorPoint": 11.801263157894741,
+      "bottomGap": 11,
+      "finalPosition": 6,
+      "penetrationPx": 6,
+      "penetrationPercent": 14.235764235764236
+    },
+    "penetrationError": 0.5
+  },
+  "11": {
+    "widthRatio": 1.1,
+    "yAdjustPx": 1,
+    "anchorY": 0.18000000000000002,
+    "expectedResult": {
+      "crownWidth": 61.60000000000001,
+      "crownHeight": 42.64615384615385,
+      "anchorPoint": 7.676307692307694,
+      "bottomGap": 6,
+      "finalPosition": 3,
+      "penetrationPx": 3,
+      "penetrationPercent": 7.0346320346320335
+    },
+    "penetrationError": 0.2999999999999998
+  },
+  "12": {
+    "widthRatio": 1.1,
+    "yAdjustPx": 1,
+    "anchorY": 0.10999999999999999,
+    "expectedResult": {
+      "crownWidth": 61.60000000000001,
+      "crownHeight": 50.05000000000001,
+      "anchorPoint": 5.5055000000000005,
+      "bottomGap": 3,
+      "finalPosition": 4,
+      "penetrationPx": 4,
+      "penetrationPercent": 7.9920079920079905
+    },
+    "penetrationError": 0.10000000000000009
+  }
+}
