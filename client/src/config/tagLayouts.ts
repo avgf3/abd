@@ -33,10 +33,10 @@ export const TAG_LAYOUTS: Record<number, TagLayout> = (() => {
   // ===== التيجان الأساسية (1-12) - ضبط دقيق بناءً على تصميم كل تاج =====
   
   // التيجان البسيطة/الخفيفة - دخول متوسط لتبدو طبيعية
-  override(1,  { anchorY: 0.54, yAdjustPx: 3 });   // تاج كلاسيكي بسيط - يدخل أكثر وينزل
+  override(1,  { anchorY: 0.54, yAdjustPx: 4 });   // تاج كلاسيكي بسيط - يدخل أكثر وينزل
   override(2,  { anchorY: 0.32, yAdjustPx: 1 });   // تاج ملكي أنيق
   override(3,  { anchorY: 0.30, yAdjustPx: 1, widthRatio: 1.08 }); // تاج رفيع
-  override(8,  { anchorY: 0.54, yAdjustPx: 3 });   // تاج بسيط - يدخل أكثر وينزل
+  override(8,  { anchorY: 0.54, yAdjustPx: 4 });   // تاج بسيط - يدخل أكثر وينزل
   
   // التيجان المتوسطة - دخول متوسط (الافتراضي)
   override(5,  { anchorY: 0.37, yAdjustPx: 1 });   // تاج ناعم
@@ -48,7 +48,7 @@ export const TAG_LAYOUTS: Record<number, TagLayout> = (() => {
   override(6,  { anchorY: 0.47, yAdjustPx: 1 });   // إمبراطوري
   override(9,  { anchorY: 0.42, yAdjustPx: 1, widthRatio: 1.12 }); // مزخرف
   override(10, { anchorY: 0.42, yAdjustPx: 3 });   // تاج صغير - ينزل شوي
-  override(12, { anchorY: 0.44, yAdjustPx: 1 });   // تاج كبير/ملكي
+  override(12, { anchorY: 0.44, yAdjustPx: 2 });   // تاج كبير/ملكي
 
   // ===== باقي التيجان (13-50) - تصنيف حسب المستوى =====
   const applyRange = (from: number, to: number, layout: Partial<TagLayout>) => {
