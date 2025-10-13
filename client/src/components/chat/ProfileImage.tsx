@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
 
 import { getUserLevelIcon } from '@/components/chat/UserRoleBadge';
 import type { ChatUser } from '@/types/chat';
@@ -19,6 +19,122 @@ interface ProfileImageProps {
   // سياق العرض لضبط التيجان بدقة بين الملف الشخصي والحاويات
   context?: 'profile' | 'container';
 }
+
+type TagOverlayProps = {
+  src: string;
+  overlayTopPx: number;
+  basePx: number;
+  // تمرير القيم اللازمة فقط لتثبيت الهوية ومنع إعادة التركيب المتكرر
+  anchorY?: number;
+  yAdjustPx?: number;
+  xAdjustPx?: number;
+  autoAnchor?: boolean;
+};
+
+// مكون التاج خارج ProfileImage لمنع تبديل الهوية والوميض، مع تحسينات استقرار
+const TagOverlay = memo(function TagOverlay({
+  src,
+  overlayTopPx,
+  basePx,
+  anchorY,
+  yAdjustPx,
+  xAdjustPx,
+  autoAnchor,
+}: TagOverlayProps) {
+  const imgRef = useRef<HTMLImageElement | null>(null);
+  const [anchorOffsetPx, setAnchorOffsetPx] = useState<number>(yAdjustPx || 0);
+
+  useEffect(() => {
+    const el = imgRef.current;
+    if (!el) return;
+    let cancelled = false;
+
+    const compute = () => {
+      if (!el.naturalWidth || !el.naturalHeight) return;
+      // عرض التاج النهائي بالبكسل
+      const overlayWidthPx = Math.round(basePx);
+      const scale = overlayWidthPx / el.naturalWidth;
+      const tagRenderedHeight = el.naturalHeight * scale;
+
+      let bottomGapPx = 0;
+      if (autoAnchor) {
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width = el.naturalWidth;
+          canvas.height = el.naturalHeight;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(el, 0, 0);
+            const alphaThreshold = 12; // ~5%
+            for (let y = canvas.height - 1; y >= 0; y--) {
+              const row = ctx.getImageData(0, y, canvas.width, 1).data;
+              let opaque = false;
+              for (let x = 0; x < canvas.width; x++) {
+                if (row[x * 4 + 3] > alphaThreshold) { opaque = true; break; }
+              }
+              if (opaque) {
+                bottomGapPx = (canvas.height - 1 - y) * scale;
+                break;
+              }
+            }
+          }
+        } catch {
+          // ignore
+        }
+      }
+
+      const tagVisibleHeight = tagRenderedHeight - bottomGapPx;
+      const depth = Math.max(0, Math.min(1, anchorY ?? 0)) * tagVisibleHeight;
+      const totalOffset = tagVisibleHeight - depth + (yAdjustPx || 0);
+      if (!cancelled) {
+        setAnchorOffsetPx(Math.round(totalOffset));
+      }
+    };
+
+    if (el.complete) compute();
+    el.addEventListener('load', compute);
+    return () => {
+      cancelled = true;
+      el.removeEventListener('load', compute);
+    };
+  }, [src, basePx, anchorY, autoAnchor, yAdjustPx]);
+
+  return (
+    <img
+      ref={imgRef}
+      src={src}
+      alt="tag"
+      className="profile-tag-overlay"
+      aria-hidden="true"
+      style={{
+        top: overlayTopPx,
+        // نمرر العرض المحسوب من المكون الأب كـ basePx مباشرة هنا
+        width: basePx,
+        transform: `translate(-50%, calc(-100% + ${anchorOffsetPx}px))`,
+        marginLeft: xAdjustPx || 0,
+        backgroundColor: 'transparent',
+        background: 'transparent',
+        opacity: 1, // إزالة وميض الانتقال من 0 -> 1
+        transition: 'transform 120ms ease-out',
+        willChange: 'transform',
+        transformOrigin: '50% 100%',
+      }}
+      decoding="async"
+      loading="eager"
+      draggable={false}
+      onError={(e: any) => { try { e.currentTarget.style.display = 'none'; } catch {} }}
+    />
+  );
+}, (prev, next) => (
+  prev.src === next.src &&
+  prev.overlayTopPx === next.overlayTopPx &&
+  prev.basePx === next.basePx &&
+  prev.anchorY === next.anchorY &&
+  prev.yAdjustPx === next.yAdjustPx &&
+  prev.xAdjustPx === next.xAdjustPx &&
+  prev.autoAnchor === next.autoAnchor
+));
 
 export default function ProfileImage({
   user,
@@ -158,122 +274,11 @@ export default function ProfileImage({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tagNumber, context, baseLayout.widthRatio, baseLayout.yAdjustPx, baseLayout.xAdjustPx, baseLayout.anchorY]);
 
-  function TagOverlay({
-    src,
-    overlayTopPx,
-    basePx,
-  }: {
-    src: string;
-    overlayTopPx: number;
-    basePx: number;
-  }) {
-    const imgRef = useRef<HTMLImageElement | null>(null);
-    const [anchorOffsetPx, setAnchorOffsetPx] = useState<number>(tagLayout.yAdjustPx || 0);
-    const [hasComputed, setHasComputed] = useState<boolean>(false);
-    // 👑 حساب حجم التاج المثالي - متوازن ومتناسق في كلا السياقين
-    const minCoverRatio = context === 'profile' ? 1.08 : 1.06; // حد أدنى أعلى قليلاً للملفات الشخصية
-    const maxCoverRatio = context === 'profile' ? 1.16 : 1.18; // حد أقصى أقل قليلاً للملفات الشخصية
-    const targetRatio = tagLayout.widthRatio || (context === 'profile' ? 1.10 : 1.08);
-    const clampedRatio = Math.min(Math.max(targetRatio, minCoverRatio), maxCoverRatio);
-    const overlayWidthPx = Math.round(basePx * clampedRatio);
-
-    useEffect(() => {
-      const el = imgRef.current;
-      if (!el) return;
-      let cancelled = false;
-
-      const compute = () => {
-        if (!el.naturalWidth || !el.naturalHeight) return;
-        const scale = overlayWidthPx / el.naturalWidth;
-        const tagRenderedHeight = el.naturalHeight * scale;
-
-        let bottomGapPx = 0;
-        if (tagLayout.autoAnchor) {
-          try {
-            const canvas = document.createElement('canvas');
-            canvas.width = el.naturalWidth;
-            canvas.height = el.naturalHeight;
-            const ctx = canvas.getContext('2d');
-            if (ctx) {
-              ctx.clearRect(0, 0, canvas.width, canvas.height);
-              ctx.drawImage(el, 0, 0);
-              const alphaThreshold = 12; // ~5% opacity
-              for (let y = canvas.height - 1; y >= 0; y--) {
-                const row = ctx.getImageData(0, y, canvas.width, 1).data;
-                let opaque = false;
-                for (let x = 0; x < canvas.width; x++) {
-                  if (row[x * 4 + 3] > alphaThreshold) { opaque = true; break; }
-                }
-                if (opaque) {
-                  bottomGapPx = (canvas.height - 1 - y) * scale;
-                  break;
-                }
-              }
-            }
-          } catch {
-            // ignore
-          }
-        }
-
-        // الحساب الاحترافي الجديد:
-        // 1. tagRenderedHeight = الارتفاع الكامل للتاج بعد التكبير
-        // 2. bottomGapPx = الشفافية في الأسفل (يجب إزالتها)
-        // 3. anchorY = نسبة من الارتفاع المرئي تدخل في الصورة (0 = يلامس، 0.2 = 20% يدخل)
-        // 4. yAdjustPx = ضبط يدوي نهائي (موجب = ينزل، سالب = يرتفع)
-        
-        // الارتفاع المرئي للتاج (بدون الشفافية السفلية)
-        const tagVisibleHeight = tagRenderedHeight - bottomGapPx;
-        
-        // مقدار الدخول المطلوب في الصورة (نسبة من الارتفاع المرئي)
-        const anchorDepth = Math.max(0, Math.min(1, tagLayout.anchorY ?? 0)) * tagVisibleHeight;
-        
-        // المعادلة المُصححة:
-        // - نبدأ من الارتفاع المرئي (tagVisibleHeight)
-        // - نطرح مقدار الدخول (anchorDepth) لو أردنا أن يدخل
-        // - نضيف الضبط اليدوي (yAdjustPx)
-        // - إزالة Math.max(0, ...) للسماح بالقيم السالبة المطلوبة لرفع التاج
-        const totalOffset = tagVisibleHeight - anchorDepth + (tagLayout.yAdjustPx || 0);
-
-        if (!cancelled) {
-          setAnchorOffsetPx(Math.round(totalOffset));
-          setHasComputed(true);
-        }
-      };
-
-      if (el.complete) compute();
-      el.addEventListener('load', compute);
-      return () => {
-        cancelled = true;
-        el.removeEventListener('load', compute);
-      };
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [src, overlayWidthPx, tagLayout.anchorY, tagLayout.autoAnchor, tagLayout.yAdjustPx]);
-
-    return (
-      <img
-        ref={imgRef}
-        src={src}
-        alt="tag"
-        className="profile-tag-overlay"
-        aria-hidden="true"
-        style={{
-          top: overlayTopPx,
-          width: overlayWidthPx,
-          transform: `translate(-50%, calc(-100% + ${anchorOffsetPx}px))`,
-          marginLeft: tagLayout.xAdjustPx || 0,
-          backgroundColor: 'transparent',
-          background: 'transparent',
-          opacity: hasComputed ? 1 : 0,
-          transition: hasComputed ? 'opacity 120ms ease-in-out' : 'none',
-          willChange: 'transform, opacity',
-          transformOrigin: '50% 100%',
-        }}
-        decoding="async"
-        loading="eager"
-        onError={(e: any) => { try { e.currentTarget.style.display = 'none'; } catch {} }}
-      />
-    );
-  }
+  // 👑 حساب حجم التاج المثالي - متوازن ومتناسق في كلا السياقين
+  const minCoverRatio = context === 'profile' ? 1.04 : 1.06; // خفض الحد الأدنى للملف الشخصي
+  const maxCoverRatio = context === 'profile' ? 1.12 : 1.18; // خفض الحد الأقصى للملف الشخصي
+  const targetRatio = tagLayout.widthRatio || (context === 'profile' ? 1.08 : 1.08);
+  const clampedRatio = Math.min(Math.max(targetRatio, minCoverRatio), maxCoverRatio);
   const frameIndex = (() => {
     if (!frameName) return undefined;
     const match = String(frameName).match(/(\d+)/);
@@ -301,7 +306,16 @@ export default function ProfileImage({
       >
         <VipAvatar src={imageSrc} alt={`صورة ${user.username}`} size={px} frame={frameIndex as any} />
         {tagSrc && (
-          <TagOverlay src={tagSrc} overlayTopPx={overlayTopPx} basePx={px} />
+          <TagOverlay
+            src={tagSrc}
+            overlayTopPx={overlayTopPx}
+            // نضرب basePx بالنسبة المضبوطة ثم نمرر الناتج ليستخدمه المكون الفرعي كما هو
+            basePx={Math.round(px * clampedRatio)}
+            anchorY={tagLayout.anchorY}
+            yAdjustPx={tagLayout.yAdjustPx}
+            xAdjustPx={tagLayout.xAdjustPx}
+            autoAnchor={tagLayout.autoAnchor}
+          />
         )}
       </div>
     );
@@ -343,7 +357,15 @@ export default function ProfileImage({
           />
         </div>
         {tagSrc && (
-          <TagOverlay src={tagSrc} overlayTopPx={overlayTopPx} basePx={px} />
+          <TagOverlay
+            src={tagSrc}
+            overlayTopPx={overlayTopPx}
+            basePx={Math.round(px * clampedRatio)}
+            anchorY={tagLayout.anchorY}
+            yAdjustPx={tagLayout.yAdjustPx}
+            xAdjustPx={tagLayout.xAdjustPx}
+            autoAnchor={tagLayout.autoAnchor}
+          />
         )}
       </div>
     );
