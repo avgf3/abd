@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>اختبار بصري — تاج 8 و 10</title>
+  <title>اختبار بصري — تاج 1، 8 و 10</title>
   <style>
     :root {
       --bg: #0b1220;
@@ -57,13 +57,20 @@
 </head>
 <body>
   <div class="wrap">
-    <h1>اختبار بصري — ضبط تاج 8 و 10</h1>
+    <h1>اختبار بصري — ضبط تاج 1، 8 و 10</h1>
     <p>
-      هذه الصفحة تطبّق نفس معادلة التموضع من الكود الفعلي، لعرض نتيجة تاج <b>8</b> و <b>10</b> على ثلاث قياسات للصورة: 36/56/72 بكسل.
-      الهدف: التأكد أن التاجين "نازلين" بما يكفي ليلبسوا الصورة بدون ما يكونوا مرتفعين فوقها.
+      هذه الصفحة تطبّق نفس معادلة التموضع من الكود الفعلي، لعرض نتيجة تاج <b>1</b>، <b>8</b> و <b>10</b> على ثلاث قياسات للصورة: 36/56/72 بكسل.
+      الهدف: التأكد أن التيجان تلبس الصورة بشكل طبيعي كـ "طوق رأس" بدون تداخل مفرط أو ارتفاع زائد.
     </p>
 
     <div class="grid">
+      <div class="card" id="card-1">
+        <div class="title">
+          <h2>تاج 1 <span class="badge">tag1.webp</span></h2>
+          <span class="meta" id="meta-1"></span>
+        </div>
+        <div id="rows-1"></div>
+      </div>
       <div class="card" id="card-8">
         <div class="title">
           <h2>تاج 8 <span class="badge">tag8.webp</span></h2>
@@ -71,6 +78,9 @@
         </div>
         <div id="rows-8"></div>
       </div>
+    </div>
+    
+    <div class="grid" style="margin-top: 16px;">
       <div class="card" id="card-10">
         <div class="title">
           <h2>تاج 10 <span class="badge">tag10.webp</span></h2>
@@ -87,14 +97,16 @@
     // نفس الحسبة المستخدمة داخل ProfileImage.tsx مع تبسيط العرض
     const SIZES = [36, 56, 72];
 
-    // استنساخ مبسّط لتخطيطات tagLayouts.ts (القيم الحالية)
+    // استنساخ مبسّط لتخطيطات tagLayouts.ts (القيم المُصححة)
     const TAG_LAYOUTS = {
-      8:  { widthRatio: 1.10, xAdjustPx: 0, yAdjustPx: 1, anchorY: 0.36, autoAnchor: true },
-      10: { widthRatio: 1.08, xAdjustPx: 0, yAdjustPx: 2, anchorY: 0.40, autoAnchor: true },
+      1:  { widthRatio: 1.10, xAdjustPx: 0, yAdjustPx: -3, anchorY: 0.25, autoAnchor: true },
+      8:  { widthRatio: 1.10, xAdjustPx: 0, yAdjustPx: -2, anchorY: 0.25, autoAnchor: true },
+      10: { widthRatio: 1.08, xAdjustPx: 0, yAdjustPx: 5, anchorY: 0.40, autoAnchor: true },
     };
 
     const AVATAR_SRC = '/default_avatar.svg';
     const TAG_SRC = {
+      1: '/tags/tag1.webp',
       8: '/tags/tag8.webp',
       10: '/tags/tag10.webp',
     };
@@ -200,7 +212,7 @@
       const naturalSizes = {};
       const bottomRatios = {};
 
-      await Promise.all([8,10].map(tagNumber => new Promise((resolve) => {
+      await Promise.all([1,8,10].map(tagNumber => new Promise((resolve) => {
         const img = new Image();
         img.onload = async () => {
           naturalSizes[tagNumber] = { w: img.naturalWidth, h: img.naturalHeight };
@@ -212,7 +224,7 @@
       })));
 
       // تعبئة البطاقات
-      [8,10].forEach((tagNumber) => {
+      [1,8,10].forEach((tagNumber) => {
         const layout = TAG_LAYOUTS[tagNumber];
         const metaEl = document.getElementById('meta-' + tagNumber);
         metaEl.textContent = `widthRatio ${layout.widthRatio} • anchorY ${(layout.anchorY*100).toFixed(1)}% • yAdjust ${layout.yAdjustPx||0}px`;
