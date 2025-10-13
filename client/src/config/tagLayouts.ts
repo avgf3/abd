@@ -10,7 +10,7 @@ export const DEFAULT_TAG_LAYOUT: TagLayout = {
   widthRatio: 1.08,
   xAdjustPx: 0,
   // ضبط مثالي للملامسة الطبيعية مع الصورة
-  yAdjustPx: -2,
+  yAdjustPx: 0,
   // نقطة ارتكاز متوازنة للملامسة المثلى
   anchorY: 0.08,
   autoAnchor: true,
