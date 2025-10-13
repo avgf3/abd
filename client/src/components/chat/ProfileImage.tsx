@@ -4,7 +4,7 @@ import { getUserLevelIcon } from '@/components/chat/UserRoleBadge';
 import type { ChatUser } from '@/types/chat';
 import { getImageSrc } from '@/utils/imageUtils';
 import VipAvatar from '@/components/ui/VipAvatar';
-import { getTagLayout } from '@/config/tagLayouts';
+import { getTagLayout, DEFAULT_TAG_LAYOUT } from '@/config/tagLayouts';
 // حذف الاعتماد على التخطيطات الديناميكية للتاج لتثبيت المقاسات والمواضع
 
 interface ProfileImageProps {
@@ -28,6 +28,7 @@ type TagOverlayProps = {
   anchorY?: number; // نسبة من ارتفاع التاج تدخل فوق الرأس
   yAdjustPx?: number;
   xAdjustPx?: number;
+  autoAnchor?: boolean; // حساب تلقائي لهامش الشفافية السفلي
 };
 
 // مكون التاج مع احتساب الارتكاز بناءً على أبعاد الصورة الحقيقية لمواءمة محترفة
@@ -38,16 +39,20 @@ const TagOverlay = memo(function TagOverlay({
   anchorY = 0.08,
   yAdjustPx = 0,
   xAdjustPx = 0,
+  autoAnchor = true,
 }: TagOverlayProps) {
   const [naturalSize, setNaturalSize] = useState<{ w: number; h: number } | null>(null);
+  const [bottomGapRatio, setBottomGapRatio] = useState<number>(0); // نسبة الشفافية من الأسفل
 
   const anchorFromImagePx = (() => {
-    // قبل تحميل أبعاد الصورة، اجعل التلامس دقيقاً دون أي اقتحام
+    // قبل تحميل أبعاد الصورة، لا نستطيع حساب الشفافية؛ نستخدم yAdjustPx فقط لتقليل الوميض
     if (!naturalSize) return 0 + yAdjustPx;
     const scale = basePx / Math.max(1, naturalSize.w);
     const heightPx = naturalSize.h * scale;
     const anchor = heightPx * anchorY; // الجزء الذي يدخل فوق الرأس
-    return Math.round(anchor + yAdjustPx);
+    const bottomGapPx = autoAnchor ? Math.round(bottomGapRatio * heightPx) : 0;
+    // نضيف هامش الشفافية السفلي لتقريب التاج من أعلى الصورة دائماً
+    return Math.round(anchor + yAdjustPx + bottomGapPx);
   })();
 
   return (
@@ -75,7 +80,47 @@ const TagOverlay = memo(function TagOverlay({
         try {
           const img = e.currentTarget as HTMLImageElement;
           if (img && img.naturalWidth && img.naturalHeight) {
+            // حفظ الحجم الطبيعي
             setNaturalSize({ w: img.naturalWidth, h: img.naturalHeight });
+            // حساب نسبة الشفافية السفلية تلقائياً بشكل خفيف الأداء
+            // نقوم بالمسح على نسخة مصغّرة لسرعة التشغيل
+            const maxW = 96; // عرض المسح (أقصى حد)
+            const scale = Math.min(1, maxW / img.naturalWidth);
+            const cw = Math.max(1, Math.floor(img.naturalWidth * scale));
+            const ch = Math.max(1, Math.floor(img.naturalHeight * scale));
+            const canvas = document.createElement('canvas');
+            canvas.width = cw;
+            canvas.height = ch;
+            const ctx = canvas.getContext('2d');
+            if (ctx) {
+              ctx.drawImage(img, 0, 0, cw, ch);
+              const imageData = ctx.getImageData(0, 0, cw, ch);
+              const data = imageData.data;
+              // امسح من الأسفل للأعلى للعثور على أول صف يحتوي على بكسلات غير شفافة
+              let gapRows = 0;
+              const stride = 4; // RGBA
+              // نستخدم خطوات أفقية لتقليل التكلفة
+              const stepX = Math.max(1, Math.floor(cw / 24));
+              scan: for (let y = ch - 1; y >= 0; y--) {
+                let rowTransparent = true;
+                for (let x = 0; x < cw; x += stepX) {
+                  const idx = (y * cw + x) * stride + 3; // قناة ألفا
+                  const alpha = data[idx];
+                  if (alpha > 8) { // أي بكسل شبه مرئي يوقف الشفافية
+                    rowTransparent = false;
+                    break;
+                  }
+                }
+                if (rowTransparent) {
+                  gapRows++;
+                } else {
+                  break scan;
+                }
+              }
+              const ratio = gapRows / ch;
+              // تأكد من النطاق
+              setBottomGapRatio(Number.isFinite(ratio) ? Math.max(0, Math.min(0.5, ratio)) : 0);
+            }
           }
         } catch {}
       }}
@@ -88,7 +133,8 @@ const TagOverlay = memo(function TagOverlay({
   prev.basePx === next.basePx &&
   prev.anchorY === next.anchorY &&
   prev.yAdjustPx === next.yAdjustPx &&
-  prev.xAdjustPx === next.xAdjustPx
+  prev.xAdjustPx === next.xAdjustPx &&
+  prev.autoAnchor === next.autoAnchor
 ));
 
 export default function ProfileImage({
@@ -189,9 +235,10 @@ export default function ProfileImage({
             src={tagSrc}
             overlayTopPx={overlayTopPx}
             basePx={Math.round(px * layout.widthRatio)}
-            anchorY={0}
-            yAdjustPx={0}
+            anchorY={layout.anchorY ?? DEFAULT_TAG_LAYOUT.anchorY!}
+            yAdjustPx={layout.yAdjustPx}
             xAdjustPx={layout.xAdjustPx}
+            autoAnchor={layout.autoAnchor}
           />
         )}
       </div>
@@ -238,9 +285,10 @@ export default function ProfileImage({
             src={tagSrc}
             overlayTopPx={overlayTopPx}
             basePx={Math.round(px * layout.widthRatio)}
-            anchorY={0}
-            yAdjustPx={0}
+            anchorY={layout.anchorY ?? DEFAULT_TAG_LAYOUT.anchorY!}
+            yAdjustPx={layout.yAdjustPx}
             xAdjustPx={layout.xAdjustPx}
+            autoAnchor={layout.autoAnchor}
           />
         )}
       </div>
