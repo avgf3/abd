@@ -231,6 +231,7 @@ export default function ProfileImage({
     return base;
   }, [user.profileImage, (user as any)?.avatarHash, (user as any)?.avatarVersion]);
 
+  // يمكن أن تأتي قيمة profileFrame بدون امتداد (مثلاً: "frame11")
   const frameName = (user as any)?.profileFrame as string | undefined;
   const tagName = (user as any)?.profileTag as string | undefined;
   const tagSrc: string | undefined = (() => {

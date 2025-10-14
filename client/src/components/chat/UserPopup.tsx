@@ -40,7 +40,8 @@ export default function UserPopup({
     try {
       const body: any = {};
       if (Number(frameIndex) > 0) {
-        body.profileFrame = `frame${frameIndex}.webp`;
+        // احفظ مرجعًا محايدًا للامتداد، وسيقوم العميل بالاختيار بين gif/webp/png تلقائيًا
+        body.profileFrame = `frame${frameIndex}`;
       } else {
         body.profileFrame = null; // إزالة الإطار بشكل صريح
       }
