@@ -6,19 +6,19 @@ import sharp from 'sharp';
 
 // User-provided ibb links (13 images)
 const IBB_URLS = [
-  'https://ibb.co/nq4r2RPN',
-  'https://ibb.co/mKbk9Rm',
-  'https://ibb.co/6JbKbGF7',
-  'https://ibb.co/fYWwWwrV',
-  'https://ibb.co/HDZjWrvN',
-  'https://ibb.co/bjpzwz7H',
-  'https://ibb.co/jvsnbBpt',
-  'https://ibb.co/tMmXsZ58',
-  'https://ibb.co/d4t30zZ3',
-  'https://ibb.co/yvNXZSd',
-  'https://ibb.co/BJMRCT0',
-  'https://ibb.co/rKqJR3t2',
-  'https://ibb.co/21wmBX9Z',
+  'https://ibb.co/ZQHCmrQ',
+  'https://ibb.co/nMppKkwd',
+  'https://ibb.co/YFPMy6GB',
+  'https://ibb.co/0y31Qy6f',
+  'https://ibb.co/7xt4s5fZ',
+  'https://ibb.co/DP5Qs7p5',
+  'https://ibb.co/Tx5tV1Fk',
+  'https://ibb.co/fh8VmSz',
+  'https://ibb.co/dszhNNj6',
+  'https://ibb.co/Wvz7kJsT',
+  'https://ibb.co/XxJ56d17',
+  'https://ibb.co/675qwYFd',
+  'https://ibb.co/wNjLx21c',
 ];
 
 // Start index to append after existing title1..title17.webp
