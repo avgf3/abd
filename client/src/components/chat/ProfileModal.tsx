@@ -2214,11 +2214,13 @@ export default function ProfileModal({
         .profile-cover {
           position: relative;
           height: 268px; /* زيادة طفيفة لارتفاع الغلاف */
+          /* تغطية كاملة لصور الغلاف داخل المودال */
           background-size: cover;
           background-position: center center;
           background-repeat: no-repeat;
           overflow: visible; /* ✅ السماح للتاج بالظهور فوق الصورة بدون قص */
           border-radius: 0;
+          background-color: #000; /* مساحات letterbox محايدة عند اختلاف الأبعاد */
         }
 
         .change-cover-btn {
@@ -2952,6 +2954,7 @@ export default function ProfileModal({
                 const bannerSrc = getProfileBannerSrcLocal();
                 return bannerSrc ? `url(${bannerSrc})` : 'none';
               })(),
+              // استخدام cover للتغطية الكاملة لصورة الغلاف
               backgroundSize: 'cover',
               backgroundPosition: (() => {
                 const bannerSrc = getProfileBannerSrcLocal();
@@ -2963,6 +2966,7 @@ export default function ProfileModal({
                 return canUploadBanner ? 'center center' : 'top center';
               })(),
               backgroundRepeat: 'no-repeat',
+              backgroundColor: '#000',
             }}
           >
             {/* مشغل الموسيقى - يظهر أعلى يمين الغلاف */}
