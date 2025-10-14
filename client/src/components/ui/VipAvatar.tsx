@@ -1,6 +1,7 @@
 /* @jsxRuntime classic */
 /* @jsx React.createElement */
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
+import { gsap } from 'gsap';
 
 interface VipAvatarProps {
   src: string;
@@ -66,6 +67,51 @@ export default function VipAvatar({
 
   const hasImageOverlay = Boolean(overlaySrc);
 
+  // Refs for GSAP animations (frame10 only)
+  const overlayRef = useRef<HTMLImageElement | null>(null);
+  const shineRef = useRef<HTMLDivElement | null>(null);
+
+  // Animate frame10 with subtle float and a shine sweep
+  useEffect(() => {
+    if (normalizedFrame !== 10) return;
+    const overlayEl = overlayRef.current;
+    const shineEl = shineRef.current;
+    const tweens: gsap.core.Tween[] = [];
+
+    if (overlayEl) {
+      tweens.push(
+        gsap.to(overlayEl, {
+          y: 1.2,
+          rotation: 0.25,
+          duration: 1.8,
+          ease: 'sine.inOut',
+          yoyo: true,
+          repeat: -1,
+        })
+      );
+    }
+
+    if (shineEl) {
+      gsap.set(shineEl, { x: '-140%', rotate: 20, opacity: 0.0 });
+      tweens.push(
+        gsap.to(shineEl, {
+          x: '140%',
+          opacity: 0.45,
+          duration: 1.2,
+          ease: 'power2.out',
+          repeat: -1,
+          repeatDelay: 1.6,
+          yoyo: false,
+          onRepeat: () => gsap.set(shineEl, { x: '-140%', opacity: 0.0 }),
+        })
+      );
+    }
+
+    return () => {
+      tweens.forEach((t) => t.kill());
+    };
+  }, [normalizedFrame, overlaySrc]);
+
   return (
     <div
       className={`vip-frame base ${hasImageOverlay ? 'with-image' : ''} ${
@@ -77,6 +123,7 @@ export default function VipAvatar({
         <img src={src} alt={alt} className="vip-frame-img" style={imgStyle} />
         {overlaySrc && (
           <img
+            ref={overlayRef}
             src={overlaySrc}
             alt="frame"
             className="vip-frame-overlay"
@@ -105,6 +152,9 @@ export default function VipAvatar({
               } catch {}
             }}
           />
+        )}
+        {normalizedFrame === 10 && (
+          <div ref={shineRef} className="vip-frame-shine" aria-hidden="true" />
         )}
       </div>
     </div>
