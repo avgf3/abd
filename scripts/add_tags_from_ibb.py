@@ -6,19 +6,29 @@ import sys
 import urllib.request
 from io import BytesIO
 
-# 8 new ibb pages provided by the user
+# 18 new ibb pages provided by the user
 IBB_URLS = [
-    "https://ibb.co/7x6RKbzj",
-    "https://ibb.co/39dctkPV",
-    "https://ibb.co/8DykwnGt",
-    "https://ibb.co/hJX7PHmC",
-    "https://ibb.co/3YCgrnDf",
-    "https://ibb.co/wm1331p",
-    "https://ibb.co/Xk67SDwK",
-    "https://ibb.co/cKvFst48",
+    "https://ibb.co/Z6Fhdfrg",
+    "https://ibb.co/1G30qvkp",
+    "https://ibb.co/845zxRcM",
+    "https://ibb.co/7Dk3m3j",
+    "https://ibb.co/8nGDr118",
+    "https://ibb.co/Z68nqgVM",
+    "https://ibb.co/20ZQxZDN",
+    "https://ibb.co/twyMGd9j",
+    "https://ibb.co/tppVtcMg",
+    "https://ibb.co/Y7wGjhtf",
+    "https://ibb.co/5Wpv26sV",
+    "https://ibb.co/Swrt24Rv",
+    "https://ibb.co/LDxQKCvQ",
+    "https://ibb.co/yxQ9B5G",
+    "https://ibb.co/KcbG7vL8",
+    "https://ibb.co/kV83mV1T",
+    "https://ibb.co/nSrfBtG",
+    "https://ibb.co/SL4mq7X",
 ]
 
-START_INDEX = 13  # save as tag13.webp .. tag20.webp
+START_INDEX = 21  # save as tag21.webp .. tag38.webp
 
 REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 OUT_DIR = os.path.join(REPO_ROOT, "client", "public", "tags")
@@ -48,28 +58,12 @@ def extract_og_image(html: str) -> str | None:
     return m2.group(1) if m2 else None
 
 
-def ensure_pillow():
-    try:
-        import PIL  # noqa: F401
-        from PIL import Image  # noqa: F401
-    except Exception:
-        print("Installing Pillow...", file=sys.stderr)
-        os.system(f"{sys.executable} -m pip install --user --disable-pip-version-check pillow > /dev/null 2>&1")
-        try:
-            import PIL  # noqa: F401
-            from PIL import Image  # noqa: F401
-        except Exception as e:
-            print("Failed to import Pillow after installation:", e, file=sys.stderr)
-            sys.exit(1)
-
-
-def convert_to_webp(image_bytes: bytes, dest_path: str) -> None:
-    from PIL import Image
-
-    with Image.open(BytesIO(image_bytes)) as im:
-        if im.mode not in ("RGB", "RGBA"):
-            im = im.convert("RGBA" if "A" in im.getbands() else "RGB")
-        im.save(dest_path, format="WEBP", quality=88, method=6)
+def infer_extension_from_url(url: str) -> str:
+    url = url.lower()
+    for ext in ('.webp', '.png', '.jpg', '.jpeg'):
+        if ext in url:
+            return ext
+    return '.webp'
 
 
 def main() -> int:
@@ -77,13 +71,10 @@ def main() -> int:
         print(f"Output directory not found: {OUT_DIR}", file=sys.stderr)
         return 1
 
-    ensure_pillow()
-
     saved = 0
     for offset, page_url in enumerate(IBB_URLS):
         target_idx = START_INDEX + offset
-        dest = os.path.join(OUT_DIR, f"tag{target_idx}.webp")
-        print(f"Processing {page_url} -> tag{target_idx}.webp")
+        print(f"Processing {page_url} -> tag{target_idx}.*")
         try:
             html = http_get(page_url).decode("utf-8", errors="ignore")
         except Exception as e:
@@ -103,13 +94,20 @@ def main() -> int:
             print(f"Failed to download image {direct}: {e}", file=sys.stderr)
             return 1
 
+        # Save with original/guessed extension; UI falls back .webp→.png→.jpg
+        ext = infer_extension_from_url(direct)
+        dest = os.path.join(OUT_DIR, f"tag{target_idx}{ext}")
         try:
-            convert_to_webp(img_bytes, dest)
+            with open(dest, 'wb') as f:
+                f.write(img_bytes)
         except Exception as e:
-            print(f"Failed to convert/save to {dest}: {e}", file=sys.stderr)
+            print(f"Failed to save to {dest}: {e}", file=sys.stderr)
             return 1
 
-        os.chmod(dest, 0o644)
+        try:
+            os.chmod(dest, 0o644)
+        except Exception:
+            pass
         saved += 1
         print(f"Wrote {dest}")
 
