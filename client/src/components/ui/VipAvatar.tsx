@@ -101,8 +101,8 @@ export default function VipAvatar({
                 if (nextIndex < overlayCandidates.length) {
                   setCandidateIndex(nextIndex);
                 } else {
-                  // Hide overlay if all candidates fail
-                  (e.currentTarget as HTMLImageElement).style.display = 'none';
+                  // All candidates failed: stop rendering overlay and re-enable CSS gradient frames
+                  setCandidateIndex(overlayCandidates.length);
                 }
               } catch {}
             }}
