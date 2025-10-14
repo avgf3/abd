@@ -47,23 +47,36 @@ export default function VipAvatar({
     transform: 'translateZ(0)',
   };
 
-  // Normalize frame number and prepare overlay source with extension fallback (.webp -> .png -> .jpg -> .jpeg)
+  // Normalize frame number and prepare overlay source with comprehensive fallback
+  // Priority now prefers animated GIFs when available, and also accepts `_animated` suffix
   const hasValidFrame = Number.isFinite(frame as number) && (frame as number) > 0;
   const normalizedFrame = hasValidFrame
     ? Math.max(1, Math.min(50, Math.floor(frame as number)))
     : undefined;
 
   const overlayBase = normalizedFrame ? `/frames/frame${normalizedFrame}` : undefined;
-  const [overlaySrc, setOverlaySrc] = useState<string | undefined>(
-    overlayBase ? `${overlayBase}.webp` : undefined
-  );
-  const [fallbackStep, setFallbackStep] = useState<number>(0);
 
-  useEffect(() => {
-    setOverlaySrc(overlayBase ? `${overlayBase}.webp` : undefined);
-    setFallbackStep(0);
+  // Generate candidate filenames in preferred order
+  const overlayCandidates: string[] = useMemo(() => {
+    if (!overlayBase) return [];
+    return [
+      `${overlayBase}_animated.gif`,
+      `${overlayBase}.gif`,
+      `${overlayBase}.webp`,
+      `${overlayBase}.png`,
+      `${overlayBase}.jpg`,
+      `${overlayBase}.jpeg`,
+    ];
   }, [overlayBase]);
 
+  const [candidateIndex, setCandidateIndex] = useState<number>(0);
+
+  // Reset to first candidate whenever frame changes
+  useEffect(() => {
+    setCandidateIndex(0);
+  }, [overlayBase]);
+
+  const overlaySrc = overlayCandidates[candidateIndex];
   const hasImageOverlay = Boolean(overlaySrc);
 
 
@@ -76,7 +89,7 @@ export default function VipAvatar({
     >
       <div className="vip-frame-inner">
         <img src={src} alt={alt} className="vip-frame-img" style={imgStyle} />
-        {overlaySrc && (
+        {hasImageOverlay && (
           <img
             src={overlaySrc}
             alt="frame"
@@ -84,25 +97,13 @@ export default function VipAvatar({
             style={{ transform: overlayScale === 1 ? 'scale(1)' : `scale(${overlayScale})` }}
             onError={(e) => {
               try {
-                const cur = overlaySrc || '';
-                if (fallbackStep === 0 && /\.webp(\?.*)?$/i.test(cur)) {
-                  setOverlaySrc(cur.replace(/\.webp(\?.*)?$/i, '.png$1'));
-                  setFallbackStep(1);
-                  return;
+                const nextIndex = candidateIndex + 1;
+                if (nextIndex < overlayCandidates.length) {
+                  setCandidateIndex(nextIndex);
+                } else {
+                  // All candidates failed: stop rendering overlay and re-enable CSS gradient frames
+                  setCandidateIndex(overlayCandidates.length);
                 }
-                if (fallbackStep === 1 && /\.png(\?.*)?$/i.test(cur)) {
-                  setOverlaySrc(cur.replace(/\.png(\?.*)?$/i, '.jpg$1'));
-                  setFallbackStep(2);
-                  return;
-                }
-                if (fallbackStep === 2 && /\.jpg(\?.*)?$/i.test(cur)) {
-                  setOverlaySrc(cur.replace(/\.jpg(\?.*)?$/i, '.jpeg$1'));
-                  setFallbackStep(3);
-                  return;
-                }
-                // Hide overlay if all fallbacks fail
-                (e.currentTarget as HTMLImageElement).style.display = 'none';
-                setOverlaySrc(undefined);
               } catch {}
             }}
           />

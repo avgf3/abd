@@ -29,6 +29,7 @@ export default function UserPopup({
   onClose,
 }: UserPopupProps) {
   const { toast } = useToast();
+  const MAX_FRAME_INDEX = 42;
   const canSetFrame =
     currentUser && currentUser.userType === 'owner' && currentUser.id !== user.id;
   const canSetTag = canSetFrame;
@@ -39,7 +40,8 @@ export default function UserPopup({
     try {
       const body: any = {};
       if (Number(frameIndex) > 0) {
-        body.profileFrame = `frame${frameIndex}.webp`;
+        // احفظ مرجعًا محايدًا للامتداد، وسيقوم العميل بالاختيار بين gif/webp/png تلقائيًا
+        body.profileFrame = `frame${frameIndex}`;
       } else {
         body.profileFrame = null; // إزالة الإطار بشكل صريح
       }
@@ -285,7 +287,7 @@ export default function UserPopup({
               <div className="border-t border-gray-300 my-1"></div>
               <div className="px-2 py-1 text-xs text-gray-500">إضافة إطار:</div>
               <div className="flex flex-wrap gap-1 px-2 pb-1 max-w-[420px]">
-                {Array.from({ length: 19 }, (_, idx) => idx + 1).map((i) => (
+                {Array.from({ length: MAX_FRAME_INDEX }, (_, idx) => idx + 1).map((i) => (
                   <button
                     key={i}
                     onClick={() => handleAddFrame(i)}
