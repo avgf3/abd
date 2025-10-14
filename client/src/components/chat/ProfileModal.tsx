@@ -2273,26 +2273,29 @@ export default function ProfileModal({
 
         .change-avatar-btn {
           position: absolute;
-          right: 8px;
-          bottom: 8px;
+          right: 12px;
+          bottom: 12px;
           background: rgba(0,0,0,0.8);
           border-radius: 9999px;
-          width: 36px;
-          height: 36px;
+          width: 40px;
+          height: 40px;
           display: inline-flex;
           align-items: center;
           justify-content: center;
-          font-size: 16px;
+          font-size: 18px;
           color: #fff;
           cursor: pointer;
-          z-index: 3;
+          z-index: 10;
           transition: background 0.3s ease, transform 0.2s ease;
-          border: none;
+          border: 2px solid rgba(255,255,255,0.3);
+          backdrop-filter: blur(4px);
         }
 
         .change-avatar-btn:hover {
-          background: rgba(0,0,0,1);
-          transform: scale(1.1);
+          background: rgba(0,0,0,0.95);
+          transform: scale(1.15);
+          border-color: rgba(255,255,255,0.6);
+          box-shadow: 0 4px 12px rgba(0,0,0,0.4);
         }
 
         input[type="file"] {
@@ -2898,12 +2901,13 @@ export default function ProfileModal({
           }
           
           .change-avatar-btn {
-            bottom: 6px;
-            right: 6px;
-            width: 30px;
-            height: 30px;
-            z-index: 5; /* جعل الزر تحت الصورة */
+            bottom: 8px;
+            right: 8px;
+            width: 32px;
+            height: 32px;
+            z-index: 15; /* جعل الزر فوق الصورة */
             font-size: 14px;
+            border-width: 1px;
           }
 
           /* على الجوال، زيادة بسيطة أيضاً لضمان تناسق النِسَب */
@@ -3247,19 +3251,19 @@ export default function ProfileModal({
                   context="profile"
                 />
               </div>
+              
+              {localUser?.id === currentUser?.id && 
+               currentUser && currentUser.userType !== 'guest' && (
+                <button
+                  className="change-avatar-btn"
+                  onClick={() => avatarInputRef.current?.click()}
+                  title="تغيير الصورة"
+                  disabled={isLoading}
+                >
+                  📷
+                </button>
+              )}
             </div>
-
-            {localUser?.id === currentUser?.id && 
-             currentUser && currentUser.userType !== 'guest' && (
-              <button
-                className="change-avatar-btn"
-                onClick={() => avatarInputRef.current?.click()}
-                title="تغيير الصورة"
-                disabled={isLoading}
-              >
-                📷
-              </button>
-            )}
 
           </div>
 
