@@ -1967,6 +1967,52 @@ li > * > div.effect-snow {
   box-shadow: 0 0 12px rgba(192, 192, 192, 0.5);
 }
 
+/* Generic fallback styles for frames 10-50 when overlay image is missing */
+.vip-frame-10::before,
+.vip-frame-11::before,
+.vip-frame-12::before,
+.vip-frame-13::before,
+.vip-frame-14::before,
+.vip-frame-15::before,
+.vip-frame-16::before,
+.vip-frame-17::before,
+.vip-frame-18::before,
+.vip-frame-19::before,
+.vip-frame-20::before,
+.vip-frame-21::before,
+.vip-frame-22::before,
+.vip-frame-23::before,
+.vip-frame-24::before,
+.vip-frame-25::before,
+.vip-frame-26::before,
+.vip-frame-27::before,
+.vip-frame-28::before,
+.vip-frame-29::before,
+.vip-frame-30::before,
+.vip-frame-31::before,
+.vip-frame-32::before,
+.vip-frame-33::before,
+.vip-frame-34::before,
+.vip-frame-35::before,
+.vip-frame-36::before,
+.vip-frame-37::before,
+.vip-frame-38::before,
+.vip-frame-39::before,
+.vip-frame-40::before,
+.vip-frame-41::before,
+.vip-frame-42::before,
+.vip-frame-43::before,
+.vip-frame-44::before,
+.vip-frame-45::before,
+.vip-frame-46::before,
+.vip-frame-47::before,
+.vip-frame-48::before,
+.vip-frame-49::before,
+.vip-frame-50::before {
+  background: conic-gradient(from 0deg, #9b59b6, #2ecc71, #3498db, #e74c3c, #f1c40f, #9b59b6);
+  box-shadow: 0 0 14px rgba(155, 89, 182, 0.45);
+}
+
 /* Optional subtle pulsation */
 /* تعطيل أي نبض/حركة */
 .vip-frame.base { animation: none !important; }

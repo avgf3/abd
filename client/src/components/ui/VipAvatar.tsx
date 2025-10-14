@@ -100,6 +100,12 @@ export default function VipAvatar({
                   setFallbackStep(3);
                   return;
                 }
+                // Try GIF as a final image fallback for animated frames
+                if (fallbackStep === 3 && /\.jpeg(\?.*)?$/i.test(cur)) {
+                  setOverlaySrc(cur.replace(/\.jpeg(\?.*)?$/i, '.gif$1'));
+                  setFallbackStep(4);
+                  return;
+                }
                 // Hide overlay if all fallbacks fail
                 (e.currentTarget as HTMLImageElement).style.display = 'none';
                 setOverlaySrc(undefined);
