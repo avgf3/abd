@@ -304,8 +304,8 @@ export default function UserPopup({
                 </button>
               </div>
               <div className="px-2 py-1 text-xs text-gray-500">إضافة تاج:</div>
-              <div className="flex flex-wrap gap-1 px-2 pb-1">
-                {[1,2,3,4,5,6,7,8,9,10,11,12].map((i) => (
+              <div className="flex flex-wrap gap-1 px-2 pb-1 max-w-[320px]">
+                {Array.from({ length: 20 }, (_, idx) => idx + 1).map((i) => (
                   <button
                     key={`tag-${i}`}
                     onClick={() => handleAddTag(i)}
