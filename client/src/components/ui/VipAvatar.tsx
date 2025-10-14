@@ -1,12 +1,13 @@
 /* @jsxRuntime classic */
 /* @jsx React.createElement */
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
+import { gsap } from 'gsap';
 
 interface VipAvatarProps {
   src: string;
   alt?: string;
   size?: number; // pixels
-  frame?: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
+  frame?: number;
   className?: string;
 }
 
@@ -47,21 +48,113 @@ export default function VipAvatar({
     transform: 'translateZ(0)',
   };
 
-  // Use image-based overlay for frames 1..9 if available
-  const frameImage = frame >= 1 && frame <= 9 ? `/frames/frame${frame}.webp` : undefined;
-  const hasImageOverlay = Boolean(frameImage);
+  // Normalize frame number and prepare overlay source with extension fallback (.webp -> .png -> .jpg -> .jpeg)
+  const hasValidFrame = Number.isFinite(frame as number) && (frame as number) > 0;
+  const normalizedFrame = hasValidFrame
+    ? Math.max(1, Math.min(50, Math.floor(frame as number)))
+    : undefined;
+
+  const overlayBase = normalizedFrame ? `/frames/frame${normalizedFrame}` : undefined;
+  const [overlaySrc, setOverlaySrc] = useState<string | undefined>(
+    overlayBase ? `${overlayBase}.webp` : undefined
+  );
+  const [fallbackStep, setFallbackStep] = useState<number>(0);
+
+  useEffect(() => {
+    setOverlaySrc(overlayBase ? `${overlayBase}.webp` : undefined);
+    setFallbackStep(0);
+  }, [overlayBase]);
+
+  const hasImageOverlay = Boolean(overlaySrc);
+
+  // Refs for GSAP animations (frame10 only)
+  const overlayRef = useRef<HTMLImageElement | null>(null);
+  const shineRef = useRef<HTMLDivElement | null>(null);
+
+  // Animate frame10 with subtle float and a shine sweep
+  useEffect(() => {
+    if (normalizedFrame !== 10) return;
+    const overlayEl = overlayRef.current;
+    const shineEl = shineRef.current;
+    const tweens: gsap.core.Tween[] = [];
+
+    if (overlayEl) {
+      tweens.push(
+        gsap.to(overlayEl, {
+          y: 1.2,
+          rotation: 0.25,
+          duration: 1.8,
+          ease: 'sine.inOut',
+          yoyo: true,
+          repeat: -1,
+        })
+      );
+    }
+
+    if (shineEl) {
+      gsap.set(shineEl, { x: '-140%', rotate: 20, opacity: 0.0 });
+      tweens.push(
+        gsap.to(shineEl, {
+          x: '140%',
+          opacity: 0.45,
+          duration: 1.2,
+          ease: 'power2.out',
+          repeat: -1,
+          repeatDelay: 1.6,
+          yoyo: false,
+          onRepeat: () => gsap.set(shineEl, { x: '-140%', opacity: 0.0 }),
+        })
+      );
+    }
+
+    return () => {
+      tweens.forEach((t) => t.kill());
+    };
+  }, [normalizedFrame, overlaySrc]);
 
   return (
-    <div className={`vip-frame base ${hasImageOverlay ? 'with-image' : ''} ${`vip-frame-${frame}`} ${className}`} style={containerStyle}>
+    <div
+      className={`vip-frame base ${hasImageOverlay ? 'with-image' : ''} ${
+        normalizedFrame ? `vip-frame-${normalizedFrame}` : ''
+      } ${className}`}
+      style={containerStyle}
+    >
       <div className="vip-frame-inner">
         <img src={src} alt={alt} className="vip-frame-img" style={imgStyle} />
-        {hasImageOverlay && (
+        {overlaySrc && (
           <img
-            src={frameImage}
+            ref={overlayRef}
+            src={overlaySrc}
             alt="frame"
             className="vip-frame-overlay"
             style={{ transform: overlayScale === 1 ? 'scale(1)' : `scale(${overlayScale})` }}
+            onError={(e) => {
+              try {
+                const cur = overlaySrc || '';
+                if (fallbackStep === 0 && /\.webp(\?.*)?$/i.test(cur)) {
+                  setOverlaySrc(cur.replace(/\.webp(\?.*)?$/i, '.png$1'));
+                  setFallbackStep(1);
+                  return;
+                }
+                if (fallbackStep === 1 && /\.png(\?.*)?$/i.test(cur)) {
+                  setOverlaySrc(cur.replace(/\.png(\?.*)?$/i, '.jpg$1'));
+                  setFallbackStep(2);
+                  return;
+                }
+                if (fallbackStep === 2 && /\.jpg(\?.*)?$/i.test(cur)) {
+                  setOverlaySrc(cur.replace(/\.jpg(\?.*)?$/i, '.jpeg$1'));
+                  setFallbackStep(3);
+                  return;
+                }
+                // Hide overlay if all fallbacks fail
+                (e.currentTarget as HTMLImageElement).style.display = 'none';
+                setOverlaySrc(undefined);
+              } catch {}
+            }}
           />
+        )}
+        {normalizedFrame === 10 && (
+          <div ref={shineRef} className="vip-frame-shine" aria-hidden="true" />
         )}
       </div>
     </div>

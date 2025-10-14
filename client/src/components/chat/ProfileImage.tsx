@@ -264,7 +264,8 @@ export default function ProfileImage({
     if (!match) return undefined;
     const n = parseInt(match[1], 10);
     if (!Number.isFinite(n) || n <= 0) return undefined; // تجاهل 0 أو قيم غير صالحة
-    return Math.min(10, n) as any;
+    // دعم حتى 50 إطاراً
+    return Math.min(50, n) as any;
   })();
 
   if (!disableFrame && frameName && frameIndex) {

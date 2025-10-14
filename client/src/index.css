@@ -1872,6 +1872,37 @@ li > * > div.effect-snow {
   transform: scale(1);
 }
 
+/* Shine overlay element for frame10 */
+.vip-frame-shine {
+  position: absolute;
+  top: -10%;
+  left: -10%;
+  width: 120%;
+  height: 120%;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 4; /* فوق الإطار */
+}
+.vip-frame-shine::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 40%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    rgba(255,255,255,0) 0%,
+    rgba(255,255,255,0.15) 45%,
+    rgba(255,255,255,0.35) 50%,
+    rgba(255,255,255,0.15) 55%,
+    rgba(255,255,255,0) 100%
+  );
+  filter: blur(2px);
+  border-radius: 9999px;
+  transform: translateX(0);
+}
+
 /* Shared rotating border - داخل الصورة الشخصية */
 .vip-frame.base::before {
   content: '';
