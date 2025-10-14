@@ -2273,15 +2273,16 @@ export default function ProfileModal({
 
         .change-avatar-btn {
           position: absolute;
-          top: calc(100% - 70px); /* رفع الزر ليتناسب مع الصورة الجديدة */
-          right: calc(1.5cm + 40px); /* نقل الزر لليمين مع الإطار */
+          right: 8px;
+          bottom: 8px;
           background: rgba(0,0,0,0.8);
-          border-radius: 50%;
-          width: 30px;
-          height: 30px;
-          text-align: center;
-          line-height: 30px;
-          font-size: 14px;
+          border-radius: 9999px;
+          width: 36px;
+          height: 36px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 16px;
           color: #fff;
           cursor: pointer;
           z-index: 3;
@@ -2897,13 +2898,12 @@ export default function ProfileModal({
           }
           
           .change-avatar-btn {
-            top: calc(100% - 50px); /* رفع الزر ليتناسب مع الصورة على الجوال */
-            right: calc(1.3cm + 37px); /* نقل الزر لليمين مع الإطار */
-            width: 25px;
-            height: 25px;
+            bottom: 6px;
+            right: 6px;
+            width: 30px;
+            height: 30px;
             z-index: 5; /* جعل الزر تحت الصورة */
-            line-height: 25px;
-            font-size: 12px;
+            font-size: 14px;
           }
 
           /* على الجوال، زيادة بسيطة أيضاً لضمان تناسق النِسَب */
