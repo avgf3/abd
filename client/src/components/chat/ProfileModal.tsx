@@ -2214,8 +2214,11 @@ export default function ProfileModal({
         .profile-cover {
           position: relative;
           height: 268px; /* زيادة طفيفة لارتفاع الغلاف */
+          /* نقطة تركيز افتراضية للصورة (يمكن تعديلها لاحقًا) */
+          --fx: 50%;
+          --fy: 35%;
           background-size: cover;
-          background-position: center center;
+          background-position: var(--fx, 50%) var(--fy, 35%);
           background-repeat: no-repeat;
           overflow: visible; /* ✅ السماح للتاج بالظهور فوق الصورة بدون قص */
           border-radius: 0;
@@ -2953,16 +2956,20 @@ export default function ProfileModal({
                 return bannerSrc ? `url(${bannerSrc})` : 'none';
               })(),
               backgroundSize: 'cover',
-              backgroundPosition: (() => {
+              /* استخدام متغيري التركيز بدل قيم ثابتة لضبط القص ببساطة */
+              backgroundPosition: 'var(--fx) var(--fy)',
+              backgroundRepeat: 'no-repeat',
+              // ضبط نقطة التركيز افتراضيًا: الوسط أفقيًا، أعلى-ثلث عموديًا عند عدم توفّر غلاف
+              ...( (() => {
                 const bannerSrc = getProfileBannerSrcLocal();
-                if (!bannerSrc) return 'top center';
                 const type = (localUser as any)?.userType;
                 const isModerator = type === 'owner' || type === 'admin' || type === 'moderator';
                 const lvl = Number((localUser as any)?.level || 1);
                 const canUploadBanner = isModerator || lvl >= 20;
-                return canUploadBanner ? 'center center' : 'top center';
-              })(),
-              backgroundRepeat: 'no-repeat',
+                const fx = '50%';
+                const fy = bannerSrc ? (canUploadBanner ? '50%' : '30%') : '30%';
+                return ({ ['--fx' as any]: fx, ['--fy' as any]: fy }) as any;
+              })() ),
             }}
           >
             {/* مشغل الموسيقى - يظهر أعلى يمين الغلاف */}
