@@ -155,6 +155,30 @@ def multiply_masks(a: Image.Image, b: Image.Image) -> Image.Image:
     return ImageChops.multiply(a, b)
 
 
+def binarize_mask(mask: Image.Image, threshold: int = 8) -> Image.Image:
+    """Return a binary L mask where values > threshold are 255, else 0."""
+    if mask.mode != 'L':
+        mask = mask.convert('L')
+    return mask.point(lambda p: 255 if p > threshold else 0, mode='L')
+
+
+def split_wings_masks(base_mask: Image.Image, ring_mask: Image.Image) -> Tuple[Image.Image, Image.Image, Image.Image]:
+    """Derive left/right wings masks by subtracting the circular ring from the opaque region."""
+    wings = ImageChops.subtract(base_mask, ring_mask)
+    wings = binarize_mask(wings, threshold=12)
+    # Light erosion to keep wings cleanly separated from ring edge
+    wings = erode_mask(wings, 1)
+    w, h = wings.size
+    left = wings.copy()
+    right = wings.copy()
+    d_left = ImageDraw.Draw(left)
+    d_right = ImageDraw.Draw(right)
+    # Zero-out the opposite halves
+    d_left.rectangle([w // 2, 0, w, h], fill=0)
+    d_right.rectangle([0, 0, w // 2, h], fill=0)
+    return left, right, wings
+
+
 def create_full_ring_mask(
     size: Tuple[int, int],
     r_inner: int,
@@ -355,11 +379,18 @@ def apply_effects_to_frame(
     r_midline = r_inner_est + ring_thickness_px * 0.5
     ring_softness = max(1, ring_thickness_px // 3)
     ring_mask = create_full_ring_mask(size=(w, h), r_inner=int(round(r_inner_est)), ring_thickness_px=ring_thickness_px, softness_px=ring_softness)
+    left_wing_mask, right_wing_mask, wings_mask = split_wings_masks(base_mask, ring_mask)
+    # Pre-extract wing layers from base image
+    base_rgb = base_img.copy()
+    ring_only = Image.new('RGBA', (w, h), (0, 0, 0, 0))
+    ring_only = Image.composite(base_rgb, ring_only, ring_mask)
+    wings_only = Image.new('RGBA', (w, h), (0, 0, 0, 0))
+    wings_only = Image.composite(base_rgb, wings_only, wings_mask)
 
     frames = []
     for t in range(num_anim_frames):
-        # Start with original image
-        frame = base_img.copy()
+        # Start with ring only; wings will be re-composited with vertical oscillation
+        frame = ring_only.copy()
 
         # Rotating glow
         glow_layer = generate_glow_layer(
@@ -389,6 +420,17 @@ def apply_effects_to_frame(
             ring_thickness_px=ring_thickness_px,
         )
         frame = Image.alpha_composite(frame, lightning_layer)
+
+        # Animate wings: vertical oscillation top-to-bottom
+        # Motion: sine wave mapped to [-A, +A] pixels
+        amplitude = max(1, int(round(min(w, h) * 0.015)))  # ~1.5% of size
+        phase = 2.0 * math.pi * (t / float(num_anim_frames))
+        dy = int(round(amplitude * math.sin(phase)))
+
+        # Shift wings image and composite
+        wings_shifted = Image.new('RGBA', (w, h), (0, 0, 0, 0))
+        wings_shifted.paste(wings_only, (0, dy))
+        frame = Image.alpha_composite(frame, wings_shifted)
 
         frames.append(frame)
     return tuple(frames)
