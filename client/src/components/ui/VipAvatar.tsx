@@ -67,13 +67,13 @@ export default function VipAvatar({
 
   const hasImageOverlay = Boolean(overlaySrc);
 
-  // Refs for GSAP animations (frame10 only)
+  // Refs for GSAP animations (frames 10-42)
   const overlayRef = useRef<HTMLImageElement | null>(null);
   const shineRef = useRef<HTMLDivElement | null>(null);
 
-  // Animate frame10 with subtle float and a shine sweep
+  // Animate frames 10-42 with subtle float and a shine sweep
   useEffect(() => {
-    if (normalizedFrame !== 10) return;
+    if (!normalizedFrame || normalizedFrame < 10 || normalizedFrame > 42) return;
     const overlayEl = overlayRef.current;
     const shineEl = shineRef.current;
     const tweens: gsap.core.Tween[] = [];
@@ -153,7 +153,7 @@ export default function VipAvatar({
             }}
           />
         )}
-        {normalizedFrame === 10 && (
+        {normalizedFrame && normalizedFrame >= 10 && normalizedFrame <= 42 && (
           <div ref={shineRef} className="vip-frame-shine" aria-hidden="true" />
         )}
       </div>
