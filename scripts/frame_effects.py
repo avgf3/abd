@@ -220,26 +220,34 @@ def generate_glow_layer(
     glow_sweep_deg: float,
     ring_thickness_px: int,
 ) -> Image.Image:
-    # Start at bottom (270°) and rotate CCW
-    angle = 270.0 + 360.0 * (t / float(total))
-    # Ring softness proportional to ring thickness
+    # Dual sweeps starting from bottom (270°) moving toward top (90°), meeting at the top
+    p = (t / float(total))
+    angle_left = 270.0 + 180.0 * p
+    angle_right = 270.0 - 180.0 * p
     softness = max(1, ring_thickness_px // 2)
-    # Small outer margin to keep it from clipping
     outer_margin_px = max(2, min(size) // 64)
 
-    wedge = create_angular_ring_mask(
+    wedge_left = create_angular_ring_mask(
         size=size,
-        angle_center_deg=angle,
+        angle_center_deg=angle_left,
         sweep_deg=glow_sweep_deg,
         outer_margin_px=outer_margin_px,
         ring_thickness_px=ring_thickness_px,
         softness_px=softness,
     )
-    # Constrain to border
-    wedge = multiply_masks(wedge, border_mask)
+    wedge_right = create_angular_ring_mask(
+        size=size,
+        angle_center_deg=angle_right,
+        sweep_deg=glow_sweep_deg,
+        outer_margin_px=outer_margin_px,
+        ring_thickness_px=ring_thickness_px,
+        softness_px=softness,
+    )
+    # Combine and constrain strictly to the circular rim only
+    wedge = ImageChops.lighter(wedge_left, wedge_right)
     wedge = multiply_masks(wedge, ring_mask)
+    wedge = multiply_masks(wedge, border_mask)
 
-    # Convert to colored layer
     overlay = colorize_from_mask(wedge, glow_color, alpha_scale=glow_intensity)
     return overlay
 
@@ -249,8 +257,8 @@ def jitter(value: float, amount: float) -> float:
 
 
 def draw_lightning(draw: ImageDraw.ImageDraw, path: Tuple[Tuple[float, float], ...], width: int, intensity: float, color: Color):
-    # Draw core
-    draw.line(path, fill=(*color, int(255 * intensity)), width=width, joint="curve")
+    # Draw core (jagged polyline)
+    draw.line(path, fill=(*color, int(255 * intensity)), width=width)
 
 
 def generate_lightning_layer(
@@ -258,11 +266,12 @@ def generate_lightning_layer(
     t: int,
     total: int,
     border_band_mask: Image.Image,
+    ring_mask: Image.Image,
     lightning_color: Color,
     base_intensity: float,
     cycles_per_loop: float,
     r_midline: float,
-    arc_span_deg: float = 18.0,
+    ring_thickness_px: int,
 ) -> Image.Image:
     w, h = size
     cx, cy = w / 2.0, h / 2.0
@@ -272,29 +281,30 @@ def generate_lightning_layer(
     flicker = 0.6 + 0.4 * math.sin(phase)
     intensity = max(0.0, min(1.0, base_intensity * flicker))
 
-    # Angular positions for two arcs that start at bottom (270°) and move towards top (90°)
-    p = (t / float(total))  # 0..1
-    theta_left = 270.0 + 180.0 * p
-    theta_right = 270.0 - 180.0 * p
+    # Build jagged polylines along the circular rim from bottom (270°) toward top (90°)
+    p = (t / float(total))
+    left_end_deg = 270.0 + 180.0 * p
+    right_end_deg = 270.0 - 180.0 * p
 
-    def arc_path(theta_center_deg: float) -> Tuple[Tuple[float, float], ...]:
-        half = arc_span_deg / 2.0
-        start = theta_center_deg - half
-        end = theta_center_deg + half
-        steps = max(6, int(arc_span_deg // 2) * 2)
+    r_in = r_midline - ring_thickness_px * 0.5
+    r_out = r_midline + ring_thickness_px * 0.5
+    jitter_max = max(1.0, ring_thickness_px * 0.45)
+
+    def build_arc_polyline(start_deg: float, end_deg: float, steps: int = 64) -> Tuple[Tuple[float, float], ...]:
         pts = []
         for i in range(steps + 1):
-            a = math.radians(start + (end - start) * (i / steps))
-            # Small electric jitter
-            radial_jitter = jitter(0.0, max(1.0, min(w, h) * 0.004))
-            r = max(1.0, r_midline + radial_jitter)
+            a_deg = start_deg + (end_deg - start_deg) * (i / steps)
+            a = math.radians(a_deg)
+            # radial jitter within the ring band
+            r = r_midline + jitter(0.0, jitter_max)
+            r = max(r_in + 1.0, min(r_out - 1.0, r))
             x = cx + r * math.cos(a)
             y = cy + r * math.sin(a)
             pts.append((x, y))
         return tuple(pts)
 
-    path_left = arc_path(theta_left)
-    path_right = arc_path(theta_right)
+    path_left = build_arc_polyline(270.0, left_end_deg)
+    path_right = build_arc_polyline(270.0, right_end_deg)
 
     # Create layer and draw
     layer = Image.new('RGBA', (w, h), (0, 0, 0, 0))
@@ -314,12 +324,11 @@ def generate_lightning_layer(
     # Combine core and glow
     combined = Image.alpha_composite(glow_layer, layer)
 
-    # Constrain to border band
-    band_alpha = border_band_mask
-    if band_alpha.mode != 'L':
-        band_alpha = band_alpha.convert('L')
-    # Apply band_alpha as the alpha of combined
+    # Constrain strictly to circular ring (avoid wings) then to narrow band
+    band_alpha = border_band_mask.convert('L') if border_band_mask.mode != 'L' else border_band_mask
+    ring_alpha = ring_mask.convert('L') if ring_mask.mode != 'L' else ring_mask
     r, g, b, a = combined.split()
+    a = ImageChops.multiply(a, ring_alpha)
     a = ImageChops.multiply(a, band_alpha)
     combined = Image.merge('RGBA', (r, g, b, a))
     return combined
@@ -372,10 +381,12 @@ def apply_effects_to_frame(
             t=t,
             total=num_anim_frames,
             border_band_mask=border_band_mask,
+            ring_mask=ring_mask,
             lightning_color=lightning_color,
             base_intensity=lightning_intensity,
             cycles_per_loop=lightning_cycles_per_loop,
             r_midline=r_midline,
+            ring_thickness_px=ring_thickness_px,
         )
         frame = Image.alpha_composite(frame, lightning_layer)
 
