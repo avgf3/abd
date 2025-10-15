@@ -155,11 +155,66 @@ def multiply_masks(a: Image.Image, b: Image.Image) -> Image.Image:
     return ImageChops.multiply(a, b)
 
 
+def create_full_ring_mask(
+    size: Tuple[int, int],
+    r_inner: int,
+    ring_thickness_px: int,
+    softness_px: int,
+) -> Image.Image:
+    """Create an L mask for a full circular ring defined by inner radius and thickness."""
+    w, h = size
+    cx, cy = w // 2, h // 2
+    r_in = max(1, int(r_inner))
+    r_out = max(r_in + 1, int(r_inner + ring_thickness_px))
+    m = Image.new('L', (w, h), 0)
+    d = ImageDraw.Draw(m)
+    bbox_out = [cx - r_out, cy - r_out, cx + r_out, cy + r_out]
+    bbox_in = [cx - r_in, cy - r_in, cx + r_in, cy + r_in]
+    d.ellipse(bbox_out, fill=255)
+    d.ellipse(bbox_in, fill=0)
+    if softness_px > 0:
+        m = gaussian(m, softness_px)
+    return m
+
+
+def estimate_inner_radius(mask: Image.Image, threshold: int = 8) -> float:
+    """Estimate inner circle radius of the frame by ray casting from center to first opaque pixel."""
+    if mask.mode != 'L':
+        mask = mask.convert('L')
+    w, h = mask.size
+    cx, cy = w / 2.0, h / 2.0
+    max_r = min(w, h) / 2.0 - 2
+    radii: list[float] = []
+    step_deg = 2
+    pix = mask.load()
+    for deg in range(0, 360, step_deg):
+        theta = math.radians(deg)
+        found = None
+        r = 1.0
+        while r < max_r:
+            x = int(round(cx + r * math.cos(theta)))
+            y = int(round(cy + r * math.sin(theta)))
+            if x < 0 or y < 0 or x >= w or y >= h:
+                break
+            if pix[x, y] > threshold:
+                found = r
+                break
+            r += 1.0
+        if found is not None:
+            radii.append(found)
+    if not radii:
+        return max(6.0, max_r * 0.7)
+    radii.sort()
+    mid = len(radii) // 2
+    return float((radii[mid] + radii[~mid]) / 2.0)
+
+
 def generate_glow_layer(
     size: Tuple[int, int],
     t: int,
     total: int,
     border_mask: Image.Image,
+    ring_mask: Image.Image,
     glow_color: Color,
     glow_intensity: float,
     glow_sweep_deg: float,
@@ -182,6 +237,7 @@ def generate_glow_layer(
     )
     # Constrain to border
     wedge = multiply_masks(wedge, border_mask)
+    wedge = multiply_masks(wedge, ring_mask)
 
     # Convert to colored layer
     overlay = colorize_from_mask(wedge, glow_color, alpha_scale=glow_intensity)
@@ -205,45 +261,40 @@ def generate_lightning_layer(
     lightning_color: Color,
     base_intensity: float,
     cycles_per_loop: float,
+    r_midline: float,
+    arc_span_deg: float = 18.0,
 ) -> Image.Image:
     w, h = size
-    cx = w / 2.0
+    cx, cy = w / 2.0, h / 2.0
 
     # Flicker over time, configurable cycles per loop
     phase = cycles_per_loop * 2.0 * math.pi * (t / float(total))
     flicker = 0.6 + 0.4 * math.sin(phase)
     intensity = max(0.0, min(1.0, base_intensity * flicker))
 
-    # Base geometry
-    bottom_y = h * 0.92
-    top_y = h * 0.08
+    # Angular positions for two arcs that start at bottom (270°) and move towards top (90°)
+    p = (t / float(total))  # 0..1
+    theta_left = 270.0 + 180.0 * p
+    theta_right = 270.0 - 180.0 * p
 
-    # Path points (zigzag upwards) - 6 segments
-    segments = 6
-
-    def build_path(x_start: float) -> Tuple[Tuple[float, float], ...]:
+    def arc_path(theta_center_deg: float) -> Tuple[Tuple[float, float], ...]:
+        half = arc_span_deg / 2.0
+        start = theta_center_deg - half
+        end = theta_center_deg + half
+        steps = max(6, int(arc_span_deg // 2) * 2)
         pts = []
-        x = x_start
-        for i in range(segments + 1):
-            y = bottom_y + (top_y - bottom_y) * (i / segments)
-            # Lateral jitter diminishes near top where they meet
-            jitter_amt = max(0.0, (bottom_y - y) / (bottom_y - top_y))  # 1..0
-            jitter_px = (w * 0.02) * jitter_amt
-            x_off = (-1 if i % 2 == 0 else 1) * jitter(jitter_px, jitter_px * 0.4)
-            pts.append((x + x_off, y + jitter(h * 0.002, h * 0.001)))
+        for i in range(steps + 1):
+            a = math.radians(start + (end - start) * (i / steps))
+            # Small electric jitter
+            radial_jitter = jitter(0.0, max(1.0, min(w, h) * 0.004))
+            r = max(1.0, r_midline + radial_jitter)
+            x = cx + r * math.cos(a)
+            y = cy + r * math.sin(a)
+            pts.append((x, y))
         return tuple(pts)
 
-    left_start_x = cx - w * 0.12
-    right_start_x = cx + w * 0.12
-
-    path_left = build_path(left_start_x)
-    path_right = build_path(right_start_x)
-
-    # Merge at top: pull last points toward center
-    merge_x = cx + jitter(0, w * 0.01)
-    merge_y = top_y + jitter(0, h * 0.01)
-    path_left = path_left[:-1] + ((merge_x, merge_y),)
-    path_right = path_right[:-1] + ((merge_x, merge_y),)
+    path_left = arc_path(theta_left)
+    path_right = arc_path(theta_right)
 
     # Create layer and draw
     layer = Image.new('RGBA', (w, h), (0, 0, 0, 0))
@@ -290,6 +341,11 @@ def apply_effects_to_frame(
     w, h = base_img.size
     base_mask = threshold_alpha_to_mask(base_img)
     border_band_mask = make_border_band_mask(base_mask, band_width_px=band_width_px)
+    # Estimate circular inner radius to align effects precisely with the frame circle (ignore wings)
+    r_inner_est = estimate_inner_radius(base_mask)
+    r_midline = r_inner_est + ring_thickness_px * 0.5
+    ring_softness = max(1, ring_thickness_px // 3)
+    ring_mask = create_full_ring_mask(size=(w, h), r_inner=int(round(r_inner_est)), ring_thickness_px=ring_thickness_px, softness_px=ring_softness)
 
     frames = []
     for t in range(num_anim_frames):
@@ -302,6 +358,7 @@ def apply_effects_to_frame(
             t=t,
             total=num_anim_frames,
             border_mask=base_mask,  # allow glow anywhere on opaque frame
+            ring_mask=ring_mask,    # restrict to circular rim only
             glow_color=glow_color,
             glow_intensity=glow_intensity,
             glow_sweep_deg=glow_sweep_deg,
@@ -318,6 +375,7 @@ def apply_effects_to_frame(
             lightning_color=lightning_color,
             base_intensity=lightning_intensity,
             cycles_per_loop=lightning_cycles_per_loop,
+            r_midline=r_midline,
         )
         frame = Image.alpha_composite(frame, lightning_layer)
 
