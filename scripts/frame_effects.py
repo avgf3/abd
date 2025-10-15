@@ -18,7 +18,7 @@ CLI example:
     --start 10 --end 42 \
     --num-frames 24 --duration 50 \
     --glow-intensity 0.35 --glow-sweep-deg 35 \
-    --lightning-intensity 0.22
+    --lightning-intensity 0.22 --lightning-cycles 2.2
 
 You can also pass a JSON config to override parameters per-frame index:
   {
@@ -204,12 +204,13 @@ def generate_lightning_layer(
     border_band_mask: Image.Image,
     lightning_color: Color,
     base_intensity: float,
+    cycles_per_loop: float,
 ) -> Image.Image:
     w, h = size
     cx = w / 2.0
 
-    # Flicker over time, 2.2 cycles per loop
-    phase = 2.2 * 2.0 * math.pi * (t / float(total))
+    # Flicker over time, configurable cycles per loop
+    phase = cycles_per_loop * 2.0 * math.pi * (t / float(total))
     flicker = 0.6 + 0.4 * math.sin(phase)
     intensity = max(0.0, min(1.0, base_intensity * flicker))
 
@@ -283,6 +284,7 @@ def apply_effects_to_frame(
     lightning_color: Color,
     lightning_intensity: float,
     band_width_px: int,
+    lightning_cycles_per_loop: float,
 ) -> Tuple[Image.Image, ...]:
     """Return a tuple of RGBA animation frames including base image + effects."""
     w, h = base_img.size
@@ -315,6 +317,7 @@ def apply_effects_to_frame(
             border_band_mask=border_band_mask,
             lightning_color=lightning_color,
             base_intensity=lightning_intensity,
+            cycles_per_loop=lightning_cycles_per_loop,
         )
         frame = Image.alpha_composite(frame, lightning_layer)
 
@@ -364,6 +367,7 @@ def main():
 
     parser.add_argument('--lightning-color', default='#cfefff', help='Lightning color hex')
     parser.add_argument('--lightning-intensity', type=float, default=0.22, help='Lightning base intensity (0..1)')
+    parser.add_argument('--lightning-cycles', type=float, default=2.2, help='Lightning flicker cycles per animation loop (lower = slower)')
 
     parser.add_argument('--band-width-px', type=int, default=12, help='Border band width to confine effects (px)')
 
@@ -402,6 +406,7 @@ def main():
                 ring_thickness_px=args.ring_thickness_px,
                 lightning_color=lightning_color_rgb,
                 lightning_intensity=args.lightning_intensity,
+                lightning_cycles=args.lightning_cycles,
                 band_width_px=args.band_width_px,
                 quality=args.quality,
                 lossless=args.lossless,
@@ -437,6 +442,7 @@ def main():
             lightning_color=tuple(local['lightning_color']),
             lightning_intensity=float(local['lightning_intensity']),
             band_width_px=band_width_px,
+            lightning_cycles_per_loop=float(local['lightning_cycles']),
         )
 
         out_path = os.path.join(args.output_dir, f"frame{idx}.webp")
