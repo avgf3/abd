@@ -589,7 +589,7 @@ export const useChat = () => {
     
     // تهيئة Web Worker
     initSocketWorker();
-    // مزامنة حالة الاتصال مع Web Worker ليعرف متى يُرسل ping
+    // مزامنة حالة الاتصال مع Web Worker/Service Worker ليعرفا متى يُرسل ping
     try {
       socketInstance.on('connect', () => {
         dispatch({ type: 'SET_CONNECTION_STATUS', payload: true });
@@ -601,6 +601,12 @@ export const useChat = () => {
         try {
           if (socketWorkerRef.current) {
             socketWorkerRef.current.postMessage({
+              type: 'socket-status',
+              data: { connected: true },
+            });
+          }
+          if (serviceWorkerRef.current) {
+            serviceWorkerRef.current.postMessage({
               type: 'socket-status',
               data: { connected: true },
             });
@@ -625,6 +631,12 @@ export const useChat = () => {
               data: { connected: false },
             });
           }
+          if (serviceWorkerRef.current) {
+            serviceWorkerRef.current.postMessage({
+              type: 'socket-status',
+              data: { connected: false },
+            });
+          }
           
           // 🚀 تفعيل backup polling عند انقطاع Socket
           if (pollManagerRef.current) {
@@ -644,6 +656,12 @@ export const useChat = () => {
         try {
           if (socketWorkerRef.current) {
             socketWorkerRef.current.postMessage({
+              type: 'socket-status',
+              data: { connected: false },
+            });
+          }
+          if (serviceWorkerRef.current) {
+            serviceWorkerRef.current.postMessage({
               type: 'socket-status',
               data: { connected: false },
             });
@@ -924,6 +942,13 @@ export const useChat = () => {
       }
       
       if (serviceWorkerRef.current) {
+        // أبلغ الـ Service Worker بأن الاتصال أصبح غير متصل
+        try {
+          serviceWorkerRef.current.postMessage({
+            type: 'socket-status',
+            data: { connected: false },
+          });
+        } catch {}
         serviceWorkerRef.current.postMessage({
           type: 'stop-background-ping',
           data: {}
