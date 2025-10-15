@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { Link } from 'wouter';
 
 export default function ArabicChat() {
   useEffect(() => {
@@ -17,7 +18,7 @@ export default function ArabicChat() {
       <h1 className="text-2xl font-bold mb-2">شات عربي عام</h1>
       <p>دردشة عامة تجمع العرب في مكان واحد.</p>
       <div className="mt-4">
-        <a href="/watan" className="text-blue-500 underline">دردشه الوطن</a>
+        <Link href="/watan" className="text-blue-500 underline">دردشه الوطن</Link>
       </div>
     </div>
   );

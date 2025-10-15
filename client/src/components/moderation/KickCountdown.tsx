@@ -2,6 +2,7 @@ import { Clock, AlertTriangle } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 
 import { Badge } from '@/components/ui/badge';
+import { useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatCountdownTime } from '@/utils/timeUtils';
@@ -13,6 +14,7 @@ interface KickCountdownProps {
 }
 
 export default function KickCountdown({ isVisible, onClose, durationMinutes }: KickCountdownProps) {
+  const [, setLocation] = useLocation();
   const [timeLeft, setTimeLeft] = useState(durationMinutes * 60); // بالثواني
 
   useEffect(() => {
@@ -25,11 +27,7 @@ export default function KickCountdown({ isVisible, onClose, durationMinutes }: K
           onClose();
           // إعادة التوجيه للصفحة الرئيسية عند انتهاء الوقت
           setTimeout(() => {
-            try {
-              window.location.replace('/');
-            } catch {
-              window.location.href = '/';
-            }
+            try { setLocation('/'); } catch { window.location.href = '/'; }
           }, 1000);
           return 0;
         }

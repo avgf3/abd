@@ -7,6 +7,7 @@ import StructuredData from '@/components/SEO/StructuredData';
 import { getCityLinkFromName } from '@/utils/cityUtils';
 
 import { Button } from '@/components/ui/button';
+import { Link } from 'wouter';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -222,13 +223,13 @@ export default function SubChatWelcomeScreen({ onUserLogin, subChatData }: SubCh
         <div className="max-w-6xl mx-auto flex justify-between items-center">
           {/* روابط الشريط العلوي */}
           <div className="flex items-center gap-3 text-sm">
-            <a href="/privacy" className="text-blue-400 hover:text-blue-300 transition-colors underline">
+            <Link href="/privacy" className="text-blue-400 hover:text-blue-300 transition-colors underline">
               سياسة الخصوصية
-            </a>
+            </Link>
             <span className="text-gray-400">|</span>
-            <a href="/terms" className="text-blue-400 hover:text-blue-300 transition-colors underline">
+            <Link href="/terms" className="text-blue-400 hover:text-blue-300 transition-colors underline">
               شروط الاستخدام
-            </a>
+            </Link>
           </div>
           {/* الشعار المثبت يساراً: أبيض وأزرق */}
           <div className="flex items-center gap-2 cursor-default select-none">
@@ -347,29 +348,29 @@ export default function SubChatWelcomeScreen({ onUserLogin, subChatData }: SubCh
               دردشات أخرى
             </h3>
             <div className="flex flex-wrap justify-center gap-3">
-              <a href="/" className="text-blue-300 hover:text-blue-200 transition-colors">الرئيسية</a>
+              <Link href="/" className="text-blue-300 hover:text-blue-200 transition-colors">الرئيسية</Link>
               <span className="text-gray-500">|</span>
-              <a href="/oman" className="text-blue-300 hover:text-blue-200 transition-colors">شات عمان</a>
+              <Link href="/oman" className="text-blue-300 hover:text-blue-200 transition-colors">شات عمان</Link>
               <span className="text-gray-500">|</span>
-              <a href="/egypt" className="text-blue-300 hover:text-blue-200 transition-colors">شات مصر</a>
+              <Link href="/egypt" className="text-blue-300 hover:text-blue-200 transition-colors">شات مصر</Link>
               <span className="text-gray-500">|</span>
-              <a href="/saudi" className="text-blue-300 hover:text-blue-200 transition-colors">شات السعودية</a>
+              <Link href="/saudi" className="text-blue-300 hover:text-blue-200 transition-colors">شات السعودية</Link>
               <span className="text-gray-500">|</span>
-              <a href="/algeria" className="text-blue-300 hover:text-blue-200 transition-colors">شات الجزائر</a>
+              <Link href="/algeria" className="text-blue-300 hover:text-blue-200 transition-colors">شات الجزائر</Link>
               <span className="text-gray-500">|</span>
-              <a href="/bahrain" className="text-blue-300 hover:text-blue-200 transition-colors">شات البحرين</a>
+              <Link href="/bahrain" className="text-blue-300 hover:text-blue-200 transition-colors">شات البحرين</Link>
               <span className="text-gray-500">|</span>
-              <a href="/uae" className="text-blue-300 hover:text-blue-200 transition-colors">شات الإمارات</a>
+              <Link href="/uae" className="text-blue-300 hover:text-blue-200 transition-colors">شات الإمارات</Link>
               <span className="text-gray-500">|</span>
-              <a href="/jordan" className="text-blue-300 hover:text-blue-200 transition-colors">شات الأردن</a>
+              <Link href="/jordan" className="text-blue-300 hover:text-blue-200 transition-colors">شات الأردن</Link>
               <span className="text-gray-500">|</span>
-              <a href="/kuwait" className="text-blue-300 hover:text-blue-200 transition-colors">شات الكويت</a>
+              <Link href="/kuwait" className="text-blue-300 hover:text-blue-200 transition-colors">شات الكويت</Link>
               <span className="text-gray-500">|</span>
-              <a href="/libya" className="text-blue-300 hover:text-blue-200 transition-colors">شات ليبيا</a>
+              <Link href="/libya" className="text-blue-300 hover:text-blue-200 transition-colors">شات ليبيا</Link>
               <span className="text-gray-500">|</span>
-              <a href="/tunisia" className="text-blue-300 hover:text-blue-200 transition-colors">شات تونس</a>
+              <Link href="/tunisia" className="text-blue-300 hover:text-blue-200 transition-colors">شات تونس</Link>
               <span className="text-gray-500">|</span>
-              <a href="/morocco" className="text-blue-300 hover:text-blue-200 transition-colors">شات المغرب</a>
+              <Link href="/morocco" className="text-blue-300 hover:text-blue-200 transition-colors">شات المغرب</Link>
             </div>
           </div>
         </div>
