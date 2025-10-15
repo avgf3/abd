@@ -112,6 +112,42 @@ export default function VipAvatar({
     };
   }, [normalizedFrame, overlaySrc]);
 
+  // Animate frame13 with wing flapping motion (vertical stretching)
+  useEffect(() => {
+    if (normalizedFrame !== 13) return;
+    const overlayEl = overlayRef.current;
+    const tweens: gsap.core.Tween[] = [];
+
+    if (overlayEl) {
+      // حركة رفرفة الأجنحة - تمدد طولي (عمودي)
+      tweens.push(
+        gsap.to(overlayEl, {
+          scaleY: 1.08, // تمدد عمودي خفيف
+          scaleX: 0.98, // انكماش أفقي طفيف لمحاكاة الرفرفة
+          duration: 0.6,
+          ease: 'power2.inOut',
+          yoyo: true,
+          repeat: -1,
+        })
+      );
+
+      // حركة إضافية للوميض الخفيف
+      tweens.push(
+        gsap.to(overlayEl, {
+          opacity: 0.85,
+          duration: 1.2,
+          ease: 'sine.inOut',
+          yoyo: true,
+          repeat: -1,
+        })
+      );
+    }
+
+    return () => {
+      tweens.forEach((t) => t.kill());
+    };
+  }, [normalizedFrame, overlaySrc]);
+
   return (
     <div
       className={`vip-frame base ${hasImageOverlay ? 'with-image' : ''} ${
