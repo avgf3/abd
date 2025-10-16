@@ -151,7 +151,10 @@ export class ConnectionManager {
   }
 
   private hardReload() {
-    try { window.location.reload(); } catch {}
+    // استرجاع صامت بدلاً من إعادة تحميل الصفحة
+    // إعادة ضبط عداد الإخفاقات وتفعيل وضع النسخ الاحتياطي لفترة وجيزة
+    this.consecutiveFailures = 0;
+    this.enableBackupMode();
   }
 
   private updateMonitors(startedAt: number) {
@@ -238,8 +241,9 @@ export function createDefaultConnectionManager(opts: Partial<ConnectionManagerCo
     // errorReportUrl: undefined, // opt-in only if server endpoint implemented
     speedVisibleMs: 1500,
     speedHiddenMs: 4000,
-    failuresBeforeHardReload: 25,
-    hardReloadOnServerAck: true,
+    // تعطيل إعادة التحميل الصلبة بشكل افتراضي
+    failuresBeforeHardReload: 0,
+    hardReloadOnServerAck: false,
     ...opts,
   });
 }
