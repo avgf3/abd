@@ -257,7 +257,10 @@ export default function ProfileImage({
   
   // جميع التيجان تستخدم نفس المنطق البسيط - لا نحتاج touchTop بعد الآن
   const needsTouchTop = false;
-  const scanCenterRatio = 1;
+  const needsCrownProfileFix =
+    context === 'profile' && tagNumber && tagNumber >= 21 && tagNumber <= 34;
+  // تقليل مجال المسح للأطراف المقوّسة لبعض التيجان حتى لا تُحسب كفراغ سفلي
+  const scanCenterRatio = needsCrownProfileFix ? 0.65 : 1;
   const frameIndex = (() => {
     if (!frameName) return undefined;
     const match = String(frameName).match(/(\d+)/);
@@ -280,10 +283,9 @@ export default function ProfileImage({
     const overlayTopPx = imageTopWithinContainer; // تلامس مباشر مع أعلى الصورة
     // إزاحة إضافية لتيجان 21-34 في سياق الملف الشخصي لخفض التاج ليجلس على الرأس
     // زيادة النسبة لضمان ملامسة التاج للرأس كما طُلب
-    const extraProfileDownshift =
-      context === 'profile' && tagNumber && tagNumber >= 21 && tagNumber <= 34
-        ? Math.min(18, Math.max(6, Math.round(px * 0.12)))
-        : 0;
+    const extraProfileDownshift = needsCrownProfileFix
+      ? Math.min(24, Math.max(8, Math.round(px * 0.18)))
+      : 0;
 
     return (
       <div
@@ -300,7 +302,7 @@ export default function ProfileImage({
             anchorY={layout.anchorY ?? DEFAULT_TAG_LAYOUT.anchorY!}
             yAdjustPx={(layout.yAdjustPx || 0) + extraProfileDownshift}
             xAdjustPx={layout.xAdjustPx}
-            autoAnchor={layout.autoAnchor}
+            autoAnchor={needsCrownProfileFix ? false : layout.autoAnchor}
             scanCenterRatio={scanCenterRatio}
             touchTop={needsTouchTop}
           />
@@ -317,10 +319,9 @@ export default function ProfileImage({
 
     // إزاحة إضافية لتيجان 21-34 في سياق الملف الشخصي لخفض التاج ليجلس على الرأس
     // زيادة النسبة لضمان ملامسة التاج للرأس كما طُلب
-    const extraProfileDownshift =
-      context === 'profile' && tagNumber && tagNumber >= 21 && tagNumber <= 34
-        ? Math.min(18, Math.max(6, Math.round(px * 0.12)))
-        : 0;
+    const extraProfileDownshift = needsCrownProfileFix
+      ? Math.min(24, Math.max(8, Math.round(px * 0.18)))
+      : 0;
 
     return (
       <div
@@ -359,7 +360,7 @@ export default function ProfileImage({
             anchorY={layout.anchorY ?? DEFAULT_TAG_LAYOUT.anchorY!}
             yAdjustPx={(layout.yAdjustPx || 0) + extraProfileDownshift}
             xAdjustPx={layout.xAdjustPx}
-            autoAnchor={layout.autoAnchor}
+            autoAnchor={needsCrownProfileFix ? false : layout.autoAnchor}
             scanCenterRatio={scanCenterRatio}
             touchTop={needsTouchTop}
           />
