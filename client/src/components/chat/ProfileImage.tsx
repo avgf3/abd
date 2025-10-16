@@ -285,7 +285,7 @@ export default function ProfileImage({
     // التاج يجب أن يلامس أعلى الصورة تماماً، دون التأثر بإزاحة الإطار
     // اجعل المرجع أعلى الصورة مباشرة لا أعلى الحاوية لتفادي ارتفاع التاج
     const overlayTopPx = 0;
-    const desiredOverlapPx = Math.round(px * 0.10); // دخول ثابت 10% من قطر الصورة لتثبيت التاج على الرأس
+    // ✅ الحل: عدم تمرير overlapPx، لنترك الكود يستخدم anchorY + yAdjustPx من tagLayouts.ts
 
     return (
       <div
@@ -304,7 +304,6 @@ export default function ProfileImage({
             xAdjustPx={layout.xAdjustPx}
             autoAnchor={false}
             touchTop={needsTouchTop}
-            overlapPx={desiredOverlapPx}
           />
         )}
       </div>
@@ -317,8 +316,7 @@ export default function ProfileImage({
     const imageTopWithinContainer = (containerSize - px) / 2;
     // اجعل المرجع أعلى الصورة مباشرة لا أعلى الحاوية
     const overlayTopPx = 0;
-    const desiredOverlapPx = Math.round(px * 0.10); // دخول ثابت 10%
-
+    // ✅ الحل: عدم تمرير overlapPx، لنترك الكود يستخدم anchorY + yAdjustPx من tagLayouts.ts
 
     return (
       <div
@@ -359,7 +357,6 @@ export default function ProfileImage({
             xAdjustPx={layout.xAdjustPx}
             autoAnchor={false}
             touchTop={needsTouchTop}
-            overlapPx={desiredOverlapPx}
           />
         )}
       </div>
