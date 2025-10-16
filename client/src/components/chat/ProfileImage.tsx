@@ -282,7 +282,7 @@ export default function ProfileImage({
     // زيادة النسبة لضمان ملامسة التاج للرأس كما طُلب
     const extraProfileDownshift =
       context === 'profile' && tagNumber && tagNumber >= 21 && tagNumber <= 34
-        ? Math.min(12, Math.max(4, Math.round(px * 0.085)))
+        ? Math.min(18, Math.max(6, Math.round(px * 0.12)))
         : 0;
 
     return (
@@ -319,7 +319,7 @@ export default function ProfileImage({
     // زيادة النسبة لضمان ملامسة التاج للرأس كما طُلب
     const extraProfileDownshift =
       context === 'profile' && tagNumber && tagNumber >= 21 && tagNumber <= 34
-        ? Math.min(12, Math.max(4, Math.round(px * 0.085)))
+        ? Math.min(18, Math.max(6, Math.round(px * 0.12)))
         : 0;
 
     return (
