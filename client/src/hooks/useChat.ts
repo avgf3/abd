@@ -779,12 +779,7 @@ export const useChat = () => {
         // ping عادي في المقدمة (كل 20 ثانية)
         pingIntervalRef.current = startPing(20000);
 
-        // حاول إعادة الاتصال فور العودة إذا كان الاتصال مقطوعاً
-        try {
-          if (!socketInstance.connected) {
-            socketInstance.connect();
-          }
-        } catch {}
+        // لا نحاول إعادة الاتصال هنا لتفادي ازدواجية المصادر
 
         // تفريغ الرسائل المؤجلة وإحضار المفقود منذ آخر رسالة معروفة
         try {
@@ -816,8 +811,8 @@ export const useChat = () => {
     // دعم أفضل لدورة حياة الصفحة على الأجهزة المحمولة: pageshow/pagehide
     const handlePageShow = async () => {
       try {
-        // 🚀 فحص ذكي للحالة المحفوظة
-        const { shouldReconnectOnPageShow, getConnectionHealth } = await import('@/lib/socket');
+        // إزالة منطق إعادة الاتصال عند pageshow لتفادي التكرار
+        const { getConnectionHealth } = await import('@/lib/socket');
         const health = getConnectionHealth();
         
         // 🍎 معالجة خاصة لـ iOS
@@ -829,24 +824,14 @@ export const useChat = () => {
               const timeDiff = Date.now() - snapshot.timestamp;
               
               // إذا مر أكثر من 10 ثواني، أعد الاتصال بالكامل
-              if (timeDiff > 10000 && snapshot.wasConnected) {
-                if (socket.current) {
-                  socket.current.disconnect();
-                  setTimeout(() => socket.current?.connect(), 500);
-                }
-              }
+              // لا نقوم بإعادة الاتصال يدوياً هنا
               
               // تنظيف الـ snapshot
               localStorage.removeItem('ios_connection_snapshot');
             } catch {}
           }
         } else {
-          // 🤖 معالجة Android العادية
-          if (shouldReconnectOnPageShow()) {
-            if (socket.current && !socket.current.connected) {
-              socket.current.connect();
-            }
-          }
+          // لا نقوم بمحاولات connect يدوية هنا
         }
         
         // عند العودة للصفحة، تفريغ الرسائل المؤجلة وجلب المفقود
@@ -867,10 +852,6 @@ export const useChat = () => {
         }
       } catch (error) {
         console.warn('⚠️ خطأ في handlePageShow:', error);
-        // fallback: محاولة اتصال بسيطة
-        if (socket.current && !socket.current.connected) {
-          socket.current.connect();
-        }
       }
     };
     const handlePageHide = () => {
@@ -1839,12 +1820,7 @@ export const useChat = () => {
 
   useEffect(() => {
     const handleOnline = () => {
-      if (socket.current && !socket.current.connected) {
-        try {
-          socket.current.connect();
-        } catch {}
-      }
-      // حاول تفريغ الرسائل المعلقة عند عودة الشبكة
+      // لا محاولات connect يدوية عند online؛ فقط تفريغ الصادر إن وجد
       try {
         if (!isFlushingOutboxRef.current) {
           isFlushingOutboxRef.current = true;

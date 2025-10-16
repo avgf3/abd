@@ -97,23 +97,7 @@ export function getConnectionHealth(): {
 }
 
 // 🆕 دالة ذكية للتحقق من ضرورة إعادة الاتصال عند العودة للصفحة
-export function shouldReconnectOnPageShow(): boolean {
-  try {
-    const health = getConnectionHealth();
-    const session = getSession();
-    
-    // إذا لا توجد جلسة، لا حاجة لإعادة الاتصال
-    if (!session.userId && !session.username) return false;
-    
-    // إذا كان الاتصال صحي، لا حاجة لإعادة الاتصال
-    if (health.isHealthy) return false;
-    
-    // إذا مر وقت طويل، أعد الاتصال
-    return health.shouldReconnect;
-  } catch {
-    return true; // في حالة الخطأ، من الأفضل إعادة الاتصال
-  }
-}
+// تمت إزالة منطق "إعادة الاتصال عند العودة للصفحة" لمنع تعدد مصادر إعادة الاتصال
 
 let socketInstance: Socket | null = null;
 
@@ -171,35 +155,20 @@ function attachCoreListeners(socket: Socket) {
     } catch {}
   });
 
-  // 🔥 معالجة إعادة الاتصال الذكية
+  // تقليل الضجيج: الاكتفاء بالتوثيق عند نجاح إعادة الاتصال دون أي سلوك إضافي
   socket.on('reconnect', (attemptNumber) => {
     reconnectAttempt = attemptNumber;
     maxReconnectAttempt = Math.max(maxReconnectAttempt, attemptNumber);
     reauth(true);
-    
-    // 🆕 تحديث إحصائيات الاتصال
     try {
       localStorage.setItem('socket_last_reconnected', Date.now().toString());
       localStorage.setItem('socket_max_reconnect_attempts', maxReconnectAttempt.toString());
     } catch {}
   });
 
-  // 🔥 معالجة محاولات إعادة الاتصال
+  // تعطيل محاولات إعادة الاتصال اليدوية المتداخلة — اترك Socket.IO يدير ذلك فقط
   socket.on('reconnect_attempt', (attemptNumber) => {
     reconnectAttempt = attemptNumber;
-    
-    // 🆕 استراتيجية ذكية حسب رقم المحاولة
-    if (attemptNumber > 5) {
-      // بعد 5 محاولات، جرب تغيير النقل
-      socket.io.opts.transports = ['polling', 'websocket'];
-    }
-    if (attemptNumber > 10) {
-      // بعد 10 محاولات، أعد تعيين الاتصال بالكامل
-      try {
-        socket.disconnect();
-        setTimeout(() => socket.connect(), 1000);
-      } catch {}
-    }
   });
 
   // 🔥 معالجة أخطاء الاتصال
@@ -218,42 +187,19 @@ function attachCoreListeners(socket: Socket) {
     } catch {}
   });
 
-  // 🔥 معالجة قطع الاتصال الذكية
+  // تبسيط: لا نقوم باستدعاء connect() يدوياً هنا، نكتفي بتحديث الحالة
   socket.on('disconnect', (reason) => {
-    // 🆕 تحليل سبب الانقطاع
     isManualDisconnect = reason === 'io client disconnect';
-    
     try {
       localStorage.setItem('socket_last_disconnected', Date.now().toString());
       localStorage.setItem('socket_disconnect_reason', reason);
       localStorage.setItem('socket_connection_stable', 'false');
     } catch {}
-    
-    // 🚀 إعادة اتصال ذكية حسب السبب
-    if (!isManualDisconnect) {
-      if (reason === 'transport close' || reason === 'transport error') {
-        // مشكلة في النقل - جرب نقل مختلف
-        socket.io.opts.transports = socket.io.opts.transports.reverse();
-      }
-      
-      // محاولة إعادة اتصال فورية للأسباب المؤقتة
-      if (reason === 'ping timeout' || reason === 'transport close') {
-        setTimeout(() => {
-          if (!socket.connected) {
-            socket.connect();
-          }
-        }, 100);
-      }
-    }
   });
 
-  // 🔥 معالجة عودة الشبكة
+  // إزالة إعادة الاتصال عند online — سيُدار ذلك من قبل Socket.IO تلقائياً
   window.addEventListener('online', () => {
-    if (!socket.connected && !isManualDisconnect) {
-      try {
-        socket.connect();
-      } catch {}
-    }
+    try { localStorage.setItem('socket_network_online', Date.now().toString()); } catch {}
   });
 
   // 🔥 معالجة انقطاع الشبكة
@@ -302,11 +248,11 @@ export function getSocket(): Socket {
     rememberUpgrade: true, // تذكر الترقية الناجحة
     autoConnect: false,
     reconnection: true,
-    // 🔥 إعادة اتصال لانهائية وذكية مثل المواقع الناجحة
-    reconnectionAttempts: Infinity, // لا يستسلم أبداً!
-    reconnectionDelay: 200, // بداية سريعة جداً
-    reconnectionDelayMax: 2000, // حد أقصى منخفض للسرعة
-    randomizationFactor: 0.1, // عشوائية قليلة للسرعة
+    // مصدر وحيد لإعادة الاتصال: دع Socket.IO يدير المحاولات بلا حدود
+    reconnectionAttempts: Infinity,
+    reconnectionDelay: 500,
+    reconnectionDelayMax: 5000,
+    randomizationFactor: 0.2,
     // 🔥 أوقات استجابة سريعة جداً
     timeout: 8000, // مهلة قصيرة للكشف السريع عن المشاكل
     forceNew: false,
