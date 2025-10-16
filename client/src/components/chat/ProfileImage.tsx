@@ -69,19 +69,20 @@ const TagOverlay = memo(function TagOverlay({
     const scale = basePx / Math.max(1, naturalSize.w);
     const heightPx = naturalSize.h * scale;
 
-    // حساب الشفافية السفلية تلقائياً (لرفع التاج)
+    // حساب الشفافية السفلية تلقائياً (لرفع التاج) - يجب أن يُطرح!
     const bottomGapPx = autoAnchor ? Math.round(bottomGapRatio * heightPx) : 0;
 
-    // إذا حُدد overlapPx (مثلاً 6% من قطر الصورة) فالأولوية له لضمان اتساق الدخول
+    // إذا حُدد overlapPx (مثلاً 10% من قطر الصورة) فالأولوية له لضمان اتساق الدخول
     if (typeof overlapPx === 'number') {
       const desired = touchTop ? 0 : Math.max(0, Math.round(overlapPx));
-      // تجاهل yAdjustPx هنا لتحقيق توحيد بصري صارم؛ نعوّض فقط شفافية القاعدة
+      // ✅ الإصلاح: نطرح bottomGapPx لرفع التاج (إزالة الشفافية)
       return Math.max(0, Math.round(desired - bottomGapPx));
     }
 
     // خلاف ذلك، استخدم النسبة من ارتفاع التاج
-    const anchor = touchTop ? bottomGapPx : Math.round(heightPx * anchorY);
-    // anchor + yAdjustPx - bottomGapPx
+    const anchor = touchTop ? 0 : Math.round(heightPx * anchorY);
+    // ✅ الإصلاح الرئيسي: نطرح bottomGapPx بدلاً من جمعه!
+    // المنطق: bottomGapPx يمثل المسافة الشفافة التي يجب إزالتها
     return Math.round(anchor + yAdjustPx - bottomGapPx);
   })();
 
