@@ -31,10 +31,8 @@ function getLayout(num){
 }
 
 // Analysis params: match ProfileImage.tsx logic
-const AVATAR_PX = 56; // medium
-const CONTAINER_SIZE = Math.round(AVATAR_PX * 1.35);
-const IMAGE_TOP_WITHIN_CONTAINER = Math.round((CONTAINER_SIZE - AVATAR_PX) / 2);
-const SCAN_CENTER_RATIO_FOR = (num) => (num === 1 || num === 8 ? 0.6 : 1); // proposed fix; also report current=1
+const SIZES = [36, 56, 72]; // small, medium, large
+const SCAN_CENTER_RATIO_FOR = (num) => (num === 1 || num === 8 ? 0.6 : 1); // proposed optional center-scan for curved crowns (reported separately)
 
 async function measureBottomGapRatio(imgPath, scanCenterRatio=1){
   const img = sharp(imgPath);
@@ -80,37 +78,40 @@ async function analyzeTag(num){
   const file = fileForTag(num);
   if (!file) return { num, status: 'missing' };
   const layout = getLayout(num);
-  const basePx = Math.round(AVATAR_PX * layout.widthRatio);
-
   const { ratio: bottomGapFull, natural } = await measureBottomGapRatio(file, 1);
-  // Proposed center scan for curved-base crowns:
+  // Optional center-scan measurement (not used in current app logic, informative only)
   const { ratio: bottomGapCenter } = await measureBottomGapRatio(file, SCAN_CENTER_RATIO_FOR(num));
 
-  // Current code uses scanCenterRatio=1 always
-  const scale = basePx / Math.max(1, natural.w || 1);
-  const heightPx = (natural.h || 0) * scale;
-  const bottomGapPxCurrent = Math.round((layout.autoAnchor ? bottomGapFull : 0) * heightPx);
-  const anchorCurrent = Math.round(heightPx * (layout.anchorY ?? DEFAULT_LAYOUT.anchorY));
-  const anchorFromImagePxCurrent = Math.round(anchorCurrent + (layout.yAdjustPx || 0) - bottomGapPxCurrent);
+  // Compute per-size metrics exactly like the component
+  const perSize = SIZES.map((px) => {
+    const basePx = Math.round(px * layout.widthRatio);
+    const scale = basePx / Math.max(1, natural.w || 1);
+    const heightPx = (natural.h || 0) * scale;
+    const bottomGapPx = Math.round((layout.autoAnchor ? bottomGapFull : 0) * heightPx);
+    const anchorPx = Math.round(heightPx * (layout.anchorY ?? DEFAULT_LAYOUT.anchorY));
+    const anchorFromImagePx = Math.round(anchorPx + (layout.yAdjustPx || 0) - bottomGapPx);
+    const entryRatio = heightPx > 0 ? anchorFromImagePx / heightPx : 0; // fraction of tag height entering avatar
+    // Classification by entry ratio (geometry-based, scale-invariant)
+    let cls;
+    if (entryRatio >= 0.26) cls = 'good';
+    else if (entryRatio >= 0.18) cls = 'slightly-high';
+    else cls = 'too-high';
+    return { px, basePx, heightPx: Math.round(heightPx), anchorFromImagePx, entryRatio: Number(entryRatio.toFixed(3)), class: cls };
+  });
 
-  // Heuristic classification: how far above top of avatar is the final translateY
-  // translateY = -100% + anchorFromImagePx; if anchorFromImagePx is too small, badge floats too high.
-  // We classify by anchorFromImagePx in pixels relative to avatar px.
-  let cls;
-  if (anchorFromImagePxCurrent >= Math.round(AVATAR_PX * 0.28)) cls = 'good';
-  else if (anchorFromImagePxCurrent >= Math.round(AVATAR_PX * 0.16)) cls = 'slightly-high';
-  else cls = 'too-high';
+  // Derive a conservative overall class (worst among sizes)
+  const order = { 'good': 2, 'slightly-high': 1, 'too-high': 0 };
+  const overall = perSize.reduce((acc, s) => (order[s.class] < order[acc] ? s.class : acc), 'good');
 
   return {
     num,
     file: path.basename(file),
     natural,
     layout,
-    basePx,
     bottomGapFull: Number(bottomGapFull.toFixed(3)),
     bottomGapCenter: Number(bottomGapCenter.toFixed(3)),
-    anchorFromImagePxCurrent,
-    class: cls,
+    perSize,
+    class: overall,
   };
 }
 
@@ -136,11 +137,10 @@ async function analyzeTag(num){
   console.log('Too high:', groups.too.join(', '));
   if (groups.missing.length) console.log('Missing:', groups.missing.join(', '));
 
-  // Detailed table
-  console.log('\nDetails:');
+  // Detailed per-size table
+  console.log('\nDetails (per size):');
   for (const r of results) {
-    console.log(
-      `${String(r.num).padStart(2,' ')} | ${r.file.padEnd(10)} | base=${r.basePx}px | gapFull=${r.bottomGapFull} | gapCtr=${r.bottomGapCenter} | anchorPx=${r.anchorFromImagePxCurrent} | ${r.class}`
-    );
+    const sizesText = r.perSize.map(s => `${s.px}px: base=${s.basePx}px entry=${(s.entryRatio*100).toFixed(1)}% anchorPx=${s.anchorFromImagePx}px [${s.class}]`).join(' | ');
+    console.log(`${String(r.num).padStart(2,' ')} | ${r.file.padEnd(10)} | gapFull=${r.bottomGapFull} gapCtr=${r.bottomGapCenter} | ${sizesText}`);
   }
 })();
