@@ -33,22 +33,22 @@ export const TAG_LAYOUTS: Record<number, TagLayout> = (() => {
   // ===== التيجان الأساسية (1-12) - ضبط دقيق بناءً على تصميم كل تاج =====
   
   // التيجان البسيطة/الخفيفة - دخول متوسط لتبدو طبيعية
-  override(1,  { anchorY: 0.48, yAdjustPx: 4 });   // تنزيل إضافي قليل
-  override(2,  { anchorY: 0.32, yAdjustPx: 3 });   // تاج ملكي أنيق - تنزيل قليل
-  override(3,  { anchorY: 0.30, yAdjustPx: 3, widthRatio: 1.08 }); // تاج رفيع - تنزيل قليل
-  override(8,  { anchorY: 0.48, yAdjustPx: 4 });   // ضبط مماثل لتوحيد التموضع
+  override(1,  { anchorY: 0.48, yAdjustPx: 5 });   // تنزيل إضافي قليل
+  override(2,  { anchorY: 0.32, yAdjustPx: 4 });   // تاج ملكي أنيق - تنزيل قليل
+  override(3,  { anchorY: 0.30, yAdjustPx: 4, widthRatio: 1.08 }); // تاج رفيع - تنزيل قليل
+  override(8,  { anchorY: 0.48, yAdjustPx: 5 });   // ضبط مماثل لتوحيد التموضع
   
   // التيجان المتوسطة - دخول متوسط (الافتراضي)
-  override(5,  { anchorY: 0.37, yAdjustPx: 3 });   // تاج ناعم - تنزيل قليل
-  override(7,  { anchorY: 0.37, yAdjustPx: 3 });   // تاج متوسط - تنزيل قليل
-  override(11, { anchorY: 0.37, yAdjustPx: 3 });   // تاج متوسط - تنزيل قليل
+  override(5,  { anchorY: 0.37, yAdjustPx: 4 });   // تاج ناعم - تنزيل قليل
+  override(7,  { anchorY: 0.37, yAdjustPx: 4 });   // تاج متوسط - تنزيل قليل
+  override(11, { anchorY: 0.37, yAdjustPx: 4 });   // تاج متوسط - تنزيل قليل
   
   // التيجان الثقيلة/الملكية - دخول أكبر
-  override(4,  { anchorY: 0.42, yAdjustPx: 3, widthRatio: 1.12 }); // مزخرف - تنزيل قليل
-  override(6,  { anchorY: 0.47, yAdjustPx: 3 });   // إمبراطوري - تنزيل قليل
-  override(9,  { anchorY: 0.42, yAdjustPx: 3, widthRatio: 1.12 }); // مزخرف - تنزيل قليل
-  override(10, { anchorY: 0.40, yAdjustPx: 4 });   // تنزيل قليل
-  override(12, { anchorY: 0.42, yAdjustPx: 4 });   // تنزيل قليل
+  override(4,  { anchorY: 0.42, yAdjustPx: 4, widthRatio: 1.12 }); // مزخرف - تنزيل قليل
+  override(6,  { anchorY: 0.47, yAdjustPx: 4 });   // إمبراطوري - تنزيل قليل
+  override(9,  { anchorY: 0.42, yAdjustPx: 4, widthRatio: 1.12 }); // مزخرف - تنزيل قليل
+  override(10, { anchorY: 0.40, yAdjustPx: 5 });   // تنزيل قليل
+  override(12, { anchorY: 0.42, yAdjustPx: 5 });   // تنزيل قليل
 
   // ===== باقي التيجان (13-50) - تصنيف حسب المستوى =====
   const applyRange = (from: number, to: number, layout: Partial<TagLayout>) => {
@@ -56,16 +56,16 @@ export const TAG_LAYOUTS: Record<number, TagLayout> = (() => {
   };
 
   // 13-20: تيجان بسيطة
-  applyRange(13, 20, { anchorY: 0.34, yAdjustPx: 3 });
+  applyRange(13, 20, { anchorY: 0.34, yAdjustPx: 4 });
   
   // 21-30: تيجان متوسطة
-  applyRange(21, 30, { anchorY: 0.36, yAdjustPx: 4 });
+  applyRange(21, 30, { anchorY: 0.36, yAdjustPx: 5 });
   
   // 31-40: تيجان مزخرفة
-  applyRange(31, 40, { anchorY: 0.38, yAdjustPx: 5, widthRatio: 1.10 });
+  applyRange(31, 40, { anchorY: 0.38, yAdjustPx: 6, widthRatio: 1.10 });
   
   // 41-50: تيجان ملكية/إمبراطورية
-  applyRange(41, 50, { anchorY: 0.44, yAdjustPx: 3, widthRatio: 1.12 });
+  applyRange(41, 50, { anchorY: 0.44, yAdjustPx: 4, widthRatio: 1.12 });
 
   return map;
 })();
