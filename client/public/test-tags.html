@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>اختبار بصري — تاج 1، 8، 10، 21، 28، 34</title>
+  <title>اختبار بصري — تاج 1، 8، 10، 20، 21، 28، 34</title>
   <style>
     :root {
       --bg: #0b1220;
@@ -57,10 +57,10 @@
 </head>
 <body>
   <div class="wrap">
-    <h1>اختبار بصري — ضبط تاج 1، 8، 10، 21، 28، 34</h1>
+    <h1>اختبار بصري — ضبط تاج 1، 8، 10، 20، 21، 28، 34</h1>
     <p>
-      هذه الصفحة تطبّق نفس معادلة التموضع من الكود الفعلي، لعرض نتيجة التيجان <b>1</b>، <b>8</b>، <b>10</b>، <b>21</b>، <b>28</b> و <b>34</b> على ثلاث قياسات للصورة: 36/56/72 بكسل.
-      الهدف: التأكد أن التيجان تلبس الصورة بشكل طبيعي كـ "طوق رأس" وقياس نزول إضافي خاص للبروفايل لتيجان 21–34.
+      هذه الصفحة تطبّق نفس معادلة التموضع من الكود الفعلي، لعرض نتيجة التيجان <b>1</b>، <b>8</b>، <b>10</b>، <b>20</b>، <b>21</b>، <b>28</b> و <b>34</b> على ثلاث قياسات للصورة: 36/56/72 بكسل.
+      الهدف: التأكد أن التيجان تلبس الصورة بشكل طبيعي كـ "طوق رأس" وقياس نزول إضافي خاص للبروفايل لتيجان 20–32.
     </p>
 
     <div class="grid">
@@ -88,6 +88,16 @@
         </div>
         <div id="rows-10"></div>
       </div>
+      <div class="card" id="card-20">
+        <div class="title">
+          <h2>تاج 20 <span class="badge">tag20.webp</span></h2>
+          <span class="meta" id="meta-20"></span>
+        </div>
+        <div id="rows-20"></div>
+      </div>
+    </div>
+    
+    <div class="grid" style="margin-top: 16px;">
       <div class="card" id="card-21">
         <div class="title">
           <h2>تاج 21 <span class="badge">tag21.webp</span></h2>
@@ -123,11 +133,12 @@
       1:  { widthRatio: 1.10, xAdjustPx: 0, yAdjustPx: 4, anchorY: 0.54, autoAnchor: true },
       8:  { widthRatio: 1.10, xAdjustPx: 0, yAdjustPx: 4, anchorY: 0.54, autoAnchor: true },
       10: { widthRatio: 1.10, xAdjustPx: 0, yAdjustPx: 3, anchorY: 0.42, autoAnchor: true },
-      // 21–30: anchorY 0.37, yAdjust 1
-      21: { widthRatio: 1.10, xAdjustPx: 0, yAdjustPx: 1, anchorY: 0.37, autoAnchor: true },
-      28: { widthRatio: 1.10, xAdjustPx: 0, yAdjustPx: 1, anchorY: 0.37, autoAnchor: true },
-      // 31–40: anchorY 0.40, yAdjust 1, widthRatio 1.11
-      34: { widthRatio: 1.11, xAdjustPx: 0, yAdjustPx: 1, anchorY: 0.40, autoAnchor: true },
+      // 20–32: anchorY 0.37, yAdjust 11 (قيم موحدة)
+      20: { widthRatio: 1.10, xAdjustPx: 0, yAdjustPx: 11, anchorY: 0.37, autoAnchor: true },
+      21: { widthRatio: 1.10, xAdjustPx: 0, yAdjustPx: 11, anchorY: 0.37, autoAnchor: true },
+      28: { widthRatio: 1.10, xAdjustPx: 0, yAdjustPx: 11, anchorY: 0.37, autoAnchor: true },
+      // 33–40: anchorY 0.40, yAdjust 11, widthRatio 1.11
+      34: { widthRatio: 1.11, xAdjustPx: 0, yAdjustPx: 11, anchorY: 0.40, autoAnchor: true },
     };
 
     const AVATAR_SRC = '/default_avatar.svg';
@@ -135,6 +146,7 @@
       1: '/tags/tag1.webp',
       8: '/tags/tag8.webp',
       10: '/tags/tag10.webp',
+      20: '/tags/tag20.webp',
       21: '/tags/tag21.webp',
       28: '/tags/tag28.webp',
       34: '/tags/tag34.webp',
@@ -151,8 +163,8 @@
       const bottomGapPx = (layout.autoAnchor ? Math.round(bottomGapRatio * heightPx) : 0);
       const isTouchTop = false; // لم نعد نحتاج touchTop مع الإعدادات الجديدة
       const anchor = isTouchTop ? bottomGapPx : Math.round(heightPx * (layout.anchorY ?? 0.08));
-      // تطبيق نزول إضافي خاص بالبروفايل لتيجان 21–34 لمضاهاة الكود الفعلي
-      const extraProfileDownshift = (tagNumber >= 21 && tagNumber <= 34)
+      // تطبيق نزول إضافي خاص بالبروفايل لتيجان 20–32 لمضاهاة الكود الفعلي
+      const extraProfileDownshift = (tagNumber >= 20 && tagNumber <= 32)
         ? Math.min(18, Math.max(6, Math.round(px * 0.12)))
         : 0;
       const anchorFromImagePx = Math.round(anchor + (layout.yAdjustPx || 0) + extraProfileDownshift - bottomGapPx);
@@ -250,7 +262,7 @@
       const naturalSizes = {};
       const bottomRatios = {};
 
-      await Promise.all([1,8,10,21,28,34].map(tagNumber => new Promise((resolve) => {
+      await Promise.all([1,8,10,20,21,28,34].map(tagNumber => new Promise((resolve) => {
         const img = new Image();
         img.onload = async () => {
           naturalSizes[tagNumber] = { w: img.naturalWidth, h: img.naturalHeight };
@@ -264,7 +276,7 @@
       })));
 
       // تعبئة البطاقات
-      [1,8,10,21,28,34].forEach((tagNumber) => {
+      [1,8,10,20,21,28,34].forEach((tagNumber) => {
         const layout = TAG_LAYOUTS[tagNumber];
         const metaEl = document.getElementById('meta-' + tagNumber);
         metaEl.textContent = `widthRatio ${layout.widthRatio} • anchorY ${(layout.anchorY*100).toFixed(1)}% • yAdjust ${layout.yAdjustPx||0}px`;

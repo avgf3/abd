@@ -55,14 +55,14 @@ export const TAG_LAYOUTS: Record<number, TagLayout> = (() => {
     for (let i = from; i <= to; i++) override(i, layout);
   };
 
-  // 13-20: تيجان بسيطة
-  applyRange(13, 20, { anchorY: 0.34, yAdjustPx: 1 });
+  // 13-19: تيجان بسيطة
+  applyRange(13, 19, { anchorY: 0.34, yAdjustPx: 1 });
   
-  // 21-30: تيجان متوسطة - قيم مثبتة (كانت تستخدم extraProfileDownshift)
-  applyRange(21, 30, { anchorY: 0.37, yAdjustPx: 11 });
+  // 20-32: تيجان متوسطة - قيم موحدة لحل مشكلة المحاذاة
+  applyRange(20, 32, { anchorY: 0.37, yAdjustPx: 11 });
   
-  // 31-40: تيجان مزخرفة - قيم مثبتة (كانت تستخدم extraProfileDownshift)  
-  applyRange(31, 40, { anchorY: 0.40, yAdjustPx: 11, widthRatio: 1.11 });
+  // 33-40: تيجان مزخرفة - قيم مثبتة (كانت تستخدم extraProfileDownshift)  
+  applyRange(33, 40, { anchorY: 0.40, yAdjustPx: 11, widthRatio: 1.11 });
   
   // 41-50: تيجان ملكية/إمبراطورية
   applyRange(41, 50, { anchorY: 0.44, yAdjustPx: 1, widthRatio: 1.12 });
