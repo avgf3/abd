@@ -264,14 +264,12 @@ export default function ProfileImage({
   })();
 
   if (!disableFrame && frameName && frameIndex) {
-    const centerScanRatio = (tagNumber === 1 || tagNumber === 8) ? 0.6 : 1;
+    const centerScanRatio = 1; // مسح كامل العرض لتوحيد حساب الشفافية
     // مقاسات دقيقة لتطابق الموقع الآخر - مُصغرة بحوالي 10%
     const px = pixelSize ?? (size === 'small' ? 36 : size === 'large' ? 72 : 56);
     // الحاوية يجب أن تكون أكبر لاستيعاب الإطار (نفس النسبة المستخدمة في VipAvatar)
     const containerSize = px * 1.35;
     const imageTopWithinContainer = (containerSize - px) / 2; // موضع أعلى الصورة داخل الحاوية
-    // إزاحة عمودية بسيطة لإطارات محددة التي تبدو مرتفعة قليلاً في البروفايل فقط
-    const frameDownshift = (frameIndex === 7 || frameIndex === 8 || frameIndex === 9) ? Math.round(px * 0.02) : 0;
     // التاج يجب أن يلامس أعلى الصورة تماماً، دون التأثر بإزاحة الإطار
     const overlayTopPx = imageTopWithinContainer; // تلامس مباشر مع أعلى الصورة
 
@@ -304,7 +302,7 @@ export default function ProfileImage({
     const containerSize = px * 1.35; // نفس حاوية إضافة الإطار
     const imageTopWithinContainer = (containerSize - px) / 2;
     const overlayTopPx = imageTopWithinContainer;
-    const centerScanRatio = (tagNumber === 1 || tagNumber === 8) ? 0.6 : 1;
+    const centerScanRatio = 1; // مسح كامل العرض لتوحيد حساب الشفافية
 
 
     return (
