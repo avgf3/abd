@@ -278,6 +278,12 @@ export default function ProfileImage({
     const frameDownshift = (frameIndex === 7 || frameIndex === 8 || frameIndex === 9) ? Math.round(px * 0.02) : 0;
     // التاج يجب أن يلامس أعلى الصورة تماماً، دون التأثر بإزاحة الإطار
     const overlayTopPx = imageTopWithinContainer; // تلامس مباشر مع أعلى الصورة
+    // إزاحة إضافية لتيجان 21-34 في سياق الملف الشخصي لخفض التاج ليجلس على الرأس
+    const extraProfileDownshift =
+      context === 'profile' && tagNumber && tagNumber >= 21 && tagNumber <= 34
+        ? Math.min(8, Math.max(2, Math.round(px * 0.05)))
+        : 0;
+
     return (
       <div
         className={`relative inline-block ${className || ''}`}
@@ -291,7 +297,7 @@ export default function ProfileImage({
             overlayTopPx={overlayTopPx}
             basePx={Math.round(px * layout.widthRatio)}
             anchorY={layout.anchorY ?? DEFAULT_TAG_LAYOUT.anchorY!}
-            yAdjustPx={layout.yAdjustPx}
+            yAdjustPx={(layout.yAdjustPx || 0) + extraProfileDownshift}
             xAdjustPx={layout.xAdjustPx}
             autoAnchor={layout.autoAnchor}
             scanCenterRatio={scanCenterRatio}
@@ -307,6 +313,12 @@ export default function ProfileImage({
     const containerSize = px * 1.35; // نفس حاوية إضافة الإطار
     const imageTopWithinContainer = (containerSize - px) / 2;
     const overlayTopPx = imageTopWithinContainer;
+
+    // إزاحة إضافية لتيجان 21-34 في سياق الملف الشخصي لخفض التاج ليجلس على الرأس
+    const extraProfileDownshift =
+      context === 'profile' && tagNumber && tagNumber >= 21 && tagNumber <= 34
+        ? Math.min(8, Math.max(2, Math.round(px * 0.05)))
+        : 0;
 
     return (
       <div
@@ -343,7 +355,7 @@ export default function ProfileImage({
             overlayTopPx={overlayTopPx}
             basePx={Math.round(px * layout.widthRatio)}
             anchorY={layout.anchorY ?? DEFAULT_TAG_LAYOUT.anchorY!}
-            yAdjustPx={layout.yAdjustPx}
+            yAdjustPx={(layout.yAdjustPx || 0) + extraProfileDownshift}
             xAdjustPx={layout.xAdjustPx}
             autoAnchor={layout.autoAnchor}
             scanCenterRatio={scanCenterRatio}
