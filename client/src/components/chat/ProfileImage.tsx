@@ -263,6 +263,14 @@ export default function ProfileImage({
   // إعدادات التاج من التخطيطات الموحدة
   const layout = getTagLayout(tagNumber);
   
+  // تعديل إضافي للتاجات في صفحة الملف الشخصي (الصورة الكبيرة 135px)
+  const profileExtraYAdjust = (() => {
+    if (context !== 'profile' || !tagNumber) return 0;
+    // التاجات 21-40 تحتاج نزول إضافي في الملف الشخصي
+    if (tagNumber >= 21 && tagNumber <= 40) return 8;
+    return 0;
+  })();
+  
   // جميع التيجان تستخدم نفس المنطق البسيط الموحد
   const needsTouchTop = false;
   const frameIndex = (() => {
