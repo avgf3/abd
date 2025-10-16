@@ -11,6 +11,7 @@ import type { Notification } from '@/types/chat';
 import { mapDbMessagesToChatMessages } from '@/utils/messageUtils';
 import { userCache, setCachedUser } from '@/utils/userCacheManager';
 import { connectionMonitor } from '@/lib/connectionMonitor';
+import { enqueueOfflineMessage, flushOfflineQueue } from '@/lib/offlineQueue';
 
 // Audio notification function
 const playNotificationSound = () => {
@@ -346,6 +347,7 @@ export const useChat = () => {
   const ignoredUsersRef = useRef<Set<number>>(new Set());
   const roomMessagesRef = useRef<Record<string, ChatMessage[]>>({});
   const typingTimersRef = useRef<Map<number, number>>(new Map());
+  const isFlushingOutboxRef = useRef<boolean>(false);
   // Throttle لمنع إرسال joinRoom أكثر من مرة خلال نافذة زمنية قصيرة
   const lastJoinEmitTsRef = useRef<number>(0);
   // Prevent duplicate handling for kick/ban events and centralize navigation
@@ -1842,6 +1844,20 @@ export const useChat = () => {
           socket.current.connect();
         } catch {}
       }
+      // حاول تفريغ الرسائل المعلقة عند عودة الشبكة
+      try {
+        if (!isFlushingOutboxRef.current) {
+          isFlushingOutboxRef.current = true;
+          flushOfflineQueue(async (m) => {
+            await apiRequest(`/api/messages/room/${m.roomId}`, {
+              method: 'POST',
+              body: { content: m.content, messageType: m.messageType },
+            });
+          }).finally(() => {
+            isFlushingOutboxRef.current = false;
+          });
+        }
+      } catch {}
     };
     const handleOffline = () => {
       dispatch({ type: 'SET_CONNECTION_STATUS', payload: false });
@@ -1973,6 +1989,21 @@ export const useChat = () => {
               username: user.username,
               userType: user.userType,
             });
+          } catch {}
+
+          // بعد نجاح الاتصال، حاول تفريغ الرسائل المعلقة في outbox
+          try {
+            if (!isFlushingOutboxRef.current) {
+              isFlushingOutboxRef.current = true;
+              flushOfflineQueue(async (m) => {
+                await apiRequest(`/api/messages/room/${m.roomId}`, {
+                  method: 'POST',
+                  body: { content: m.content, messageType: m.messageType },
+                });
+              }).finally(() => {
+                isFlushingOutboxRef.current = false;
+              });
+            }
           } catch {}
 
           // Prefetch expected data shortly after connection success
@@ -2127,8 +2158,8 @@ export const useChat = () => {
   // 🔥 SIMPLIFIED Send message function
   const sendMessage = useCallback(
     (content: string, messageType: string = 'text', receiverId?: number, roomId?: string, textColor?: string, bold?: boolean) => {
-      if (!state.currentUser || !socket.current?.connected) {
-        console.error('❌ لا يمكن إرسال الرسالة - المستخدم غير متصل');
+      if (!state.currentUser) {
+        console.error('❌ لا يمكن إرسال الرسالة - لا يوجد مستخدم');
         return;
       }
 
@@ -2168,6 +2199,21 @@ export const useChat = () => {
           },
         }).catch(() => {});
       } else {
+        // رسالة غرفة عامة
+        const isConnected = !!socket.current?.connected;
+        if (!isConnected) {
+          try {
+            enqueueOfflineMessage({
+              senderId: messageData.senderId,
+              roomId: messageData.roomId!,
+              content: messageData.content,
+              messageType: (messageData.messageType as any) || 'text',
+              textColor: messageData.textColor,
+              bold: messageData.bold,
+            });
+          } catch {}
+          return;
+        }
         socket.current.emit('publicMessage', messageData);
       }
     },

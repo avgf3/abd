@@ -864,8 +864,53 @@ export class VoiceManager {
    */
   private adjustQualityForBackground(isBackground: boolean): void {
     if (!this.settings.adaptiveQuality) return;
-    
-    // تنفيذ منطق تعديل الجودة
+    try {
+      // Reduce analyzer workload and mic bitrate when in background
+      if (isBackground) {
+        if (this.analyserNode) {
+          this.analyserNode.fftSize = 128;
+          this.analyserNode.smoothingTimeConstant = 0.9;
+        }
+        if (this.gainNode) {
+          // Slightly lower mic gain to reduce CPU usage from downstream processing
+          this.gainNode.gain.value = Math.min(this.gainNode.gain.value, 0.7);
+        }
+        // Hint to all peer connections to use lower bandwidth when possible
+        for (const [, connection] of this.connections.entries()) {
+          try {
+            const senderList = connection.peerConnection?.getSenders?.() || [];
+            for (const sender of senderList) {
+              if (sender.track && sender.track.kind === 'audio') {
+                const params = sender.getParameters();
+                params.encodings = [{ maxBitrate: 24000 }];
+                sender.setParameters(params).catch(() => {});
+              }
+            }
+          } catch {}
+        }
+      } else {
+        // Restore reasonable defaults when foregrounded
+        if (this.analyserNode) {
+          this.analyserNode.fftSize = 256;
+          this.analyserNode.smoothingTimeConstant = 0.8;
+        }
+        if (this.gainNode) {
+          this.gainNode.gain.value = this.settings.micVolume / 100;
+        }
+        for (const [, connection] of this.connections.entries()) {
+          try {
+            const senderList = connection.peerConnection?.getSenders?.() || [];
+            for (const sender of senderList) {
+              if (sender.track && sender.track.kind === 'audio') {
+                const params = sender.getParameters();
+                params.encodings = [{ maxBitrate: 64000 }];
+                sender.setParameters(params).catch(() => {});
+              }
+            }
+          } catch {}
+        }
+      }
+    } catch {}
     }
 
   /**

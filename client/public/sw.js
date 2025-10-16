@@ -1,5 +1,5 @@
 /* Enhanced Service Worker for caching static assets and background sync */
-const VERSION = 'v2';
+const VERSION = 'v3';
 const STATIC_CACHE = `static-${VERSION}`;
 const BACKGROUND_SYNC_TAG = 'socket-ping-sync';
 
@@ -23,7 +23,7 @@ self.addEventListener('activate', (event) => {
 	self.clients.claim();
 });
 
-// 🔥 Background Sync لدعم ping/pong في الخلفية
+// 🔥 Background Sync لدعم ping/pong في الخلفية وأيضاً تفريغ outbox بسيط عبر fetch
 self.addEventListener('sync', (event) => {
 	console.log('🔄 Service Worker: Background Sync', event.tag);
 	
@@ -45,7 +45,7 @@ async function handleBackgroundSync() {
 			},
 		});
 		
-		if (response.ok) {
+    if (response.ok) {
 			console.log('✅ Service Worker: ping نجح');
 			// إشعار التطبيق الرئيسي
 			const clients = await self.clients.matchAll();
