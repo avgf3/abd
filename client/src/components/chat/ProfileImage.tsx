@@ -61,18 +61,18 @@ const TagOverlay = memo(function TagOverlay({
     const scale = basePx / Math.max(1, naturalSize.w);
     const heightPx = naturalSize.h * scale;
     
-    // حساب الشفافية السفلية تلقائياً (لرفع التاج)
+    // الشفافية السفلية: يجب إضافتها لتعويض المساحة الفارغة أسفل الصورة
     const bottomGapPx = autoAnchor ? Math.round(bottomGapRatio * heightPx) : 0;
     
-    // حساب مقدار دخول التاج في الصورة (anchorY)
-    // مثال: anchorY=0.3 يعني 30% من ارتفاع التاج يدخل في الصورة
-    const anchor = touchTop ? bottomGapPx : Math.round(heightPx * anchorY);
+    // مقدار الدخول داخل الرأس
+    // touchTop يعني ملامسة أعلى الصورة دون دخول، لكن مع تعويض الشفافية السفلية
+    const desiredEnterPx = touchTop ? 0 : Math.round(heightPx * anchorY);
     
     // الحساب النهائي:
-    // anchor: كم يدخل التاج في الصورة (موجب = للأسفل)
+    // bottomGapPx: لتعويض الشفافية السفلية ودفع التاج للأسفل ليلامس أعلى الصورة
+    // desiredEnterPx: مقدار الدخول الإضافي داخل الرأس
     // yAdjustPx: ضبط يدوي إضافي (موجب = للأسفل، سالب = للأعلى)
-    // bottomGapPx: الشفافية السفلية (نطرحها لرفع التاج)
-    return Math.round(anchor + yAdjustPx - bottomGapPx);
+    return Math.round(bottomGapPx + desiredEnterPx + yAdjustPx);
   })();
 
   return (
