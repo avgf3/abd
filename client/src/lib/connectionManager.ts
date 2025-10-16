@@ -165,8 +165,15 @@ export class ConnectionManager {
   }
 
   private pollOnce() {
+    // لا تنفذ polling عند فقدان الشبكة
     if (!this.isOnline) {
       this.scheduleNextPoll(this.backoffDelay());
+      return;
+    }
+
+    // عند الخلفية: لا polling ولا زيادة لإخفاقات — أجل حتى تصبح الصفحة مرئية
+    if (!this.isVisible) {
+      this.scheduleNextPoll(this.speedMs);
       return;
     }
 
@@ -211,9 +218,12 @@ export class ConnectionManager {
       .catch(() => {
         this.consecutiveFailures += 1;
         const reloadLimit = this.cfg.failuresBeforeHardReload;
-        if (typeof reloadLimit === 'number' && reloadLimit > 0 && this.consecutiveFailures >= reloadLimit) {
-          this.hardReload();
-          return;
+        // لا تقم بإعادة التحميل إذا كانت الصفحة مخفية — انتظر حتى تصبح مرئية
+        if (this.isVisible) {
+          if (typeof reloadLimit === 'number' && reloadLimit > 0 && this.consecutiveFailures >= reloadLimit) {
+            this.hardReload();
+            return;
+          }
         }
         this.scheduleNextPoll(this.backoffDelay());
       });
