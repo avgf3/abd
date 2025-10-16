@@ -279,9 +279,10 @@ export default function ProfileImage({
     // التاج يجب أن يلامس أعلى الصورة تماماً، دون التأثر بإزاحة الإطار
     const overlayTopPx = imageTopWithinContainer; // تلامس مباشر مع أعلى الصورة
     // إزاحة إضافية لتيجان 21-34 في سياق الملف الشخصي لخفض التاج ليجلس على الرأس
+    // زيادة النسبة لضمان ملامسة التاج للرأس كما طُلب
     const extraProfileDownshift =
       context === 'profile' && tagNumber && tagNumber >= 21 && tagNumber <= 34
-        ? Math.min(8, Math.max(2, Math.round(px * 0.05)))
+        ? Math.min(12, Math.max(4, Math.round(px * 0.085)))
         : 0;
 
     return (
@@ -315,9 +316,10 @@ export default function ProfileImage({
     const overlayTopPx = imageTopWithinContainer;
 
     // إزاحة إضافية لتيجان 21-34 في سياق الملف الشخصي لخفض التاج ليجلس على الرأس
+    // زيادة النسبة لضمان ملامسة التاج للرأس كما طُلب
     const extraProfileDownshift =
       context === 'profile' && tagNumber && tagNumber >= 21 && tagNumber <= 34
-        ? Math.min(8, Math.max(2, Math.round(px * 0.05)))
+        ? Math.min(12, Math.max(4, Math.round(px * 0.085)))
         : 0;
 
     return (
