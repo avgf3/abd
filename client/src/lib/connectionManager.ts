@@ -241,8 +241,9 @@ export function createDefaultConnectionManager(opts: Partial<ConnectionManagerCo
     // errorReportUrl: undefined, // opt-in only if server endpoint implemented
     speedVisibleMs: 1500,
     speedHiddenMs: 4000,
-    failuresBeforeHardReload: 25,
-    hardReloadOnServerAck: true,
+    // تعطيل إعادة التحميل الصلبة بشكل افتراضي
+    failuresBeforeHardReload: 0,
+    hardReloadOnServerAck: false,
     ...opts,
   });
 }
