@@ -118,16 +118,16 @@
     // نفس الحسبة المستخدمة داخل ProfileImage.tsx مع تبسيط العرض
     const SIZES = [36, 56, 72];
 
-    // استنساخ مبسّط لتخطيطات tagLayouts.ts (القيم المُصححة)
+    // ✅ مطابق 100% للكود الفعلي في tagLayouts.ts
     const TAG_LAYOUTS = {
-      1:  { widthRatio: 1.10, xAdjustPx: 0, yAdjustPx: 4, anchorY: 0.54, autoAnchor: true },
-      8:  { widthRatio: 1.10, xAdjustPx: 0, yAdjustPx: 4, anchorY: 0.54, autoAnchor: true },
-      10: { widthRatio: 1.10, xAdjustPx: 0, yAdjustPx: 3, anchorY: 0.42, autoAnchor: true },
-      // 21–30: anchorY 0.37, yAdjust 1
-      21: { widthRatio: 1.10, xAdjustPx: 0, yAdjustPx: 1, anchorY: 0.37, autoAnchor: true },
-      28: { widthRatio: 1.10, xAdjustPx: 0, yAdjustPx: 1, anchorY: 0.37, autoAnchor: true },
-      // 31–40: anchorY 0.40, yAdjust 1, widthRatio 1.11
-      34: { widthRatio: 1.11, xAdjustPx: 0, yAdjustPx: 1, anchorY: 0.40, autoAnchor: true },
+      1:  { widthRatio: 1.08, xAdjustPx: 0, yAdjustPx: 2, anchorY: 0.48, autoAnchor: false },
+      8:  { widthRatio: 1.08, xAdjustPx: 0, yAdjustPx: 2, anchorY: 0.48, autoAnchor: false },
+      10: { widthRatio: 1.08, xAdjustPx: 0, yAdjustPx: 2, anchorY: 0.40, autoAnchor: false },
+      // 21–30: anchorY 0.36, yAdjust 2
+      21: { widthRatio: 1.08, xAdjustPx: 0, yAdjustPx: 2, anchorY: 0.36, autoAnchor: false },
+      28: { widthRatio: 1.08, xAdjustPx: 0, yAdjustPx: 2, anchorY: 0.36, autoAnchor: false },
+      // 31–40: anchorY 0.38, yAdjust 3, widthRatio 1.10
+      34: { widthRatio: 1.10, xAdjustPx: 0, yAdjustPx: 3, anchorY: 0.38, autoAnchor: false },
     };
 
     const AVATAR_SRC = '/default_avatar.svg';
@@ -148,14 +148,12 @@
       // حساب anchorFromImagePx بنفس المنطق
       const scale = basePx / Math.max(1, naturalTagSize.w);
       const heightPx = naturalTagSize.h * scale;
+      // ✅ الحل الصحيح: نستخدم anchorY + yAdjustPx + bottomGapPx
       const bottomGapPx = (layout.autoAnchor ? Math.round(bottomGapRatio * heightPx) : 0);
-      const isTouchTop = false; // لم نعد نحتاج touchTop مع الإعدادات الجديدة
-      const anchor = isTouchTop ? bottomGapPx : Math.round(heightPx * (layout.anchorY ?? 0.08));
-      // تطبيق نزول إضافي خاص بالبروفايل لتيجان 21–34 لمضاهاة الكود الفعلي
-      const extraProfileDownshift = (tagNumber >= 21 && tagNumber <= 34)
-        ? Math.min(18, Math.max(6, Math.round(px * 0.12)))
-        : 0;
-      const anchorFromImagePx = Math.round(anchor + (layout.yAdjustPx || 0) + extraProfileDownshift - bottomGapPx);
+      const isTouchTop = false;
+      const anchor = isTouchTop ? 0 : Math.round(heightPx * (layout.anchorY ?? 0.34));
+      // المعادلة الصحيحة: anchor + yAdjustPx + bottomGapPx
+      const anchorFromImagePx = Math.round(anchor + (layout.yAdjustPx || 0) + bottomGapPx);
 
       const row = document.createElement('div');
       row.className = 'row';
@@ -179,7 +177,8 @@
       tag.src = TAG_SRC[tagNumber];
       tag.className = 'profile-tag-overlay';
       tag.alt = 'tag';
-      tag.style.top = imageTopWithinContainer + 'px';
+      // overlayTopPx = 0 (من أعلى الحاوية)
+      tag.style.top = '0px';
       tag.style.width = basePx + 'px';
       tag.style.transform = `translate(-50%, calc(-100% + ${anchorFromImagePx}px))`;
       tag.style.marginLeft = (layout.xAdjustPx || 0) + 'px';
@@ -193,6 +192,7 @@
           <span>basePx</span><b>${basePx}px</b>
           <span>anchorY</span><b>${(layout.anchorY * 100).toFixed(1)}%</b>
           <span>yAdjustPx</span><b>${layout.yAdjustPx || 0}px</b>
+          <span>anchor</span><b>${Math.round(heightPx * (layout.anchorY ?? 0.34))}px</b>
           <span>bottomGap</span><b>${(bottomGapRatio * 100).toFixed(1)}%</b>
           <span>translateY</span><b>-100% + ${anchorFromImagePx}px</b>
         </div>
