@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>فحص شامل لجميع التيجان على الصور الشخصية</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .subtitle {
+            color: rgba(255,255,255,0.9);
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        .controls {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+
+        .control-row {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        label {
+            font-weight: 600;
+            color: #333;
+            font-size: 14px;
+        }
+
+        input[type="range"] {
+            width: 200px;
+        }
+
+        input[type="number"] {
+            padding: 8px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            width: 120px;
+            font-size: 14px;
+        }
+
+        .value-display {
+            font-family: 'Courier New', monospace;
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 25px;
+            margin-top: 20px;
+        }
+
+        .tag-item {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .tag-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+        }
+
+        .tag-name {
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+
+        .profile-container {
+            position: relative;
+            display: inline-block;
+            margin: 0 auto;
+        }
+
+        .profile-image {
+            border-radius: 50%;
+            border: 3px solid #667eea;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .tag-overlay {
+            position: absolute;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .measurements {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 2px solid #f0f0f0;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .measurement-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
+        }
+
+        .stats {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .stats h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .stat-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+
+        .verification-status {
+            margin-top: 10px;
+            padding: 8px;
+            border-radius: 6px;
+            font-weight: 600;
+        }
+
+        .status-pass {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-warn {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-fail {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 فحص شامل لجميع التيجان</h1>
+        <p class="subtitle">نظام تحقق دقيق لوضعية التيجان على الصور الشخصية - 34 تاج</p>
+
+        <div class="controls">
+            <div class="control-row">
+                <div class="control-group">
+                    <label>حجم الصورة (px):</label>
+                    <input type="range" id="imageSize" min="36" max="150" value="56" step="1">
+                    <span class="value-display" id="imageSizeValue">56px</span>
+                </div>
+
+                <div class="control-group">
+                    <label>نسبة عرض التاج (widthRatio):</label>
+                    <input type="number" id="widthRatio" min="0.5" max="2.0" step="0.05" value="1.1">
+                    <span class="value-display" id="widthRatioValue">1.1</span>
+                </div>
+
+                <div class="control-group">
+                    <label>إزاحة علوية (topOffsetRatio):</label>
+                    <input type="number" id="topOffset" min="-0.5" max="0.5" step="0.01" value="-0.05">
+                    <span class="value-display" id="topOffsetValue">-0.05</span>
+                </div>
+            </div>
+
+            <div class="control-row">
+                <button onclick="resetDefaults()" style="padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 16px;">
+                    إعادة تعيين القيم الافتراضية
+                </button>
+                <button onclick="exportConfig()" style="padding: 10px 20px; background: #28a745; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 16px;">
+                    تصدير الإعدادات
+                </button>
+            </div>
+        </div>
+
+        <div class="stats">
+            <h2>إحصائيات الفحص</h2>
+            <div class="stat-grid">
+                <div class="stat-box">
+                    <div>إجمالي التيجان</div>
+                    <div class="stat-value" id="totalTags">34</div>
+                </div>
+                <div class="stat-box">
+                    <div>التيجان المحملة</div>
+                    <div class="stat-value" id="loadedTags">0</div>
+                </div>
+                <div class="stat-box">
+                    <div>الوضعية الصحيحة</div>
+                    <div class="stat-value" id="correctPosition">0</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid" id="tagsGrid"></div>
+    </div>
+
+    <script>
+        const TOTAL_TAGS = 34;
+        const SAMPLE_IMAGE = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><circle cx="50" cy="50" r="45" fill="%23667eea"/><circle cx="35" cy="40" r="5" fill="white"/><circle cx="65" cy="40" r="5" fill="white"/><path d="M 35 65 Q 50 75 65 65" stroke="white" stroke-width="3" fill="none" stroke-linecap="round"/></svg>';
+
+        let config = {
+            imageSize: 56,
+            widthRatio: 1.1,
+            topOffset: -0.05
+        };
+
+        let loadedCount = 0;
+        let correctPositionCount = 0;
+
+        function updateStats() {
+            document.getElementById('loadedTags').textContent = loadedCount;
+            document.getElementById('correctPosition').textContent = correctPositionCount;
+        }
+
+        function verifyPosition(tagTop, imageSize) {
+            const topPx = tagTop;
+            // التاج يجب أن يكون فوق الصورة (قيمة سالبة) أو قريب جداً من الحافة العلوية
+            if (topPx < 0 && topPx >= -imageSize * 0.3) {
+                return 'pass';
+            } else if (topPx >= -imageSize * 0.5 && topPx < imageSize * 0.1) {
+                return 'warn';
+            }
+            return 'fail';
+        }
+
+        function createTagItem(tagNumber) {
+            const tagSrc = `/tags/tag${tagNumber}.${tagNumber <= 12 ? 'webp' : 'png'}`;
+            
+            const item = document.createElement('div');
+            item.className = 'tag-item';
+            
+            const imageSize = config.imageSize;
+            const containerSize = imageSize * 1.35;
+            const tagWidth = Math.round(imageSize * config.widthRatio);
+            const tagTop = Math.round(imageSize * config.topOffset);
+            
+            const status = verifyPosition(tagTop, imageSize);
+            const statusText = status === 'pass' ? '✅ صحيح' : status === 'warn' ? '⚠️ تحذير' : '❌ خطأ';
+            const statusClass = `status-${status}`;
+            
+            if (status === 'pass') correctPositionCount++;
+            
+            item.innerHTML = `
+                <div class="tag-name">التاج ${tagNumber}</div>
+                <div class="profile-container" style="width: ${containerSize}px; height: ${containerSize}px;">
+                    <img src="${SAMPLE_IMAGE}" 
+                         class="profile-image" 
+                         style="width: ${imageSize}px; height: ${imageSize}px;"
+                         alt="صورة تجريبية">
+                    <img src="${tagSrc}" 
+                         class="tag-overlay" 
+                         style="
+                            width: ${tagWidth}px;
+                            top: ${tagTop}px;
+                            left: 50%;
+                            transform: translateX(-50%);
+                         "
+                         alt="تاج ${tagNumber}"
+                         onload="tagLoaded()"
+                         onerror="tagError(this, ${tagNumber})">
+                </div>
+                <div class="measurements">
+                    <div class="measurement-row">
+                        <span>حجم الصورة:</span>
+                        <strong>${imageSize}px</strong>
+                    </div>
+                    <div class="measurement-row">
+                        <span>عرض التاج:</span>
+                        <strong>${tagWidth}px</strong>
+                    </div>
+                    <div class="measurement-row">
+                        <span>الإزاحة العلوية:</span>
+                        <strong>${tagTop}px</strong>
+                    </div>
+                    <div class="measurement-row">
+                        <span>نسبة العرض:</span>
+                        <strong>${(tagWidth/imageSize).toFixed(2)}</strong>
+                    </div>
+                </div>
+                <div class="verification-status ${statusClass}">
+                    ${statusText}
+                </div>
+            `;
+            
+            return item;
+        }
+
+        function tagLoaded() {
+            loadedCount++;
+            updateStats();
+        }
+
+        function tagError(img, tagNumber) {
+            img.style.border = '2px dashed red';
+            img.alt = `فشل تحميل التاج ${tagNumber}`;
+        }
+
+        function renderAllTags() {
+            const grid = document.getElementById('tagsGrid');
+            grid.innerHTML = '';
+            loadedCount = 0;
+            correctPositionCount = 0;
+            
+            for (let i = 1; i <= TOTAL_TAGS; i++) {
+                grid.appendChild(createTagItem(i));
+            }
+            
+            updateStats();
+        }
+
+        function updateConfig() {
+            config.imageSize = parseInt(document.getElementById('imageSize').value);
+            config.widthRatio = parseFloat(document.getElementById('widthRatio').value);
+            config.topOffset = parseFloat(document.getElementById('topOffset').value);
+            
+            document.getElementById('imageSizeValue').textContent = config.imageSize + 'px';
+            document.getElementById('widthRatioValue').textContent = config.widthRatio;
+            document.getElementById('topOffsetValue').textContent = config.topOffset;
+            
+            renderAllTags();
+        }
+
+        function resetDefaults() {
+            document.getElementById('imageSize').value = 56;
+            document.getElementById('widthRatio').value = 1.1;
+            document.getElementById('topOffset').value = -0.05;
+            updateConfig();
+        }
+
+        function exportConfig() {
+            const configCode = `// TAG_CONFIG - تم إنشاؤه بواسطة أداة الفحص
+export const TAG_CONFIG = {
+  widthRatio: ${config.widthRatio},       // عرض التاج = ${(config.widthRatio * 100).toFixed(0)}% من عرض الصورة
+  topOffsetRatio: ${config.topOffset}, // الإزاحة العلوية = ${(config.topOffset * 100).toFixed(0)}% من ارتفاع الصورة
+};
+
+/* إحصائيات الفحص:
+ * - إجمالي التيجان: ${TOTAL_TAGS}
+ * - التيجان المحملة: ${loadedCount}
+ * - الوضعية الصحيحة: ${correctPositionCount}
+ * - النسبة: ${((correctPositionCount/TOTAL_TAGS)*100).toFixed(1)}%
+ */`;
+            
+            const blob = new Blob([configCode], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'tagConfig.ts';
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            alert('تم تصدير الإعدادات بنجاح! ✅');
+        }
+
+        // Event listeners
+        document.getElementById('imageSize').addEventListener('input', updateConfig);
+        document.getElementById('widthRatio').addEventListener('input', updateConfig);
+        document.getElementById('topOffset').addEventListener('input', updateConfig);
+
+        // Initial render
+        renderAllTags();
+    </script>
+</body>
+</html>
