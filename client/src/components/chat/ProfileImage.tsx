@@ -309,7 +309,7 @@ export default function ProfileImage({
             overlayTopPx={overlayTopPx}
             basePx={Math.round(px * layout.widthRatio)}
             anchorY={layout.anchorY ?? DEFAULT_TAG_LAYOUT.anchorY!}
-            yAdjustPx={layout.yAdjustPx || 0}
+            yAdjustPx={(layout.yAdjustPx || 0) + profileExtraYAdjust}
             xAdjustPx={layout.xAdjustPx}
             autoAnchor={false}
             touchTop={needsTouchTop}
@@ -362,7 +362,7 @@ export default function ProfileImage({
             overlayTopPx={overlayTopPx}
             basePx={Math.round(px * layout.widthRatio)}
             anchorY={layout.anchorY ?? DEFAULT_TAG_LAYOUT.anchorY!}
-            yAdjustPx={layout.yAdjustPx || 0}
+            yAdjustPx={(layout.yAdjustPx || 0) + profileExtraYAdjust}
             xAdjustPx={layout.xAdjustPx}
             autoAnchor={false}
             touchTop={needsTouchTop}
