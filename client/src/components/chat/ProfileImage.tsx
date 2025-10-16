@@ -282,8 +282,9 @@ export default function ProfileImage({
     // إزاحة عمودية بسيطة لإطارات محددة التي تبدو مرتفعة قليلاً في البروفايل فقط
     const frameDownshift = (frameIndex === 7 || frameIndex === 8 || frameIndex === 9) ? Math.round(px * 0.02) : 0;
     // التاج يجب أن يلامس أعلى الصورة تماماً، دون التأثر بإزاحة الإطار
-    const overlayTopPx = imageTopWithinContainer; // تلامس مباشر مع أعلى الصورة
-    const desiredOverlapPx = Math.round(px * 0.06); // دخول ثابت 6% من قطر الصورة
+    // اجعل المرجع أعلى الصورة مباشرة لا أعلى الحاوية لتفادي ارتفاع التاج
+    const overlayTopPx = 0;
+    const desiredOverlapPx = Math.round(px * 0.10); // دخول ثابت 10% من قطر الصورة لتثبيت التاج على الرأس
 
     return (
       <div
@@ -300,7 +301,7 @@ export default function ProfileImage({
             anchorY={layout.anchorY ?? DEFAULT_TAG_LAYOUT.anchorY!}
             yAdjustPx={layout.yAdjustPx || 0}
             xAdjustPx={layout.xAdjustPx}
-            autoAnchor={layout.autoAnchor}
+            autoAnchor={false}
             touchTop={needsTouchTop}
             overlapPx={desiredOverlapPx}
           />
@@ -313,8 +314,9 @@ export default function ProfileImage({
     const px = pixelSize ?? (size === 'small' ? 36 : size === 'large' ? 72 : 56);
     const containerSize = px * 1.35; // نفس حاوية إضافة الإطار
     const imageTopWithinContainer = (containerSize - px) / 2;
-    const overlayTopPx = imageTopWithinContainer;
-    const desiredOverlapPx = Math.round(px * 0.06); // دخول ثابت 6%
+    // اجعل المرجع أعلى الصورة مباشرة لا أعلى الحاوية
+    const overlayTopPx = 0;
+    const desiredOverlapPx = Math.round(px * 0.10); // دخول ثابت 10%
 
 
     return (
@@ -354,7 +356,7 @@ export default function ProfileImage({
             anchorY={layout.anchorY ?? DEFAULT_TAG_LAYOUT.anchorY!}
             yAdjustPx={layout.yAdjustPx || 0}
             xAdjustPx={layout.xAdjustPx}
-            autoAnchor={layout.autoAnchor}
+            autoAnchor={false}
             touchTop={needsTouchTop}
             overlapPx={desiredOverlapPx}
           />
