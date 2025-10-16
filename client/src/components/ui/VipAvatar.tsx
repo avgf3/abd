@@ -26,8 +26,8 @@ export default function VipAvatar({
   // الإطار (الحاوية) يتكيف ليكون أكبر من الصورة بنسبة كافية لاستيعاب الإطار بالكامل
   const frameSize = imageSize * 1.35; // الإطار أكبر بـ 35% لضمان احتواء الإطار بالكامل داخل الحاوية
 
-  // إلغاء أي تكبير إضافي في جميع السياقات لتوحيد القياس عبر كل الواجهات
-  const overlayScale = useMemo(() => 1, []);
+  // مقياس تلقائي لطبقة صورة الإطار بناءً على مساحة المحتوى الفعلية داخل الصورة
+  const [overlayScale, setOverlayScale] = useState<number>(1);
 
   const containerStyle: React.CSSProperties & { ['--vip-spin-duration']?: string } = {
     width: frameSize,
@@ -70,6 +70,91 @@ export default function VipAvatar({
   // Refs for GSAP animations (frame10 only)
   const overlayRef = useRef<HTMLImageElement | null>(null);
   const shineRef = useRef<HTMLDivElement | null>(null);
+
+  // قياس تلقائي لمحتوى صورة الإطار (يحاول تكبير/تصغير الإطار بحيث يغطي المحتوى تقريباً كامل الحاوية)
+  const computeAutoOverlayScale = (img: HTMLImageElement | null) => {
+    try {
+      if (!img || !img.naturalWidth || !img.naturalHeight) {
+        setOverlayScale(1);
+        return;
+      }
+
+      // Canvas مربع يحاكي object-fit: contain داخل حاوية مربعة
+      const sampleSize = 128; // عيّنة كافية وخفيفة الأداء
+      const canvas = document.createElement('canvas');
+      canvas.width = sampleSize;
+      canvas.height = sampleSize;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        setOverlayScale(1);
+        return;
+      }
+
+      const naturalWidth = img.naturalWidth;
+      const naturalHeight = img.naturalHeight;
+      const baseScale = sampleSize / Math.max(naturalWidth, naturalHeight);
+      const drawWidth = Math.max(1, Math.round(naturalWidth * baseScale));
+      const drawHeight = Math.max(1, Math.round(naturalHeight * baseScale));
+      const dx = Math.floor((sampleSize - drawWidth) / 2);
+      const dy = Math.floor((sampleSize - drawHeight) / 2);
+
+      // ارسم الصورة بالحجم/الموضع الذي يطابق العرض الفعلي داخل الحاوية المربعة
+      ctx.clearRect(0, 0, sampleSize, sampleSize);
+      ctx.drawImage(img, dx, dy, drawWidth, drawHeight);
+
+      const imageData = ctx.getImageData(0, 0, sampleSize, sampleSize);
+      const data = imageData.data;
+
+      // ابحث عن صندوق إحاطة البكسلات غير الشفافة (تجاهل التوهجات الضعيفة جداً)
+      const alphaThreshold = 24; // 0..255
+      let left = sampleSize;
+      let right = -1;
+      let top = sampleSize;
+      let bottom = -1;
+
+      // مسح كامل العينة (128x128 ~ 16k بكسل)
+      for (let y = 0; y < sampleSize; y++) {
+        const rowOffset = y * sampleSize * 4;
+        for (let x = 0; x < sampleSize; x++) {
+          const a = data[rowOffset + x * 4 + 3];
+          if (a >= alphaThreshold) {
+            if (x < left) left = x;
+            if (x > right) right = x;
+            if (y < top) top = y;
+            if (y > bottom) bottom = y;
+          }
+        }
+      }
+
+      if (right < 0 || bottom < 0) {
+        // لا محتوى يمكن قياسه (صورة شفافة بالكامل؟) — اترك المقياس 1
+        setOverlayScale(1);
+        return;
+      }
+
+      const contentWidth = Math.max(1, right - left + 1);
+      const contentHeight = Math.max(1, bottom - top + 1);
+      const widthCoverage = contentWidth / sampleSize; // تغطية المحتوى داخل الحاوية المربعة (0..1)
+      const heightCoverage = contentHeight / sampleSize;
+
+      // غطِّ الحاوية تقريباً بالكامل مع هامش أمان بسيط
+      const targetCoverage = 0.96; // 96% من البعد
+      const scaleForWidth = targetCoverage / widthCoverage;
+      const scaleForHeight = targetCoverage / heightCoverage;
+      let desiredScale = Math.max(scaleForWidth, scaleForHeight);
+
+      // حدود قصوى/دنيا لتجنب تغييرات مبالغ فيها
+      const MIN_SCALE = 0.9;
+      const MAX_SCALE = 1.15;
+      if (!Number.isFinite(desiredScale)) desiredScale = 1;
+      desiredScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, desiredScale));
+
+      // تقريب خفيف لتفادي jitter العشري
+      setOverlayScale(parseFloat(desiredScale.toFixed(3)));
+    } catch {
+      setOverlayScale(1);
+    }
+  };
 
   // Animate frame10 with subtle float and a shine sweep
   useEffect(() => {
@@ -128,6 +213,7 @@ export default function VipAvatar({
             alt="frame"
             className="vip-frame-overlay"
             style={{ transform: overlayScale === 1 ? 'scale(1)' : `scale(${overlayScale})` }}
+            onLoad={(e) => computeAutoOverlayScale(e.currentTarget as HTMLImageElement)}
             onError={(e) => {
               try {
                 const cur = overlaySrc || '';
