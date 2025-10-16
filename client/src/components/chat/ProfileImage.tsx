@@ -46,33 +46,36 @@ const TagOverlay = memo(function TagOverlay({
 }: TagOverlayProps) {
   const [imageSrc, setImageSrc] = useState<string>(src);
   const [fallbackStep, setFallbackStep] = useState<number>(0);
+  const [isReady, setIsReady] = useState<boolean>(false);
   useEffect(() => {
     setImageSrc(src);
     setFallbackStep(0);
+    setIsReady(false);
   }, [src]);
   const [naturalSize, setNaturalSize] = useState<{ w: number; h: number } | null>(null);
   const [bottomGapRatio, setBottomGapRatio] = useState<number>(0); // نسبة الشفافية من الأسفل
 
   const anchorFromImagePx = (() => {
-    // قبل تحميل صورة التاج، نستخدم yAdjustPx فقط كتقدير مبدئي
-    if (!naturalSize) return yAdjustPx;
-    
+    // نحسب إدخالاً ثابتاً يعتمد على عرض التاج المعروض (basePx) لضمان ثبات عبر اختلاف الأبعاد
+    const desiredEnterPx = touchTop ? 0 : Math.round(basePx * anchorY);
+
+    // إذا لم تُحمّل الصورة بعد، أعد قيمة ثابتة ومستقرة دون الاعتماد على naturalSize
+    if (!naturalSize) {
+      return Math.round(desiredEnterPx + yAdjustPx);
+    }
+
     // حساب أبعاد التاج المعروض على الشاشة
     const scale = basePx / Math.max(1, naturalSize.w);
     const heightPx = naturalSize.h * scale;
-    
-    // حساب الشفافية السفلية تلقائياً (لرفع التاج)
+
+    // الشفافية السفلية: أضفها فقط عند تفعيل autoAnchor
     const bottomGapPx = autoAnchor ? Math.round(bottomGapRatio * heightPx) : 0;
-    
-    // حساب مقدار دخول التاج في الصورة (anchorY)
-    // مثال: anchorY=0.3 يعني 30% من ارتفاع التاج يدخل في الصورة
-    const anchor = touchTop ? bottomGapPx : Math.round(heightPx * anchorY);
-    
-    // الحساب النهائي:
-    // anchor: كم يدخل التاج في الصورة (موجب = للأسفل)
-    // yAdjustPx: ضبط يدوي إضافي (موجب = للأسفل، سالب = للأعلى)
-    // bottomGapPx: الشفافية السفلية (نطرحها لرفع التاج)
-    return Math.round(anchor + yAdjustPx - bottomGapPx);
+
+    // اجمع القيم مع قيد علوي بسيط لمنع الطيران في الحالات الشاذة
+    const total = bottomGapPx + desiredEnterPx + yAdjustPx;
+    const maxEnter = Math.round(basePx * 0.22); // حد أمان 22% من عرض التاج
+    const clamped = Math.max(0, Math.min(total, maxEnter));
+    return clamped;
   })();
 
   return (
@@ -88,7 +91,8 @@ const TagOverlay = memo(function TagOverlay({
         marginLeft: xAdjustPx,
         backgroundColor: 'transparent',
         background: 'transparent',
-        opacity: 1,
+        opacity: isReady ? 1 : 0,
+        visibility: isReady ? 'visible' : 'hidden',
         transition: 'none',
         willChange: 'auto',
         transformOrigin: '50% 100%',
@@ -145,6 +149,7 @@ const TagOverlay = memo(function TagOverlay({
               // تأكد من النطاق
               setBottomGapRatio(Number.isFinite(ratio) ? Math.max(0, Math.min(0.5, ratio)) : 0);
             }
+            setIsReady(true);
           }
         } catch {}
       }}

@@ -16,6 +16,7 @@ import SubChat from '@/pages/SubChat';
 import PrivacyPolicy from '@/pages/PrivacyPolicy';
 import TermsOfService from '@/pages/TermsOfService';
 import EmojisPage from '@/pages/Emojis';
+import VisualTagTest from '@/pages/VisualTagTest';
 
 /*
 🚀 نظام المدن المتكامل - المحدث في 2025
@@ -56,6 +57,8 @@ function Router() {
       <Route path="/arabic" component={ArabicChat} />
       <Route path="/emojis" component={EmojisPage} />
       <Route path="/emojis/:tab" component={EmojisPage} />
+      {/* Visual test for profile tags (must be before generic routes) */}
+      <Route path="/tags/test" component={VisualTagTest} />
 
       {/* Sub-chat routes for country-specific chat rooms - FIRST */}
       {/* Emamir sub-chats */}
