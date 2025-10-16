@@ -59,10 +59,10 @@ export const TAG_LAYOUTS: Record<number, TagLayout> = (() => {
   applyRange(13, 20, { anchorY: 0.34, yAdjustPx: 7 });
   
   // 21-30: تيجان متوسطة
-  applyRange(21, 30, { anchorY: 0.36, yAdjustPx: 11 });
+  applyRange(21, 30, { anchorY: 0.36, yAdjustPx: 8 });
   
   // 31-40: تيجان مزخرفة
-  applyRange(31, 40, { anchorY: 0.38, yAdjustPx: 12, widthRatio: 1.10 });
+  applyRange(31, 40, { anchorY: 0.38, yAdjustPx: 9, widthRatio: 1.10 });
   
   // 41-50: تيجان ملكية/إمبراطورية
   applyRange(41, 50, { anchorY: 0.44, yAdjustPx: 7, widthRatio: 1.12 });
