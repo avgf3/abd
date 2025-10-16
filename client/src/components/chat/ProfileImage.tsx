@@ -69,21 +69,21 @@ const TagOverlay = memo(function TagOverlay({
     const scale = basePx / Math.max(1, naturalSize.w);
     const heightPx = naturalSize.h * scale;
 
-    // حساب الشفافية السفلية تلقائياً (لرفع التاج) - يجب أن يُطرح!
+    // حساب الشفافية السفلية تلقائياً (لنزول التاج أكثر لتعويض الشفافية)
     const bottomGapPx = autoAnchor ? Math.round(bottomGapRatio * heightPx) : 0;
 
     // إذا حُدد overlapPx (مثلاً 10% من قطر الصورة) فالأولوية له لضمان اتساق الدخول
     if (typeof overlapPx === 'number') {
       const desired = touchTop ? 0 : Math.max(0, Math.round(overlapPx));
-      // ✅ الإصلاح: نطرح bottomGapPx لرفع التاج (إزالة الشفافية)
-      return Math.max(0, Math.round(desired - bottomGapPx));
+      // ✅ الإصلاح: نجمع bottomGapPx لأن الشفافية تتطلب نزول التاج أكثر
+      return Math.max(0, Math.round(desired + bottomGapPx));
     }
 
     // خلاف ذلك، استخدم النسبة من ارتفاع التاج
     const anchor = touchTop ? 0 : Math.round(heightPx * anchorY);
-    // ✅ الإصلاح الرئيسي: نطرح bottomGapPx بدلاً من جمعه!
-    // المنطق: bottomGapPx يمثل المسافة الشفافة التي يجب إزالتها
-    return Math.round(anchor + yAdjustPx - bottomGapPx);
+    // ✅ الإصلاح الرئيسي: نجمع bottomGapPx لأن الشفافية تتطلب نزول التاج أكثر
+    // المنطق: bottomGapPx يمثل المسافة الشفافة التي يجب تعويضها بنزول إضافي
+    return Math.round(anchor + yAdjustPx + bottomGapPx);
   })();
 
   return (
@@ -285,7 +285,7 @@ export default function ProfileImage({
     // التاج يجب أن يلامس أعلى الصورة تماماً، دون التأثر بإزاحة الإطار
     // اجعل المرجع أعلى الصورة مباشرة لا أعلى الحاوية لتفادي ارتفاع التاج
     const overlayTopPx = 0;
-    const desiredOverlapPx = Math.round(px * 0.10); // دخول ثابت 10% من قطر الصورة لتثبيت التاج على الرأس
+    // ✅ الحل: عدم تمرير overlapPx، لنترك الكود يستخدم anchorY + yAdjustPx من tagLayouts.ts
 
     return (
       <div
@@ -304,7 +304,6 @@ export default function ProfileImage({
             xAdjustPx={layout.xAdjustPx}
             autoAnchor={false}
             touchTop={needsTouchTop}
-            overlapPx={desiredOverlapPx}
           />
         )}
       </div>
@@ -317,8 +316,7 @@ export default function ProfileImage({
     const imageTopWithinContainer = (containerSize - px) / 2;
     // اجعل المرجع أعلى الصورة مباشرة لا أعلى الحاوية
     const overlayTopPx = 0;
-    const desiredOverlapPx = Math.round(px * 0.10); // دخول ثابت 10%
-
+    // ✅ الحل: عدم تمرير overlapPx، لنترك الكود يستخدم anchorY + yAdjustPx من tagLayouts.ts
 
     return (
       <div
@@ -359,7 +357,6 @@ export default function ProfileImage({
             xAdjustPx={layout.xAdjustPx}
             autoAnchor={false}
             touchTop={needsTouchTop}
-            overlapPx={desiredOverlapPx}
           />
         )}
       </div>

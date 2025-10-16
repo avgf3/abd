@@ -148,14 +148,12 @@
       // حساب anchorFromImagePx بنفس المنطق
       const scale = basePx / Math.max(1, naturalTagSize.w);
       const heightPx = naturalTagSize.h * scale;
-      // ✅ إصلاح: bottomGapPx يُطرح لرفع التاج
+      // ✅ الحل الصحيح: نستخدم anchorY + yAdjustPx + bottomGapPx
       const bottomGapPx = (layout.autoAnchor ? Math.round(bottomGapRatio * heightPx) : 0);
       const isTouchTop = false;
       const anchor = isTouchTop ? 0 : Math.round(heightPx * (layout.anchorY ?? 0.34));
-      // ✅ المعادلة المصححة: نطرح bottomGapPx بدلاً من جمعه
-      // overlapPx يستخدم 10% ثابت في الكود الفعلي
-      const overlapPx = Math.round(px * 0.10);
-      const anchorFromImagePx = Math.round(overlapPx - bottomGapPx);
+      // المعادلة الصحيحة: anchor + yAdjustPx + bottomGapPx
+      const anchorFromImagePx = Math.round(anchor + (layout.yAdjustPx || 0) + bottomGapPx);
 
       const row = document.createElement('div');
       row.className = 'row';
@@ -179,7 +177,7 @@
       tag.src = TAG_SRC[tagNumber];
       tag.className = 'profile-tag-overlay';
       tag.alt = 'tag';
-      // ✅ مطابق للكود الفعلي: overlayTopPx = 0
+      // overlayTopPx = 0 (من أعلى الحاوية)
       tag.style.top = '0px';
       tag.style.width = basePx + 'px';
       tag.style.transform = `translate(-50%, calc(-100% + ${anchorFromImagePx}px))`;
@@ -194,7 +192,7 @@
           <span>basePx</span><b>${basePx}px</b>
           <span>anchorY</span><b>${(layout.anchorY * 100).toFixed(1)}%</b>
           <span>yAdjustPx</span><b>${layout.yAdjustPx || 0}px</b>
-          <span>overlapPx</span><b>10% = ${Math.round(px * 0.10)}px</b>
+          <span>anchor</span><b>${Math.round(heightPx * (layout.anchorY ?? 0.34))}px</b>
           <span>bottomGap</span><b>${(bottomGapRatio * 100).toFixed(1)}%</b>
           <span>translateY</span><b>-100% + ${anchorFromImagePx}px</b>
         </div>
