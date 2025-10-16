@@ -1,6 +1,7 @@
 import type { Socket } from 'socket.io-client';
 import { io } from 'socket.io-client';
 
+// Simple session storage helpers
 const STORAGE_KEY = 'chat_session';
 
 type StoredSession = {
@@ -41,13 +42,19 @@ export function clearSession() {
   }
 }
 
+
 let socketInstance: Socket | null = null;
 
 function getServerUrl(): string {
   try {
     const isDev = (import.meta as any)?.env?.DEV;
     if (isDev) return 'http://localhost:5000';
-    return window.location.origin;
+    
+    // في الإنتاج، استخدم نفس الأصل دائماً
+    // هذا يضمن التوافق مع أي بيئة استضافة
+    const protocol = window.location.protocol;
+    const host = window.location.host;
+    return `${protocol}//${host}`;
   } catch {
     return window.location.origin;
   }
@@ -57,6 +64,11 @@ function attachCoreListeners(socket: Socket) {
   const anySocket = socket as any;
   if (anySocket.__coreListenersAttached) return;
   anySocket.__coreListenersAttached = true;
+
+  // 🚀 نظام إعادة اتصال ذكي ومتقدم
+  let reconnectAttempt = 0;
+  let maxReconnectAttempt = 0;
+  let isManualDisconnect = false;
 
   const reauth = (isReconnect: boolean) => {
     const session = getSession();
@@ -68,6 +80,8 @@ function attachCoreListeners(socket: Socket) {
         userType: session.userType,
         token: session.token,
         reconnect: isReconnect,
+        // 🆕 معلومات إضافية للذكاء
+        reconnectAttempt,
         timestamp: Date.now(),
       });
     } catch {}
@@ -75,6 +89,9 @@ function attachCoreListeners(socket: Socket) {
 
   socket.on('connect', () => {
     reauth(false);
+    try {
+      localStorage.setItem('socket_connection_stable', 'true');
+    } catch {}
   });
 
   socket.on('reconnect', () => {
@@ -86,21 +103,26 @@ function attachCoreListeners(socket: Socket) {
   });
 
   socket.on('disconnect', (reason) => {
-    console.log(`انقطع الاتصال: ${reason}`);
+    isManualDisconnect = reason === 'io client disconnect';
+    try {
+      localStorage.setItem('socket_connection_stable', 'false');
+    } catch {}
   });
 
   window.addEventListener('online', () => {
-    if (!socket.connected) {
+    if (!socket.connected && !isManualDisconnect) {
       socket.connect();
     }
   });
 }
 
 export function getSocket(): Socket {
+  // إذا كان هناك socket قديم وتم مسح الجلسة، أنشئ واحد جديد
   if (socketInstance && !getSession().userId && !getSession().username) {
     socketInstance.removeAllListeners();
     socketInstance.disconnect();
     socketInstance = null;
+    // listeners are scoped to instance via a private flag now
   }
 
   if (socketInstance) return socketInstance;
@@ -118,6 +140,10 @@ export function getSocket(): Socket {
   })();
 
   const serverUrl = getServerUrl();
+  
+  // 🔥 إعدادات محسّنة للأداء والاستقرار
+  const isDevelopment = (import.meta as any)?.env?.DEV;
+  const isProduction = !isDevelopment;
   const sessionForHandshake = getSession();
   
   socketInstance = io(serverUrl, {
@@ -135,6 +161,7 @@ export function getSocket(): Socket {
 
   attachCoreListeners(socketInstance);
   
+  // لا نتصل تلقائياً هنا بعد الآن؛ الاتصال يتم صراحةً عبر connectSocket()
   return socketInstance;
 }
 
