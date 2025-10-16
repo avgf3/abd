@@ -1,6 +1,5 @@
 import { memo, useEffect, useMemo, useState } from 'react';
 
-import { getUserLevelIcon } from '@/components/chat/UserRoleBadge';
 import type { ChatUser } from '@/types/chat';
 import { getImageSrc } from '@/utils/imageUtils';
 import VipAvatar from '@/components/ui/VipAvatar';
@@ -29,6 +28,8 @@ type TagOverlayProps = {
   autoAnchor?: boolean; // حساب تلقائي لهامش الشفافية السفلي
   // جعل التاج يلامس أعلى الصورة تماماً (بدون دخول)
   touchTop?: boolean;
+  // نسبة عرض المسح من منتصف الصورة أفقياً لحساب الشفافية (0.3..1)
+  centerScanRatio?: number;
 };
 
 // مكون التاج مع احتساب الارتكاز بناءً على أبعاد الصورة الحقيقية لمواءمة محترفة
@@ -41,6 +42,7 @@ const TagOverlay = memo(function TagOverlay({
   xAdjustPx = 0,
   autoAnchor = true,
   touchTop = false,
+  centerScanRatio = 1,
 }: TagOverlayProps) {
   const [imageSrc, setImageSrc] = useState<string>(src);
   const [fallbackStep, setFallbackStep] = useState<number>(0);
@@ -120,8 +122,8 @@ const TagOverlay = memo(function TagOverlay({
               // نستخدم خطوات أفقية لتقليل التكلفة
               const stepX = Math.max(1, Math.floor(cw / 24));
               // نطاق الفحص الأفقي (العرض الكامل)
-              const centerRatio = 1;
-              const xStart = Math.floor(((1 - centerRatio) / 2) * cw);
+              const scanRatio = Math.max(0.3, Math.min(1, centerScanRatio));
+              const xStart = Math.floor(((1 - scanRatio) / 2) * cw);
               const xEnd = Math.ceil(cw - xStart);
               scan: for (let y = ch - 1; y >= 0; y--) {
                 let rowTransparent = true;
@@ -178,7 +180,8 @@ const TagOverlay = memo(function TagOverlay({
   prev.yAdjustPx === next.yAdjustPx &&
   prev.xAdjustPx === next.xAdjustPx &&
   prev.autoAnchor === next.autoAnchor &&
-  prev.touchTop === next.touchTop
+  prev.touchTop === next.touchTop &&
+  prev.centerScanRatio === next.centerScanRatio
 ));
 
 export default function ProfileImage({
@@ -261,6 +264,7 @@ export default function ProfileImage({
   })();
 
   if (!disableFrame && frameName && frameIndex) {
+    const centerScanRatio = (tagNumber === 1 || tagNumber === 8) ? 0.6 : 1;
     // مقاسات دقيقة لتطابق الموقع الآخر - مُصغرة بحوالي 10%
     const px = pixelSize ?? (size === 'small' ? 36 : size === 'large' ? 72 : 56);
     // الحاوية يجب أن تكون أكبر لاستيعاب الإطار (نفس النسبة المستخدمة في VipAvatar)
@@ -288,6 +292,7 @@ export default function ProfileImage({
             xAdjustPx={layout.xAdjustPx}
             autoAnchor={layout.autoAnchor}
             touchTop={needsTouchTop}
+            centerScanRatio={centerScanRatio}
           />
         )}
       </div>
@@ -299,6 +304,7 @@ export default function ProfileImage({
     const containerSize = px * 1.35; // نفس حاوية إضافة الإطار
     const imageTopWithinContainer = (containerSize - px) / 2;
     const overlayTopPx = imageTopWithinContainer;
+    const centerScanRatio = (tagNumber === 1 || tagNumber === 8) ? 0.6 : 1;
 
 
     return (
@@ -340,6 +346,7 @@ export default function ProfileImage({
             xAdjustPx={layout.xAdjustPx}
             autoAnchor={layout.autoAnchor}
             touchTop={needsTouchTop}
+            centerScanRatio={centerScanRatio}
           />
         )}
       </div>
