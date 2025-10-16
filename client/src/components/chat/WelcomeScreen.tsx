@@ -4,6 +4,7 @@ import { useState } from 'react';
 import UserRegistration from './UserRegistration';
 
 import { Button } from '@/components/ui/button';
+import { Link } from 'wouter';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -182,13 +183,13 @@ export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
         <div className="max-w-6xl mx-auto flex justify-between items-center">
           {/* روابط الشريط العلوي: سياسة الخصوصية | شروط الاستخدام (توضع يميناً في RTL) */}
           <div className="flex items-center gap-3 text-sm">
-            <a href="/privacy" className="text-blue-400 hover:text-blue-300 transition-colors underline">
+            <Link href="/privacy" className="text-blue-400 hover:text-blue-300 transition-colors underline">
               سياسة الخصوصية
-            </a>
+            </Link>
             <span className="text-gray-400">|</span>
-            <a href="/terms" className="text-blue-400 hover:text-blue-300 transition-colors underline">
+            <Link href="/terms" className="text-blue-400 hover:text-blue-300 transition-colors underline">
               شروط الاستخدام
-            </a>
+            </Link>
           </div>
 
           {/* الشعار المثبت يساراً: أبيض وأزرق */}
@@ -488,44 +489,44 @@ export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
           <h3 className="text-2xl font-semibold mb-4">غرف الدردشة</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto mt-6">
             <div className="space-y-2">
-              <a href="/watan" className="block text-yellow-300 hover:text-yellow-200 transition-colors">دردشه الوطن</a>
-              <a href="/algeria" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات الجزائر</a>
-              <a href="/bahrain" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات البحرين</a>
-              <a href="/uae" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات الإمارات</a>
-              <a href="/jordan" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات الأردن</a>
-              <a href="/kuwait" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات الكويت</a>
+              <Link href="/watan" className="block text-yellow-300 hover:text-yellow-200 transition-colors">دردشه الوطن</Link>
+              <Link href="/algeria" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات الجزائر</Link>
+              <Link href="/bahrain" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات البحرين</Link>
+              <Link href="/uae" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات الإمارات</Link>
+              <Link href="/jordan" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات الأردن</Link>
+              <Link href="/kuwait" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات الكويت</Link>
             </div>
             <div className="space-y-2">
-              <a href="/libya" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات ليبيا</a>
-              <a href="/tunisia" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات تونس</a>
-              <a href="/morocco" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات المغرب</a>
-              <a href="/oman" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات عمان</a>
-              <a href="/sudan" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات السودان</a>
+              <Link href="/libya" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات ليبيا</Link>
+              <Link href="/tunisia" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات تونس</Link>
+              <Link href="/morocco" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات المغرب</Link>
+              <Link href="/oman" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات عمان</Link>
+              <Link href="/sudan" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات السودان</Link>
             </div>
             <div className="space-y-2">
-              <a href="/palestine" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات فلسطين</a>
-              <a href="/qatar" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات قطر</a>
-              <a href="/comoros" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات جزر القمر</a>
-              <a href="/yemen" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات اليمن</a>
-              <a href="/djibouti" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات جيبوتي</a>
+              <Link href="/palestine" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات فلسطين</Link>
+              <Link href="/qatar" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات قطر</Link>
+              <Link href="/comoros" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات جزر القمر</Link>
+              <Link href="/yemen" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات اليمن</Link>
+              <Link href="/djibouti" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات جيبوتي</Link>
             </div>
             <div className="space-y-2">
-              <a href="/egypt" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات مصر</a>
-              <a href="/saudi" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات السعودية</a>
-              <a href="/lebanon" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات لبنان</a>
-              <a href="/syria" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات سوريا</a>
-              <a href="/iraq" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات العراق</a>
+              <Link href="/egypt" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات مصر</Link>
+              <Link href="/saudi" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات السعودية</Link>
+              <Link href="/lebanon" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات لبنان</Link>
+              <Link href="/syria" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات سوريا</Link>
+              <Link href="/iraq" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات العراق</Link>
             </div>
           </div>
           <div className="mt-8 space-y-2">
             <div className="flex justify-center items-center gap-4 text-sm">
-              <a href="/privacy" className="text-blue-400 hover:text-blue-300 transition-colors underline">
+              <Link href="/privacy" className="text-blue-400 hover:text-blue-300 transition-colors underline">
                 سياسة الخصوصية
-              </a>
+              </Link>
               <span className="text-gray-400">|</span>
-              <a href="/terms" className="text-blue-400 hover:text-blue-300 transition-colors underline">
+              <Link href="/terms" className="text-blue-400 hover:text-blue-300 transition-colors underline">
                 شروط الاستخدام
-              </a>
+              </Link>
             </div>
             <p className="text-sm text-blue-300">💬 انضم إلى شات عربي وتعرف على الجميع بسهولة ومن أي مكان بالعالم… بدون أي تسجيل.</p>
           </div>

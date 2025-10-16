@@ -1,6 +1,7 @@
 import { Ban, AlertTriangle } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
+import { useLocation } from 'wouter';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface BlockNotificationProps {
@@ -10,6 +11,7 @@ interface BlockNotificationProps {
 }
 
 export default function BlockNotification({ isVisible, reason, onClose }: BlockNotificationProps) {
+  const [, setLocation] = useLocation();
   if (!isVisible) return null;
 
   return (
@@ -40,7 +42,7 @@ export default function BlockNotification({ isVisible, reason, onClose }: BlockN
             <Button
               onClick={() => {
                 onClose();
-                window.location.href = '/';
+                try { setLocation('/'); } catch { window.location.href = '/'; }
               }}
               variant="destructive"
               className="w-full"
