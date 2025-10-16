@@ -17,7 +17,7 @@ interface ProfileImageProps {
   hideRoleBadgeOverlay?: boolean;
   // تعطيل عرض إطار الصورة في سياقات معينة (مثل الرسائل)
   disableFrame?: boolean;
-  // سياق اختياري للاستخدامات الخاصة (لا يؤثر وظيفياً حالياً)
+  // سياق اختياري للاستخدامات الخاصة (يؤثر على موضع التاج في صفحة الملف الشخصي)
   context?: 'profile' | 'list' | 'message' | string;
 }
 
@@ -203,6 +203,7 @@ export default function ProfileImage({
   onClick,
   hideRoleBadgeOverlay = false,
   disableFrame = false,
+  context,
 }: ProfileImageProps) {
   const sizeClasses = {
     small: 'w-9 h-9',
