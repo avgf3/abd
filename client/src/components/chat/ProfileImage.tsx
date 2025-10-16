@@ -5,7 +5,7 @@ import type { ChatUser } from '@/types/chat';
 import { getImageSrc } from '@/utils/imageUtils';
 import VipAvatar from '@/components/ui/VipAvatar';
 import { getTagLayout, DEFAULT_TAG_LAYOUT } from '@/config/tagLayouts';
-// حذف الاعتماد على التخطيطات الديناميكية للتاج لتثبيت المقاسات والمواضع
+// نظام التيجان الموحد - جميع التيجان تستخدم نفس الآلية البسيطة
 
 interface ProfileImageProps {
   user: ChatUser;
@@ -17,8 +17,6 @@ interface ProfileImageProps {
   hideRoleBadgeOverlay?: boolean;
   // تعطيل عرض إطار الصورة في سياقات معينة (مثل الرسائل)
   disableFrame?: boolean;
-  // سياق العرض لضبط التيجان بدقة بين الملف الشخصي والحاويات
-  context?: 'profile' | 'container';
 }
 
 type TagOverlayProps = {
@@ -29,8 +27,6 @@ type TagOverlayProps = {
   yAdjustPx?: number;
   xAdjustPx?: number;
   autoAnchor?: boolean; // حساب تلقائي لهامش الشفافية السفلي
-  // فحص مركزي فقط لتجاهل أطراف القاعدة المقوّسة (يفيد تاجي 1 و8)
-  scanCenterRatio?: number; // 0..1, الافتراضي 1 (العرض الكامل)
   // جعل التاج يلامس أعلى الصورة تماماً (بدون دخول)
   touchTop?: boolean;
 };
@@ -44,7 +40,6 @@ const TagOverlay = memo(function TagOverlay({
   yAdjustPx = 0,
   xAdjustPx = 0,
   autoAnchor = true,
-  scanCenterRatio = 1,
   touchTop = false,
 }: TagOverlayProps) {
   const [imageSrc, setImageSrc] = useState<string>(src);
@@ -124,8 +119,8 @@ const TagOverlay = memo(function TagOverlay({
               const stride = 4; // RGBA
               // نستخدم خطوات أفقية لتقليل التكلفة
               const stepX = Math.max(1, Math.floor(cw / 24));
-              // نطاق الفحص الأفقي (منتصف الصورة لتجاهل الأطراف المقوّسة)
-              const centerRatio = Math.max(0.2, Math.min(1, scanCenterRatio || (touchTop ? 0.6 : 1)));
+              // نطاق الفحص الأفقي (العرض الكامل)
+              const centerRatio = 1;
               const xStart = Math.floor(((1 - centerRatio) / 2) * cw);
               const xEnd = Math.ceil(cw - xStart);
               scan: for (let y = ch - 1; y >= 0; y--) {
@@ -183,7 +178,6 @@ const TagOverlay = memo(function TagOverlay({
   prev.yAdjustPx === next.yAdjustPx &&
   prev.xAdjustPx === next.xAdjustPx &&
   prev.autoAnchor === next.autoAnchor &&
-  prev.scanCenterRatio === next.scanCenterRatio &&
   prev.touchTop === next.touchTop
 ));
 
@@ -195,7 +189,6 @@ export default function ProfileImage({
   onClick,
   hideRoleBadgeOverlay = false,
   disableFrame = false,
-  context = 'container',
 }: ProfileImageProps) {
   const sizeClasses = {
     small: 'w-9 h-9',
@@ -255,12 +248,8 @@ export default function ProfileImage({
   // إعدادات التاج من التخطيطات الموحدة
   const layout = getTagLayout(tagNumber);
   
-  // جميع التيجان تستخدم نفس المنطق البسيط - لا نحتاج touchTop بعد الآن
+  // جميع التيجان تستخدم نفس المنطق البسيط الموحد
   const needsTouchTop = false;
-  const needsCrownProfileFix =
-    context === 'profile' && tagNumber && tagNumber >= 21 && tagNumber <= 34;
-  // تقليل مجال المسح للأطراف المقوّسة لبعض التيجان حتى لا تُحسب كفراغ سفلي
-  const scanCenterRatio = needsCrownProfileFix ? 0.65 : 1;
   const frameIndex = (() => {
     if (!frameName) return undefined;
     const match = String(frameName).match(/(\d+)/);
@@ -281,11 +270,6 @@ export default function ProfileImage({
     const frameDownshift = (frameIndex === 7 || frameIndex === 8 || frameIndex === 9) ? Math.round(px * 0.02) : 0;
     // التاج يجب أن يلامس أعلى الصورة تماماً، دون التأثر بإزاحة الإطار
     const overlayTopPx = imageTopWithinContainer; // تلامس مباشر مع أعلى الصورة
-    // إزاحة إضافية لتيجان 21-34 في سياق الملف الشخصي لخفض التاج ليجلس على الرأس
-    // زيادة النسبة لضمان ملامسة التاج للرأس كما طُلب
-    const extraProfileDownshift = needsCrownProfileFix
-      ? Math.min(24, Math.max(8, Math.round(px * 0.18)))
-      : 0;
 
     return (
       <div
@@ -300,10 +284,9 @@ export default function ProfileImage({
             overlayTopPx={overlayTopPx}
             basePx={Math.round(px * layout.widthRatio)}
             anchorY={layout.anchorY ?? DEFAULT_TAG_LAYOUT.anchorY!}
-            yAdjustPx={(layout.yAdjustPx || 0) + extraProfileDownshift}
+            yAdjustPx={layout.yAdjustPx || 0}
             xAdjustPx={layout.xAdjustPx}
-            autoAnchor={needsCrownProfileFix ? false : layout.autoAnchor}
-            scanCenterRatio={scanCenterRatio}
+            autoAnchor={layout.autoAnchor}
             touchTop={needsTouchTop}
           />
         )}
@@ -317,11 +300,6 @@ export default function ProfileImage({
     const imageTopWithinContainer = (containerSize - px) / 2;
     const overlayTopPx = imageTopWithinContainer;
 
-    // إزاحة إضافية لتيجان 21-34 في سياق الملف الشخصي لخفض التاج ليجلس على الرأس
-    // زيادة النسبة لضمان ملامسة التاج للرأس كما طُلب
-    const extraProfileDownshift = needsCrownProfileFix
-      ? Math.min(24, Math.max(8, Math.round(px * 0.18)))
-      : 0;
 
     return (
       <div
@@ -358,10 +336,9 @@ export default function ProfileImage({
             overlayTopPx={overlayTopPx}
             basePx={Math.round(px * layout.widthRatio)}
             anchorY={layout.anchorY ?? DEFAULT_TAG_LAYOUT.anchorY!}
-            yAdjustPx={(layout.yAdjustPx || 0) + extraProfileDownshift}
+            yAdjustPx={layout.yAdjustPx || 0}
             xAdjustPx={layout.xAdjustPx}
-            autoAnchor={needsCrownProfileFix ? false : layout.autoAnchor}
-            scanCenterRatio={scanCenterRatio}
+            autoAnchor={layout.autoAnchor}
             touchTop={needsTouchTop}
           />
         )}
