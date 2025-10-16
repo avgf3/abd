@@ -4,196 +4,43 @@ import { getUserLevelIcon } from '@/components/chat/UserRoleBadge';
 import type { ChatUser } from '@/types/chat';
 import { getImageSrc } from '@/utils/imageUtils';
 import VipAvatar from '@/components/ui/VipAvatar';
-import { getTagLayout, DEFAULT_TAG_LAYOUT } from '@/config/tagLayouts';
-// نظام التيجان الموحد - جميع التيجان تستخدم نفس الآلية البسيطة
+import { TAG_CONFIG } from '@/config/tagLayouts';
 
 interface ProfileImageProps {
   user: ChatUser;
   size?: 'small' | 'medium' | 'large';
-  // حجم بكسلات مخصص لتوحيد المقاس بدقة أينما لزم
   pixelSize?: number;
   className?: string;
   onClick?: (e: any) => void;
   hideRoleBadgeOverlay?: boolean;
-  // تعطيل عرض إطار الصورة في سياقات معينة (مثل الرسائل)
   disableFrame?: boolean;
-  // سياق اختياري للاستخدامات الخاصة (يؤثر على موضع التاج في صفحة الملف الشخصي)
-  context?: 'profile' | 'list' | 'message' | string;
 }
 
 type TagOverlayProps = {
   src: string;
-  overlayTopPx: number;
-  basePx: number; // عرض التاج النهائي بالبكسل (يعتمد على widthRatio)
-  anchorY?: number; // نسبة من ارتفاع التاج تدخل فوق الرأس
-  yAdjustPx?: number;
-  xAdjustPx?: number;
-  autoAnchor?: boolean; // حساب تلقائي لهامش الشفافية السفلي
-  // جعل التاج يلامس أعلى الصورة تماماً (بدون دخول)
-  touchTop?: boolean;
-  // مقدار دخول التاج داخل الصورة كقيمة بكسل ثابتة نسبةً لقطر الصورة
-  // مثال: 6% من قطر الصورة = px * 0.06
-  overlapPx?: number;
+  basePx: number;      // عرض التاج بالبكسل
+  yAdjustPx: number;   // إزاحة عمودية
 };
 
-// مكون التاج مع احتساب الارتكاز بناءً على أبعاد الصورة الحقيقية لمواءمة محترفة
-const TagOverlay = memo(function TagOverlay({
-  src,
-  overlayTopPx,
-  basePx,
-  anchorY = 0.08,
-  yAdjustPx = 0,
-  xAdjustPx = 0,
-  autoAnchor = true,
-  touchTop = false,
-  overlapPx,
-}: TagOverlayProps) {
-  const [imageSrc, setImageSrc] = useState<string>(src);
-  const [fallbackStep, setFallbackStep] = useState<number>(0);
-  useEffect(() => {
-    setImageSrc(src);
-    setFallbackStep(0);
-  }, [src]);
-  const [naturalSize, setNaturalSize] = useState<{ w: number; h: number } | null>(null);
-  const [bottomGapRatio, setBottomGapRatio] = useState<number>(0); // نسبة الشفافية من الأسفل
-
-  const anchorFromImagePx = (() => {
-    // قبل تحميل صورة التاج
-    if (!naturalSize) {
-      // إذا عُيّن overlapPx نستخدمه مباشرة كقيمة تقديرية
-      if (typeof overlapPx === 'number') return Math.max(0, Math.round(overlapPx));
-      return yAdjustPx;
-    }
-
-    // حساب أبعاد التاج المعروض على الشاشة
-    const scale = basePx / Math.max(1, naturalSize.w);
-    const heightPx = naturalSize.h * scale;
-
-    // حساب الشفافية السفلية تلقائياً (لنزول التاج أكثر لتعويض الشفافية)
-    const bottomGapPx = autoAnchor ? Math.round(bottomGapRatio * heightPx) : 0;
-
-    // إذا حُدد overlapPx (مثلاً 10% من قطر الصورة) فالأولوية له لضمان اتساق الدخول
-    if (typeof overlapPx === 'number') {
-      const desired = touchTop ? 0 : Math.max(0, Math.round(overlapPx));
-      // ✅ الإصلاح: نجمع bottomGapPx لأن الشفافية تتطلب نزول التاج أكثر
-      return Math.max(0, Math.round(desired + bottomGapPx));
-    }
-
-    // خلاف ذلك، استخدم النسبة من ارتفاع التاج
-    const anchor = touchTop ? 0 : Math.round(heightPx * anchorY);
-    // ✅ الإصلاح الرئيسي: نجمع bottomGapPx لأن الشفافية تتطلب نزول التاج أكثر
-    // المنطق: bottomGapPx يمثل المسافة الشفافة التي يجب تعويضها بنزول إضافي
-    return Math.round(anchor + yAdjustPx + bottomGapPx);
-  })();
-
+// مكون التاج - بسيط ومباشر
+const TagOverlay = memo(function TagOverlay({ src, basePx, yAdjustPx }: TagOverlayProps) {
   return (
     <img
-      src={imageSrc}
+      src={src}
       alt="tag"
       className="profile-tag-overlay"
-      aria-hidden="true"
       style={{
-        top: overlayTopPx,
+        position: 'absolute',
+        top: yAdjustPx,
+        left: '50%',
         width: basePx,
-        transform: `translate(-50%, calc(-100% + ${anchorFromImagePx}px))`,
-        marginLeft: xAdjustPx,
-        backgroundColor: 'transparent',
-        background: 'transparent',
-        opacity: 1,
-        transition: 'none',
-        willChange: 'auto',
-        transformOrigin: '50% 100%',
+        transform: 'translateX(-50%)',
+        pointerEvents: 'none',
       }}
-      decoding="async"
-      loading="eager"
       draggable={false}
-      onLoad={(e: any) => {
-        try {
-          const img = e.currentTarget as HTMLImageElement;
-          if (img && img.naturalWidth && img.naturalHeight) {
-            // حفظ الحجم الطبيعي
-            setNaturalSize({ w: img.naturalWidth, h: img.naturalHeight });
-            // حساب نسبة الشفافية السفلية تلقائياً بشكل خفيف الأداء
-            // نقوم بالمسح على نسخة مصغّرة لسرعة التشغيل
-            const maxW = 96; // عرض المسح (أقصى حد)
-            const scale = Math.min(1, maxW / img.naturalWidth);
-            const cw = Math.max(1, Math.floor(img.naturalWidth * scale));
-            const ch = Math.max(1, Math.floor(img.naturalHeight * scale));
-            const canvas = document.createElement('canvas');
-            canvas.width = cw;
-            canvas.height = ch;
-            const ctx = canvas.getContext('2d');
-            if (ctx) {
-              ctx.drawImage(img, 0, 0, cw, ch);
-              const imageData = ctx.getImageData(0, 0, cw, ch);
-              const data = imageData.data;
-              // امسح من الأسفل للأعلى للعثور على أول صف يحتوي على بكسلات غير شفافة
-              let gapRows = 0;
-              const stride = 4; // RGBA
-              // نستخدم خطوات أفقية لتقليل التكلفة
-              const stepX = Math.max(1, Math.floor(cw / 24));
-              // نطاق الفحص الأفقي (العرض الكامل)
-              const centerRatio = 1;
-              const xStart = Math.floor(((1 - centerRatio) / 2) * cw);
-              const xEnd = Math.ceil(cw - xStart);
-              scan: for (let y = ch - 1; y >= 0; y--) {
-                let rowTransparent = true;
-                for (let x = xStart; x < xEnd; x += stepX) {
-                  const idx = (y * cw + x) * stride + 3; // قناة ألفا
-                  const alpha = data[idx];
-                  if (alpha > 8) { // أي بكسل شبه مرئي يوقف الشفافية
-                    rowTransparent = false;
-                    break;
-                  }
-                }
-                if (rowTransparent) {
-                  gapRows++;
-                } else {
-                  break scan;
-                }
-              }
-              const ratio = gapRows / ch;
-              // تأكد من النطاق
-              setBottomGapRatio(Number.isFinite(ratio) ? Math.max(0, Math.min(0.5, ratio)) : 0);
-            }
-          }
-        } catch {}
-      }}
-      onError={(e: any) => {
-        try {
-          const cur = imageSrc || '';
-          // Fallback chain: .webp -> .png -> .jpg -> .jpeg -> hide
-          if (fallbackStep === 0 && /\.webp(\?.*)?$/.test(cur)) {
-            setImageSrc(cur.replace(/\.webp(\?.*)?$/i, '.png$1'));
-            setFallbackStep(1);
-            return;
-          }
-          if (fallbackStep === 1 && /\.png(\?.*)?$/.test(cur)) {
-            setImageSrc(cur.replace(/\.png(\?.*)?$/i, '.jpg$1'));
-            setFallbackStep(2);
-            return;
-          }
-          if (fallbackStep === 2 && /\.jpg(\?.*)?$/.test(cur)) {
-            setImageSrc(cur.replace(/\.jpg(\?.*)?$/i, '.jpeg$1'));
-            setFallbackStep(3);
-            return;
-          }
-          e.currentTarget.style.display = 'none';
-        } catch {}
-      }}
     />
   );
-}, (prev, next) => (
-  prev.src === next.src &&
-  prev.overlayTopPx === next.overlayTopPx &&
-  prev.basePx === next.basePx &&
-  prev.anchorY === next.anchorY &&
-  prev.yAdjustPx === next.yAdjustPx &&
-  prev.xAdjustPx === next.xAdjustPx &&
-  prev.autoAnchor === next.autoAnchor &&
-  prev.touchTop === next.touchTop &&
-  prev.overlapPx === next.overlapPx
-));
+});
 
 export default function ProfileImage({
   user,
@@ -203,7 +50,6 @@ export default function ProfileImage({
   onClick,
   hideRoleBadgeOverlay = false,
   disableFrame = false,
-  context,
 }: ProfileImageProps) {
   const sizeClasses = {
     small: 'w-9 h-9',
@@ -260,19 +106,6 @@ export default function ProfileImage({
     return Number.isFinite(n) ? n : undefined;
   })();
 
-  // إعدادات التاج من التخطيطات الموحدة
-  const layout = getTagLayout(tagNumber);
-  
-  // تعديل إضافي للتاجات في صفحة الملف الشخصي (الصورة الكبيرة 135px)
-  const profileExtraYAdjust = (() => {
-    if (context !== 'profile' || !tagNumber) return 0;
-    // التاجات 21-40 تحتاج نزول إضافي كبير في الملف الشخصي (الصورة كبيرة 135px)
-    if (tagNumber >= 21 && tagNumber <= 40) return 10;
-    return 0;
-  })();
-  
-  // جميع التيجان تستخدم نفس المنطق البسيط الموحد
-  const needsTouchTop = false;
   const frameIndex = (() => {
     if (!frameName) return undefined;
     const match = String(frameName).match(/(\d+)/);
@@ -283,92 +116,35 @@ export default function ProfileImage({
     return Math.min(50, n) as any;
   })();
 
+  const px = pixelSize ?? (size === 'small' ? 36 : size === 'large' ? 72 : 56);
+  const containerSize = px * 1.35;
+  const tagWidth = Math.round(px * TAG_CONFIG.widthRatio);
+  const tagTop = Math.round(px * TAG_CONFIG.topOffsetRatio);
+
   if (!disableFrame && frameName && frameIndex) {
-    // مقاسات دقيقة لتطابق الموقع الآخر - مُصغرة بحوالي 10%
-    const px = pixelSize ?? (size === 'small' ? 36 : size === 'large' ? 72 : 56);
-    // الحاوية يجب أن تكون أكبر لاستيعاب الإطار (نفس النسبة المستخدمة في VipAvatar)
-    const containerSize = px * 1.35;
-    const imageTopWithinContainer = (containerSize - px) / 2; // موضع أعلى الصورة داخل الحاوية
-    // إزاحة عمودية بسيطة لإطارات محددة التي تبدو مرتفعة قليلاً في البروفايل فقط
-    const frameDownshift = (frameIndex === 7 || frameIndex === 8 || frameIndex === 9) ? Math.round(px * 0.02) : 0;
-    // التاج يجب أن يلامس أعلى الصورة تماماً، دون التأثر بإزاحة الإطار
-    // اجعل المرجع أعلى الصورة مباشرة لا أعلى الحاوية لتفادي ارتفاع التاج
-    const overlayTopPx = 0;
-    // ✅ الحل: عدم تمرير overlapPx، لنترك الكود يستخدم anchorY + yAdjustPx من tagLayouts.ts
-
     return (
-      <div
-        className={`relative inline-block ${className || ''}`}
-        onClick={onClick}
-        style={{ width: containerSize, height: containerSize, contain: 'layout style', isolation: 'isolate', overflow: 'visible' }}
-      >
+      <div className={`relative inline-block ${className || ''}`} onClick={onClick} style={{ width: containerSize, height: containerSize, overflow: 'visible' }}>
         <VipAvatar src={imageSrc} alt={`صورة ${user.username}`} size={px} frame={frameIndex as any} />
-        {tagSrc && (
-          <TagOverlay
-            src={tagSrc}
-            overlayTopPx={overlayTopPx}
-            basePx={Math.round(px * layout.widthRatio)}
-            anchorY={layout.anchorY ?? DEFAULT_TAG_LAYOUT.anchorY!}
-            yAdjustPx={(layout.yAdjustPx || 0) + profileExtraYAdjust}
-            xAdjustPx={layout.xAdjustPx}
-            autoAnchor={false}
-            touchTop={needsTouchTop}
-          />
-        )}
+        {tagSrc && <TagOverlay src={tagSrc} basePx={tagWidth} yAdjustPx={tagTop} />}
       </div>
     );
   }
 
-  {
-    const px = pixelSize ?? (size === 'small' ? 36 : size === 'large' ? 72 : 56);
-    const containerSize = px * 1.35; // نفس حاوية إضافة الإطار
-    const imageTopWithinContainer = (containerSize - px) / 2;
-    // اجعل المرجع أعلى الصورة مباشرة لا أعلى الحاوية
-    const overlayTopPx = 0;
-    // ✅ الحل: عدم تمرير overlapPx، لنترك الكود يستخدم anchorY + yAdjustPx من tagLayouts.ts
-
-    return (
-      <div
-        className={`relative inline-block ${className || ''}`}
-        onClick={onClick}
-        style={{ width: containerSize, height: containerSize, contain: 'layout style', isolation: 'isolate', overflow: 'visible' }}
-      >
-        <div className="vip-frame-inner">
-          <img
-            src={imageSrc}
-            alt={`صورة ${user.username}`}
-            className={`rounded-full ring-[3px] ${borderColor} shadow-sm object-cover`}
-            style={{
-              width: px,
-              height: px,
-              transition: 'none',
-              backfaceVisibility: 'hidden',
-              transform: 'translateZ(0)',
-              display: 'block',
-            }}
-            loading="lazy"
-            decoding="async"
-            sizes={String(px) + 'px'}
-            onError={(e: any) => {
-              if (e?.currentTarget && e.currentTarget.src !== '/default_avatar.svg') {
-                e.currentTarget.src = '/default_avatar.svg';
-              }
-            }}
-          />
-        </div>
-        {tagSrc && (
-          <TagOverlay
-            src={tagSrc}
-            overlayTopPx={overlayTopPx}
-            basePx={Math.round(px * layout.widthRatio)}
-            anchorY={layout.anchorY ?? DEFAULT_TAG_LAYOUT.anchorY!}
-            yAdjustPx={(layout.yAdjustPx || 0) + profileExtraYAdjust}
-            xAdjustPx={layout.xAdjustPx}
-            autoAnchor={false}
-            touchTop={needsTouchTop}
-          />
-        )}
-      </div>
-    );
-  }
+  return (
+    <div className={`relative inline-block ${className || ''}`} onClick={onClick} style={{ width: containerSize, height: containerSize, overflow: 'visible' }}>
+      <img
+        src={imageSrc}
+        alt={`صورة ${user.username}`}
+        className={`rounded-full ring-[3px] ${borderColor} shadow-sm object-cover`}
+        style={{ width: px, height: px }}
+        loading="lazy"
+        onError={(e: any) => {
+          if (e?.currentTarget && e.currentTarget.src !== '/default_avatar.svg') {
+            e.currentTarget.src = '/default_avatar.svg';
+          }
+        }}
+      />
+      {tagSrc && <TagOverlay src={tagSrc} basePx={tagWidth} yAdjustPx={tagTop} />}
+    </div>
+  );
 }
