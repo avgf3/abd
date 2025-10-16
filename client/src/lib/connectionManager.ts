@@ -151,7 +151,10 @@ export class ConnectionManager {
   }
 
   private hardReload() {
-    try { window.location.reload(); } catch {}
+    // استرجاع صامت بدلاً من إعادة تحميل الصفحة
+    // إعادة ضبط عداد الإخفاقات وتفعيل وضع النسخ الاحتياطي لفترة وجيزة
+    this.consecutiveFailures = 0;
+    this.enableBackupMode();
   }
 
   private updateMonitors(startedAt: number) {
