@@ -266,8 +266,8 @@ export default function ProfileImage({
   // تعديل إضافي للتاجات في صفحة الملف الشخصي (الصورة الكبيرة 135px)
   const profileExtraYAdjust = (() => {
     if (context !== 'profile' || !tagNumber) return 0;
-    // التاجات 21-40 تحتاج نزول إضافي في الملف الشخصي
-    if (tagNumber >= 21 && tagNumber <= 40) return 8;
+    // التاجات 21-40 تحتاج نزول إضافي كبير في الملف الشخصي (الصورة كبيرة 135px)
+    if (tagNumber >= 21 && tagNumber <= 40) return 10;
     return 0;
   })();
   
