@@ -17,6 +17,8 @@ interface ProfileImageProps {
   hideRoleBadgeOverlay?: boolean;
   // تعطيل عرض إطار الصورة في سياقات معينة (مثل الرسائل)
   disableFrame?: boolean;
+  // سياق اختياري للاستخدامات الخاصة (لا يؤثر وظيفياً حالياً)
+  context?: 'profile' | 'list' | 'message' | string;
 }
 
 type TagOverlayProps = {
@@ -29,6 +31,9 @@ type TagOverlayProps = {
   autoAnchor?: boolean; // حساب تلقائي لهامش الشفافية السفلي
   // جعل التاج يلامس أعلى الصورة تماماً (بدون دخول)
   touchTop?: boolean;
+  // مقدار دخول التاج داخل الصورة كقيمة بكسل ثابتة نسبةً لقطر الصورة
+  // مثال: 6% من قطر الصورة = px * 0.06
+  overlapPx?: number;
 };
 
 // مكون التاج مع احتساب الارتكاز بناءً على أبعاد الصورة الحقيقية لمواءمة محترفة
@@ -41,6 +46,7 @@ const TagOverlay = memo(function TagOverlay({
   xAdjustPx = 0,
   autoAnchor = true,
   touchTop = false,
+  overlapPx,
 }: TagOverlayProps) {
   const [imageSrc, setImageSrc] = useState<string>(src);
   const [fallbackStep, setFallbackStep] = useState<number>(0);
@@ -52,24 +58,30 @@ const TagOverlay = memo(function TagOverlay({
   const [bottomGapRatio, setBottomGapRatio] = useState<number>(0); // نسبة الشفافية من الأسفل
 
   const anchorFromImagePx = (() => {
-    // قبل تحميل صورة التاج، نستخدم yAdjustPx فقط كتقدير مبدئي
-    if (!naturalSize) return yAdjustPx;
-    
+    // قبل تحميل صورة التاج
+    if (!naturalSize) {
+      // إذا عُيّن overlapPx نستخدمه مباشرة كقيمة تقديرية
+      if (typeof overlapPx === 'number') return Math.max(0, Math.round(overlapPx));
+      return yAdjustPx;
+    }
+
     // حساب أبعاد التاج المعروض على الشاشة
     const scale = basePx / Math.max(1, naturalSize.w);
     const heightPx = naturalSize.h * scale;
-    
+
     // حساب الشفافية السفلية تلقائياً (لرفع التاج)
     const bottomGapPx = autoAnchor ? Math.round(bottomGapRatio * heightPx) : 0;
-    
-    // حساب مقدار دخول التاج في الصورة (anchorY)
-    // مثال: anchorY=0.3 يعني 30% من ارتفاع التاج يدخل في الصورة
+
+    // إذا حُدد overlapPx (مثلاً 6% من قطر الصورة) فالأولوية له لضمان اتساق الدخول
+    if (typeof overlapPx === 'number') {
+      const desired = touchTop ? 0 : Math.max(0, Math.round(overlapPx));
+      // تجاهل yAdjustPx هنا لتحقيق توحيد بصري صارم؛ نعوّض فقط شفافية القاعدة
+      return Math.max(0, Math.round(desired - bottomGapPx));
+    }
+
+    // خلاف ذلك، استخدم النسبة من ارتفاع التاج
     const anchor = touchTop ? bottomGapPx : Math.round(heightPx * anchorY);
-    
-    // الحساب النهائي:
-    // anchor: كم يدخل التاج في الصورة (موجب = للأسفل)
-    // yAdjustPx: ضبط يدوي إضافي (موجب = للأسفل، سالب = للأعلى)
-    // bottomGapPx: الشفافية السفلية (نطرحها لرفع التاج)
+    // anchor + yAdjustPx - bottomGapPx
     return Math.round(anchor + yAdjustPx - bottomGapPx);
   })();
 
@@ -178,7 +190,8 @@ const TagOverlay = memo(function TagOverlay({
   prev.yAdjustPx === next.yAdjustPx &&
   prev.xAdjustPx === next.xAdjustPx &&
   prev.autoAnchor === next.autoAnchor &&
-  prev.touchTop === next.touchTop
+  prev.touchTop === next.touchTop &&
+  prev.overlapPx === next.overlapPx
 ));
 
 export default function ProfileImage({
@@ -270,6 +283,7 @@ export default function ProfileImage({
     const frameDownshift = (frameIndex === 7 || frameIndex === 8 || frameIndex === 9) ? Math.round(px * 0.02) : 0;
     // التاج يجب أن يلامس أعلى الصورة تماماً، دون التأثر بإزاحة الإطار
     const overlayTopPx = imageTopWithinContainer; // تلامس مباشر مع أعلى الصورة
+    const desiredOverlapPx = Math.round(px * 0.06); // دخول ثابت 6% من قطر الصورة
 
     return (
       <div
@@ -288,6 +302,7 @@ export default function ProfileImage({
             xAdjustPx={layout.xAdjustPx}
             autoAnchor={layout.autoAnchor}
             touchTop={needsTouchTop}
+            overlapPx={desiredOverlapPx}
           />
         )}
       </div>
@@ -299,6 +314,7 @@ export default function ProfileImage({
     const containerSize = px * 1.35; // نفس حاوية إضافة الإطار
     const imageTopWithinContainer = (containerSize - px) / 2;
     const overlayTopPx = imageTopWithinContainer;
+    const desiredOverlapPx = Math.round(px * 0.06); // دخول ثابت 6%
 
 
     return (
@@ -340,6 +356,7 @@ export default function ProfileImage({
             xAdjustPx={layout.xAdjustPx}
             autoAnchor={layout.autoAnchor}
             touchTop={needsTouchTop}
+            overlapPx={desiredOverlapPx}
           />
         )}
       </div>
