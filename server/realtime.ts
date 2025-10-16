@@ -59,7 +59,7 @@ function scheduleUserListUpdate(roomId: string): void {
 
 const GENERAL_ROOM = 'general';
 // نافذة استئناف الجلسة بدون رسائل انضمام جديدة
-const RESUME_TTL_MS = 60 * 60 * 1000; // 1 ساعة
+const RESUME_TTL_MS = 24 * 60 * 60 * 1000; // 24 ساعة
 // تخزين نافذة الاستئناف لكل مستخدم بعد انقطاع آخر Socket له
 const resumeWindow = new Map<number, { until: number; roomId: string | null }>();
 // نافذة استئناف إضافية مبنية على معرف الجهاز لتغطية سيناريو الرفرش الفوري/السباق
