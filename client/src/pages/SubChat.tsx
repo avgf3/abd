@@ -58,7 +58,7 @@ export default function SubChat() {
       setShowWelcome(false);
       if (roomId) {
         setSelectedRoomId(roomId);
-        chat.joinRoom(roomId);
+        // الانضمام سيتم مركزياً بعد المصادقة من خلال useChat (authenticated)
       } else {
         setSelectedRoomId(null);
       }
@@ -79,7 +79,7 @@ export default function SubChat() {
             const r = session?.roomId && session.roomId !== 'public' && session.roomId !== 'friends' ? session.roomId : null;
             if (r) {
               setSelectedRoomId(r);
-              chat.joinRoom(r);
+              // الانضمام سيتم مركزياً بعد المصادقة من خلال useChat (authenticated)
             }
           } else {
             setShowWelcome(true);
