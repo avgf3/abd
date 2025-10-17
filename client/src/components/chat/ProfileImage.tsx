@@ -17,24 +17,16 @@ interface ProfileImageProps {
 interface CrownOverlayProps {
   src: string;
   size: number;
+  tagNumber?: number;
 }
 
-// مكون التاج البسيط - بدون أي تعقيدات!
-const CrownOverlay = memo(function CrownOverlay({ src, size, tagNumber }: CrownOverlayProps & { tagNumber?: number }) {
+// Simple crown component - no complex positioning
+const CrownOverlay = memo(function CrownOverlay({ src, size, tagNumber }: CrownOverlayProps) {
   const [imageSrc, setImageSrc] = useState<string>(src);
   const [isVisible, setIsVisible] = useState<boolean>(false);
 
-  // حجم التاج = 125% من حجم الصورة - تحسين للوضوح
-  const crownSize = Math.round(size * 1.25);
-
-  // التاجات 11-16، 18-30 (ما عدا 17) تُرفع إلى -50%
-  // التاجات 3، 5، 6، 7 تبقى كما هي (-35%)
-  // باقي التاجات تُرفع إلى -47%
-  const adjustedTags = [11, 12, 13, 14, 15, 16, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30];
-  const keepOriginal = tagNumber === 3 || tagNumber === 5 || tagNumber === 6 || tagNumber === 7;
-  const isAdjusted = tagNumber && adjustedTags.includes(tagNumber);
-  
-  const yPosition = isAdjusted ? -50 : (keepOriginal ? -35 : -47);
+  // Simple crown size - 20% larger than avatar
+  const crownSize = Math.round(size * 1.2);
 
   return (
     <img
@@ -43,22 +35,22 @@ const CrownOverlay = memo(function CrownOverlay({ src, size, tagNumber }: CrownO
       className="profile-crown"
       style={{
         position: 'absolute',
-        top: 0,
+        top: '-10%',
         left: '50%',
         width: crownSize,
         height: 'auto',
-        transform: `translate(-50%, ${yPosition}%)`, // رفع التاج
+        transform: 'translateX(-50%)',
         pointerEvents: 'none',
         opacity: isVisible ? 1 : 0,
         transition: 'opacity 0.2s',
-        zIndex: 10,
+        zIndex: 2,
       }}
       loading="lazy"
       decoding="async"
       draggable={false}
       onLoad={() => setIsVisible(true)}
       onError={(e: any) => {
-        // Fallback chain: .webp -> .png -> .jpg
+        // Simple fallback chain: .webp -> .png -> .jpg
         const cur = imageSrc || '';
         if (/\.webp(\?.*)?$/.test(cur)) {
           setImageSrc(cur.replace(/\.webp(\?.*)?$/i, '.png$1'));
@@ -81,17 +73,18 @@ export default function ProfileImage({
   hideRoleBadgeOverlay = false,
   disableFrame = false,
 }: ProfileImageProps) {
-  const sizeClasses = {
-    small: 'w-9 h-9',
-    medium: 'w-14 h-14',
-    large: 'w-18 h-18',
+  // Simple size mapping
+  const sizeMap = {
+    small: 32,
+    medium: 48,
+    large: 64,
   };
 
-  // تحديد لون الإطار حسب الجنس
+  // Simple border color based on gender
   const isFemale = user.gender === 'female' || user.gender === 'أنثى';
-  const borderColor = isFemale ? 'border-pink-400 ring-pink-200' : 'border-blue-400 ring-blue-200';
+  const borderColor = isFemale ? 'border-pink-400' : 'border-blue-400';
 
-  // مصدر الصورة
+  // Image source with simple fallback
   const imageSrc = useMemo(() => {
     if (!user.profileImage) {
       return '/default_avatar.svg';
@@ -113,7 +106,7 @@ export default function ProfileImage({
   const frameName = (user as any)?.profileFrame as string | undefined;
   const tagName = (user as any)?.profileTag as string | undefined;
   
-  // استخراج رقم التاج
+  // Simple tag number extraction
   const tagNumber = useMemo(() => {
     if (!tagName) return undefined;
     const str = String(tagName);
@@ -124,6 +117,7 @@ export default function ProfileImage({
     return undefined;
   }, [tagName]);
   
+  // Simple crown source
   const crownSrc: string | undefined = useMemo(() => {
     if (!tagName) return undefined;
     const str = String(tagName);
@@ -134,6 +128,7 @@ export default function ProfileImage({
     return `/tags/${str}`;
   }, [tagName, tagNumber]);
   
+  // Simple frame extraction
   const frameIndex = (() => {
     if (!frameName) return undefined;
     const match = String(frameName).match(/(\d+)/);
@@ -143,79 +138,61 @@ export default function ProfileImage({
     return Math.min(50, n) as any;
   })();
 
-  // حساب الأحجام - تحسين لضمان احتواء الإطارات والتيجان بشكل مثالي
-  const px = pixelSize ?? (size === 'small' ? 36 : size === 'large' ? 72 : 56);
-  const containerSize = px * 1.6; // حاوية أكبر لضمان احتواء الإطارات والتيجان بشكل مثالي
+  // Simple size calculation - no complex multipliers
+  const px = pixelSize ?? sizeMap[size];
 
-  // مع إطار
+  // With frame
   if (!disableFrame && frameName && frameIndex) {
     return (
       <div
         className={`relative inline-block ${className || ''}`}
         onClick={onClick}
         style={{ 
-          width: containerSize, 
-          height: containerSize,
+          width: px, 
+          height: px,
           position: 'relative',
         }}
       >
-        <div style={{ 
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-        }}>
-          <VipAvatar 
-            src={imageSrc} 
-            alt={`صورة ${user.username}`} 
-            size={px} 
-            frame={frameIndex as any} 
-          />
-        </div>
+        <VipAvatar 
+          src={imageSrc} 
+          alt={`صورة ${user.username}`} 
+          size={px} 
+          frame={frameIndex as any} 
+        />
         {crownSrc && <CrownOverlay src={crownSrc} size={px} tagNumber={tagNumber} />}
       </div>
     );
   }
 
-  // بدون إطار
+  // Without frame - simple avatar
   return (
     <div
       className={`relative inline-block ${className || ''}`}
       onClick={onClick}
       style={{ 
-        width: containerSize, 
-        height: containerSize,
+        width: px, 
+        height: px,
         position: 'relative',
       }}
     >
-      <div style={{ 
-        position: 'absolute',
-        top: '50%',
-        left: '50%',
-        transform: 'translate(-50%, -50%)',
-        width: px,
-        height: px,
-      }}>
-        <img
-          src={imageSrc}
-          alt={`صورة ${user.username}`}
-          className={`rounded-full ring-[3px] ${borderColor} shadow-sm`}
-          style={{
-            width: px,
-            height: px,
-            display: 'block',
-            objectFit: 'cover',
-            borderRadius: '9999px',
-          }}
-          loading="lazy"
-          decoding="async"
-          onError={(e: any) => {
-            if (e?.currentTarget && e.currentTarget.src !== '/default_avatar.svg') {
-              e.currentTarget.src = '/default_avatar.svg';
-            }
-          }}
-        />
-      </div>
+      <img
+        src={imageSrc}
+        alt={`صورة ${user.username}`}
+        className={`rounded-full ring-2 ${borderColor} shadow-sm`}
+        style={{
+          width: px,
+          height: px,
+          display: 'block',
+          objectFit: 'cover',
+        }}
+        loading="lazy"
+        decoding="async"
+        onError={(e: any) => {
+          if (e?.currentTarget && e.currentTarget.src !== '/default_avatar.svg') {
+            e.currentTarget.src = '/default_avatar.svg';
+          }
+        }}
+      />
       {crownSrc && <CrownOverlay src={crownSrc} size={px} tagNumber={tagNumber} />}
     </div>
   );

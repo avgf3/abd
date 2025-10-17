@@ -1789,212 +1789,92 @@ li > * > div.effect-snow {
   z-index: 1;
 }
 
-/* ===== VIP Animated Frames (10 styles) ===== */
-.vip-frame.base {
+/* ===== Simple Professional Avatar Frames ===== */
+.vip-avatar {
   position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  /* الإطار الخارجي (الحاوية) */
-  /* ثبات كامل ومنع أي اهتزازات أو تأثيرات خارجية */
-  contain: layout paint style;
-  isolation: isolate;
-  backface-visibility: hidden;
-  transform: translateZ(0);
+  display: inline-block;
 }
 
-/* ===== Profile Tag overlay (top crown/badge above avatar) ===== */
-.profile-tag-overlay {
-  position: absolute;
-  /* 🎯 الموضع والحجم يتم التحكم بهما بالكامل من ProfileImage.tsx */
-  left: 50%;
-  height: auto;
-  z-index: 4; /* فوق الإطار والصورة */
-  pointer-events: none;
-  
-  /* 🎨 شفافية مثالية للخلفية */
-  background: transparent !important;
-  background-color: transparent !important;
-  
-  /* 🔧 تحسين جودة العرض */
-  image-rendering: -webkit-optimize-contrast;
-  image-rendering: crisp-edges;
-  
-  /* ⚡ تحسين الأداء والثبات */
-  -webkit-backface-visibility: hidden;
-  backface-visibility: hidden;
-  will-change: auto;
-  transform: translateZ(0);
-  contain: layout style paint;
-  
-  /* 📐 نقطة الارتكاز المثلى للتحويلات */
-  transform-origin: 50% 100%;
-  
-  /* 🎨 تحسينات بصرية احترافية */
-  overflow: visible;
-  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
-  
-  /* 🔄 إلغاء أي انتقالات لمنع الاهتزاز */
-  transition: none !important;
-}
-.vip-frame-inner {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  border-radius: 9999px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.vip-frame-img {
-  /* الصورة أصغر من الحاوية - يتم التحكم بها من VipAvatar.tsx */
-  border-radius: 9999px;
-  object-fit: cover;
-  background: #0b1220;
-  position: relative;
-  z-index: 2;
-  /* تحسينات لضمان جودة الصورة */
-  image-rendering: -webkit-optimize-contrast;
-  image-rendering: crisp-edges;
-  /* منع تشويه الصورة */
-  flex-shrink: 0;
+.vip-avatar-img {
+  display: block;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-/* Image-based overlay for frames (webp imported) */
-.vip-frame.with-image .vip-frame-inner {
-  position: relative;
-}
-.vip-frame-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover; /* ملء الحاوية بالكامل مع الحفاظ على النسبة */
-  border-radius: 9999px;
-  pointer-events: none;
-  /* تحسينات إضافية لضمان العرض المثالي */
-  object-position: center;
-  image-rendering: -webkit-optimize-contrast;
-  image-rendering: crisp-edges;
-  z-index: 3;
-  /* تعطيل أي دوران */
-  animation: none !important;
-  /* الإطار يحيط بالصورة من الخارج */
-  transform-origin: center center;
-  transform: scale(1);
+.vip-avatar-overlay {
+  display: block;
 }
 
-/* Shine overlay element for frame10 */
-.vip-frame-shine {
-  position: absolute;
-  top: -10%;
-  left: -10%;
-  width: 120%;
-  height: 120%;
-  overflow: hidden;
-  pointer-events: none;
-  z-index: 4; /* فوق الإطار */
-}
-.vip-frame-shine::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 40%;
-  height: 100%;
-  background: linear-gradient(
-    90deg,
-    rgba(255,255,255,0) 0%,
-    rgba(255,255,255,0.15) 45%,
-    rgba(255,255,255,0.35) 50%,
-    rgba(255,255,255,0.15) 55%,
-    rgba(255,255,255,0) 100%
-  );
-  filter: blur(2px);
-  border-radius: 9999px;
-  transform: translateX(0);
+/* Professional frame styles */
+.vip-avatar.with-frame .vip-avatar-img {
+  border: 3px solid transparent;
+  background: linear-gradient(white, white) padding-box,
+              linear-gradient(45deg, #ffd700, #ff6b35) border-box;
 }
 
-/* Shared rotating border - داخل الصورة الشخصية */
-.vip-frame.base::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0; /* توسيط الإطار */
-  width: 100%;
-  height: 100%;
-  border-radius: 9999px;
-  z-index: 3;
-  padding: 2px; /* frame thickness */
-  -webkit-mask:
-    linear-gradient(#000 0 0) content-box,
-    linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  /* تعطيل أي دوران */
-  animation: none !important;
+.vip-avatar.frame-1 .vip-avatar-img {
+  background: linear-gradient(white, white) padding-box,
+              linear-gradient(45deg, #ffd700, #ff6b35) border-box;
+  box-shadow: 0 0 15px rgba(255, 215, 0, 0.4);
 }
 
-
-/* تم تعطيل الدوران؛ الإبقاء على keyframes غير ضروري */
-
-/* عند استخدام صورة إطار جاهزة، أخفِ الإطار الشعاعي */
-.vip-frame.with-image::before { display: none !important; }
-
-/* 9 distinct gradient frames matching modern VIP look */
-.vip-frame-1::before {
-  background: conic-gradient(from 0deg, #ffcc33, #ff6633, #ffcc33);
-  box-shadow: 0 0 12px rgba(255, 204, 51, 0.5);
-}
-.vip-frame-2::before {
-  background: conic-gradient(from 0deg, #66e0ff, #4488ff, #66e0ff);
-  box-shadow: 0 0 12px rgba(68, 136, 255, 0.45);
-}
-.vip-frame-3::before {
-  background: conic-gradient(from 0deg, #444, #999, #444);
-  box-shadow: 0 0 12px rgba(200, 200, 200, 0.35);
-}
-.vip-frame-4::before {
-  background: conic-gradient(from 0deg, #b45309, #065f46, #b45309);
-  box-shadow: 0 0 12px rgba(6, 95, 70, 0.4);
-}
-.vip-frame-5::before {
-  background: conic-gradient(from 0deg, #ec4899, #8b5cf6, #ec4899);
-  box-shadow: 0 0 14px rgba(236, 72, 153, 0.5);
-}
-.vip-frame-6::before {
-  background: conic-gradient(from 0deg, #7c2d12, #f59e0b, #7c2d12);
-  box-shadow: 0 0 12px rgba(245, 158, 11, 0.4);
-}
-.vip-frame-7::before {
-  background: conic-gradient(from 0deg, #ffd700, #ffed4e, #ffa500, #ffd700);
-  box-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
-}
-.vip-frame-8::before {
-  background: conic-gradient(from 0deg, #e6f3ff, #87ceeb, #4682b4, #e6f3ff);
-  box-shadow: 0 0 12px rgba(70, 130, 180, 0.5);
-}
-.vip-frame-9::before {
-  background: conic-gradient(from 0deg, #f8f8ff, #c0c0c0, #a8a8a8, #f8f8ff);
-  box-shadow: 0 0 12px rgba(192, 192, 192, 0.5);
+.vip-avatar.frame-2 .vip-avatar-img {
+  background: linear-gradient(white, white) padding-box,
+              linear-gradient(45deg, #00d4ff, #0099cc) border-box;
+  box-shadow: 0 0 15px rgba(0, 212, 255, 0.4);
 }
 
-/* Optional subtle pulsation */
-/* تعطيل أي نبض/حركة */
-.vip-frame.base { 
-  animation: none !important; 
-  /* منع أي تأثيرات غير مرغوب فيها */
-  transition: none !important;
+.vip-avatar.frame-3 .vip-avatar-img {
+  background: linear-gradient(white, white) padding-box,
+              linear-gradient(45deg, #888, #ccc) border-box;
+  box-shadow: 0 0 15px rgba(136, 136, 136, 0.4);
 }
 
-/* منع تأثيرات التحويم على الإطارات */
-.vip-frame.base:hover,
-.vip-frame-overlay:hover {
-  transform: none !important;
-  scale: none !important;
+.vip-avatar.frame-4 .vip-avatar-img {
+  background: linear-gradient(white, white) padding-box,
+              linear-gradient(45deg, #8b4513, #228b22) border-box;
+  box-shadow: 0 0 15px rgba(139, 69, 19, 0.4);
+}
+
+.vip-avatar.frame-5 .vip-avatar-img {
+  background: linear-gradient(white, white) padding-box,
+              linear-gradient(45deg, #ff1493, #9932cc) border-box;
+  box-shadow: 0 0 15px rgba(255, 20, 147, 0.4);
+}
+
+.vip-avatar.frame-6 .vip-avatar-img {
+  background: linear-gradient(white, white) padding-box,
+              linear-gradient(45deg, #ff4500, #ffa500) border-box;
+  box-shadow: 0 0 15px rgba(255, 69, 0, 0.4);
+}
+
+.vip-avatar.frame-7 .vip-avatar-img {
+  background: linear-gradient(white, white) padding-box,
+              linear-gradient(45deg, #ffd700, #ffed4e, #ffa500) border-box;
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+}
+
+.vip-avatar.frame-8 .vip-avatar-img {
+  background: linear-gradient(white, white) padding-box,
+              linear-gradient(45deg, #87ceeb, #4682b4) border-box;
+  box-shadow: 0 0 15px rgba(70, 130, 180, 0.4);
+}
+
+.vip-avatar.frame-9 .vip-avatar-img {
+  background: linear-gradient(white, white) padding-box,
+              linear-gradient(45deg, #c0c0c0, #a8a8a8) border-box;
+  box-shadow: 0 0 15px rgba(192, 192, 192, 0.4);
+}
+
+.vip-avatar.frame-10 .vip-avatar-img {
+  background: linear-gradient(white, white) padding-box,
+              linear-gradient(45deg, #ff69b4, #ff1493, #dc143c) border-box;
+  box-shadow: 0 0 20px rgba(255, 105, 180, 0.6);
+}
+
+/* Crown positioning */
+.profile-crown {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
 }
 
 /* ===== تحسينات الاهتزاز الخفيف للرسائل ===== */
@@ -2466,14 +2346,7 @@ li > * > div.effect-snow {
     animation: none !important;
   }
 
-  /* استثناء إطارات VIP: إبقاء حركة الإطار فعّالة داخل richest حتى مع mobile-stable */
-  .richest-modal .mobile-stable .vip-frame-overlay,
-  .richest-modal .mobile-stable .vip-frame.base::before {
-    animation: vip-rotate var(--vip-spin-duration, 6s) linear infinite !important;
-  }
-  .richest-modal .mobile-stable .vip-frame.base {
-    animation: vip-pulse 3.6s ease-in-out infinite !important;
-  }
+  /* Clean VIP avatars - no animations needed */
 
   /* منع تأثيرات التحويم من إحداث حركة في الجوال داخل نافذة الأثرياء */
   .richest-modal .mobile-stable:hover {
