@@ -808,8 +808,8 @@ export default function UnifiedSidebar({
                             } as ChatUser;
                             if (frameFromPost) (effectiveUser as any).profileFrame = frameFromPost;
                             if (tagFromPost) (effectiveUser as any).profileTag = tagFromPost;
-                            const hasFrame = Boolean((effectiveUser as any)?.profileFrame);
-                            const containerSize = hasFrame ? 43 : 32;
+                            // ProfileImage with pixelSize=29 creates container of 29 * 1.4 = 40.6px
+                            const containerSize = 29 * 1.4; // متطابق مع منطق ProfileImage
                             return (
                               <div style={{ width: containerSize, height: containerSize, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                                 <ProfileImage 
@@ -961,8 +961,8 @@ export default function UnifiedSidebar({
                             } as ChatUser;
                             if (frameFromPost) (effectiveUser as any).profileFrame = frameFromPost;
                             if (tagFromPost) (effectiveUser as any).profileTag = tagFromPost;
-                            const hasFrame = Boolean((effectiveUser as any)?.profileFrame);
-                            const containerSize = hasFrame ? 43 : 32;
+                            // ProfileImage with pixelSize=29 creates container of 29 * 1.4 = 40.6px
+                            const containerSize = 29 * 1.4; // متطابق مع منطق ProfileImage
                             return (
                               <div style={{ width: containerSize, height: containerSize, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                                 <ProfileImage 

@@ -143,9 +143,9 @@ export default function ProfileImage({
     return Math.min(50, n) as any;
   })();
 
-  // حساب الأحجام
+  // حساب الأحجام - ثابت ومتناسق عبر كل السياقات
   const px = pixelSize ?? (size === 'small' ? 36 : size === 'large' ? 72 : 56);
-  const containerSize = px * 1.4; // حاوية أكبر قليلاً للتاج
+  const containerSize = px * 1.4; // حاوية أكبر قليلاً للتاج - متطابق مع VipAvatar
 
   // مع إطار
   if (!disableFrame && frameName && frameIndex) {
@@ -157,6 +157,7 @@ export default function ProfileImage({
           width: containerSize, 
           height: containerSize,
           position: 'relative',
+          flexShrink: 0,
         }}
       >
         <div style={{ 
@@ -164,6 +165,11 @@ export default function ProfileImage({
           top: '50%',
           left: '50%',
           transform: 'translate(-50%, -50%)',
+          width: px * 1.4,
+          height: px * 1.4,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
         }}>
           <VipAvatar 
             src={imageSrc} 
@@ -186,6 +192,7 @@ export default function ProfileImage({
         width: containerSize, 
         height: containerSize,
         position: 'relative',
+        flexShrink: 0,
       }}
     >
       <div style={{ 
@@ -195,6 +202,7 @@ export default function ProfileImage({
         transform: 'translate(-50%, -50%)',
         width: px,
         height: px,
+        flexShrink: 0,
       }}>
         <img
           src={imageSrc}
@@ -206,6 +214,7 @@ export default function ProfileImage({
             display: 'block',
             objectFit: 'cover',
             borderRadius: '9999px',
+            flexShrink: 0,
           }}
           loading="lazy"
           decoding="async"
