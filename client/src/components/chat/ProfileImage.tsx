@@ -189,15 +189,19 @@ export default function ProfileImage({
         top: '50%',
         left: '50%',
         transform: 'translate(-50%, -50%)',
+        width: px,
+        height: px,
       }}>
         <img
           src={imageSrc}
           alt={`صورة ${user.username}`}
-          className={`rounded-full ring-[3px] ${borderColor} shadow-sm object-cover`}
+          className={`rounded-full ring-[3px] ${borderColor} shadow-sm`}
           style={{
             width: px,
             height: px,
             display: 'block',
+            objectFit: 'cover',
+            borderRadius: '9999px',
           }}
           loading="lazy"
           decoding="async"
