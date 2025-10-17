@@ -6,33 +6,19 @@ const sharp = require('sharp');
 // Repo-relative paths
 const TAGS_DIR = path.resolve(__dirname, '..', 'client', 'public', 'tags');
 
-// Match logic from client src/config/tagLayouts.ts
-const DEFAULT_LAYOUT = { widthRatio: 1.10, xAdjustPx: 0, yAdjustPx: 1, anchorY: 0.37, autoAnchor: true };
+// Match logic with current client ProfileImage.tsx (TagOverlay)
+// IMPORTANT: In the client, anchorY is applied as a FRACTION OF basePx (final tag width),
+// not a fraction of tag HEIGHT. We also apply a clamp (maxEnter = basePx * SAFE_ENTER_RATIO).
+const SAFE_ENTER_RATIO = 0.22; // must match TagOverlay's maxEnter factor
+const DEFAULT_LAYOUT = { widthRatio: 1.10, xAdjustPx: 0, yAdjustPx: 0, anchorY: 0.10, autoAnchor: true };
 function getLayout(num){
-  const l = { ...DEFAULT_LAYOUT };
-  const override = (layout) => Object.assign(l, layout);
-  if (num === 1) override({ anchorY: 0.54, yAdjustPx: 4 });
-  if (num === 2) override({ anchorY: 0.32, yAdjustPx: 1 });
-  if (num === 3) override({ anchorY: 0.30, yAdjustPx: 1, widthRatio: 1.08 });
-  if (num === 4) override({ anchorY: 0.42, yAdjustPx: 1, widthRatio: 1.12 });
-  if (num === 5) override({ anchorY: 0.37, yAdjustPx: 1 });
-  if (num === 6) override({ anchorY: 0.47, yAdjustPx: 1 });
-  if (num === 7) override({ anchorY: 0.37, yAdjustPx: 1 });
-  if (num === 8) override({ anchorY: 0.54, yAdjustPx: 4 });
-  if (num === 9) override({ anchorY: 0.42, yAdjustPx: 1, widthRatio: 1.12 });
-  if (num === 10) override({ anchorY: 0.42, yAdjustPx: 3 });
-  if (num === 11) override({ anchorY: 0.37, yAdjustPx: 1 });
-  if (num === 12) override({ anchorY: 0.44, yAdjustPx: 2 });
-  if (num >= 13 && num <= 20) override({ anchorY: 0.34, yAdjustPx: 1 });
-  if (num >= 21 && num <= 30) override({ anchorY: 0.37, yAdjustPx: 1 });
-  if (num >= 31 && num <= 40) override({ anchorY: 0.40, yAdjustPx: 1, widthRatio: 1.11 });
-  if (num >= 41 && num <= 50) override({ anchorY: 0.44, yAdjustPx: 1, widthRatio: 1.12 });
-  return l;
+  // Keep everything default; we will compute recommendations instead of hardcoding legacy overrides
+  return { ...DEFAULT_LAYOUT };
 }
 
 // Analysis params: match ProfileImage.tsx logic
 const SIZES = [36, 56, 72]; // small, medium, large
-const SCAN_CENTER_RATIO_FOR = (num) => (num === 1 || num === 8 ? 0.6 : 1); // proposed optional center-scan for curved crowns (reported separately)
+const SCAN_CENTER_RATIO_FOR = () => 1; // client uses full-width scan now
 
 async function measureBottomGapRatio(imgPath, scanCenterRatio=1){
   const img = sharp(imgPath);
@@ -74,13 +60,34 @@ function fileForTag(num){
   return undefined;
 }
 
+function clamp(val, mi, ma){ return Math.max(mi, Math.min(ma, val)); }
+
+function recommendAnchorY({
+  natural, layout, bottomGapFull, px = 56,
+  targetEntry = 0.20, // desired fraction of tag HEIGHT that should enter avatar
+}){
+  // Given current logic (anchorFromImagePx = bottomGapPx + basePx*anchorY + yAdjustPx, clamped to basePx*SAFE_ENTER_RATIO),
+  // derive anchorY that achieves targetEntry without hitting the clamp.
+  const basePx = Math.round(px * layout.widthRatio);
+  const scale = basePx / Math.max(1, natural.w || 1);
+  const heightPx = (natural.h || 0) * scale;
+  const bottomGapPx = Math.round((layout.autoAnchor ? bottomGapFull : 0) * heightPx);
+  const maxEnter = Math.round(basePx * SAFE_ENTER_RATIO);
+  // We want: bottomGapPx + basePx*anchorY ≈ targetEntry * heightPx (ignore yAdjust for base recommendation)
+  const needed = targetEntry * heightPx - bottomGapPx;
+  let proposed = needed / Math.max(1, basePx);
+  // Respect clamp: bottomGapPx + basePx*anchorY <= maxEnter → anchorY <= (maxEnter - bottomGapPx)/basePx
+  const maxAnchorYAllowed = (maxEnter - bottomGapPx) / Math.max(1, basePx);
+  // Bound to sane range
+  proposed = clamp(proposed, 0, 0.35);
+  return clamp(proposed, 0, isFinite(maxAnchorYAllowed) ? maxAnchorYAllowed : 0.35);
+}
+
 async function analyzeTag(num){
   const file = fileForTag(num);
   if (!file) return { num, status: 'missing' };
   const layout = getLayout(num);
   const { ratio: bottomGapFull, natural } = await measureBottomGapRatio(file, 1);
-  // Optional center-scan measurement (not used in current app logic, informative only)
-  const { ratio: bottomGapCenter } = await measureBottomGapRatio(file, SCAN_CENTER_RATIO_FOR(num));
 
   // Compute per-size metrics exactly like the component
   const perSize = SIZES.map((px) => {
@@ -88,28 +95,33 @@ async function analyzeTag(num){
     const scale = basePx / Math.max(1, natural.w || 1);
     const heightPx = (natural.h || 0) * scale;
     const bottomGapPx = Math.round((layout.autoAnchor ? bottomGapFull : 0) * heightPx);
-    const anchorPx = Math.round(heightPx * (layout.anchorY ?? DEFAULT_LAYOUT.anchorY));
-    const anchorFromImagePx = Math.round(anchorPx + (layout.yAdjustPx || 0) - bottomGapPx);
+    const desiredEnterPx = Math.round(basePx * (layout.anchorY ?? DEFAULT_LAYOUT.anchorY));
+    const totalEnterBeforeClamp = bottomGapPx + desiredEnterPx + (layout.yAdjustPx || 0);
+    const maxEnter = Math.round(basePx * SAFE_ENTER_RATIO);
+    const anchorFromImagePx = clamp(totalEnterBeforeClamp, 0, maxEnter);
     const entryRatio = heightPx > 0 ? anchorFromImagePx / heightPx : 0; // fraction of tag height entering avatar
-    // Classification by entry ratio (geometry-based, scale-invariant)
+    // Classification ranges tuned for current clamp (0.22 of basePx)
     let cls;
-    if (entryRatio >= 0.26) cls = 'good';
-    else if (entryRatio >= 0.18) cls = 'slightly-high';
-    else cls = 'too-high';
+    if (entryRatio >= 0.17 && entryRatio <= 0.24) cls = 'good';
+    else if (entryRatio >= 0.12 && entryRatio < 0.17) cls = 'slightly-high';
+    else if (entryRatio < 0.12) cls = 'too-high';
+    else cls = 'too-low';
     return { px, basePx, heightPx: Math.round(heightPx), anchorFromImagePx, entryRatio: Number(entryRatio.toFixed(3)), class: cls };
   });
 
   // Derive a conservative overall class (worst among sizes)
-  const order = { 'good': 2, 'slightly-high': 1, 'too-high': 0 };
+  const order = { 'good': 3, 'slightly-high': 2, 'too-high': 1, 'too-low': 0 };
   const overall = perSize.reduce((acc, s) => (order[s.class] < order[acc] ? s.class : acc), 'good');
 
+  const recAnchorY = recommendAnchorY({ natural, layout, bottomGapFull, px: 56, targetEntry: 0.20 });
   return {
     num,
     file: path.basename(file),
     natural,
     layout,
     bottomGapFull: Number(bottomGapFull.toFixed(3)),
-    bottomGapCenter: Number(bottomGapCenter.toFixed(3)),
+    safeEnterRatio: SAFE_ENTER_RATIO,
+    recommended: { anchorY: Number(recAnchorY.toFixed(3)) },
     perSize,
     class: overall,
   };
@@ -141,6 +153,16 @@ async function analyzeTag(num){
   console.log('\nDetails (per size):');
   for (const r of results) {
     const sizesText = r.perSize.map(s => `${s.px}px: base=${s.basePx}px entry=${(s.entryRatio*100).toFixed(1)}% anchorPx=${s.anchorFromImagePx}px [${s.class}]`).join(' | ');
-    console.log(`${String(r.num).padStart(2,' ')} | ${r.file.padEnd(10)} | gapFull=${r.bottomGapFull} gapCtr=${r.bottomGapCenter} | ${sizesText}`);
+    console.log(`${String(r.num).padStart(2,' ')} | ${r.file.padEnd(10)} | gap=${r.bottomGapFull} | rec.anchorY=${r.recommended.anchorY} | ${sizesText}`);
   }
+
+  // Save machine-readable recommendations for automation
+  try {
+    fs.writeFileSync(path.resolve(__dirname, 'tag-layouts-recommendations.json'), JSON.stringify(
+      results.map(r => ({ num: r.num, rec: r.recommended, gap: r.bottomGapFull, file: r.file })),
+      null,
+      2
+    ));
+    console.log('\nSaved recommendations to tools/tag-layouts-recommendations.json');
+  } catch {}
 })();
