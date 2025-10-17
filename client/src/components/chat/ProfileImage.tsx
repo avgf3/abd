@@ -197,6 +197,7 @@ export default function ProfileImage({
           style={{
             width: px,
             height: px,
+            aspectRatio: '1 / 1',
             display: 'block',
           }}
           loading="lazy"

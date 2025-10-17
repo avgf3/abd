@@ -481,6 +481,7 @@ img, video, canvas, iframe {
 .user-img {
   width: 45px;
   height: 45px;
+  aspect-ratio: 1 / 1;
   border-radius: 50%;
   object-fit: cover;
   margin-left: 10px;
@@ -1844,6 +1845,7 @@ li > * > div.effect-snow {
   /* الصورة أصغر من الحاوية - يتم التحكم بها من VipAvatar.tsx */
   border-radius: 9999px;
   object-fit: cover;
+  aspect-ratio: 1 / 1; /* إجبار النسبة 1:1 لمنع الشكل البيضوي */
   background: #0b1220;
   position: relative;
   z-index: 2;
@@ -3313,6 +3315,7 @@ li::before {
 .message-avatar {
   width: 32px;
   height: 32px;
+  aspect-ratio: 1 / 1;
   border-radius: 50%;
   object-fit: cover;
   flex-shrink: 0;

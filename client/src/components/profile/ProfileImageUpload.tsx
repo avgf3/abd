@@ -175,6 +175,7 @@ export default function ProfileImageUpload({
             src={preview}
             alt="معاينة الصورة"
             className="w-full h-full rounded-full object-cover border-4 border-primary"
+            style={{ aspectRatio: '1 / 1' }}
           />
           <button
             onClick={removePreview}

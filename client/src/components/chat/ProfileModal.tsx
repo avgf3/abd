@@ -2269,6 +2269,7 @@ export default function ProfileModal({
         .profile-avatar img:not(.profile-tag-overlay) {
           width: 100%;
           height: 100%;
+          aspect-ratio: 1 / 1;
           object-fit: cover;
           display: block;
           border-radius: 9999px; /* الصورة دائرية */

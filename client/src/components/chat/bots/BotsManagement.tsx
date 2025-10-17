@@ -743,7 +743,7 @@ export default function BotsManagement({ currentUser }: BotsManagementProps) {
                   اختيار صورة
                 </Button>
                 {pendingImagePreview && (
-                  <img src={pendingImagePreview} alt="preview" className="w-10 h-10 rounded-full object-cover border" />
+                  <img src={pendingImagePreview} alt="preview" className="w-10 h-10 rounded-full object-cover border" style={{ aspectRatio: '1 / 1' }} />
                 )}
                 {uploadProgress > 0 && (
                   <span className="text-xs text-gray-500">{uploadProgress}%</span>

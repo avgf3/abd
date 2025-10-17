@@ -43,6 +43,7 @@ export default function VipAvatar({
   const imgStyle: React.CSSProperties = {
     width: imageSize,
     height: imageSize,
+    aspectRatio: '1 / 1',
     willChange: 'transform',
     backfaceVisibility: 'hidden',
     transform: 'translateZ(0)',
