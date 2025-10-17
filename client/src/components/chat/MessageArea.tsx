@@ -740,7 +740,7 @@ export default function MessageArea({
                           <ProfileImage
                             user={message.sender}
                             size="small"
-                            pixelSize={28}
+                            pixelSize={36}
                             className="cursor-pointer hover:scale-110 transition-transform duration-200"
                             /* عرض الإطار للمستخدم صاحب الإطار */
                             onClick={(e) => onUserClick && onUserClick(e, message.sender!)}
@@ -880,7 +880,7 @@ export default function MessageArea({
                           <ProfileImage
                             user={message.sender}
                             size="small"
-                            pixelSize={28}
+                            pixelSize={36}
                             className="cursor-pointer hover:scale-110 transition-transform duration-200"
                             /* عرض الإطار للمستخدم صاحب الإطار */
                             onClick={(e) => onUserClick && onUserClick(e, message.sender!)}
