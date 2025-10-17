@@ -38,7 +38,7 @@ const CrownOverlay = memo(function CrownOverlay({ src, size }: CrownOverlayProps
         left: '50%',
         width: crownSize,
         height: 'auto',
-        transform: 'translate(-50%, -95%)', // رفع التاج عالي فوق الرأس
+        transform: 'translate(-50%, -30%)', // تخفيض التاج ليكون أقرب للرأس
         pointerEvents: 'none',
         opacity: isVisible ? 1 : 0,
         transition: 'opacity 0.2s',
