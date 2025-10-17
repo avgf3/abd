@@ -75,12 +75,13 @@ const TagOverlay = memo(function TagOverlay({
     const MIN_ENTRY_RATIO = 0.05;
     const minVisibleEnterPx = Math.round(heightPx * MIN_ENTRY_RATIO);
 
-    // اجمع القيم مع قيد علوي بسيط لمنع الطيران في الحالات الشاذة
-    let total = bottomGapPx + desiredEnterPx + yAdjustPx;
+    // ✅ FIXED: نطرح bottomGapPx لرفع التاج وإزالة الشفافية السفلية
+    // المعادلة الصحيحة: desiredEnterPx (مقدار الدخول) + yAdjustPx (ضبط يدوي) - bottomGapPx (إزالة الشفافية)
+    let total = desiredEnterPx + yAdjustPx - bottomGapPx;
     if (!touchTop) {
-      // تأكد أن الجزء المرئي يدخل على الأقل 5%
-      const minTotalIncludingGap = bottomGapPx + minVisibleEnterPx;
-      if (total < minTotalIncludingGap) total = minTotalIncludingGap;
+      // تأكد أن الجزء المرئي يدخل على الأقل 5% (بعد طرح الشفافية)
+      const minTotalAfterGap = minVisibleEnterPx - bottomGapPx;
+      if (total < minTotalAfterGap) total = minTotalAfterGap;
     }
     const maxEnter = Math.round(basePx * 0.22); // حد أمان 22% من عرض التاج
     const clamped = Math.max(0, Math.min(total, maxEnter));
