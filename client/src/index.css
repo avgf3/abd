@@ -271,6 +271,12 @@ img, video, canvas, iframe {
   height: auto;
 }
 
+/* Fix: enforce perfect circle for avatar images without touching other elements */
+img.rounded-full {
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+}
+
 /* Modern Animations System */
 @keyframes fade-in {
   from {
