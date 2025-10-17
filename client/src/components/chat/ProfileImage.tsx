@@ -27,10 +27,10 @@ const CrownOverlay = memo(function CrownOverlay({ src, size, tagNumber }: CrownO
   // حجم التاج = 120% من حجم الصورة
   const crownSize = Math.round(size * 1.2);
 
-  // التاجات 3، 5، 6، 7 تبقى كما هي (-35%)
-  // باقي التاجات تُرفع إلى -42%
-  const keepOriginal = tagNumber === 3 || tagNumber === 5 || tagNumber === 6 || tagNumber === 7;
-  const yPosition = keepOriginal ? -35 : -42;
+  // التاجات 3، 5، 6، 7، 23، 25 تبقى كما هي (-35%)
+  // باقي التاجات تُرفع إلى -47%
+  const keepOriginal = tagNumber === 3 || tagNumber === 5 || tagNumber === 6 || tagNumber === 7 || tagNumber === 23 || tagNumber === 25;
+  const yPosition = keepOriginal ? -35 : -47;
 
   return (
     <img
