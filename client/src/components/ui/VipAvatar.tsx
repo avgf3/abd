@@ -21,21 +21,10 @@ export default function VipAvatar({
   // تعطيل الحركة نهائياً (المطلوب نسخة ثابتة)
   const duration = useMemo(() => '0s', []);
 
-  // الصورة تحتفظ بحجمها الأصلي المطلوب
+  // الصورة تحتفظ بحجمها الأصلي
   const imageSize = size;
-  // الإطار (الحاوية) يتكيف ليكون أكبر من الصورة بنسبة كافية لاستيعاب الإطار بالكامل
-  // تحسين: زيادة النسبة لضمان احتواء جميع الإطارات بشكل مثالي
-  const frameSize = imageSize * 1.5; // الإطار أكبر بـ 50% لضمان احتواء جميع الإطارات بالكامل
-
-  // تحسين المقياس حسب حجم الإطار - الإطارات الصغيرة تحتاج تكبير أكثر
-  const overlayScale = useMemo(() => {
-    // للأحجام الصغيرة (أقل من 40px) نحتاج تكبير أكثر لضمان وضوح الإطار
-    if (size < 40) return 1.1;
-    // للأحجام المتوسطة (40-80px) نستخدم المقياس الطبيعي
-    if (size < 80) return 1.0;
-    // للأحجام الكبيرة (أكثر من 80px) نقلل قليلاً لتجنب التشويه
-    return 0.95;
-  }, [size]);
+  // الحاوية أكبر من الصورة لاستيعاب الإطار
+  const frameSize = imageSize * 1.5;
 
   const containerStyle: React.CSSProperties & { ['--vip-spin-duration']?: string } = {
     width: frameSize,
@@ -135,7 +124,6 @@ export default function VipAvatar({
             src={overlaySrc}
             alt="frame"
             className="vip-frame-overlay"
-            style={{ transform: overlayScale === 1 ? 'scale(1)' : `scale(${overlayScale})` }}
             onError={(e) => {
               try {
                 const cur = overlaySrc || '';
