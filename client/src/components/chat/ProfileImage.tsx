@@ -3,7 +3,7 @@ import { memo, useEffect, useMemo, useState } from 'react';
 import type { ChatUser } from '@/types/chat';
 import { getImageSrc } from '@/utils/imageUtils';
 import VipAvatar from '@/components/ui/VipAvatar';
-// تبسيط منطق التيجان: وضع ثابت أعلى الصورة
+import { getTagLayout } from '@/config/tagLayouts';
 
 interface ProfileImageProps {
   user: ChatUser;
@@ -17,14 +17,24 @@ interface ProfileImageProps {
   disableFrame?: boolean;
 }
 
-// تمت إزالة نوع TagOverlayProps بعد تبسيط المنطق
+interface TagOverlayProps {
+  src: string;
+  overlayTopPx: number;
+  basePx: number;
+  anchorY?: number;
+  yAdjustPx?: number;
+  xAdjustPx?: number;
+  autoAnchor?: boolean;
+  touchTop?: boolean;
+  centerScanRatio?: number;
+}
 
 // مكون التاج مع احتساب الارتكاز بناءً على أبعاد الصورة الحقيقية لمواءمة محترفة
 const TagOverlay = memo(function TagOverlay({
   src,
   overlayTopPx,
   basePx,
-  anchorY = 0.08,
+  anchorY = 0.05,
   yAdjustPx = 0,
   xAdjustPx = 0,
   autoAnchor = true,
@@ -231,24 +241,33 @@ export default function ProfileImage({
 
   const frameName = (user as any)?.profileFrame as string | undefined;
   const tagName = (user as any)?.profileTag as string | undefined;
-  const tagSrc: string | undefined = (() => {
+  
+  // استخراج رقم التاج والمسار
+  const tagNumber = useMemo(() => {
+    if (!tagName) return undefined;
+    const str = String(tagName);
+    const m = str.match(/(\d+)/);
+    if (m && Number.isFinite(parseInt(m[1]))) {
+      return Math.max(1, Math.min(50, parseInt(m[1])));
+    }
+    return undefined;
+  }, [tagName]);
+  
+  const tagSrc: string | undefined = useMemo(() => {
     if (!tagName) return undefined;
     const str = String(tagName);
     if (str.startsWith('data:') || str.startsWith('/') || str.includes('/')) return str;
-    const m = str.match(/(\d+)/);
-    if (m && Number.isFinite(parseInt(m[1]))) {
-      const n = Math.max(1, Math.min(50, parseInt(m[1])));
-      return `/tags/tag${n}.webp`;
+    if (tagNumber) {
+      return `/tags/tag${tagNumber}.webp`;
     }
     return `/tags/${str}`;
-  })();
-  // منطق مبسّط للتاج: بدون تخطيطات خاصة
-  const [tagImageSrc, setTagImageSrc] = useState<string | undefined>(tagSrc);
-  const [tagFallbackStep, setTagFallbackStep] = useState<number>(0);
-  useEffect(() => {
-    setTagImageSrc(tagSrc);
-    setTagFallbackStep(0);
-  }, [tagSrc]);
+  }, [tagName, tagNumber]);
+  
+  // تحميل إعدادات التاج من tagLayouts
+  const tagLayout = useMemo(() => {
+    return getTagLayout(tagNumber);
+  }, [tagNumber]);
+  
   const frameIndex = (() => {
     if (!frameName) return undefined;
     const match = String(frameName).match(/(\d+)/);
@@ -265,10 +284,10 @@ export default function ProfileImage({
     // الحاوية يجب أن تكون أكبر لاستيعاب الإطار (نفس النسبة المستخدمة في VipAvatar)
     const containerSize = px * 1.35;
     const imageTopWithinContainer = (containerSize - px) / 2; // موضع أعلى الصورة داخل الحاوية
-    // التاج يلامس أعلى الصورة مباشرة
     const overlayTopPx = imageTopWithinContainer; // أعلى الصورة
-    const crownWidthPx = Math.round(px * 1.1);
-    const enterPx = Math.round(px * 0.08);
+    
+    // استخدام إعدادات التاج الذكية من tagLayouts
+    const crownWidthPx = Math.round(px * (tagLayout?.widthRatio ?? 1.1));
 
     return (
       <div
@@ -277,123 +296,74 @@ export default function ProfileImage({
         style={{ width: containerSize, height: containerSize, contain: 'layout style', isolation: 'isolate', overflow: 'visible' }}
       >
         <VipAvatar src={imageSrc} alt={`صورة ${user.username}`} size={px} frame={frameIndex as any} />
-        {tagImageSrc && (
-          <img
-            src={tagImageSrc}
-            alt="tag"
-            className="profile-tag-overlay"
-            aria-hidden="true"
-            style={{
-              top: overlayTopPx,
-              width: crownWidthPx,
-              transform: `translate(-50%, calc(-100% + ${enterPx}px))`,
-            }}
-            decoding="async"
-            loading="eager"
-            draggable={false}
-            onError={(e: any) => {
-              try {
-                const cur = tagImageSrc || '';
-                if (tagFallbackStep === 0 && /\.webp(\?.*)?$/i.test(cur)) {
-                  setTagImageSrc(cur.replace(/\.webp(\?.*)?$/i, '.png$1'));
-                  setTagFallbackStep(1);
-                  return;
-                }
-                if (tagFallbackStep === 1 && /\.png(\?.*)?$/i.test(cur)) {
-                  setTagImageSrc(cur.replace(/\.png(\?.*)?$/i, '.jpg$1'));
-                  setTagFallbackStep(2);
-                  return;
-                }
-                if (tagFallbackStep === 2 && /\.jpg(\?.*)?$/i.test(cur)) {
-                  setTagImageSrc(cur.replace(/\.jpg(\?.*)?$/i, '.jpeg$1'));
-                  setTagFallbackStep(3);
-                  return;
-                }
-                (e.currentTarget as HTMLImageElement).style.display = 'none';
-              } catch {}
-            }}
+        {tagSrc && (
+          <TagOverlay
+            src={tagSrc}
+            overlayTopPx={overlayTopPx}
+            basePx={crownWidthPx}
+            anchorY={tagLayout?.anchorY}
+            yAdjustPx={tagLayout?.yAdjustPx}
+            xAdjustPx={tagLayout?.xAdjustPx}
+            autoAnchor={tagLayout?.autoAnchor}
+            touchTop={false}
+            centerScanRatio={1}
           />
         )}
       </div>
     );
   }
 
-  {
-    const px = pixelSize ?? (size === 'small' ? 36 : size === 'large' ? 72 : 56);
-    const containerSize = px * 1.35; // نفس حاوية إضافة الإطار
-    const imageTopWithinContainer = (containerSize - px) / 2;
-    const overlayTopPx = imageTopWithinContainer;
-    const crownWidthPx = Math.round(px * 1.1);
-    const enterPx = Math.round(px * 0.08);
+  // حالة بدون إطار
+  const px = pixelSize ?? (size === 'small' ? 36 : size === 'large' ? 72 : 56);
+  const containerSize = px * 1.35; // نفس حاوية إضافة الإطار
+  const imageTopWithinContainer = (containerSize - px) / 2;
+  const overlayTopPx = imageTopWithinContainer;
+  
+  // استخدام إعدادات التاج الذكية من tagLayouts
+  const crownWidthPx = Math.round(px * (tagLayout?.widthRatio ?? 1.1));
 
-
-    return (
-      <div
-        className={`relative inline-block ${className || ''}`}
-        onClick={onClick}
-        style={{ width: containerSize, height: containerSize, contain: 'layout style', isolation: 'isolate', overflow: 'visible' }}
-      >
-        <div className="vip-frame-inner">
-          <img
-            src={imageSrc}
-            alt={`صورة ${user.username}`}
-            className={`rounded-full ring-[3px] ${borderColor} shadow-sm object-cover`}
-            style={{
-              width: px,
-              height: px,
-              transition: 'none',
-              backfaceVisibility: 'hidden',
-              transform: 'translateZ(0)',
-              display: 'block',
-            }}
-            loading="lazy"
-            decoding="async"
-            sizes={String(px) + 'px'}
-            onError={(e: any) => {
-              if (e?.currentTarget && e.currentTarget.src !== '/default_avatar.svg') {
-                e.currentTarget.src = '/default_avatar.svg';
-              }
-            }}
-          />
-        </div>
-        {tagImageSrc && (
-          <img
-            src={tagImageSrc}
-            alt="tag"
-            className="profile-tag-overlay"
-            aria-hidden="true"
-            style={{
-              top: overlayTopPx,
-              width: crownWidthPx,
-              transform: `translate(-50%, calc(-100% + ${enterPx}px))`,
-            }}
-            decoding="async"
-            loading="eager"
-            draggable={false}
-            onError={(e: any) => {
-              try {
-                const cur = tagImageSrc || '';
-                if (tagFallbackStep === 0 && /\.webp(\?.*)?$/i.test(cur)) {
-                  setTagImageSrc(cur.replace(/\.webp(\?.*)?$/i, '.png$1'));
-                  setTagFallbackStep(1);
-                  return;
-                }
-                if (tagFallbackStep === 1 && /\.png(\?.*)?$/i.test(cur)) {
-                  setTagImageSrc(cur.replace(/\.png(\?.*)?$/i, '.jpg$1'));
-                  setTagFallbackStep(2);
-                  return;
-                }
-                if (tagFallbackStep === 2 && /\.jpg(\?.*)?$/i.test(cur)) {
-                  setTagImageSrc(cur.replace(/\.jpg(\?.*)?$/i, '.jpeg$1'));
-                  setTagFallbackStep(3);
-                  return;
-                }
-                (e.currentTarget as HTMLImageElement).style.display = 'none';
-              } catch {}
-            }}
-          />
-        )}
+  return (
+    <div
+      className={`relative inline-block ${className || ''}`}
+      onClick={onClick}
+      style={{ width: containerSize, height: containerSize, contain: 'layout style', isolation: 'isolate', overflow: 'visible' }}
+    >
+      <div className="vip-frame-inner">
+        <img
+          src={imageSrc}
+          alt={`صورة ${user.username}`}
+          className={`rounded-full ring-[3px] ${borderColor} shadow-sm object-cover`}
+          style={{
+            width: px,
+            height: px,
+            transition: 'none',
+            backfaceVisibility: 'hidden',
+            transform: 'translateZ(0)',
+            display: 'block',
+          }}
+          loading="lazy"
+          decoding="async"
+          sizes={String(px) + 'px'}
+          onError={(e: any) => {
+            if (e?.currentTarget && e.currentTarget.src !== '/default_avatar.svg') {
+              e.currentTarget.src = '/default_avatar.svg';
+            }
+          }}
+        />
       </div>
-    );
-  }
+      {tagSrc && (
+        <TagOverlay
+          src={tagSrc}
+          overlayTopPx={overlayTopPx}
+          basePx={crownWidthPx}
+          anchorY={tagLayout?.anchorY}
+          yAdjustPx={tagLayout?.yAdjustPx}
+          xAdjustPx={tagLayout?.xAdjustPx}
+          autoAnchor={tagLayout?.autoAnchor}
+          touchTop={false}
+          centerScanRatio={1}
+        />
+      )}
+    </div>
+  );
 }
