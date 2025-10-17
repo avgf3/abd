@@ -10,7 +10,7 @@
   {
     "num": 2,
     "rec": {
-      "anchorY": 0.093
+      "anchorY": 0.011
     },
     "gap": 0.019,
     "file": "tag2.webp"
@@ -18,7 +18,7 @@
   {
     "num": 3,
     "rec": {
-      "anchorY": 0.084
+      "anchorY": 0.021
     },
     "gap": 0,
     "file": "tag3.webp"
@@ -26,7 +26,7 @@
   {
     "num": 4,
     "rec": {
-      "anchorY": 0.032
+      "anchorY": 0
     },
     "gap": 0.13,
     "file": "tag4.webp"
@@ -34,7 +34,7 @@
   {
     "num": 5,
     "rec": {
-      "anchorY": 0.067
+      "anchorY": 0
     },
     "gap": 0.095,
     "file": "tag5.webp"
@@ -42,7 +42,7 @@
   {
     "num": 6,
     "rec": {
-      "anchorY": 0.059
+      "anchorY": 0.003
     },
     "gap": 0.056,
     "file": "tag6.webp"
@@ -50,7 +50,7 @@
   {
     "num": 7,
     "rec": {
-      "anchorY": 0.025
+      "anchorY": 0
     },
     "gap": 0.169,
     "file": "tag7.webp"
@@ -66,7 +66,7 @@
   {
     "num": 9,
     "rec": {
-      "anchorY": 0.119
+      "anchorY": 0.03
     },
     "gap": 0,
     "file": "tag9.webp"
@@ -82,7 +82,7 @@
   {
     "num": 11,
     "rec": {
-      "anchorY": 0.093
+      "anchorY": 0.011
     },
     "gap": 0.038,
     "file": "tag11.webp"
@@ -106,7 +106,7 @@
   {
     "num": 14,
     "rec": {
-      "anchorY": 0.076
+      "anchorY": 0
     },
     "gap": 0.09,
     "file": "tag14.png"
@@ -114,7 +114,7 @@
   {
     "num": 15,
     "rec": {
-      "anchorY": 0.09
+      "anchorY": 0
     },
     "gap": 0.086,
     "file": "tag15.png"
@@ -122,7 +122,7 @@
   {
     "num": 16,
     "rec": {
-      "anchorY": 0.039
+      "anchorY": 0
     },
     "gap": 0.167,
     "file": "tag16.png"
@@ -130,7 +130,7 @@
   {
     "num": 17,
     "rec": {
-      "anchorY": 0.006
+      "anchorY": 0
     },
     "gap": 0.188,
     "file": "tag17.png"
@@ -138,7 +138,7 @@
   {
     "num": 18,
     "rec": {
-      "anchorY": 0.115
+      "anchorY": 0.017
     },
     "gap": 0.016,
     "file": "tag18.png"
@@ -154,7 +154,7 @@
   {
     "num": 20,
     "rec": {
-      "anchorY": 0.07
+      "anchorY": 0
     },
     "gap": 0.113,
     "file": "tag20.png"

@@ -30,7 +30,7 @@ export default function UserPopup({
 }: UserPopupProps) {
   const { toast } = useToast();
   const canSetFrame =
-    currentUser && currentUser.userType === 'owner' && currentUser.id !== user.id;
+    currentUser && (currentUser.userType === 'owner' || currentUser.userType === 'admin') && currentUser.id !== user.id;
   const canSetTag = canSetFrame;
   const canSetTitle = canSetFrame;
 

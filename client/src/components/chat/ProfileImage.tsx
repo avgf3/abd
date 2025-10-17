@@ -71,8 +71,17 @@ const TagOverlay = memo(function TagOverlay({
     // الشفافية السفلية: أضفها فقط عند تفعيل autoAnchor
     const bottomGapPx = autoAnchor ? Math.round(bottomGapRatio * heightPx) : 0;
 
+    // حد أدنى للدخول: 5% من ارتفاع التاج فوق الرأس (بعد إزالة الشفافية)
+    const MIN_ENTRY_RATIO = 0.05;
+    const minVisibleEnterPx = Math.round(heightPx * MIN_ENTRY_RATIO);
+
     // اجمع القيم مع قيد علوي بسيط لمنع الطيران في الحالات الشاذة
-    const total = bottomGapPx + desiredEnterPx + yAdjustPx;
+    let total = bottomGapPx + desiredEnterPx + yAdjustPx;
+    if (!touchTop) {
+      // تأكد أن الجزء المرئي يدخل على الأقل 5%
+      const minTotalIncludingGap = bottomGapPx + minVisibleEnterPx;
+      if (total < minTotalIncludingGap) total = minTotalIncludingGap;
+    }
     const maxEnter = Math.round(basePx * 0.22); // حد أمان 22% من عرض التاج
     const clamped = Math.max(0, Math.min(total, maxEnter));
     return clamped;
