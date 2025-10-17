@@ -248,9 +248,9 @@ export function getSocket(): Socket {
     rememberUpgrade: true, // تذكر الترقية الناجحة
     autoConnect: false,
     reconnection: true,
-    // مصدر وحيد لإعادة الاتصال: دع Socket.IO يدير المحاولات بلا حدود
-    reconnectionAttempts: Infinity,
-    reconnectionDelay: 500,
+    // 🔧 تم التحسين: حد أقصى 10 محاولات بدلاً من لانهائي
+    reconnectionAttempts: 10,
+    reconnectionDelay: 1000, // 🔧 من 500 إلى 1000 (ثانية واحدة)
     reconnectionDelayMax: 5000,
     randomizationFactor: 0.2,
     // 🔥 أوقات استجابة سريعة جداً
