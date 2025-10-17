@@ -1,5 +1,5 @@
 /* Enhanced Service Worker for caching static assets and background sync */
-const VERSION = 'v3';
+const VERSION = 'v4';
 const STATIC_CACHE = `static-${VERSION}`;
 const BACKGROUND_SYNC_TAG = 'socket-ping-sync';
 
@@ -10,7 +10,7 @@ let serverUrl = '';
 
 self.addEventListener('install', (event) => {
 	console.log('🔧 Service Worker: التثبيت');
-	self.skipWaiting();
+	// لا تقم بتفعيل فوري لتجنّب إعادة تحميل الجلسات عند العودة من الخلفية
 });
 
 self.addEventListener('activate', (event) => {
@@ -20,7 +20,7 @@ self.addEventListener('activate', (event) => {
 			Promise.all(keys.filter((k) => k !== STATIC_CACHE).map((k) => caches.delete(k)))
 		)
 	);
-	self.clients.claim();
+	// لا تقم بالـ claim الفوري لتجنّب تغيّر الـ controller أثناء الخلفية
 });
 
 // 🔥 Background Sync لدعم ping/pong في الخلفية وأيضاً تفريغ outbox بسيط عبر fetch

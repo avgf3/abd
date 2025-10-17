@@ -850,6 +850,14 @@ export const useChat = () => {
             fetchMissedMessagesForRoom(roomId).catch(() => {});
           }
         }
+        // تحديث قائمة المتصلين فور العودة كضمان إضافي بدون إعادة تحميل كاملة
+        try {
+          const online = await apiRequest('/api/users/online');
+          const users = Array.isArray((online as any)?.users) ? (online as any).users : [];
+          if (users.length > 0) {
+            dispatch({ type: 'SET_ONLINE_USERS', payload: users });
+          }
+        } catch {}
       } catch (error) {
         console.warn('⚠️ خطأ في handlePageShow:', error);
       }
