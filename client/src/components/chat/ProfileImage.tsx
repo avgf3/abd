@@ -20,12 +20,17 @@ interface CrownOverlayProps {
 }
 
 // مكون التاج البسيط - بدون أي تعقيدات!
-const CrownOverlay = memo(function CrownOverlay({ src, size }: CrownOverlayProps) {
+const CrownOverlay = memo(function CrownOverlay({ src, size, tagNumber }: CrownOverlayProps & { tagNumber?: number }) {
   const [imageSrc, setImageSrc] = useState<string>(src);
   const [isVisible, setIsVisible] = useState<boolean>(false);
 
   // حجم التاج = 120% من حجم الصورة
   const crownSize = Math.round(size * 1.2);
+
+  // التاجات 3، 5، 6، 7 تبقى كما هي (-35%)
+  // باقي التاجات تُرفع إلى -42%
+  const keepOriginal = tagNumber === 3 || tagNumber === 5 || tagNumber === 6 || tagNumber === 7;
+  const yPosition = keepOriginal ? -35 : -42;
 
   return (
     <img
@@ -38,7 +43,7 @@ const CrownOverlay = memo(function CrownOverlay({ src, size }: CrownOverlayProps
         left: '50%',
         width: crownSize,
         height: 'auto',
-        transform: 'translate(-50%, -35%)', // رفع التاج قليلاً أعلى
+        transform: `translate(-50%, ${yPosition}%)`, // رفع التاج
         pointerEvents: 'none',
         opacity: isVisible ? 1 : 0,
         transition: 'opacity 0.2s',
@@ -163,7 +168,7 @@ export default function ProfileImage({
             frame={frameIndex as any} 
           />
         </div>
-        {crownSrc && <CrownOverlay src={crownSrc} size={px} />}
+        {crownSrc && <CrownOverlay src={crownSrc} size={px} tagNumber={tagNumber} />}
       </div>
     );
   }
@@ -204,7 +209,7 @@ export default function ProfileImage({
           }}
         />
       </div>
-      {crownSrc && <CrownOverlay src={crownSrc} size={px} />}
+      {crownSrc && <CrownOverlay src={crownSrc} size={px} tagNumber={tagNumber} />}
     </div>
   );
 }
