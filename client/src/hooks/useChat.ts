@@ -954,6 +954,8 @@ export const useChat = () => {
         );
         if (!desired || desired === 'public' || desired === 'friends') return;
         if (!currentUserRef.current) return;
+        // إذا كان هناك طلب انضمام قيد الانتظار، لا تُعد الإرسال
+        if (pendingJoinRoomRef.current && pendingJoinRoomRef.current === desired) return;
         // إذا كنا بالفعل في نفس الغرفة، لا ترسل
         if (currentRoomIdRef.current && currentRoomIdRef.current === desired) return;
         // Throttle: امنع التكرار خلال نافذة قصيرة
