@@ -143,9 +143,9 @@ export default function ProfileImage({
     return Math.min(50, n) as any;
   })();
 
-  // حساب الأحجام - تحسين لضمان احتواء الإطارات والتيجان بشكل مثالي
+  // حساب الأحجام - حاوية أكبر لاستيعاب الإطار والتاج
   const px = pixelSize ?? (size === 'small' ? 36 : size === 'large' ? 72 : 56);
-  const containerSize = px * 1.6; // حاوية أكبر لضمان احتواء الإطارات والتيجان بشكل مثالي
+  const containerSize = px * 1.6;
 
   // مع إطار
   if (!disableFrame && frameName && frameIndex) {
