@@ -38,7 +38,7 @@ const CrownOverlay = memo(function CrownOverlay({ src, size }: CrownOverlayProps
         left: '50%',
         width: crownSize,
         height: 'auto',
-        transform: 'translate(-50%, -85%)', // رفع التاج فوق الرأس مباشرة
+        transform: 'translate(-50%, -95%)', // رفع التاج عالي فوق الرأس
         pointerEvents: 'none',
         opacity: isVisible ? 1 : 0,
         transition: 'opacity 0.2s',
@@ -192,6 +192,7 @@ export default function ProfileImage({
           style={{
             width: px,
             height: px,
+            aspectRatio: '1/1',
             display: 'block',
           }}
           loading="lazy"
