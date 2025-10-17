@@ -11,9 +11,28 @@ const TAGS_DIR = path.resolve(__dirname, '..', 'client', 'public', 'tags');
 // not a fraction of tag HEIGHT. We also apply a clamp (maxEnter = basePx * SAFE_ENTER_RATIO).
 const SAFE_ENTER_RATIO = 0.22; // must match TagOverlay's maxEnter factor
 const DEFAULT_LAYOUT = { widthRatio: 1.10, xAdjustPx: 0, yAdjustPx: 0, anchorY: 0.10, autoAnchor: true };
+
+// Try to load current overrides from client/src/config/tagLayouts.ts
+const CONFIG_FILE = path.resolve(__dirname, '..', 'client', 'src', 'config', 'tagLayouts.ts');
+let CONFIG_OVERRIDES = new Map();
+try {
+  const src = fs.readFileSync(CONFIG_FILE, 'utf8');
+  // Match set(n, { anchorY: 0.123 ... })
+  const re = /set\(\s*(\d+)\s*,\s*\{[^}]*?anchorY:\s*([0-9]*\.?[0-9]+)\s*\}/g;
+  let m;
+  while ((m = re.exec(src))) {
+    const n = parseInt(m[1], 10);
+    const v = parseFloat(m[2]);
+    if (Number.isFinite(n) && Number.isFinite(v)) {
+      CONFIG_OVERRIDES.set(n, { anchorY: v });
+    }
+  }
+} catch {}
 function getLayout(num){
-  // Keep everything default; we will compute recommendations instead of hardcoding legacy overrides
-  return { ...DEFAULT_LAYOUT };
+  const base = { ...DEFAULT_LAYOUT };
+  const ov = CONFIG_OVERRIDES.get(num);
+  if (ov) Object.assign(base, ov);
+  return base;
 }
 
 // Analysis params: match ProfileImage.tsx logic
