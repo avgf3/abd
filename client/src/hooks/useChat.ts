@@ -4,6 +4,14 @@ import type { Socket } from 'socket.io-client';
 import type { PrivateConversation } from '../../../shared/types';
 
 import { apiRequest, queryClient } from '@/lib/queryClient';
+import { 
+  getRoomMessages as cacheGetRoomMessages,
+  saveRoomMessages as cacheSaveRoomMessages,
+  getRoomMeta as cacheGetRoomMeta,
+  saveRoomMeta as cacheSaveRoomMeta,
+  getCurrentRoomId as cacheGetCurrentRoomId,
+  saveCurrentRoomId as cacheSaveCurrentRoomId,
+} from '@/lib/chatCache';
 import { createDefaultConnectionManager } from '@/lib/connectionManager';
 import { connectSocket, saveSession, clearSession, getSession } from '@/lib/socket';
 import type { ChatUser, ChatMessage } from '@/types/chat';
@@ -382,6 +390,24 @@ export const useChat = () => {
         if (list.length > 0) {
           const last = list[list.length - 1];
           next.set(rid, { lastId: last.id, lastTs: last.timestamp });
+          // احفظ الميتاداتا في IndexedDB أيضاً
+          cacheSaveRoomMeta(rid, { lastId: last.id, lastTs: last.timestamp }).catch(() => {});
+          // احفظ اللقطة الحديثة من الرسائل (محدودة) في IndexedDB
+          const toPersist = list.slice(-300).map((m) => ({
+            id: m.id,
+            content: m.content,
+            timestamp: m.timestamp,
+            senderId: m.senderId,
+            messageType: m.messageType,
+            isPrivate: m.isPrivate,
+            roomId: rid,
+            reactions: m.reactions,
+            myReaction: m.myReaction,
+            attachments: m.attachments,
+            textColor: m.textColor,
+            bold: m.bold,
+          }));
+          cacheSaveRoomMessages(rid, toPersist).catch(() => {});
         }
       });
       lastRoomMessageMetaRef.current = next;
@@ -417,6 +443,14 @@ export const useChat = () => {
         return;
       }
 
+      // أولاً: جرّب الهيدرشن من IndexedDB لعرض فوري بدون انتظار الشبكة
+      try {
+        const cached = await cacheGetRoomMessages(roomId, 300);
+        if (cached && cached.length > 0) {
+          dispatch({ type: 'SET_ROOM_MESSAGES', payload: { roomId, messages: cached as any } });
+        }
+      } catch {}
+
       if (loadingRooms.current.has(roomId)) {
         return;
       }
@@ -432,6 +466,24 @@ export const useChat = () => {
             type: 'SET_ROOM_MESSAGES',
             payload: { roomId, messages: formattedMessages },
           });
+          // حفظ فوري في الكاش
+          try {
+            const toPersist = formattedMessages.map((m) => ({
+              id: m.id,
+              content: m.content,
+              timestamp: m.timestamp,
+              senderId: m.senderId,
+              messageType: m.messageType,
+              isPrivate: m.isPrivate,
+              roomId,
+              reactions: m.reactions,
+              myReaction: m.myReaction,
+              attachments: m.attachments,
+              textColor: m.textColor,
+              bold: m.bold,
+            }));
+            cacheSaveRoomMessages(roomId, toPersist).catch(() => {});
+          } catch {}
         }
       } catch (error) {
         console.error(`❌ خطأ في تحميل رسائل الغرفة ${roomId}:`, error);
@@ -815,6 +867,17 @@ export const useChat = () => {
         const { getConnectionHealth } = await import('@/lib/socket');
         const health = getConnectionHealth();
         
+        // هيدرشن فوري من الكاش: إذا لا توجد رسائل للغرفة الحالية
+        try {
+          const rid = currentRoomIdRef.current || (await cacheGetCurrentRoomId()) || getSession()?.roomId;
+          if (rid && (!roomMessagesRef.current[rid] || roomMessagesRef.current[rid].length === 0)) {
+            const cached = await cacheGetRoomMessages(rid, 300);
+            if (cached && cached.length > 0) {
+              dispatch({ type: 'SET_ROOM_MESSAGES', payload: { roomId: rid, messages: cached as any } });
+            }
+          }
+        } catch {}
+
         // 🍎 معالجة خاصة لـ iOS
         if (isIOSRef.current) {
           const iosSnapshot = localStorage.getItem('ios_connection_snapshot');
@@ -2128,12 +2191,18 @@ export const useChat = () => {
         // تمييز أن لدينا طلب انضمام جارٍ لتفادي إعادة الإرسال من مسارات أخرى
         pendingJoinRoomRef.current = roomId;
         // لا نحدث lastSeen محلياً إطلاقاً؛ الاعتماد على بث الخادم فقط
-        try { saveSession({ roomId }); } catch {}
+        try {
+          saveSession({ roomId });
+          cacheSaveCurrentRoomId(roomId).catch(() => {});
+        } catch {}
       } else {
         // Queue join until we reconnect
         pendingJoinRoomRef.current = roomId;
         // لا تحديثات محلية للحالة الزمنية؛ فقط حفظ الجلسة لإعادة الانضمام
-        try { saveSession({ roomId }); } catch {}
+        try {
+          saveSession({ roomId });
+          cacheSaveCurrentRoomId(roomId).catch(() => {});
+        } catch {}
       }
     },
     [state.currentRoomId, state.currentUser]
