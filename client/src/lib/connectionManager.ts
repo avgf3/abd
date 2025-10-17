@@ -115,7 +115,7 @@ export class ConnectionManager {
     if (!connected && !this.backupPollActive) {
       this.shouldBackupPoll = true;
       this.backupPollActive = true;
-      this.scheduleNextPoll(500); // polling سريع عند انقطاع Socket
+      this.scheduleNextPoll(5000); // 🔧 تم التحسين: من 500 إلى 5000 (5 ثواني)
     } else if (connected && this.backupPollActive) {
       this.shouldBackupPoll = false;
       this.backupPollActive = false;
@@ -239,7 +239,7 @@ export function createDefaultConnectionManager(opts: Partial<ConnectionManagerCo
     usersPollUrl: '/api/users/online',
     pingUrl: '/api/ping',
     // errorReportUrl: undefined, // opt-in only if server endpoint implemented
-    speedVisibleMs: 1500,
+    speedVisibleMs: 10000, // 🔧 تم التحسين: من 1500 إلى 10000 (10 ثواني)
     speedHiddenMs: 4000,
     // تعطيل إعادة التحميل الصلبة بشكل افتراضي
     failuresBeforeHardReload: 0,

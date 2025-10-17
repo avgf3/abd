@@ -769,85 +769,22 @@ export const useChat = () => {
           clearInterval(pingIntervalRef.current);
         }
         
-        // 🚀 استراتيجية ذكية للهاتف المحمول (iOS + Android)
-        if (isIOSRef.current) {
-          // 🍎 استراتيجية iOS: حفظ الحالة + إعادة اتصال ذكية
-          try {
-            const connectionSnapshot = {
-              timestamp: Date.now(),
-              roomId: currentRoomIdRef.current,
-              userId: state.currentUser?.id,
-              wasConnected: socket.current?.connected || false,
-              strategy: 'ios_background'
-            };
-            localStorage.setItem('ios_connection_snapshot', JSON.stringify(connectionSnapshot));
-            
-            // على iOS: قطع الاتصال بلطف وحفظ الحالة
-            if (socket.current?.connected) {
-              socket.current.emit('going_background', { timestamp: Date.now() });
-            }
-          } catch {}
-        } else {
-          // 🤖 استراتيجية Android: Web Worker + Service Worker
-          if (socketWorkerRef.current) {
-            socketWorkerRef.current.postMessage({
-              type: 'start-ping',
-              data: { interval: 30000 } // ping أسرع للأندرويد
-            });
-          }
-          if (serviceWorkerRef.current) {
-            serviceWorkerRef.current.postMessage({
-              type: 'start-background-ping',
-              data: { interval: 30000 }
-            });
-          }
-          if (!socketWorkerRef.current && !serviceWorkerRef.current) {
-            // fallback للأندرويد
-            backgroundPingIntervalRef.current = startPing(30000);
-          }
-        }
+        // 🔧 استراتيجية مبسطة وموحدة لجميع الأجهزة
+        // بدء ping في الخلفية فقط
+        backgroundPingIntervalRef.current = startBackgroundPing(60000);
         
       } else if (!document.hidden && isBackgroundRef.current) {
-        // الصفحة عادت للمقدمة - إيقاف Web Worker واستعادة ping العادي
+        // 🔧 الصفحة عادت للمقدمة - تبسيط العملية
         isBackgroundRef.current = false;
-        // إيقاف Web Worker و Service Worker
-        if (socketWorkerRef.current) {
-          socketWorkerRef.current.postMessage({
-            type: 'stop-ping',
-            data: {}
-          });
-        }
-        
-        if (serviceWorkerRef.current) {
-          serviceWorkerRef.current.postMessage({
-            type: 'stop-background-ping',
-            data: {}
-          });
-        }
         
         if (backgroundPingIntervalRef.current) {
           clearInterval(backgroundPingIntervalRef.current);
         }
-        // ping عادي في المقدمة (كل 20 ثانية)
-        pingIntervalRef.current = startPing(20000);
+        
+        // بدء ping عادي (كل 30 ثانية)
+        startRegularPing();
 
-        // لا نحاول إعادة الاتصال هنا لتفادي ازدواجية المصادر
-
-        // تفريغ الرسائل المؤجلة وإحضار المفقود منذ آخر رسالة معروفة
-        try {
-          const currentRoom = currentRoomIdRef.current;
-          if (currentRoom) {
-            const buffered = messageBufferRef.current.get(currentRoom) || [];
-            if (buffered.length > 0) {
-              for (const msg of buffered) {
-                dispatch({ type: 'ADD_ROOM_MESSAGE', payload: { roomId: currentRoom, message: msg } });
-              }
-              messageBufferRef.current.set(currentRoom, []);
-            }
-          }
-        } catch {}
-
-        // جلب الرسائل التي فاتت أثناء الخلفية
+        // جلب الرسائل المفقودة فقط (Buffer يُفرّغ في pageshow)
         try {
           const roomId = currentRoomIdRef.current;
           if (roomId) {
@@ -860,105 +797,38 @@ export const useChat = () => {
     // إضافة معالج Page Visibility
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
-    // دعم أفضل لدورة حياة الصفحة على الأجهزة المحمولة: pageshow/pagehide
+    // 🔧 معالج مبسط وموحد لجميع الأجهزة
     const handlePageShow = async () => {
       try {
-        // إزالة منطق إعادة الاتصال عند pageshow لتفادي التكرار
-        const { getConnectionHealth } = await import('@/lib/socket');
-        const health = getConnectionHealth();
-        
-        // هيدرشن فوري من الكاش: إذا لا توجد رسائل للغرفة الحالية
-        try {
-          const rid = currentRoomIdRef.current || (await cacheGetCurrentRoomId()) || getSession()?.roomId;
-          if (rid && (!roomMessagesRef.current[rid] || roomMessagesRef.current[rid].length === 0)) {
-            const cached = await cacheGetRoomMessages(rid, 300);
-            if (cached && cached.length > 0) {
-              dispatch({ type: 'SET_ROOM_MESSAGES', payload: { roomId: rid, messages: cached as any } });
-            }
-          }
-        } catch {}
-
-        // 🍎 معالجة خاصة لـ iOS
-        if (isIOSRef.current) {
-          const iosSnapshot = localStorage.getItem('ios_connection_snapshot');
-          if (iosSnapshot) {
-            try {
-              const snapshot = JSON.parse(iosSnapshot);
-              const timeDiff = Date.now() - snapshot.timestamp;
-              
-              // إذا مر أكثر من 10 ثواني، أعد الاتصال بالكامل
-              // لا نقوم بإعادة الاتصال يدوياً هنا
-              
-              // تنظيف الـ snapshot
-              localStorage.removeItem('ios_connection_snapshot');
-            } catch {}
-          }
-        } else {
-          // لا نقوم بمحاولات connect يدوية هنا
-        }
-        
-        // عند العودة للصفحة، تفريغ الرسائل المؤجلة وجلب المفقود
         const roomId = currentRoomIdRef.current;
-        if (roomId) {
-          const buffered = messageBufferRef.current.get(roomId) || [];
-          if (buffered.length > 0) {
-            for (const msg of buffered) {
-              dispatch({ type: 'ADD_ROOM_MESSAGE', payload: { roomId, message: msg } });
-            }
-            messageBufferRef.current.set(roomId, []);
+        if (!roomId) return;
+        
+        // تفريغ الرسائل المؤجلة فقط
+        const buffered = messageBufferRef.current.get(roomId) || [];
+        if (buffered.length > 0) {
+          for (const msg of buffered) {
+            dispatch({ type: 'ADD_ROOM_MESSAGE', payload: { roomId, message: msg } });
           }
-          
-          // جلب الرسائل المفقودة إذا مر وقت طويل
-          if (health.timeSinceLastConnection > 30000) {
-            fetchMissedMessagesForRoom(roomId).catch(() => {});
-          }
+          messageBufferRef.current.set(roomId, []);
         }
-        // تحديث قائمة المتصلين فور العودة كضمان إضافي بدون إعادة تحميل كاملة
+        
+        // تنظيف snapshots القديمة (iOS/Android موحد)
         try {
-          const online = await apiRequest('/api/users/online');
-          const users = Array.isArray((online as any)?.users) ? (online as any).users : [];
-          if (users.length > 0) {
-            dispatch({ type: 'SET_ONLINE_USERS', payload: users });
-          }
+          localStorage.removeItem('ios_connection_snapshot');
+          localStorage.removeItem('ios_pagehide_snapshot');
         } catch {}
       } catch (error) {
         console.warn('⚠️ خطأ في handlePageShow:', error);
       }
     };
+    // 🔧 معالج مبسط وموحد لجميع الأجهزة
     const handlePageHide = () => {
       try {
-        // 🚀 استراتيجية ذكية حسب نوع الجهاز
-        if (isIOSRef.current) {
-          // 🍎 iOS: حفظ حالة إضافية عند pagehide
-          try {
-            const enhancedSnapshot = {
-              timestamp: Date.now(),
-              roomId: currentRoomIdRef.current,
-              userId: state.currentUser?.id,
-              wasConnected: socket.current?.connected || false,
-              strategy: 'ios_pagehide',
-              userAgent: navigator.userAgent.slice(0, 50)
-            };
-            localStorage.setItem('ios_pagehide_snapshot', JSON.stringify(enhancedSnapshot));
-          } catch {}
-        } else {
-          // 🤖 Android: تأكيد تفعيل الping في الخلفية
-          if (socketWorkerRef.current) {
-            socketWorkerRef.current.postMessage({ type: 'start-ping', data: { interval: 30000 } });
-          }
-          if (serviceWorkerRef.current) {
-            serviceWorkerRef.current.postMessage({ type: 'start-background-ping', data: { interval: 30000 } });
-          }
+        // إرسال keepalive فقط (بدون تعقيدات iOS/Android)
+        if (typeof navigator.sendBeacon === 'function') {
+          const blob = new Blob(['bg=1'], { type: 'text/plain' });
+          navigator.sendBeacon('/api/ping', blob);
         }
-        // إرسال keepalive سريع لإعلام الخادم قبل نوم الصفحة
-        try {
-          if (typeof navigator.sendBeacon === 'function') {
-            const blob = new Blob(['bg=1'], { type: 'text/plain' });
-            navigator.sendBeacon('/api/ping', blob);
-          } else {
-            fetch('/api/ping', { method: 'GET', cache: 'no-store', keepalive: true, credentials: 'include' }).catch(() => {});
-          }
-        } catch {}
       } catch {}
     };
     window.addEventListener('pageshow', handlePageShow);
