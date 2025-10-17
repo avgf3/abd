@@ -1853,6 +1853,11 @@ li > * > div.effect-snow {
   background: #0b1220;
   position: relative;
   z-index: 2;
+  /* تحسينات لضمان جودة الصورة */
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+  /* منع تشويه الصورة */
+  flex-shrink: 0;
 }
 
 /* Image-based overlay for frames (webp imported) */
@@ -1867,9 +1872,13 @@ li > * > div.effect-snow {
   bottom: 0;
   width: 100%;
   height: 100%;
-  object-fit: contain; /* منع أي قص أفقي/عمودي وضمان ثبات الحجم */
+  object-fit: cover; /* ملء الحاوية بالكامل مع الحفاظ على النسبة */
   border-radius: 9999px;
   pointer-events: none;
+  /* تحسينات إضافية لضمان العرض المثالي */
+  object-position: center;
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
   z-index: 3;
   /* تعطيل أي دوران */
   animation: none !important;
@@ -1975,7 +1984,18 @@ li > * > div.effect-snow {
 
 /* Optional subtle pulsation */
 /* تعطيل أي نبض/حركة */
-.vip-frame.base { animation: none !important; }
+.vip-frame.base { 
+  animation: none !important; 
+  /* منع أي تأثيرات غير مرغوب فيها */
+  transition: none !important;
+}
+
+/* منع تأثيرات التحويم على الإطارات */
+.vip-frame.base:hover,
+.vip-frame-overlay:hover {
+  transform: none !important;
+  scale: none !important;
+}
 
 /* ===== تحسينات الاهتزاز الخفيف للرسائل ===== */
 
