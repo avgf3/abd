@@ -46,12 +46,27 @@ function openDb(): Promise<IDBDatabase> {
   });
 }
 
+function waitForTx(tx: IDBTransaction): Promise<void> {
+  return new Promise((resolve, reject) => {
+    let settled = false;
+    const done = (fn: () => void) => () => {
+      if (!settled) {
+        settled = true;
+        fn();
+      }
+    };
+    tx.oncomplete = done(resolve);
+    tx.onerror = done(() => reject(tx.error || new Error('IndexedDB transaction error')));
+    tx.onabort = done(() => reject(tx.error || new Error('IndexedDB transaction aborted')));
+  });
+}
+
 export async function saveCurrentRoomId(roomId: string): Promise<void> {
   try {
     const db = await openDb();
     const tx = db.transaction(STORE_STATE, 'readwrite');
     tx.objectStore(STORE_STATE).put({ key: 'currentRoomId', value: roomId });
-    await tx.done;
+    await waitForTx(tx);
   } catch {}
 }
 
@@ -75,7 +90,7 @@ export async function saveRoomMeta(roomId: string, meta: RoomMeta): Promise<void
     const db = await openDb();
     const tx = db.transaction(STORE_META, 'readwrite');
     tx.objectStore(STORE_META).put({ roomId, ...meta });
-    await tx.done;
+    await waitForTx(tx);
   } catch {}
 }
 
@@ -143,7 +158,7 @@ export async function saveRoomMessages(
       const metaStore = tx.objectStore(STORE_META);
       metaStore.put({ roomId, lastId: last.id, lastTs: last.timestamp });
     }
-    await tx.done;
+    await waitForTx(tx);
   } catch {}
 }
 
@@ -189,6 +204,6 @@ export async function clearRoom(roomId: string): Promise<void> {
       req.onerror = () => resolve();
     });
     tx.objectStore(STORE_META).delete(roomId);
-    await tx.done;
+    await waitForTx(tx);
   } catch {}
 }
