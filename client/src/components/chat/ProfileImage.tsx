@@ -3,8 +3,7 @@ import { memo, useEffect, useMemo, useState } from 'react';
 import type { ChatUser } from '@/types/chat';
 import { getImageSrc } from '@/utils/imageUtils';
 import VipAvatar from '@/components/ui/VipAvatar';
-import { getTagLayout, DEFAULT_TAG_LAYOUT } from '@/config/tagLayouts';
-// نظام التيجان الموحد - جميع التيجان تستخدم نفس الآلية البسيطة
+// تبسيط منطق التيجان: وضع ثابت أعلى الصورة
 
 interface ProfileImageProps {
   user: ChatUser;
@@ -18,19 +17,7 @@ interface ProfileImageProps {
   disableFrame?: boolean;
 }
 
-type TagOverlayProps = {
-  src: string;
-  overlayTopPx: number;
-  basePx: number; // عرض التاج النهائي بالبكسل (يعتمد على widthRatio)
-  anchorY?: number; // نسبة من ارتفاع التاج تدخل فوق الرأس
-  yAdjustPx?: number;
-  xAdjustPx?: number;
-  autoAnchor?: boolean; // حساب تلقائي لهامش الشفافية السفلي
-  // جعل التاج يلامس أعلى الصورة تماماً (بدون دخول)
-  touchTop?: boolean;
-  // نسبة عرض المسح من منتصف الصورة أفقياً لحساب الشفافية (0.3..1)
-  centerScanRatio?: number;
-};
+// تمت إزالة نوع TagOverlayProps بعد تبسيط المنطق
 
 // مكون التاج مع احتساب الارتكاز بناءً على أبعاد الصورة الحقيقية لمواءمة محترفة
 const TagOverlay = memo(function TagOverlay({
@@ -255,19 +242,13 @@ export default function ProfileImage({
     }
     return `/tags/${str}`;
   })();
-  const tagNumber: number | undefined = (() => {
-    if (!tagName) return undefined;
-    const m = String(tagName).match(/(\d+)/);
-    if (!m) return undefined;
-    const n = parseInt(m[1], 10);
-    return Number.isFinite(n) ? n : undefined;
-  })();
-
-  // إعدادات التاج من التخطيطات الموحدة
-  const layout = getTagLayout(tagNumber);
-  
-  // جميع التيجان تستخدم نفس المنطق البسيط الموحد
-  const needsTouchTop = false;
+  // منطق مبسّط للتاج: بدون تخطيطات خاصة
+  const [tagImageSrc, setTagImageSrc] = useState<string | undefined>(tagSrc);
+  const [tagFallbackStep, setTagFallbackStep] = useState<number>(0);
+  useEffect(() => {
+    setTagImageSrc(tagSrc);
+    setTagFallbackStep(0);
+  }, [tagSrc]);
   const frameIndex = (() => {
     if (!frameName) return undefined;
     const match = String(frameName).match(/(\d+)/);
@@ -279,14 +260,15 @@ export default function ProfileImage({
   })();
 
   if (!disableFrame && frameName && frameIndex) {
-    const centerScanRatio = 1; // مسح كامل العرض لتوحيد حساب الشفافية
-    // مقاسات دقيقة لتطابق الموقع الآخر - مُصغرة بحوالي 10%
+    // مقاسات دقيقة
     const px = pixelSize ?? (size === 'small' ? 36 : size === 'large' ? 72 : 56);
     // الحاوية يجب أن تكون أكبر لاستيعاب الإطار (نفس النسبة المستخدمة في VipAvatar)
     const containerSize = px * 1.35;
     const imageTopWithinContainer = (containerSize - px) / 2; // موضع أعلى الصورة داخل الحاوية
-    // التاج يجب أن يلامس أعلى الصورة تماماً، دون التأثر بإزاحة الإطار
-    const overlayTopPx = imageTopWithinContainer; // تلامس مباشر مع أعلى الصورة
+    // التاج يلامس أعلى الصورة مباشرة
+    const overlayTopPx = imageTopWithinContainer; // أعلى الصورة
+    const crownWidthPx = Math.round(px * 1.1);
+    const enterPx = Math.round(px * 0.08);
 
     return (
       <div
@@ -295,17 +277,41 @@ export default function ProfileImage({
         style={{ width: containerSize, height: containerSize, contain: 'layout style', isolation: 'isolate', overflow: 'visible' }}
       >
         <VipAvatar src={imageSrc} alt={`صورة ${user.username}`} size={px} frame={frameIndex as any} />
-        {tagSrc && (
-          <TagOverlay
-            src={tagSrc}
-            overlayTopPx={overlayTopPx}
-            basePx={Math.round(px * layout.widthRatio)}
-            anchorY={layout.anchorY ?? DEFAULT_TAG_LAYOUT.anchorY!}
-            yAdjustPx={layout.yAdjustPx || 0}
-            xAdjustPx={layout.xAdjustPx}
-            autoAnchor={layout.autoAnchor}
-            touchTop={needsTouchTop}
-            centerScanRatio={centerScanRatio}
+        {tagImageSrc && (
+          <img
+            src={tagImageSrc}
+            alt="tag"
+            className="profile-tag-overlay"
+            aria-hidden="true"
+            style={{
+              top: overlayTopPx,
+              width: crownWidthPx,
+              transform: `translate(-50%, calc(-100% + ${enterPx}px))`,
+            }}
+            decoding="async"
+            loading="eager"
+            draggable={false}
+            onError={(e: any) => {
+              try {
+                const cur = tagImageSrc || '';
+                if (tagFallbackStep === 0 && /\.webp(\?.*)?$/i.test(cur)) {
+                  setTagImageSrc(cur.replace(/\.webp(\?.*)?$/i, '.png$1'));
+                  setTagFallbackStep(1);
+                  return;
+                }
+                if (tagFallbackStep === 1 && /\.png(\?.*)?$/i.test(cur)) {
+                  setTagImageSrc(cur.replace(/\.png(\?.*)?$/i, '.jpg$1'));
+                  setTagFallbackStep(2);
+                  return;
+                }
+                if (tagFallbackStep === 2 && /\.jpg(\?.*)?$/i.test(cur)) {
+                  setTagImageSrc(cur.replace(/\.jpg(\?.*)?$/i, '.jpeg$1'));
+                  setTagFallbackStep(3);
+                  return;
+                }
+                (e.currentTarget as HTMLImageElement).style.display = 'none';
+              } catch {}
+            }}
           />
         )}
       </div>
@@ -317,7 +323,8 @@ export default function ProfileImage({
     const containerSize = px * 1.35; // نفس حاوية إضافة الإطار
     const imageTopWithinContainer = (containerSize - px) / 2;
     const overlayTopPx = imageTopWithinContainer;
-    const centerScanRatio = 1; // مسح كامل العرض لتوحيد حساب الشفافية
+    const crownWidthPx = Math.round(px * 1.1);
+    const enterPx = Math.round(px * 0.08);
 
 
     return (
@@ -349,17 +356,41 @@ export default function ProfileImage({
             }}
           />
         </div>
-        {tagSrc && (
-          <TagOverlay
-            src={tagSrc}
-            overlayTopPx={overlayTopPx}
-            basePx={Math.round(px * layout.widthRatio)}
-            anchorY={layout.anchorY ?? DEFAULT_TAG_LAYOUT.anchorY!}
-            yAdjustPx={layout.yAdjustPx || 0}
-            xAdjustPx={layout.xAdjustPx}
-            autoAnchor={layout.autoAnchor}
-            touchTop={needsTouchTop}
-            centerScanRatio={centerScanRatio}
+        {tagImageSrc && (
+          <img
+            src={tagImageSrc}
+            alt="tag"
+            className="profile-tag-overlay"
+            aria-hidden="true"
+            style={{
+              top: overlayTopPx,
+              width: crownWidthPx,
+              transform: `translate(-50%, calc(-100% + ${enterPx}px))`,
+            }}
+            decoding="async"
+            loading="eager"
+            draggable={false}
+            onError={(e: any) => {
+              try {
+                const cur = tagImageSrc || '';
+                if (tagFallbackStep === 0 && /\.webp(\?.*)?$/i.test(cur)) {
+                  setTagImageSrc(cur.replace(/\.webp(\?.*)?$/i, '.png$1'));
+                  setTagFallbackStep(1);
+                  return;
+                }
+                if (tagFallbackStep === 1 && /\.png(\?.*)?$/i.test(cur)) {
+                  setTagImageSrc(cur.replace(/\.png(\?.*)?$/i, '.jpg$1'));
+                  setTagFallbackStep(2);
+                  return;
+                }
+                if (tagFallbackStep === 2 && /\.jpg(\?.*)?$/i.test(cur)) {
+                  setTagImageSrc(cur.replace(/\.jpg(\?.*)?$/i, '.jpeg$1'));
+                  setTagFallbackStep(3);
+                  return;
+                }
+                (e.currentTarget as HTMLImageElement).style.display = 'none';
+              } catch {}
+            }}
           />
         )}
       </div>
