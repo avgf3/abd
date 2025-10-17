@@ -303,8 +303,8 @@ export default function RichestModal({ isOpen, onClose, currentUser, onUserClick
                       </span>
                     )}
                     <div style={{ 
-                      width: 44, 
-                      height: 44,
+                      width: 36 * 1.4, 
+                      height: 36 * 1.4,
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -360,8 +360,8 @@ export default function RichestModal({ isOpen, onClose, currentUser, onUserClick
                 {candidates.map((c) => (
                 <div key={c.id} className="flex items-center gap-2">
                     <div style={{ 
-                      width: 32, 
-                      height: 32,
+                      width: 22 * 1.4, 
+                      height: 22 * 1.4,
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',

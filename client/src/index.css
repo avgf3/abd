@@ -275,6 +275,9 @@ img, video, canvas, iframe {
 img.rounded-full {
   aspect-ratio: 1 / 1;
   object-fit: cover;
+  flex-shrink: 0;
+  min-width: fit-content;
+  min-height: fit-content;
 }
 
 /* Modern Animations System */
@@ -1801,6 +1804,9 @@ li > * > div.effect-snow {
   isolation: isolate;
   backface-visibility: hidden;
   transform: translateZ(0);
+  flex-shrink: 0;
+  min-width: fit-content;
+  min-height: fit-content;
 }
 
 /* ===== Profile Tag overlay (top crown/badge above avatar) ===== */
@@ -1811,6 +1817,7 @@ li > * > div.effect-snow {
   height: auto;
   z-index: 4; /* فوق الإطار والصورة */
   pointer-events: none;
+  flex-shrink: 0;
   
   /* 🎨 شفافية مثالية للخلفية */
   background: transparent !important;
@@ -1837,6 +1844,20 @@ li > * > div.effect-snow {
   /* 🔄 إلغاء أي انتقالات لمنع الاهتزاز */
   transition: none !important;
 }
+
+/* تاج البروفايل (Crown overlay) - يُستخدم في ProfileImage.tsx */
+.profile-crown {
+  position: absolute;
+  pointer-events: none;
+  flex-shrink: 0;
+  image-rendering: auto;
+  object-fit: contain;
+  background: transparent !important;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  will-change: opacity;
+}
+
 .vip-frame-inner {
   position: relative;
   width: 100%;
@@ -1845,6 +1866,7 @@ li > * > div.effect-snow {
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 .vip-frame-img {
   /* الصورة أصغر من الحاوية - يتم التحكم بها من VipAvatar.tsx */
@@ -1853,6 +1875,8 @@ li > * > div.effect-snow {
   background: #0b1220;
   position: relative;
   z-index: 2;
+  display: block;
+  flex-shrink: 0;
 }
 
 /* Image-based overlay for frames (webp imported) */
@@ -1861,10 +1885,8 @@ li > * > div.effect-snow {
 }
 .vip-frame-overlay {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  top: 50%;
+  left: 50%;
   width: 100%;
   height: 100%;
   object-fit: contain; /* منع أي قص أفقي/عمودي وضمان ثبات الحجم */
@@ -1873,9 +1895,9 @@ li > * > div.effect-snow {
   z-index: 3;
   /* تعطيل أي دوران */
   animation: none !important;
-  /* الإطار يحيط بالصورة من الخارج */
+  /* الإطار يحيط بالصورة من الخارج - توسيط مثالي */
   transform-origin: center center;
-  transform: scale(1);
+  transform: translate(-50%, -50%) scale(1);
 }
 
 /* Shine overlay element for frame10 */
@@ -1913,8 +1935,8 @@ li > * > div.effect-snow {
 .vip-frame.base::before {
   content: '';
   position: absolute;
-  top: 0;
-  left: 0; /* توسيط الإطار */
+  top: 50%;
+  left: 50%;
   width: 100%;
   height: 100%;
   border-radius: 9999px;
@@ -1927,6 +1949,8 @@ li > * > div.effect-snow {
   mask-composite: exclude;
   /* تعطيل أي دوران */
   animation: none !important;
+  transform: translate(-50%, -50%);
+  transform-origin: center center;
 }
 
 

@@ -125,10 +125,10 @@ export default function WallPostList({
                     if (!('profileTag' in (effectiveUser as any)) && tagFromPost) {
                       (effectiveUser as any).profileTag = tagFromPost;
                     }
-                    const hasFrame = Boolean((effectiveUser as any)?.profileFrame);
-                    const containerSize = hasFrame ? 54 : 40; // 40px image, 54px with frame
+                    // ProfileImage with pixelSize=36 creates container of 36 * 1.4 = 50.4px
+                    const containerSize = 36 * 1.4; // متطابق مع منطق ProfileImage
                     return (
-                      <div style={{ width: containerSize, height: containerSize, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <div style={{ width: containerSize, height: containerSize, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                         <ProfileImage
                           user={effectiveUser}
                           size="small"

@@ -24,7 +24,7 @@ export default function VipAvatar({
   // الصورة تحتفظ بحجمها الأصلي المطلوب
   const imageSize = size;
   // الإطار (الحاوية) يتكيف ليكون أكبر من الصورة بنسبة كافية لاستيعاب الإطار بالكامل
-  const frameSize = imageSize * 1.35; // الإطار أكبر بـ 35% لضمان احتواء الإطار بالكامل داخل الحاوية
+  const frameSize = imageSize * 1.4; // الإطار أكبر بـ 40% لضمان احتواء الإطار بالكامل داخل الحاوية - متطابق مع ProfileImage
 
   // إلغاء أي تكبير إضافي في جميع السياقات لتوحيد القياس عبر كل الواجهات
   const overlayScale = useMemo(() => 1, []);
@@ -36,6 +36,7 @@ export default function VipAvatar({
     isolation: 'isolate',
     backfaceVisibility: 'hidden',
     transform: 'translateZ(0)',
+    flexShrink: 0,
     // تمرير مدة الدوران عبر متغير CSS
     ['--vip-spin-duration']: duration,
   };
@@ -46,6 +47,7 @@ export default function VipAvatar({
     willChange: 'transform',
     backfaceVisibility: 'hidden',
     transform: 'translateZ(0)',
+    flexShrink: 0,
   };
 
   // Normalize frame number and prepare overlay source with extension fallback (.webp -> .png -> .jpg -> .jpeg)
