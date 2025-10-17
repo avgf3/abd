@@ -10,7 +10,7 @@ const TAGS_DIR = path.resolve(__dirname, '..', 'client', 'public', 'tags');
 // IMPORTANT: In the client, anchorY is applied as a FRACTION OF basePx (final tag width),
 // not a fraction of tag HEIGHT. We also apply a clamp (maxEnter = basePx * SAFE_ENTER_RATIO).
 const SAFE_ENTER_RATIO = 0.22; // must match TagOverlay's maxEnter factor
-const DEFAULT_LAYOUT = { widthRatio: 1.10, xAdjustPx: 0, yAdjustPx: 0, anchorY: 0.10, autoAnchor: true };
+const DEFAULT_LAYOUT = { widthRatio: 1.10, xAdjustPx: 0, yAdjustPx: 0, anchorY: 0.05, autoAnchor: true };
 
 // Try to load current overrides from client/src/config/tagLayouts.ts
 const CONFIG_FILE = path.resolve(__dirname, '..', 'client', 'src', 'config', 'tagLayouts.ts');
@@ -83,7 +83,7 @@ function clamp(val, mi, ma){ return Math.max(mi, Math.min(ma, val)); }
 
 function recommendAnchorY({
   natural, layout, bottomGapFull, px = 56,
-  targetEntry = 0.20, // desired fraction of tag HEIGHT that should enter avatar
+  targetEntry = Number(process.env.TARGET_ENTRY || '0.05'), // desired fraction of tag HEIGHT that should enter avatar
 }){
   // Given current logic (anchorFromImagePx = bottomGapPx + basePx*anchorY + yAdjustPx, clamped to basePx*SAFE_ENTER_RATIO),
   // derive anchorY that achieves targetEntry without hitting the clamp.
@@ -118,21 +118,26 @@ async function analyzeTag(num){
     const totalEnterBeforeClamp = bottomGapPx + desiredEnterPx + (layout.yAdjustPx || 0);
     const maxEnter = Math.round(basePx * SAFE_ENTER_RATIO);
     const anchorFromImagePx = clamp(totalEnterBeforeClamp, 0, maxEnter);
-    const entryRatio = heightPx > 0 ? anchorFromImagePx / heightPx : 0; // fraction of tag height entering avatar
-    // Classification ranges tuned for current clamp (0.22 of basePx)
+    const visibleEnterPx = Math.max(0, anchorFromImagePx - bottomGapPx);
+    const entryRatio = heightPx > 0 ? visibleEnterPx / heightPx : 0; // fraction of tag height entering avatar (visible part only)
+    // Classification around targetEntry with tight tolerance
     let cls;
-    if (entryRatio >= 0.17 && entryRatio <= 0.24) cls = 'good';
-    else if (entryRatio >= 0.12 && entryRatio < 0.17) cls = 'slightly-high';
-    else if (entryRatio < 0.12) cls = 'too-high';
+    const t = Number(process.env.TARGET_ENTRY || '0.05');
+    const low = t - 0.01; // -1%
+    const high = t + 0.01; // +1%
+    if (entryRatio >= low && entryRatio <= high) cls = 'good';
+    else if (entryRatio > high && entryRatio <= t + 0.03) cls = 'slightly-low';
+    else if (entryRatio < low && entryRatio >= t - 0.03) cls = 'slightly-high';
+    else if (entryRatio < t - 0.03) cls = 'too-high';
     else cls = 'too-low';
-    return { px, basePx, heightPx: Math.round(heightPx), anchorFromImagePx, entryRatio: Number(entryRatio.toFixed(3)), class: cls };
+    return { px, basePx, heightPx: Math.round(heightPx), anchorFromImagePx, bottomGapPx, visibleEnterPx: Math.round(visibleEnterPx), entryRatio: Number(entryRatio.toFixed(3)), class: cls };
   });
 
   // Derive a conservative overall class (worst among sizes)
   const order = { 'good': 3, 'slightly-high': 2, 'too-high': 1, 'too-low': 0 };
   const overall = perSize.reduce((acc, s) => (order[s.class] < order[acc] ? s.class : acc), 'good');
 
-  const recAnchorY = recommendAnchorY({ natural, layout, bottomGapFull, px: 56, targetEntry: 0.20 });
+  const recAnchorY = recommendAnchorY({ natural, layout, bottomGapFull, px: 56 });
   return {
     num,
     file: path.basename(file),
@@ -171,7 +176,7 @@ async function analyzeTag(num){
   // Detailed per-size table
   console.log('\nDetails (per size):');
   for (const r of results) {
-    const sizesText = r.perSize.map(s => `${s.px}px: base=${s.basePx}px entry=${(s.entryRatio*100).toFixed(1)}% anchorPx=${s.anchorFromImagePx}px [${s.class}]`).join(' | ');
+    const sizesText = r.perSize.map(s => `${s.px}px: base=${s.basePx}px visible=${(s.entryRatio*100).toFixed(1)}% (visPx=${s.visibleEnterPx}px) anchorPx=${s.anchorFromImagePx}px gapPx=${s.bottomGapPx}px [${s.class}]`).join(' | ');
     console.log(`${String(r.num).padStart(2,' ')} | ${r.file.padEnd(10)} | gap=${r.bottomGapFull} | rec.anchorY=${r.recommended.anchorY} | ${sizesText}`);
   }
 
@@ -183,5 +188,13 @@ async function analyzeTag(num){
       2
     ));
     console.log('\nSaved recommendations to tools/tag-layouts-recommendations.json');
+  } catch {}
+
+  // Also write client overrides JSON for direct consumption by the app
+  try {
+    const overrides = Object.fromEntries(results.map(r => [String(r.num), r.recommended]));
+    const clientOverridesPath = path.resolve(__dirname, '..', 'client', 'src', 'config', 'tagOverrides.json');
+    fs.writeFileSync(clientOverridesPath, JSON.stringify(overrides, null, 2));
+    console.log('Saved client overrides to client/src/config/tagOverrides.json');
   } catch {}
 })();
