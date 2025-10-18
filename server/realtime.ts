@@ -1690,9 +1690,11 @@ async function moveBotAutomatically() {
     const activeBots = await db.select().from(bots).where(eq(bots.isActive, true));
     if (activeBots.length === 0) return;
     
-    // جلب جميع الغرف المتاحة
+    // جلب جميع الغرف المتاحة - تحديد البوتات للغرفتين العامة والترحيب فقط
     const allRooms = await roomService.getAllRooms();
-    if (allRooms.length === 0) return;
+    // تصفية الغرف لتشمل فقط العامة والترحيب
+    const allowedRooms = allRooms.filter(room => room.id === 'general' || room.id === 'welcome');
+    if (allowedRooms.length === 0) return;
     
     // اختيار البوت التالي (بالتناوب)
     const bot = activeBots[botMovementIndex % activeBots.length];
@@ -1707,8 +1709,8 @@ async function moveBotAutomatically() {
     switch (actionType) {
       case 0: // انضمام لغرفة جديدة
         {
-          // اختيار غرفة عشوائية
-          const randomRoom = allRooms[Math.floor(Math.random() * allRooms.length)];
+          // اختيار غرفة عشوائية من الغرف المسموحة (general و welcome فقط)
+          const randomRoom = allowedRooms[Math.floor(Math.random() * allowedRooms.length)];
           if (randomRoom.id !== currentRoom) {
             // تحديث غرفة البوت في قاعدة البيانات
             await db.update(bots)
@@ -1813,8 +1815,8 @@ async function moveBotAutomatically() {
         
       case 2: // تغيير الغرفة
         {
-          // اختيار غرفة عشوائية مختلفة عن الحالية
-          const availableRooms = allRooms.filter(r => r.id !== currentRoom);
+          // اختيار غرفة عشوائية مختلفة عن الحالية من الغرف المسموحة (general و welcome فقط)
+          const availableRooms = allowedRooms.filter(r => r.id !== currentRoom);
           if (availableRooms.length > 0) {
             const newRoom = availableRooms[Math.floor(Math.random() * availableRooms.length)];
             

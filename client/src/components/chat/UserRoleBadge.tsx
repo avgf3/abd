@@ -239,6 +239,10 @@ export default function UserRoleBadge({
     if (user?.userType === 'guest') {
       return null;
     }
+    // إخفاء شعار البوت في رسائل الغرف
+    if (user?.userType === 'bot') {
+      return null;
+    }
     if (user?.userType === 'member') {
       const level = user.level || 1;
       const gender = normalizeGender(user.gender) || 'male';
