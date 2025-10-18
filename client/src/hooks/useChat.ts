@@ -761,7 +761,18 @@ export const useChat = () => {
     });
 
     // 🔥 معالجات Page Visibility API للحفاظ على الاتصال في الخلفية
+    // تحسين مع منع التكرار
+    let lastVisibilityChange = 0;
+    const VISIBILITY_DEBOUNCE = 500; // نصف ثانية بين التغييرات
+    
     const handleVisibilityChange = () => {
+      const now = Date.now();
+      // 🔥 منع التكرار السريع لتجنب إعادة التحميل غير الضرورية
+      if (now - lastVisibilityChange < VISIBILITY_DEBOUNCE) {
+        return;
+      }
+      lastVisibilityChange = now;
+      
       if (document.hidden && !isBackgroundRef.current) {
         // الصفحة أصبحت في الخلفية - استخدام Web Worker للping
         isBackgroundRef.current = true;
@@ -847,11 +858,17 @@ export const useChat = () => {
           }
         } catch {}
 
-        // جلب الرسائل التي فاتت أثناء الخلفية
+        // جلب الرسائل التي فاتت أثناء الخلفية - فقط إذا مر وقت كافي
         try {
           const roomId = currentRoomIdRef.current;
           if (roomId) {
-            fetchMissedMessagesForRoom(roomId).catch(() => {});
+            const { getConnectionHealth } = await import('@/lib/socket');
+            const health = getConnectionHealth();
+            
+            // فقط إذا مر أكثر من دقيقة، جلب الرسائل المفقودة
+            if (health.timeSinceLastConnection > 60000) {
+              fetchMissedMessagesForRoom(roomId).catch(() => {});
+            }
           }
         } catch {}
       }
@@ -861,9 +878,19 @@ export const useChat = () => {
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
     // دعم أفضل لدورة حياة الصفحة على الأجهزة المحمولة: pageshow/pagehide
-    const handlePageShow = async () => {
+    const handlePageShow = async (event: PageTransitionEvent) => {
       try {
-        // إزالة منطق إعادة الاتصال عند pageshow لتفادي التكرار
+        // 🔥 فحص ذكي: event.persisted = true يعني الصفحة جاءت من bfcache
+        // في هذه الحالة فقط نحتاج لاستئناف الاتصال
+        const isRestoredFromCache = event.persisted;
+        
+        // إذا كانت تحميل عادي (persisted = false)، لا نفعل شيء
+        // لأن useEffect الأساسي سيتولى التهيئة
+        if (!isRestoredFromCache) {
+          return;
+        }
+        
+        // 📝 معالجة خاصة للصفحات المستعادة من cache فقط
         const { getConnectionHealth } = await import('@/lib/socket');
         const health = getConnectionHealth();
         
@@ -878,26 +905,33 @@ export const useChat = () => {
           }
         } catch {}
 
-        // 🍎 معالجة خاصة لـ iOS
+        // 🍎 معالجة خاصة لـ iOS عند الاستعادة من cache فقط
         if (isIOSRef.current) {
-          const iosSnapshot = localStorage.getItem('ios_connection_snapshot');
+          const iosSnapshot = localStorage.getItem('ios_pagehide_snapshot');
           if (iosSnapshot) {
             try {
               const snapshot = JSON.parse(iosSnapshot);
               const timeDiff = Date.now() - snapshot.timestamp;
               
-              // إذا مر أكثر من 10 ثواني، أعد الاتصال بالكامل
-              // لا نقوم بإعادة الاتصال يدوياً هنا
+              // فقط إذا كان الغياب قصير (أقل من دقيقة)، لا تفعل شيء
+              // Socket.IO سيعيد الاتصال تلقائياً
+              if (timeDiff < 60000) {
+                // غياب قصير: Socket.IO يتولى إعادة الاتصال تلقائياً
+              } else {
+                // غياب طويل: قد نحتاج لجلب رسائل مفقودة
+                const roomId = currentRoomIdRef.current;
+                if (roomId) {
+                  fetchMissedMessagesForRoom(roomId).catch(() => {});
+                }
+              }
               
               // تنظيف الـ snapshot
-              localStorage.removeItem('ios_connection_snapshot');
+              localStorage.removeItem('ios_pagehide_snapshot');
             } catch {}
           }
-        } else {
-          // لا نقوم بمحاولات connect يدوية هنا
         }
         
-        // عند العودة للصفحة، تفريغ الرسائل المؤجلة وجلب المفقود
+        // عند العودة للصفحة من cache، تفريغ الرسائل المؤجلة
         const roomId = currentRoomIdRef.current;
         if (roomId) {
           const buffered = messageBufferRef.current.get(roomId) || [];
@@ -908,12 +942,11 @@ export const useChat = () => {
             messageBufferRef.current.set(roomId, []);
           }
           
-          // جلب الرسائل المفقودة إذا مر وقت طويل
-          if (health.timeSinceLastConnection > 30000) {
+          // جلب الرسائل المفقودة فقط إذا مر وقت طويل
+          if (health.timeSinceLastConnection > 60000) { // زيادة من 30 ثانية إلى دقيقة
             fetchMissedMessagesForRoom(roomId).catch(() => {});
           }
         }
-        // لا نقوم بجلب قائمة المتصلين العامة هنا لمنع أي تسرب بين الغرف
       } catch (error) {
         console.warn('⚠️ خطأ في handlePageShow:', error);
       }

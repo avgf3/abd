@@ -59,7 +59,15 @@ export class ConnectionManager {
       this.isOnline = false;
     });
 
-    window.addEventListener('pageshow', () => this.scheduleNextPoll(1));
+    // معالجة ذكية لـ pageshow: فقط عند العودة من bfcache
+    window.addEventListener('pageshow', (event: PageTransitionEvent) => {
+      // event.persisted = true يعني الصفحة جاءت من cache، وليست تحميل جديد
+      if (event.persisted) {
+        // استئناف polling فقط عند العودة من cache
+        this.scheduleNextPoll(1);
+      }
+      // إذا كانت false (تحميل عادي)، لا نفعل شيء لأن start() سيتم استدعاؤه
+    });
 
     window.addEventListener('pagehide', () => {
       if (!this.cfg.pingUrl) return;
