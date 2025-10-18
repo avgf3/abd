@@ -858,21 +858,12 @@ export const useChat = () => {
           }
         } catch {}
 
-        // جلب الرسائل التي فاتت أثناء الخلفية - بذكاء
+        // 🔥 جلب الرسائل فوراً عند العودة - دائماً!
         try {
           const roomId = currentRoomIdRef.current;
           if (roomId) {
-            const { getConnectionHealth } = await import('@/lib/socket');
-            const health = getConnectionHealth();
-            
-            // 🔥 منطق ذكي متعدد المستويات
-            if (health.timeSinceLastConnection > 30000) {
-              // أكثر من 30 ثانية: جلب الرسائل المفقودة
-              fetchMissedMessagesForRoom(roomId).catch(() => {});
-            } else if (health.timeSinceLastConnection < 5000) {
-              // أقل من 5 ثوانٍ: لا نفعل شيء، الاتصال مستمر
-            }
-            // بين 5-30 ثانية: Socket.IO يدير إعادة الاتصال تلقائياً
+            // استئناف فوري - جلب الرسائل المفقودة في كل مرة
+            fetchMissedMessagesForRoom(roomId).catch(() => {});
           }
         } catch {}
       }
@@ -917,20 +908,11 @@ export const useChat = () => {
               const snapshot = JSON.parse(iosSnapshot);
               const timeDiff = Date.now() - snapshot.timestamp;
               
-              // 🔥 منطق ذكي حسب مدة الغياب
-              if (timeDiff < 10000) {
-                // أقل من 10 ثوانٍ: Socket.IO يتولى كل شيء تلقائياً
-              } else if (timeDiff < 30000) {
-                // 10-30 ثانية: تحقق من الاتصال فقط
-                if (!socket.current?.connected) {
-                  // إذا انقطع، Socket.IO سيعيد الاتصال تلقائياً
-                }
-              } else {
-                // أكثر من 30 ثانية: جلب رسائل مفقودة
-                const roomId = currentRoomIdRef.current;
-                if (roomId) {
-                  fetchMissedMessagesForRoom(roomId).catch(() => {});
-                }
+              // 🔥 استئناف فوري دائماً - جلب الرسائل في كل مرة
+              const roomId = currentRoomIdRef.current;
+              if (roomId) {
+                // جلب الرسائل المفقودة فوراً بغض النظر عن المدة
+                fetchMissedMessagesForRoom(roomId).catch(() => {});
               }
               
               // تنظيف الـ snapshot
@@ -950,12 +932,9 @@ export const useChat = () => {
             messageBufferRef.current.set(roomId, []);
           }
           
-          // جلب الرسائل المفقودة بذكاء حسب مدة الغياب
-          if (health.timeSinceLastConnection > 30000) { // أكثر من 30 ثانية
-            fetchMissedMessagesForRoom(roomId).catch(() => {});
-          } else if (health.timeSinceLastConnection < 5000) {
-            // أقل من 5 ثوانٍ: لا نفعل شيء، الاتصال مستمر
-          }
+          // 🔥 جلب الرسائل المفقودة فوراً - دائماً
+          // استئناف فوري بدون شروط زمنية
+          fetchMissedMessagesForRoom(roomId).catch(() => {});
         }
       } catch (error) {
         console.warn('⚠️ خطأ في handlePageShow:', error);
