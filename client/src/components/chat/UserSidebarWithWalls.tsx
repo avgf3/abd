@@ -577,8 +577,8 @@ export default function UnifiedSidebar({
                 {/* حاوية الصورة - حجم ثابت مع محاذاة مركزية */}
                 <div style={{ 
                   marginLeft: 4, 
-                  width: hasFrame ? 54 : 46,  // تقليل العرض للمستخدمين بدون إطار
-                  height: hasFrame ? 54 : 46, // تقليل الارتفاع للمستخدمين بدون إطار
+                  width: hasFrame ? 56 : 40,  // النظام الجديد: 40 + (2 × 8) = 56px مع إطار
+                  height: hasFrame ? 56 : 40, // النظام الجديد: 40px بدون إطار
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -809,7 +809,8 @@ export default function UnifiedSidebar({
                             if (frameFromPost) (effectiveUser as any).profileFrame = frameFromPost;
                             if (tagFromPost) (effectiveUser as any).profileTag = tagFromPost;
                             const hasFrame = Boolean((effectiveUser as any)?.profileFrame);
-                            const containerSize = hasFrame ? 43 : 32;
+                            // النظام الجديد: مع إطار = 40 + (2 × 8) = 56px، بدون إطار = 40px
+                            const containerSize = hasFrame ? 56 : 40;
                             return (
                               <div style={{ width: containerSize, height: containerSize, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                                 <ProfileImage 
@@ -962,7 +963,8 @@ export default function UnifiedSidebar({
                             if (frameFromPost) (effectiveUser as any).profileFrame = frameFromPost;
                             if (tagFromPost) (effectiveUser as any).profileTag = tagFromPost;
                             const hasFrame = Boolean((effectiveUser as any)?.profileFrame);
-                            const containerSize = hasFrame ? 43 : 32;
+                            // النظام الجديد: مع إطار = 40 + (2 × 8) = 56px، بدون إطار = 40px
+                            const containerSize = hasFrame ? 56 : 40;
                             return (
                               <div style={{ width: containerSize, height: containerSize, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                                 <ProfileImage 

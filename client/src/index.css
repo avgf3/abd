@@ -1861,22 +1861,17 @@ li > * > div.effect-snow {
 }
 .vip-frame-overlay {
   position: absolute;
-  /* إضافة padding موحد (2%) لضمان ظهور الإطار بشكل كامل ومتناسق */
-  top: -2%;
-  left: -2%;
-  right: -2%;
-  bottom: -2%;
-  width: 104%;
-  height: 104%;
-  object-fit: contain; /* منع أي قص أفقي/عمودي وضمان ثبات الحجم */
+  /* الإطار يأخذ حجم الحاوية الكاملة */
+  top: 0;
+  left: 0;
+  /* الحجم يتم تحديده من خلال inline styles */
+  object-fit: contain;
   border-radius: 9999px;
   pointer-events: none;
   z-index: 3;
   /* تعطيل أي دوران */
   animation: none !important;
-  /* الإطار يحيط بالصورة من الخارج مع مساحة إضافية 2% */
   transform-origin: center center;
-  transform: scale(1);
 }
 
 /* Shine overlay element for frame10 */

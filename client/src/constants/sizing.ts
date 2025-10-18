@@ -1,20 +1,17 @@
 /**
- * نظام الأحجام الموحد لإطارات البروفايل
- * Unified sizing system for profile frames
+ * نظام بسيط وموحد لأحجام الإطارات
+ * Simple and unified frame sizing system
  * 
- * هذا الملف يضمن تناسق كامل في أحجام الإطارات عبر كامل التطبيق
- * This file ensures complete consistency in frame sizes across the entire app
+ * الفكرة: الإطار أكبر من الصورة بمقدار عرض الإطار من كل جانب
+ * Concept: Frame is larger than image by frame width on each side
  */
 
 export const FRAME_SIZING = {
   /**
-   * النسبة الموحدة لحجم الإطار بالنسبة للصورة
-   * Unified ratio for frame size relative to image
-   * 
-   * الإطار = حجم الصورة × 1.38
-   * Frame = Image size × 1.38
+   * عرض الإطار من كل جانب (pixels)
+   * Frame width from each side (pixels)
    */
-  RATIO: 1.38,
+  FRAME_WIDTH: 8,
 
   /**
    * الأحجام القياسية للصور
@@ -36,28 +33,17 @@ export const FRAME_SIZING = {
     /** للملفات الشخصية الكاملة (120px) */
     xlarge: 120,
   },
-
-  /**
-   * مسافة إضافية للإطار حول الصورة (2%)
-   * Additional padding for frame around image (2%)
-   */
-  OVERLAY_PADDING: 0.02,
 } as const;
 
 /**
- * حساب حجم الحاوية بناءً على حجم الصورة
- * Calculate container size based on image size
- */
-export function getContainerSize(imageSize: number): number {
-  return Math.round(imageSize * FRAME_SIZING.RATIO);
-}
-
-/**
- * حساب حجم الإطار مع الـ padding
- * Calculate frame size with padding
+ * حساب حجم الإطار بناءً على حجم الصورة
+ * Calculate frame size based on image size
+ * 
+ * ببساطة: حجم الإطار = حجم الصورة + (2 × عرض الإطار)
+ * Simply: Frame size = Image size + (2 × Frame width)
  */
 export function getFrameSize(imageSize: number): number {
-  return Math.round(imageSize * (1 + FRAME_SIZING.OVERLAY_PADDING * 2));
+  return imageSize + (2 * FRAME_SIZING.FRAME_WIDTH);
 }
 
 /**
@@ -68,7 +54,6 @@ export function getStandardSize(requestedSize: number): number {
   const sizes = Object.values(FRAME_SIZING.SIZES);
   
   // إيجاد أقرب حجم قياسي
-  // Find closest standard size
   let closest = sizes[0];
   let minDiff = Math.abs(requestedSize - closest);
   

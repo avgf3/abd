@@ -379,8 +379,8 @@ export default function MessagesPanel({
                         }}
                       >
                         <div className="flex-shrink-0" style={{ 
-                          width: (user as any)?.profileFrame ? 54 : 46, 
-                          height: (user as any)?.profileFrame ? 54 : 46,
+                          width: (user as any)?.profileFrame ? 56 : 40,  // النظام الجديد: 40 + (2 × 8) = 56px
+                          height: (user as any)?.profileFrame ? 56 : 40, // مع إطار، 40px بدون إطار
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center'
