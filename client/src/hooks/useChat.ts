@@ -913,12 +913,16 @@ export const useChat = () => {
               const snapshot = JSON.parse(iosSnapshot);
               const timeDiff = Date.now() - snapshot.timestamp;
               
-              // فقط إذا كان الغياب قصير (أقل من دقيقة)، لا تفعل شيء
-              // Socket.IO سيعيد الاتصال تلقائياً
-              if (timeDiff < 60000) {
-                // غياب قصير: Socket.IO يتولى إعادة الاتصال تلقائياً
+              // 🔥 منطق ذكي حسب مدة الغياب
+              if (timeDiff < 10000) {
+                // أقل من 10 ثوانٍ: Socket.IO يتولى كل شيء تلقائياً
+              } else if (timeDiff < 30000) {
+                // 10-30 ثانية: تحقق من الاتصال فقط
+                if (!socket.current?.connected) {
+                  // إذا انقطع، Socket.IO سيعيد الاتصال تلقائياً
+                }
               } else {
-                // غياب طويل: قد نحتاج لجلب رسائل مفقودة
+                // أكثر من 30 ثانية: جلب رسائل مفقودة
                 const roomId = currentRoomIdRef.current;
                 if (roomId) {
                   fetchMissedMessagesForRoom(roomId).catch(() => {});
@@ -942,9 +946,11 @@ export const useChat = () => {
             messageBufferRef.current.set(roomId, []);
           }
           
-          // جلب الرسائل المفقودة فقط إذا مر وقت طويل
-          if (health.timeSinceLastConnection > 60000) { // زيادة من 30 ثانية إلى دقيقة
+          // جلب الرسائل المفقودة بذكاء حسب مدة الغياب
+          if (health.timeSinceLastConnection > 30000) { // أكثر من 30 ثانية
             fetchMissedMessagesForRoom(roomId).catch(() => {});
+          } else if (health.timeSinceLastConnection < 5000) {
+            // أقل من 5 ثوانٍ: لا نفعل شيء، الاتصال مستمر
           }
         }
       } catch (error) {
