@@ -39,13 +39,12 @@ export default function BlockNotification({ isVisible, reason, onClose }: BlockN
           <div className="pt-4 border-t border-red-700">
             <Button
               onClick={() => {
-                onClose();
-                window.location.href = '/';
+                try { onClose(); } catch {}
               }}
               variant="destructive"
               className="w-full"
             >
-              العودة للصفحة الرئيسية
+              إغلاق
             </Button>
           </div>
         </CardContent>
