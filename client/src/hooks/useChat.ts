@@ -2165,7 +2165,7 @@ export const useChat = () => {
           if (!document.hidden) {
             dispatch({
               type: 'SET_CONNECTION_ERROR',
-              payload: 'فقدان الاتصال. يرجى إعادة تحميل الصفحة.',
+              payload: 'فقدان الاتصال. سنستأنف تلقائياً عند عودة الشبكة.',
             });
             // Start polling fallback when reconnection ultimately fails
             startPollingFallback();

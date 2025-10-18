@@ -172,7 +172,7 @@ export class ConnectionMonitor {
     if (recentErrors > 10) {
       score -= 25;
       issues.push('أخطاء متكررة في الاتصال');
-      recommendations.push('أعد تحميل الصفحة');
+      recommendations.push('تحقق من اتصال الإنترنت أو انتظر الاستئناف التلقائي');
     } else if (recentErrors > 5) {
       score -= 10;
       issues.push('بعض أخطاء الاتصال');

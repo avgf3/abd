@@ -13,8 +13,6 @@ export type ConnectionManagerConfig = {
   speedHiddenMs?: number;
   timeoutMs?: number;
   maxBackoffMs?: number;
-  failuresBeforeHardReload?: number;
-  hardReloadOnServerAck?: boolean;
 };
 
 export class ConnectionManager {
@@ -81,24 +79,7 @@ export class ConnectionManager {
       } catch {}
     });
 
-    window.addEventListener('error', (event: ErrorEvent) => {
-      const url = this.cfg.errorReportUrl; // only post if explicitly configured
-      if (!url) return;
-      try {
-        const message = `${event?.error?.message || event?.message || 'Unknown error'}\n${event?.error?.stack || ''}`;
-        fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: new URLSearchParams({ e: message }).toString(),
-          keepalive: true,
-        })
-          .then((r) => r.text())
-          .then((txt) => {
-            if ((this.cfg.hardReloadOnServerAck ?? true) && String(txt).trim() === '1') this.hardReload();
-          })
-          .catch(() => {});
-      } catch {}
-    });
+    // Removed legacy error-report reload trigger; reporting (if any) should not force page reload
 
     updateSpeed();
   }
@@ -139,9 +120,7 @@ export class ConnectionManager {
     this.scheduleNextPoll(2500);
   }
 
-  public forceReload() {
-    this.hardReload();
-  }
+  // Removed legacy forceReload; no page reloads are performed in this manager
 
   public setLastMessageId(id: number) {
     if (Number.isFinite(id)) this.lastMessageId = Math.max(this.lastMessageId, (id as number) | 0);
@@ -159,11 +138,7 @@ export class ConnectionManager {
     return Math.max(this.speedMs, factor);
   }
 
-  private hardReload() {
-    // لا إعادة تحميل للصفحة إطلاقاً — فعّل النسخ الاحتياطي فقط
-    this.consecutiveFailures = 0;
-    this.enableBackupMode();
-  }
+  // Removed legacy hardReload implementation; fallback is enabled adaptively in code paths below
 
   private updateMonitors(startedAt: number) {
     try {
@@ -228,9 +203,8 @@ export class ConnectionManager {
       })
       .catch(() => {
         this.consecutiveFailures += 1;
-        // لا إعادة تحميل للصفحة — بدلاً من ذلك، فعّل وضع النسخ الاحتياطي عند فشل متكرر
-        const reloadLimit = this.cfg.failuresBeforeHardReload;
-        if (typeof reloadLimit === 'number' && reloadLimit > 0 && this.consecutiveFailures >= reloadLimit) {
+        // Enable backup mode after several consecutive failures — without reloading the page
+        if (this.consecutiveFailures >= 3) {
           this.enableBackupMode();
         }
         this.scheduleNextPoll(this.backoffDelay());
