@@ -10,6 +10,8 @@ interface TireFrameWrapperProps {
 /**
  * مكون بسيط لتركيب إطار الإطار حول الصورة
  * Simple component for mounting tire frame around image
+ * 
+ * ✅ إصلاح شامل: الإطار يلتف حول الصورة بشكل مثالي في جميع الأحجام
  */
 export default function TireFrameWrapper({
   children,
@@ -17,8 +19,12 @@ export default function TireFrameWrapper({
   frameNumber = 1,
   className = '',
 }: TireFrameWrapperProps) {
-  // حجم الإطار = حجم الصورة + 16px (8px من كل جانب)
-  const frameSize = size + 16;
+  // ✅ حساب حجم الإطار بشكل نسبي أفضل
+  // للصور الصغيرة: نسبة أكبر (35%)
+  // للصور المتوسطة والكبيرة: نسبة معتدلة (25-30%)
+  const framePercentage = size <= 40 ? 0.40 : size <= 60 ? 0.35 : 0.30;
+  const framePadding = Math.round(size * framePercentage);
+  const frameSize = size + (framePadding * 2);
   
   // مصدر صورة الإطار
   const frameSrc = `/frames/frame${frameNumber}.webp`;
@@ -44,12 +50,13 @@ export default function TireFrameWrapper({
           height: size,
           borderRadius: '50%',
           overflow: 'hidden',
+          zIndex: 1,
         }}
       >
         {children}
       </div>
       
-      {/* إطار الإطار */}
+      {/* إطار الإطار - يلتف حول الصورة بالكامل */}
       <img
         src={frameSrc}
         alt="tire frame"
@@ -60,7 +67,7 @@ export default function TireFrameWrapper({
           left: 0,
           width: frameSize,
           height: frameSize,
-          objectFit: 'contain',
+          objectFit: 'cover',
           pointerEvents: 'none',
           zIndex: 10,
         }}

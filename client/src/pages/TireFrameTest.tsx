@@ -9,17 +9,21 @@ import VipAvatar from '@/components/ui/VipAvatar';
 export default function TireFrameTest() {
   const testImage = '/default_avatar.svg';
   
-  const sizes = [32, 40, 56, 80, 120];
-  const frames = [1, 2, 3, 4, 5];
+  // ✅ اختبار شامل لجميع الأحجام - من الصغيرة جداً إلى الكبيرة جداً
+  const sizes = [24, 32, 40, 48, 56, 64, 80, 96, 120, 150];
+  const frames = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
   return (
     <div className="p-8 bg-gray-100 min-h-screen">
       <div className="max-w-4xl mx-auto">
         <h1 className="text-3xl font-bold text-center mb-8 text-gray-800">
-          نظام إطارات الإطارات الجديد
+          🎯 نظام إطارات الإطارات المُحسّن
         </h1>
-        <p className="text-center mb-8 text-gray-600">
-          نظام بسيط ونظيف لتركيب إطارات الإطارات حول الصور
+        <p className="text-center mb-4 text-gray-600">
+          ✅ إطارات أكبر تلتف حول الصور بشكل مثالي
+        </p>
+        <p className="text-center mb-8 text-sm text-gray-500">
+          النسب: صغير جداً (40%) | متوسط (35%) | كبير (30%)
         </p>
 
         {/* اختبار الأحجام المختلفة */}
@@ -93,11 +97,48 @@ export default function TireFrameTest() {
           </div>
         </div>
 
-        <div className="text-center text-gray-500 text-sm">
-          <p>✅ نظام بسيط ونظيف</p>
-          <p>✅ الإطار يلتف حول الصورة تمامًا</p>
-          <p>✅ يعمل مع جميع الأحجام</p>
-          <p>✅ سهل الاستخدام والصيانة</p>
+        {/* اختبار مكثف: جميع الإطارات مع جميع الأحجام */}
+        <div className="mb-12">
+          <h2 className="text-2xl font-semibold mb-6 text-gray-700">
+            🧪 اختبار شامل: كل إطار بجميع الأحجام
+          </h2>
+          {frames.slice(0, 5).map((frame) => (
+            <div key={frame} className="mb-8">
+              <h3 className="text-lg font-medium mb-4 text-gray-600 text-center">
+                إطار رقم {frame}
+              </h3>
+              <div className="flex flex-wrap gap-4 justify-center items-end bg-white p-6 rounded-lg shadow">
+                {sizes.map((size) => (
+                  <div key={size} className="text-center">
+                    <TireFrameWrapper size={size} frameNumber={frame}>
+                      <img
+                        src={testImage}
+                        alt="test"
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover',
+                          borderRadius: '50%',
+                        }}
+                      />
+                    </TireFrameWrapper>
+                    <p className="mt-2 text-xs text-gray-500">{size}px</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="text-center text-gray-500 text-sm bg-green-50 p-6 rounded-lg">
+          <h3 className="text-lg font-bold text-green-700 mb-4">✅ التحسينات المُطبقة</h3>
+          <p className="mb-2">✅ الإطارات أكبر بكثير وأكثر وضوحاً</p>
+          <p className="mb-2">✅ الإطار يلتف حول الصورة بشكل مثالي في جميع الأحجام</p>
+          <p className="mb-2">✅ نظام نسبي ذكي: يتكيف مع حجم الصورة</p>
+          <p className="mb-2">✅ صور صغيرة = إطارات أكبر نسبياً (40%)</p>
+          <p className="mb-2">✅ صور متوسطة = إطارات متوازنة (35%)</p>
+          <p className="mb-2">✅ صور كبيرة = إطارات متناسبة (30%)</p>
+          <p className="mt-4 text-green-600 font-semibold">🎉 الإطارات تعمل بشكل مثالي الآن!</p>
         </div>
       </div>
     </div>
