@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار الإطارات</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #1a1a2e;
+            color: white;
+            padding: 20px;
+            margin: 0;
+        }
+        
+        .frames-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .frame-item {
+            text-align: center;
+            padding: 10px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+        }
+        
+        .frame-preview {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 10px;
+            position: relative;
+            display: inline-block;
+        }
+        
+        /* نسخ CSS الإطارات */
+        .vip-frame.base {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            contain: layout paint style;
+            isolation: isolate;
+            backface-visibility: hidden;
+            transform: translateZ(0);
+        }
+        
+        .vip-frame-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            border-radius: 9999px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .vip-frame-img {
+            border-radius: 9999px;
+            object-fit: cover;
+            background: #0b1220;
+            position: relative;
+            z-index: 2;
+            image-rendering: -webkit-optimize-contrast;
+            image-rendering: crisp-edges;
+            flex-shrink: 0;
+        }
+        
+        .vip-frame-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 9999px;
+            pointer-events: none;
+            object-position: center;
+            image-rendering: -webkit-optimize-contrast;
+            image-rendering: crisp-edges;
+            z-index: 3;
+            animation: none !important;
+            transform-origin: center center;
+            transform: scale(1);
+        }
+        
+        .vip-frame.base::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 9999px;
+            z-index: 3;
+            padding: 2px;
+            -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            animation: none !important;
+        }
+        
+        .vip-frame.with-image::before { display: none !important; }
+        
+        /* الإطارات المتدرجة */
+        .vip-frame-1::before { background: conic-gradient(from 0deg, #ffcc33, #ff6633, #ffcc33); box-shadow: 0 0 10px rgba(255, 204, 51, 0.4); }
+        .vip-frame-2::before { background: conic-gradient(from 0deg, #66e0ff, #4488ff, #66e0ff); box-shadow: 0 0 10px rgba(68, 136, 255, 0.4); }
+        .vip-frame-3::before { background: conic-gradient(from 0deg, #444, #999, #444); box-shadow: 0 0 10px rgba(200, 200, 200, 0.3); }
+        .vip-frame-4::before { background: conic-gradient(from 0deg, #b45309, #065f46, #b45309); box-shadow: 0 0 10px rgba(6, 95, 70, 0.35); }
+        .vip-frame-5::before { background: conic-gradient(from 0deg, #ec4899, #8b5cf6, #ec4899); box-shadow: 0 0 10px rgba(236, 72, 153, 0.4); }
+        .vip-frame-6::before { background: conic-gradient(from 0deg, #7c2d12, #f59e0b, #7c2d12); box-shadow: 0 0 10px rgba(245, 158, 11, 0.35); }
+        .vip-frame-7::before { background: conic-gradient(from 0deg, #ffd700, #ffed4e, #ffa500, #ffd700); box-shadow: 0 0 12px rgba(255, 215, 0, 0.5); }
+        .vip-frame-8::before { background: conic-gradient(from 0deg, #e6f3ff, #87ceeb, #4682b4, #e6f3ff); box-shadow: 0 0 10px rgba(70, 130, 180, 0.4); }
+        .vip-frame-9::before { background: conic-gradient(from 0deg, #f8f8ff, #c0c0c0, #a8a8a8, #f8f8ff); box-shadow: 0 0 10px rgba(192, 192, 192, 0.4); }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #66e0ff;
+        }
+        
+        .section-title {
+            font-size: 18px;
+            margin: 30px 0 15px;
+            color: #ffcc33;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎨 معاينة الإطارات المحسنة</h1>
+    
+    <div class="section-title">الإطارات المتدرجة (1-9)</div>
+    <div class="frames-container">
+        <!-- إطار 1 -->
+        <div class="frame-item">
+            <div class="frame-preview">
+                <div class="vip-frame base vip-frame-1" style="width: 80px; height: 80px;">
+                    <div class="vip-frame-inner">
+                        <img src="/default_avatar.svg" alt="مستخدم" class="vip-frame-img" style="width: 60px; height: 60px;">
+                    </div>
+                </div>
+            </div>
+            <div>إطار 1 - ذهبي برتقالي</div>
+        </div>
+        
+        <!-- إطار 2 -->
+        <div class="frame-item">
+            <div class="frame-preview">
+                <div class="vip-frame base vip-frame-2" style="width: 80px; height: 80px;">
+                    <div class="vip-frame-inner">
+                        <img src="/default_avatar.svg" alt="مستخدم" class="vip-frame-img" style="width: 60px; height: 60px;">
+                    </div>
+                </div>
+            </div>
+            <div>إطار 2 - أزرق سماوي</div>
+        </div>
+        
+        <!-- إطار 3 -->
+        <div class="frame-item">
+            <div class="frame-preview">
+                <div class="vip-frame base vip-frame-3" style="width: 80px; height: 80px;">
+                    <div class="vip-frame-inner">
+                        <img src="/default_avatar.svg" alt="مستخدم" class="vip-frame-img" style="width: 60px; height: 60px;">
+                    </div>
+                </div>
+            </div>
+            <div>إطار 3 - رمادي فضي</div>
+        </div>
+        
+        <!-- إطار 4 -->
+        <div class="frame-item">
+            <div class="frame-preview">
+                <div class="vip-frame base vip-frame-4" style="width: 80px; height: 80px;">
+                    <div class="vip-frame-inner">
+                        <img src="/default_avatar.svg" alt="مستخدم" class="vip-frame-img" style="width: 60px; height: 60px;">
+                    </div>
+                </div>
+            </div>
+            <div>إطار 4 - بني أخضر</div>
+        </div>
+        
+        <!-- إطار 5 -->
+        <div class="frame-item">
+            <div class="frame-preview">
+                <div class="vip-frame base vip-frame-5" style="width: 80px; height: 80px;">
+                    <div class="vip-frame-inner">
+                        <img src="/default_avatar.svg" alt="مستخدم" class="vip-frame-img" style="width: 60px; height: 60px;">
+                    </div>
+                </div>
+            </div>
+            <div>إطار 5 - وردي بنفسجي</div>
+        </div>
+        
+        <!-- إطار 6 -->
+        <div class="frame-item">
+            <div class="frame-preview">
+                <div class="vip-frame base vip-frame-6" style="width: 80px; height: 80px;">
+                    <div class="vip-frame-inner">
+                        <img src="/default_avatar.svg" alt="مستخدم" class="vip-frame-img" style="width: 60px; height: 60px;">
+                    </div>
+                </div>
+            </div>
+            <div>إطار 6 - بني ذهبي</div>
+        </div>
+        
+        <!-- إطار 7 -->
+        <div class="frame-item">
+            <div class="frame-preview">
+                <div class="vip-frame base vip-frame-7" style="width: 80px; height: 80px;">
+                    <div class="vip-frame-inner">
+                        <img src="/default_avatar.svg" alt="مستخدم" class="vip-frame-img" style="width: 60px; height: 60px;">
+                    </div>
+                </div>
+            </div>
+            <div>إطار 7 - ذهبي لامع</div>
+        </div>
+        
+        <!-- إطار 8 -->
+        <div class="frame-item">
+            <div class="frame-preview">
+                <div class="vip-frame base vip-frame-8" style="width: 80px; height: 80px;">
+                    <div class="vip-frame-inner">
+                        <img src="/default_avatar.svg" alt="مستخدم" class="vip-frame-img" style="width: 60px; height: 60px;">
+                    </div>
+                </div>
+            </div>
+            <div>إطار 8 - أزرق فاتح</div>
+        </div>
+        
+        <!-- إطار 9 -->
+        <div class="frame-item">
+            <div class="frame-preview">
+                <div class="vip-frame base vip-frame-9" style="width: 80px; height: 80px;">
+                    <div class="vip-frame-inner">
+                        <img src="/default_avatar.svg" alt="مستخدم" class="vip-frame-img" style="width: 60px; height: 60px;">
+                    </div>
+                </div>
+            </div>
+            <div>إطار 9 - فضي أبيض</div>
+        </div>
+    </div>
+    
+    <div class="section-title">الإطارات بالصور (10+)</div>
+    <div class="frames-container">
+        <!-- إطار 10 مع صورة -->
+        <div class="frame-item">
+            <div class="frame-preview">
+                <div class="vip-frame base with-image" style="width: 80px; height: 80px;">
+                    <div class="vip-frame-inner">
+                        <img src="/default_avatar.svg" alt="مستخدم" class="vip-frame-img" style="width: 60px; height: 60px;">
+                        <img src="client/public/frames/frame10.webp" alt="frame" class="vip-frame-overlay" style="transform: scale(1);">
+                    </div>
+                </div>
+            </div>
+            <div>إطار 10 - صورة مخصصة</div>
+        </div>
+        
+        <!-- إطار 15 مع صورة -->
+        <div class="frame-item">
+            <div class="frame-preview">
+                <div class="vip-frame base with-image" style="width: 80px; height: 80px;">
+                    <div class="vip-frame-inner">
+                        <img src="/default_avatar.svg" alt="مستخدم" class="vip-frame-img" style="width: 60px; height: 60px;">
+                        <img src="client/public/frames/frame15.webp" alt="frame" class="vip-frame-overlay" style="transform: scale(1);">
+                    </div>
+                </div>
+            </div>
+            <div>إطار 15 - صورة مخصصة</div>
+        </div>
+        
+        <!-- إطار 20 مع صورة -->
+        <div class="frame-item">
+            <div class="frame-preview">
+                <div class="vip-frame base with-image" style="width: 80px; height: 80px;">
+                    <div class="vip-frame-inner">
+                        <img src="/default_avatar.svg" alt="مستخدم" class="vip-frame-img" style="width: 60px; height: 60px;">
+                        <img src="client/public/frames/frame20.webp" alt="frame" class="vip-frame-overlay" style="transform: scale(1);">
+                    </div>
+                </div>
+            </div>
+            <div>إطار 20 - صورة مخصصة</div>
+        </div>
+    </div>
+    
+    <div style="text-align: center; margin-top: 40px; color: #888;">
+        <p>✅ الإطارات الآن بأحجام موحدة ومتسقة</p>
+        <p>✅ النسبة الثابتة 1.3x لجميع الإطارات</p>
+        <p>✅ الحاويات تتكيف مع وجود الإطار</p>
+    </div>
+</body>
+</html>

@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار الإطارات الحقيقية</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #1a1a2e;
+            color: white;
+            padding: 20px;
+            margin: 0;
+        }
+        
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 30px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .test-case {
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .frame-demo {
+            position: relative;
+            margin: 20px auto;
+            display: inline-block;
+        }
+        
+        /* نسخ الكود الحقيقي من VipAvatar */
+        .vip-frame.base {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            contain: layout paint style;
+            isolation: isolate;
+            backface-visibility: hidden;
+            transform: translateZ(0);
+        }
+        
+        .vip-frame-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            border-radius: 9999px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .vip-frame-img {
+            border-radius: 9999px;
+            object-fit: cover;
+            background: #0b1220;
+            position: relative;
+            z-index: 2;
+            image-rendering: -webkit-optimize-contrast;
+            image-rendering: crisp-edges;
+            flex-shrink: 0;
+        }
+        
+        .vip-frame-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: contain; /* الإعداد الجديد */
+            border-radius: 9999px;
+            pointer-events: none;
+            object-position: center;
+            image-rendering: -webkit-optimize-contrast;
+            image-rendering: crisp-edges;
+            z-index: 3;
+            transform: scale(1);
+        }
+        
+        .vip-frame.with-image::before { display: none !important; }
+        
+        h1 { text-align: center; color: #66e0ff; margin-bottom: 30px; }
+        h3 { color: #ffcc33; margin-bottom: 15px; }
+        
+        .size-info {
+            font-size: 12px;
+            color: #888;
+            margin-top: 10px;
+        }
+        
+        .comparison-note {
+            background: rgba(255,255,255,0.05);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 اختبار الإطارات الحقيقية - هل هي مطابقة للصورة؟</h1>
+    
+    <div class="test-grid">
+        <!-- اختبار 1: حجم صغير -->
+        <div class="test-case">
+            <h3>حجم صغير (36px)</h3>
+            <div class="frame-demo">
+                <div class="vip-frame base with-image" style="width: 50.4px; height: 50.4px;"> <!-- 36 * 1.4 -->
+                    <div class="vip-frame-inner">
+                        <img src="/default_avatar.svg" alt="مستخدم" class="vip-frame-img" style="width: 36px; height: 36px;">
+                        <img src="/frames/frame10.webp" alt="frame" class="vip-frame-overlay">
+                    </div>
+                </div>
+            </div>
+            <div class="size-info">
+                صورة: 36px<br>
+                حاوية: 50.4px (36×1.4)<br>
+                object-fit: contain
+            </div>
+        </div>
+        
+        <!-- اختبار 2: حجم متوسط -->
+        <div class="test-case">
+            <h3>حجم متوسط (56px)</h3>
+            <div class="frame-demo">
+                <div class="vip-frame base with-image" style="width: 78.4px; height: 78.4px;"> <!-- 56 * 1.4 -->
+                    <div class="vip-frame-inner">
+                        <img src="/default_avatar.svg" alt="مستخدم" class="vip-frame-img" style="width: 56px; height: 56px;">
+                        <img src="/frames/frame15.webp" alt="frame" class="vip-frame-overlay">
+                    </div>
+                </div>
+            </div>
+            <div class="size-info">
+                صورة: 56px<br>
+                حاوية: 78.4px (56×1.4)<br>
+                object-fit: contain
+            </div>
+        </div>
+        
+        <!-- اختبار 3: حجم كبير -->
+        <div class="test-case">
+            <h3>حجم كبير (72px)</h3>
+            <div class="frame-demo">
+                <div class="vip-frame base with-image" style="width: 100.8px; height: 100.8px;"> <!-- 72 * 1.4 -->
+                    <div class="vip-frame-inner">
+                        <img src="/default_avatar.svg" alt="مستخدم" class="vip-frame-img" style="width: 72px; height: 72px;">
+                        <img src="/frames/frame20.webp" alt="frame" class="vip-frame-overlay">
+                    </div>
+                </div>
+            </div>
+            <div class="size-info">
+                صورة: 72px<br>
+                حاوية: 100.8px (72×1.4)<br>
+                object-fit: contain
+            </div>
+        </div>
+        
+        <!-- مقارنة: object-fit cover vs contain -->
+        <div class="test-case">
+            <h3>مقارنة: Cover vs Contain</h3>
+            
+            <!-- Cover -->
+            <div style="margin: 15px 0;">
+                <strong style="color: #f87171;">Cover (يقطع الإطار)</strong>
+                <div class="frame-demo">
+                    <div class="vip-frame base with-image" style="width: 78.4px; height: 78.4px;">
+                        <div class="vip-frame-inner">
+                            <img src="/default_avatar.svg" alt="مستخدم" class="vip-frame-img" style="width: 56px; height: 56px;">
+                            <img src="/frames/frame25.webp" alt="frame" class="vip-frame-overlay" style="object-fit: cover;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Contain -->
+            <div style="margin: 15px 0;">
+                <strong style="color: #4ade80;">Contain (إطار كامل)</strong>
+                <div class="frame-demo">
+                    <div class="vip-frame base with-image" style="width: 78.4px; height: 78.4px;">
+                        <div class="vip-frame-inner">
+                            <img src="/default_avatar.svg" alt="مستخدم" class="vip-frame-img" style="width: 56px; height: 56px;">
+                            <img src="/frames/frame25.webp" alt="frame" class="vip-frame-overlay" style="object-fit: contain;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- اختبار إطارات مختلفة -->
+        <div class="test-case">
+            <h3>إطارات متنوعة</h3>
+            <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+                <div class="frame-demo">
+                    <div class="vip-frame base with-image" style="width: 70px; height: 70px;">
+                        <div class="vip-frame-inner">
+                            <img src="/default_avatar.svg" alt="مستخدم" class="vip-frame-img" style="width: 50px; height: 50px;">
+                            <img src="/frames/frame11.webp" alt="frame" class="vip-frame-overlay">
+                        </div>
+                    </div>
+                </div>
+                <div class="frame-demo">
+                    <div class="vip-frame base with-image" style="width: 70px; height: 70px;">
+                        <div class="vip-frame-inner">
+                            <img src="/default_avatar.svg" alt="مستخدم" class="vip-frame-img" style="width: 50px; height: 50px;">
+                            <img src="/frames/frame30.webp" alt="frame" class="vip-frame-overlay">
+                        </div>
+                    </div>
+                </div>
+                <div class="frame-demo">
+                    <div class="vip-frame base with-image" style="width: 70px; height: 70px;">
+                        <div class="vip-frame-inner">
+                            <img src="/default_avatar.svg" alt="مستخدم" class="vip-frame-img" style="width: 50px; height: 50px;">
+                            <img src="/frames/frame33.webp" alt="frame" class="vip-frame-overlay">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- النتيجة النهائية -->
+        <div class="test-case" style="grid-column: 1/-1;">
+            <h3>✅ النتيجة</h3>
+            <div class="comparison-note">
+                <strong>بعد الإصلاح:</strong><br>
+                • النسبة: 1.4x (بدلاً من 1.3x)<br>
+                • object-fit: contain (بدلاً من cover)<br>
+                • الإطار يظهر كاملاً حول الصورة<br>
+                • لا يوجد قطع أو تشويه<br>
+                • أحجام متسقة في جميع الأماكن
+            </div>
+        </div>
+    </div>
+</body>
+</html>

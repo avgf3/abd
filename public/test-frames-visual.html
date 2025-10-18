@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار بصري للإطارات</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            color: white;
+            padding: 20px;
+            margin: 0;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #66e0ff;
+            margin-bottom: 40px;
+            font-size: 2.5rem;
+            text-shadow: 0 0 20px rgba(102, 224, 255, 0.3);
+        }
+        
+        .test-section {
+            background: rgba(255,255,255,0.1);
+            border-radius: 20px;
+            padding: 30px;
+            margin: 30px 0;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        .section-title {
+            color: #ffcc33;
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .frames-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 25px;
+            margin: 20px 0;
+        }
+        
+        .frame-test {
+            background: rgba(0,0,0,0.3);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            border: 2px solid rgba(255,255,255,0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .frame-test:hover {
+            transform: translateY(-5px);
+            border-color: rgba(102, 224, 255, 0.5);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        
+        .frame-container {
+            position: relative;
+            margin: 15px auto;
+            display: inline-block;
+        }
+        
+        /* نسخ CSS الإطارات الحقيقي */
+        .vip-frame.base {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            contain: layout paint style;
+            isolation: isolate;
+            backface-visibility: hidden;
+            transform: translateZ(0);
+        }
+        
+        .vip-frame-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            border-radius: 9999px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .vip-frame-img {
+            border-radius: 9999px;
+            object-fit: cover;
+            background: linear-gradient(135deg, #0b1220 0%, #1a1a2e 100%);
+            position: relative;
+            z-index: 2;
+            flex-shrink: 0;
+            border: 2px solid rgba(255,255,255,0.1);
+        }
+        
+        .vip-frame-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            border-radius: 9999px;
+            pointer-events: none;
+            object-position: center;
+            z-index: 3;
+            transform: scale(1);
+        }
+        
+        .vip-frame.with-image::before { display: none !important; }
+        
+        /* إطارات متدرجة للاختبار */
+        .vip-frame.base::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 9999px;
+            z-index: 3;
+            padding: 3px;
+            -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+        }
+        
+        .gradient-frame-1::before { 
+            background: conic-gradient(from 0deg, #ffcc33, #ff6633, #ffcc33); 
+            box-shadow: 0 0 15px rgba(255, 204, 51, 0.5);
+        }
+        .gradient-frame-2::before { 
+            background: conic-gradient(from 0deg, #66e0ff, #4488ff, #66e0ff); 
+            box-shadow: 0 0 15px rgba(68, 136, 255, 0.5);
+        }
+        .gradient-frame-3::before { 
+            background: conic-gradient(from 0deg, #ec4899, #8b5cf6, #ec4899); 
+            box-shadow: 0 0 15px rgba(236, 72, 153, 0.5);
+        }
+        
+        .size-info {
+            font-size: 11px;
+            color: #aaa;
+            margin-top: 10px;
+            line-height: 1.4;
+        }
+        
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin: 20px 0;
+        }
+        
+        .comparison-item {
+            background: rgba(0,0,0,0.2);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .good { border-left: 4px solid #4ade80; }
+        .bad { border-left: 4px solid #f87171; }
+        
+        .result-box {
+            background: linear-gradient(135deg, rgba(102, 224, 255, 0.1) 0%, rgba(255, 204, 51, 0.1) 100%);
+            border: 2px solid rgba(102, 224, 255, 0.3);
+            border-radius: 15px;
+            padding: 25px;
+            margin: 30px 0;
+            text-align: center;
+        }
+        
+        .avatar-placeholder {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #ec4899 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 0.8em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 اختبار بصري شامل للإطارات</h1>
+        
+        <!-- اختبار الأحجام المختلفة -->
+        <div class="test-section">
+            <div class="section-title">📏 اختبار الأحجام (النسبة الجديدة 1.4x)</div>
+            <div class="frames-grid">
+                <!-- حجم صغير -->
+                <div class="frame-test">
+                    <h4>صغير (36px)</h4>
+                    <div class="frame-container">
+                        <div class="vip-frame base gradient-frame-1" style="width: 50.4px; height: 50.4px;">
+                            <div class="vip-frame-inner">
+                                <div class="avatar-placeholder vip-frame-img" style="width: 36px; height: 36px;">👤</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="size-info">
+                        صورة: 36px<br>
+                        حاوية: 50.4px<br>
+                        نسبة: 1.4x
+                    </div>
+                </div>
+                
+                <!-- حجم متوسط -->
+                <div class="frame-test">
+                    <h4>متوسط (56px)</h4>
+                    <div class="frame-container">
+                        <div class="vip-frame base gradient-frame-2" style="width: 78.4px; height: 78.4px;">
+                            <div class="vip-frame-inner">
+                                <div class="avatar-placeholder vip-frame-img" style="width: 56px; height: 56px;">👤</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="size-info">
+                        صورة: 56px<br>
+                        حاوية: 78.4px<br>
+                        نسبة: 1.4x
+                    </div>
+                </div>
+                
+                <!-- حجم كبير -->
+                <div class="frame-test">
+                    <h4>كبير (72px)</h4>
+                    <div class="frame-container">
+                        <div class="vip-frame base gradient-frame-3" style="width: 100.8px; height: 100.8px;">
+                            <div class="vip-frame-inner">
+                                <div class="avatar-placeholder vip-frame-img" style="width: 72px; height: 72px;">👤</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="size-info">
+                        صورة: 72px<br>
+                        حاوية: 100.8px<br>
+                        نسبة: 1.4x
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- اختبار الإطارات بالصور -->
+        <div class="test-section">
+            <div class="section-title">🖼️ اختبار الإطارات بالصور (object-fit: contain)</div>
+            <div class="frames-grid">
+                <div class="frame-test">
+                    <h4>إطار 10</h4>
+                    <div class="frame-container">
+                        <div class="vip-frame base with-image" style="width: 84px; height: 84px;">
+                            <div class="vip-frame-inner">
+                                <div class="avatar-placeholder vip-frame-img" style="width: 60px; height: 60px;">😊</div>
+                                <img src="/frames/frame10.webp" alt="frame" class="vip-frame-overlay" 
+                                     onerror="this.style.display='none'; this.parentElement.innerHTML += '<div style=\'position:absolute;top:0;left:0;width:100%;height:100%;border:3px solid #ffcc33;border-radius:50%;z-index:3;\'></div>'">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="frame-test">
+                    <h4>إطار 15</h4>
+                    <div class="frame-container">
+                        <div class="vip-frame base with-image" style="width: 84px; height: 84px;">
+                            <div class="vip-frame-inner">
+                                <div class="avatar-placeholder vip-frame-img" style="width: 60px; height: 60px;">🎨</div>
+                                <img src="/frames/frame15.webp" alt="frame" class="vip-frame-overlay"
+                                     onerror="this.style.display='none'; this.parentElement.innerHTML += '<div style=\'position:absolute;top:0;left:0;width:100%;height:100%;border:3px solid #66e0ff;border-radius:50%;z-index:3;\'></div>'">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="frame-test">
+                    <h4>إطار 20</h4>
+                    <div class="frame-container">
+                        <div class="vip-frame base with-image" style="width: 84px; height: 84px;">
+                            <div class="vip-frame-inner">
+                                <div class="avatar-placeholder vip-frame-img" style="width: 60px; height: 60px;">⭐</div>
+                                <img src="/frames/frame20.webp" alt="frame" class="vip-frame-overlay"
+                                     onerror="this.style.display='none'; this.parentElement.innerHTML += '<div style=\'position:absolute;top:0;left:0;width:100%;height:100%;border:3px solid #ec4899;border-radius:50%;z-index:3;\'></div>'">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- مقارنة object-fit -->
+        <div class="test-section">
+            <div class="section-title">⚖️ مقارنة object-fit: cover vs contain</div>
+            <div class="comparison-grid">
+                <div class="comparison-item bad">
+                    <h4 style="color: #f87171;">❌ object-fit: cover (القديم)</h4>
+                    <div class="frame-container">
+                        <div class="vip-frame base with-image" style="width: 84px; height: 84px;">
+                            <div class="vip-frame-inner">
+                                <div class="avatar-placeholder vip-frame-img" style="width: 60px; height: 60px;">😞</div>
+                                <img src="/frames/frame25.webp" alt="frame" class="vip-frame-overlay" style="object-fit: cover;"
+                                     onerror="this.style.display='none'; this.parentElement.innerHTML += '<div style=\'position:absolute;top:0;left:0;width:100%;height:100%;border:3px dashed #f87171;border-radius:50%;z-index:3;\'></div>'">
+                            </div>
+                        </div>
+                    </div>
+                    <p style="color: #f87171; font-size: 12px;">يقطع أجزاء من الإطار</p>
+                </div>
+                
+                <div class="comparison-item good">
+                    <h4 style="color: #4ade80;">✅ object-fit: contain (الجديد)</h4>
+                    <div class="frame-container">
+                        <div class="vip-frame base with-image" style="width: 84px; height: 84px;">
+                            <div class="vip-frame-inner">
+                                <div class="avatar-placeholder vip-frame-img" style="width: 60px; height: 60px;">😊</div>
+                                <img src="/frames/frame25.webp" alt="frame" class="vip-frame-overlay" style="object-fit: contain;"
+                                     onerror="this.style.display='none'; this.parentElement.innerHTML += '<div style=\'position:absolute;top:0;left:0;width:100%;height:100%;border:3px solid #4ade80;border-radius:50%;z-index:3;\'></div>'">
+                            </div>
+                        </div>
+                    </div>
+                    <p style="color: #4ade80; font-size: 12px;">يُظهر الإطار كاملاً</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- النتيجة النهائية -->
+        <div class="result-box">
+            <h2 style="color: #66e0ff; margin-bottom: 15px;">🎯 النتيجة البصرية</h2>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; text-align: left;">
+                <div>
+                    <h4 style="color: #4ade80;">✅ ما يعمل بشكل صحيح:</h4>
+                    <ul style="color: #4ade80; font-size: 14px;">
+                        <li>النسبة 1.4x مناسبة</li>
+                        <li>الإطارات المتدرجة تظهر كاملة</li>
+                        <li>أحجام متسقة</li>
+                        <li>object-fit: contain يحافظ على الإطار</li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 style="color: #ffcc33;">⚠️ ملاحظات:</h4>
+                    <ul style="color: #ffcc33; font-size: 14px;">
+                        <li>إذا لم تظهر صور الإطارات، فالمسار خاطئ</li>
+                        <li>قد نحتاج تعديل النسبة حسب الإطار</li>
+                        <li>بعض الإطارات قد تحتاج معالجة خاصة</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div style="text-align: center; margin-top: 40px; color: #888; font-size: 14px;">
+            <p>📝 هذا اختبار بصري للتأكد من أن الإطارات تظهر بشكل صحيح ومتناسق</p>
+            <p>🔗 إذا كانت صور الإطارات لا تظهر، فهذا يعني أن المسار يحتاج تصحيح</p>
+        </div>
+    </div>
+</body>
+</html>

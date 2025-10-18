@@ -24,8 +24,8 @@ const CrownOverlay = memo(function CrownOverlay({ src, size, tagNumber }: CrownO
   const [imageSrc, setImageSrc] = useState<string>(src);
   const [isVisible, setIsVisible] = useState<boolean>(false);
 
-  // حجم التاج = 120% من حجم الصورة
-  const crownSize = Math.round(size * 1.2);
+  // حجم التاج = 125% من حجم الصورة - تحسين للوضوح
+  const crownSize = Math.round(size * 1.25);
 
   // التاجات 11-16، 18-30 (ما عدا 17) تُرفع إلى -50%
   // التاجات 3، 5، 6، 7 تبقى كما هي (-35%)
@@ -143,9 +143,9 @@ export default function ProfileImage({
     return Math.min(50, n) as any;
   })();
 
-  // حساب الأحجام
+  // إصلاح حسابات الأحجام - متناسق مع VipAvatar
   const px = pixelSize ?? (size === 'small' ? 36 : size === 'large' ? 72 : 56);
-  const containerSize = px * 1.4; // حاوية أكبر قليلاً للتاج
+  const containerSize = px * 1.4; // نفس نسبة VipAvatar المحسنة
 
   // مع إطار
   if (!disableFrame && frameName && frameIndex) {

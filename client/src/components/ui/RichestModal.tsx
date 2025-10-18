@@ -367,7 +367,7 @@ export default function RichestModal({ isOpen, onClose, currentUser, onUserClick
                       justifyContent: 'center',
                       flexShrink: 0
                     }}>
-                      <ProfileImage user={c} size="small" pixelSize={22} className="" hideRoleBadgeOverlay={true} />
+                      <ProfileImage user={c} size="small" pixelSize={32} className="" hideRoleBadgeOverlay={true} />
                     </div>
                     <div className="flex-1">
                       {(() => {
