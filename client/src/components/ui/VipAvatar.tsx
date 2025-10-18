@@ -21,21 +21,12 @@ export default function VipAvatar({
   // تعطيل الحركة نهائياً (المطلوب نسخة ثابتة)
   const duration = useMemo(() => '0s', []);
 
-  // الصورة تحتفظ بحجمها الأصلي المطلوب
+  // تبسيط حسابات الأحجام - حجم ثابت ومتسق لجميع الإطارات
   const imageSize = size;
-  // الإطار (الحاوية) يتكيف ليكون أكبر من الصورة بنسبة كافية لاستيعاب الإطار بالكامل
-  // تحسين: زيادة النسبة لضمان احتواء جميع الإطارات بشكل مثالي
-  const frameSize = imageSize * 1.5; // الإطار أكبر بـ 50% لضمان احتواء جميع الإطارات بالكامل
-
-  // تحسين المقياس حسب حجم الإطار - الإطارات الصغيرة تحتاج تكبير أكثر
-  const overlayScale = useMemo(() => {
-    // للأحجام الصغيرة (أقل من 40px) نحتاج تكبير أكثر لضمان وضوح الإطار
-    if (size < 40) return 1.1;
-    // للأحجام المتوسطة (40-80px) نستخدم المقياس الطبيعي
-    if (size < 80) return 1.0;
-    // للأحجام الكبيرة (أكثر من 80px) نقلل قليلاً لتجنب التشويه
-    return 0.95;
-  }, [size]);
+  const frameSize = imageSize * 1.2; // نسبة ثابتة ومتوازنة لجميع الإطارات
+  
+  // مقياس ثابت لجميع الإطارات - بدون تعقيدات
+  const overlayScale = 1.0;
 
   const containerStyle: React.CSSProperties & { ['--vip-spin-duration']?: string } = {
     width: frameSize,
@@ -75,50 +66,8 @@ export default function VipAvatar({
 
   const hasImageOverlay = Boolean(overlaySrc);
 
-  // Refs for GSAP animations (frame10 only)
+  // إزالة التحريك المعقد - إطارات ثابتة وبسيطة
   const overlayRef = useRef<HTMLImageElement | null>(null);
-  const shineRef = useRef<HTMLDivElement | null>(null);
-
-  // Animate frame10 with subtle float and a shine sweep
-  useEffect(() => {
-    if (normalizedFrame !== 10) return;
-    const overlayEl = overlayRef.current;
-    const shineEl = shineRef.current;
-    const tweens: gsap.core.Tween[] = [];
-
-    if (overlayEl) {
-      tweens.push(
-        gsap.to(overlayEl, {
-          y: 1.2,
-          rotation: 0.25,
-          duration: 1.8,
-          ease: 'sine.inOut',
-          yoyo: true,
-          repeat: -1,
-        })
-      );
-    }
-
-    if (shineEl) {
-      gsap.set(shineEl, { x: '-140%', rotate: 20, opacity: 0.0 });
-      tweens.push(
-        gsap.to(shineEl, {
-          x: '140%',
-          opacity: 0.45,
-          duration: 1.2,
-          ease: 'power2.out',
-          repeat: -1,
-          repeatDelay: 1.6,
-          yoyo: false,
-          onRepeat: () => gsap.set(shineEl, { x: '-140%', opacity: 0.0 }),
-        })
-      );
-    }
-
-    return () => {
-      tweens.forEach((t) => t.kill());
-    };
-  }, [normalizedFrame, overlaySrc]);
 
   return (
     <div
@@ -135,7 +84,7 @@ export default function VipAvatar({
             src={overlaySrc}
             alt="frame"
             className="vip-frame-overlay"
-            style={{ transform: overlayScale === 1 ? 'scale(1)' : `scale(${overlayScale})` }}
+            style={{ transform: 'scale(1)' }}
             onError={(e) => {
               try {
                 const cur = overlaySrc || '';
@@ -160,9 +109,6 @@ export default function VipAvatar({
               } catch {}
             }}
           />
-        )}
-        {normalizedFrame === 10 && (
-          <div ref={shineRef} className="vip-frame-shine" aria-hidden="true" />
         )}
       </div>
     </div>

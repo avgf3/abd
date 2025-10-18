@@ -24,17 +24,11 @@ const CrownOverlay = memo(function CrownOverlay({ src, size, tagNumber }: CrownO
   const [imageSrc, setImageSrc] = useState<string>(src);
   const [isVisible, setIsVisible] = useState<boolean>(false);
 
-  // حجم التاج = 125% من حجم الصورة - تحسين للوضوح
-  const crownSize = Math.round(size * 1.25);
-
-  // التاجات 11-16، 18-30 (ما عدا 17) تُرفع إلى -50%
-  // التاجات 3، 5، 6، 7 تبقى كما هي (-35%)
-  // باقي التاجات تُرفع إلى -47%
-  const adjustedTags = [11, 12, 13, 14, 15, 16, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30];
-  const keepOriginal = tagNumber === 3 || tagNumber === 5 || tagNumber === 6 || tagNumber === 7;
-  const isAdjusted = tagNumber && adjustedTags.includes(tagNumber);
+  // حجم ثابت ومتسق لجميع التيجان
+  const crownSize = Math.round(size * 1.1);
   
-  const yPosition = isAdjusted ? -50 : (keepOriginal ? -35 : -47);
+  // موضع ثابت لجميع التيجان - بسيط ومتسق
+  const yPosition = -40;
 
   return (
     <img
@@ -143,9 +137,9 @@ export default function ProfileImage({
     return Math.min(50, n) as any;
   })();
 
-  // حساب الأحجام - تحسين لضمان احتواء الإطارات والتيجان بشكل مثالي
+  // أحجام بسيطة ومتسقة
   const px = pixelSize ?? (size === 'small' ? 36 : size === 'large' ? 72 : 56);
-  const containerSize = px * 1.6; // حاوية أكبر لضمان احتواء الإطارات والتيجان بشكل مثالي
+  const containerSize = px * 1.3; // نسبة متوازنة لجميع العناصر
 
   // مع إطار
   if (!disableFrame && frameName && frameIndex) {
