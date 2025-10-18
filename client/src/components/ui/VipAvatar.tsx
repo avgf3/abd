@@ -22,21 +22,18 @@ export default function VipAvatar({
   // تعطيل الحركة نهائياً (المطلوب نسخة ثابتة)
   const duration = useMemo(() => '0s', []);
 
-  // حجم الصورة
+  // ✨ النظام الجديد: الصورة والإطار بنفس الحجم تماماً
   const imageSize = size;
-  
-  // حجم الإطار = حجم الصورة + (2 × عرض الإطار)
-  // ببساطة: الإطار أكبر من الصورة بمقدار عرض الإطار من كل جانب
-  const frameSize = getFrameSize(imageSize);
+  const frameSize = getFrameSize(imageSize); // = imageSize (نفس الحجم!)
 
   const containerStyle: React.CSSProperties & { ['--vip-spin-duration']?: string } = {
     width: frameSize,
     height: frameSize,
+    position: 'relative',
     contain: 'layout paint style',
     isolation: 'isolate',
     backfaceVisibility: 'hidden',
     transform: 'translateZ(0)',
-    // تمرير مدة الدوران عبر متغير CSS
     ['--vip-spin-duration']: duration,
   };
 
@@ -46,9 +43,11 @@ export default function VipAvatar({
     willChange: 'transform',
     backfaceVisibility: 'hidden',
     transform: 'translateZ(0)',
+    objectFit: 'cover',
+    borderRadius: '9999px',
   };
 
-  // حجم صورة الإطار = حجم الإطار الكامل (لتغطي كل الحاوية)
+  // ✨ الإطار بنفس حجم الصورة تماماً - يغطيها كـ overlay
   const overlaySize = frameSize;
 
   // Normalize frame number and prepare overlay source with extension fallback (.webp -> .png -> .jpg -> .jpeg)

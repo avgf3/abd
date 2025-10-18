@@ -144,16 +144,16 @@ export default function ProfileImage({
     return Math.min(50, n) as any;
   })();
 
-  // حساب الأحجام باستخدام النظام البسيط
+  // ✨ النظام الجديد: حساب الأحجام بشكل مباشر
   const px = pixelSize ?? (size === 'small' ? FRAME_SIZING.SIZES.small : size === 'large' ? FRAME_SIZING.SIZES.large : FRAME_SIZING.SIZES.medium);
   
   // التحقق من وجود إطار
   const hasFrame = !disableFrame && frameName && frameIndex;
   
-  // حجم الحاوية: مع إطار = حجم الصورة + (2 × عرض الإطار)، بدون إطار = حجم الصورة فقط
-  const containerSize = hasFrame ? getFrameSize(px) : px;
+  // ✨ الحجم الجديد: الصورة والإطار بنفس الحجم تماماً
+  const containerSize = px; // سواء مع أو بدون إطار - نفس الحجم!
 
-  // مع إطار
+  // مع إطار - بساطة 100%
   if (hasFrame) {
     return (
       <div
@@ -165,25 +165,18 @@ export default function ProfileImage({
           position: 'relative',
         }}
       >
-        <div style={{ 
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-        }}>
-          <VipAvatar 
-            src={imageSrc} 
-            alt={`صورة ${user.username}`} 
-            size={px} 
-            frame={frameIndex as any} 
-          />
-        </div>
+        <VipAvatar 
+          src={imageSrc} 
+          alt={`صورة ${user.username}`} 
+          size={px} 
+          frame={frameIndex as any} 
+        />
         {crownSrc && <CrownOverlay src={crownSrc} size={px} tagNumber={tagNumber} />}
       </div>
     );
   }
 
-  // بدون إطار
+  // بدون إطار - بساطة 100%
   return (
     <div
       className={`relative inline-block ${className || ''}`}
@@ -194,34 +187,25 @@ export default function ProfileImage({
         position: 'relative',
       }}
     >
-      <div style={{ 
-        position: 'absolute',
-        top: '50%',
-        left: '50%',
-        transform: 'translate(-50%, -50%)',
-        width: px,
-        height: px,
-      }}>
-        <img
-          src={imageSrc}
-          alt={`صورة ${user.username}`}
-          className={`rounded-full ring-[3px] ${borderColor} shadow-sm`}
-          style={{
-            width: px,
-            height: px,
-            display: 'block',
-            objectFit: 'cover',
-            borderRadius: '9999px',
-          }}
-          loading="lazy"
-          decoding="async"
-          onError={(e: any) => {
-            if (e?.currentTarget && e.currentTarget.src !== '/default_avatar.svg') {
-              e.currentTarget.src = '/default_avatar.svg';
-            }
-          }}
-        />
-      </div>
+      <img
+        src={imageSrc}
+        alt={`صورة ${user.username}`}
+        className={`rounded-full ring-[3px] ${borderColor} shadow-sm`}
+        style={{
+          width: px,
+          height: px,
+          display: 'block',
+          objectFit: 'cover',
+          borderRadius: '9999px',
+        }}
+        loading="lazy"
+        decoding="async"
+        onError={(e: any) => {
+          if (e?.currentTarget && e.currentTarget.src !== '/default_avatar.svg') {
+            e.currentTarget.src = '/default_avatar.svg';
+          }
+        }}
+      />
       {crownSrc && <CrownOverlay src={crownSrc} size={px} tagNumber={tagNumber} />}
     </div>
   );

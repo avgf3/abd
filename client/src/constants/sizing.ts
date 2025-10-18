@@ -1,21 +1,26 @@
 /**
- * نظام بسيط وموحد لأحجام الإطارات
- * Simple and unified frame sizing system
+ * ✨ نظام احترافي موحد لأحجام الإطارات - مثل المواقع العالمية
+ * Professional unified frame sizing system - Like global websites
  * 
- * الفكرة: الإطار أكبر من الصورة بمقدار عرض الإطار من كل جانب
- * Concept: Frame is larger than image by frame width on each side
+ * 🎯 المفهوم الجديد: الإطار والصورة بنفس الحجم تماماً
+ * New Concept: Frame and image are exactly the same size
+ * 
+ * ✅ المزايا:
+ * - محاذاة مثالية 100%
+ * - بساطة في الحساب
+ * - لا توجد مسافات غير متوقعة
+ * - يعمل مثل Facebook, Instagram, Discord
  */
 
 export const FRAME_SIZING = {
   /**
-   * عرض الإطار من كل جانب (pixels)
-   * Frame width from each side (pixels)
+   * 🚫 لم نعد نحتاج FRAME_WIDTH - الإطار يغطي الصورة مباشرة
+   * No more FRAME_WIDTH needed - Frame overlays image directly
    */
-  FRAME_WIDTH: 8,
 
   /**
-   * الأحجام القياسية للصور
-   * Standard sizes for images
+   * الأحجام القياسية الموحدة - للصورة والإطار معاً
+   * Standard unified sizes - For both image and frame
    */
   SIZES: {
     /** للاستخدام في الرسائل والأماكن الصغيرة جداً (32px) */
@@ -36,14 +41,17 @@ export const FRAME_SIZING = {
 } as const;
 
 /**
- * حساب حجم الإطار بناءً على حجم الصورة
- * Calculate frame size based on image size
+ * ✨ الحل الجديد: الإطار = الصورة (نفس الحجم تماماً)
+ * New Solution: Frame = Image (exactly same size)
  * 
- * ببساطة: حجم الإطار = حجم الصورة + (2 × عرض الإطار)
- * Simply: Frame size = Image size + (2 × Frame width)
+ * هذا هو ما تفعله المواقع الاحترافية:
+ * - Discord: الإطار يغطي الصورة بنفس الحجم
+ * - Facebook: الإطار overlay مباشر
+ * - Instagram: نفس الحجم مع padding داخلي
  */
 export function getFrameSize(imageSize: number): number {
-  return imageSize + (2 * FRAME_SIZING.FRAME_WIDTH);
+  // 🎯 البساطة = الكمال
+  return imageSize;
 }
 
 /**
