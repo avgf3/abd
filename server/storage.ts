@@ -836,7 +836,34 @@ export const storage: LegacyStorage = {
   },
 
   async getOnlineUsers() {
-    return await databaseService.getOnlineUsers();
+    // ✅ استخدام البيانات الحية من connectedUsers بدلاً من قاعدة البيانات
+    // لتجنب إظهار المستخدمين المنفصلين خلال فترة السماح
+    try {
+      const onlineUsers: User[] = [];
+      
+      for (const [userId, entry] of connectedUsers.entries()) {
+        // التحقق من أن المستخدم لديه اتصالات نشطة
+        if (entry.sockets.size > 0 && entry.user) {
+          // استثناء المستخدمين المخفيين
+          if (entry.user.isHidden === true) continue;
+          
+          // إضافة المستخدم للقائمة
+          onlineUsers.push({
+            ...entry.user,
+            isOnline: true,
+            lastSeen: entry.lastSeen,
+          } as User);
+        }
+      }
+      
+      // تنظيف البيانات قبل الإرجاع
+      const { sanitizeUsersArray } = await import('./utils/data-sanitizer');
+      return sanitizeUsersArray(onlineUsers);
+    } catch (error) {
+      console.error('Error getting online users from connectedUsers:', error);
+      // في حالة الخطأ، نستخدم قاعدة البيانات كـ fallback
+      return await databaseService.getOnlineUsers();
+    }
   },
 
   async getAllUsers() {
