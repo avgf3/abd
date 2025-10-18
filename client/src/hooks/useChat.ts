@@ -913,14 +913,7 @@ export const useChat = () => {
             fetchMissedMessagesForRoom(roomId).catch(() => {});
           }
         }
-        // تحديث قائمة المتصلين فور العودة كضمان إضافي بدون إعادة تحميل كاملة
-        try {
-          const online = await apiRequest('/api/users/online');
-          const users = Array.isArray((online as any)?.users) ? (online as any).users : [];
-          if (users.length > 0) {
-            dispatch({ type: 'SET_ONLINE_USERS', payload: users });
-          }
-        } catch {}
+        // لا نقوم بجلب قائمة المتصلين العامة هنا لمنع أي تسرب بين الغرف
       } catch (error) {
         console.warn('⚠️ خطأ في handlePageShow:', error);
       }
@@ -1207,9 +1200,12 @@ export const useChat = () => {
             }
           }
 
-          // تحديث قائمة المستخدمين إذا تم إرسالها
+          // تحديث قائمة المستخدمين إذا تم إرسالها بشرط أن تخص الغرفة الحالية فقط
           if (users && Array.isArray(users)) {
-            dispatch({ type: 'SET_ONLINE_USERS', payload: users });
+            const targetRoomId = (envelope as any)?.roomId as string | undefined;
+            if (targetRoomId && targetRoomId === currentRoomIdRef.current) {
+              dispatch({ type: 'SET_ONLINE_USERS', payload: users });
+            }
           }
         }
 
