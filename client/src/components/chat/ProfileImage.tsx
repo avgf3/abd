@@ -2,8 +2,7 @@ import { memo, useMemo, useState } from 'react';
 
 import type { ChatUser } from '@/types/chat';
 import { getImageSrc } from '@/utils/imageUtils';
-import VipAvatar from '@/components/ui/VipAvatar';
-import { FRAME_SIZING, getFrameSize } from '@/constants/sizing';
+import TireFrameWrapper from '@/components/ui/TireFrameWrapper';
 
 interface ProfileImageProps {
   user: ChatUser;
@@ -144,14 +143,11 @@ export default function ProfileImage({
     return Math.min(50, n) as any;
   })();
 
-  // حساب الأحجام باستخدام النظام البسيط
-  const px = pixelSize ?? (size === 'small' ? FRAME_SIZING.SIZES.small : size === 'large' ? FRAME_SIZING.SIZES.large : FRAME_SIZING.SIZES.medium);
+  // أحجام بسيطة وثابتة
+  const px = pixelSize ?? (size === 'small' ? 40 : size === 'large' ? 80 : 56);
   
   // التحقق من وجود إطار
   const hasFrame = !disableFrame && frameName && frameIndex;
-  
-  // حجم الحاوية: مع إطار = حجم الصورة + (2 × عرض الإطار)، بدون إطار = حجم الصورة فقط
-  const containerSize = hasFrame ? getFrameSize(px) : px;
 
   // مع إطار
   if (hasFrame) {
@@ -159,25 +155,26 @@ export default function ProfileImage({
       <div
         className={`relative inline-block ${className || ''}`}
         onClick={onClick}
-        style={{ 
-          width: containerSize, 
-          height: containerSize,
-          position: 'relative',
-        }}
       >
-        <div style={{ 
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-        }}>
-          <VipAvatar 
-            src={imageSrc} 
-            alt={`صورة ${user.username}`} 
-            size={px} 
-            frame={frameIndex as any} 
+        <TireFrameWrapper size={px} frameNumber={frameIndex}>
+          <img
+            src={imageSrc}
+            alt={`صورة ${user.username}`}
+            className={`rounded-full ring-[3px] ${borderColor} shadow-sm`}
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+            }}
+            loading="lazy"
+            decoding="async"
+            onError={(e: any) => {
+              if (e?.currentTarget && e.currentTarget.src !== '/default_avatar.svg') {
+                e.currentTarget.src = '/default_avatar.svg';
+              }
+            }}
           />
-        </div>
+        </TireFrameWrapper>
         {crownSrc && <CrownOverlay src={crownSrc} size={px} tagNumber={tagNumber} />}
       </div>
     );
@@ -189,39 +186,30 @@ export default function ProfileImage({
       className={`relative inline-block ${className || ''}`}
       onClick={onClick}
       style={{ 
-        width: containerSize, 
-        height: containerSize,
+        width: px, 
+        height: px,
         position: 'relative',
       }}
     >
-      <div style={{ 
-        position: 'absolute',
-        top: '50%',
-        left: '50%',
-        transform: 'translate(-50%, -50%)',
-        width: px,
-        height: px,
-      }}>
-        <img
-          src={imageSrc}
-          alt={`صورة ${user.username}`}
-          className={`rounded-full ring-[3px] ${borderColor} shadow-sm`}
-          style={{
-            width: px,
-            height: px,
-            display: 'block',
-            objectFit: 'cover',
-            borderRadius: '9999px',
-          }}
-          loading="lazy"
-          decoding="async"
-          onError={(e: any) => {
-            if (e?.currentTarget && e.currentTarget.src !== '/default_avatar.svg') {
-              e.currentTarget.src = '/default_avatar.svg';
-            }
-          }}
-        />
-      </div>
+      <img
+        src={imageSrc}
+        alt={`صورة ${user.username}`}
+        className={`rounded-full ring-[3px] ${borderColor} shadow-sm`}
+        style={{
+          width: px,
+          height: px,
+          display: 'block',
+          objectFit: 'cover',
+          borderRadius: '9999px',
+        }}
+        loading="lazy"
+        decoding="async"
+        onError={(e: any) => {
+          if (e?.currentTarget && e.currentTarget.src !== '/default_avatar.svg') {
+            e.currentTarget.src = '/default_avatar.svg';
+          }
+        }}
+      />
       {crownSrc && <CrownOverlay src={crownSrc} size={px} tagNumber={tagNumber} />}
     </div>
   );

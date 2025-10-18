@@ -1,17 +1,18 @@
-/* @jsxRuntime classic */
-/* @jsx React.createElement */
-import React, { useMemo, useState, useEffect, useRef } from 'react';
-import { gsap } from 'gsap';
-import { FRAME_SIZING, getFrameSize } from '@/constants/sizing';
+import React, { useState } from 'react';
+import TireFrameWrapper from './TireFrameWrapper';
 
 interface VipAvatarProps {
   src: string;
   alt?: string;
-  size?: number; // حجم الصورة بالبكسل
+  size?: number;
   frame?: number;
   className?: string;
 }
 
+/**
+ * مكون بسيط لعرض الصورة الشخصية مع إطار الإطار
+ * Simple component for displaying profile image with tire frame
+ */
 export default function VipAvatar({
   src,
   alt = '',
@@ -19,150 +20,55 @@ export default function VipAvatar({
   frame = 1,
   className = '',
 }: VipAvatarProps) {
-  // تعطيل الحركة نهائياً (المطلوب نسخة ثابتة)
-  const duration = useMemo(() => '0s', []);
+  // إذا كان هناك إطار، استخدم TireFrameWrapper
+  if (frame && frame > 0) {
+    return (
+      <TireFrameWrapper size={size} frameNumber={frame} className={className}>
+        <img
+          src={src}
+          alt={alt}
+          style={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+          }}
+          loading="lazy"
+          onError={(e) => {
+            if (e.currentTarget.src !== '/default_avatar.svg') {
+              e.currentTarget.src = '/default_avatar.svg';
+            }
+          }}
+        />
+      </TireFrameWrapper>
+    );
+  }
 
-  // حجم الصورة
-  const imageSize = size;
-  
-  // حجم الإطار = حجم الصورة + (2 × عرض الإطار)
-  // ببساطة: الإطار أكبر من الصورة بمقدار عرض الإطار من كل جانب
-  const frameSize = getFrameSize(imageSize);
-
-  const containerStyle: React.CSSProperties & { ['--vip-spin-duration']?: string } = {
-    width: frameSize,
-    height: frameSize,
-    contain: 'layout paint style',
-    isolation: 'isolate',
-    backfaceVisibility: 'hidden',
-    transform: 'translateZ(0)',
-    // تمرير مدة الدوران عبر متغير CSS
-    ['--vip-spin-duration']: duration,
-  };
-
-  const imgStyle: React.CSSProperties = {
-    width: imageSize,
-    height: imageSize,
-    willChange: 'transform',
-    backfaceVisibility: 'hidden',
-    transform: 'translateZ(0)',
-  };
-
-  // حجم صورة الإطار = حجم الإطار الكامل (لتغطي كل الحاوية)
-  const overlaySize = frameSize;
-
-  // Normalize frame number and prepare overlay source with extension fallback (.webp -> .png -> .jpg -> .jpeg)
-  const hasValidFrame = Number.isFinite(frame as number) && (frame as number) > 0;
-  const normalizedFrame = hasValidFrame
-    ? Math.max(1, Math.min(50, Math.floor(frame as number)))
-    : undefined;
-
-  const overlayBase = normalizedFrame ? `/frames/frame${normalizedFrame}` : undefined;
-  const [overlaySrc, setOverlaySrc] = useState<string | undefined>(
-    overlayBase ? `${overlayBase}.webp` : undefined
-  );
-  const [fallbackStep, setFallbackStep] = useState<number>(0);
-
-  useEffect(() => {
-    setOverlaySrc(overlayBase ? `${overlayBase}.webp` : undefined);
-    setFallbackStep(0);
-  }, [overlayBase]);
-
-  const hasImageOverlay = Boolean(overlaySrc);
-
-  // Refs for GSAP animations (frame10 only)
-  const overlayRef = useRef<HTMLImageElement | null>(null);
-  const shineRef = useRef<HTMLDivElement | null>(null);
-
-  // Animate frame10 with subtle float and a shine sweep
-  useEffect(() => {
-    if (normalizedFrame !== 10) return;
-    const overlayEl = overlayRef.current;
-    const shineEl = shineRef.current;
-    const tweens: gsap.core.Tween[] = [];
-
-    if (overlayEl) {
-      tweens.push(
-        gsap.to(overlayEl, {
-          y: 1.2,
-          rotation: 0.25,
-          duration: 1.8,
-          ease: 'sine.inOut',
-          yoyo: true,
-          repeat: -1,
-        })
-      );
-    }
-
-    if (shineEl) {
-      gsap.set(shineEl, { x: '-140%', rotate: 20, opacity: 0.0 });
-      tweens.push(
-        gsap.to(shineEl, {
-          x: '140%',
-          opacity: 0.45,
-          duration: 1.2,
-          ease: 'power2.out',
-          repeat: -1,
-          repeatDelay: 1.6,
-          yoyo: false,
-          onRepeat: () => gsap.set(shineEl, { x: '-140%', opacity: 0.0 }),
-        })
-      );
-    }
-
-    return () => {
-      tweens.forEach((t) => t.kill());
-    };
-  }, [normalizedFrame, overlaySrc]);
-
+  // بدون إطار - صورة بسيطة
   return (
     <div
-      className={`vip-frame base ${hasImageOverlay ? 'with-image' : ''} ${
-        normalizedFrame ? `vip-frame-${normalizedFrame}` : ''
-      } ${className}`}
-      style={containerStyle}
+      className={`inline-block ${className}`}
+      style={{
+        width: size,
+        height: size,
+        borderRadius: '50%',
+        overflow: 'hidden',
+      }}
     >
-      <div className="vip-frame-inner">
-        <img src={src} alt={alt} className="vip-frame-img" style={imgStyle} />
-        {overlaySrc && (
-          <img
-            ref={overlayRef}
-            src={overlaySrc}
-            alt="frame"
-            className="vip-frame-overlay"
-            style={{ 
-              width: overlaySize,
-              height: overlaySize,
-            }}
-            onError={(e) => {
-              try {
-                const cur = overlaySrc || '';
-                if (fallbackStep === 0 && /\.webp(\?.*)?$/i.test(cur)) {
-                  setOverlaySrc(cur.replace(/\.webp(\?.*)?$/i, '.png$1'));
-                  setFallbackStep(1);
-                  return;
-                }
-                if (fallbackStep === 1 && /\.png(\?.*)?$/i.test(cur)) {
-                  setOverlaySrc(cur.replace(/\.png(\?.*)?$/i, '.jpg$1'));
-                  setFallbackStep(2);
-                  return;
-                }
-                if (fallbackStep === 2 && /\.jpg(\?.*)?$/i.test(cur)) {
-                  setOverlaySrc(cur.replace(/\.jpg(\?.*)?$/i, '.jpeg$1'));
-                  setFallbackStep(3);
-                  return;
-                }
-                // Hide overlay if all fallbacks fail
-                (e.currentTarget as HTMLImageElement).style.display = 'none';
-                setOverlaySrc(undefined);
-              } catch {}
-            }}
-          />
-        )}
-        {normalizedFrame === 10 && (
-          <div ref={shineRef} className="vip-frame-shine" aria-hidden="true" />
-        )}
-      </div>
+      <img
+        src={src}
+        alt={alt}
+        style={{
+          width: '100%',
+          height: '100%',
+          objectFit: 'cover',
+        }}
+        loading="lazy"
+        onError={(e) => {
+          if (e.currentTarget.src !== '/default_avatar.svg') {
+            e.currentTarget.src = '/default_avatar.svg';
+          }
+        }}
+      />
     </div>
   );
 }
