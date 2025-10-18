@@ -1530,15 +1530,26 @@ export const useChat = () => {
           }
 
           case 'blocked': {
-            // معالجة الحجب النهائي
+            // معالجة الحجب النهائي بدون إعادة تحميل الصفحة
             if (currentUserRef.current?.id) {
               const reason = (envelope as any).reason || 'بدون سبب';
               const moderator = (envelope as any).moderator || 'مشرف';
-              alert(`تم حجبك نهائياً من الدردشة بواسطة ${moderator}\nالسبب: ${reason}`);
-              // فصل المستخدم وإعادة توجيهه
-              setTimeout(() => {
-                window.location.href = '/';
-              }, 3000);
+              try {
+                alert(`تم حجبك نهائياً من الدردشة بواسطة ${moderator}\nالسبب: ${reason}`);
+              } catch {}
+              try { socket.current?.disconnect(); } catch {}
+              try {
+                dispatch({
+                  type: 'ADD_NOTIFICATION',
+                  payload: {
+                    id: Date.now(),
+                    type: 'moderation',
+                    username: 'system',
+                    content: `تم حظرك نهائياً. السبب: ${reason}`,
+                    timestamp: new Date(),
+                  } as any,
+                });
+              } catch {}
             }
             break;
           }
@@ -1784,33 +1795,48 @@ export const useChat = () => {
       }
     });
 
-    // معالج حدث الحجب
+    // معالج حدث الحجب — بدون إعادة توجيه تلقائية لمنع الرفرش المستمر
     socketInstance.on('blocked', (data: any) => {
       if (currentUserRef.current?.id) {
         const reason = data.reason || 'بدون سبب';
         const moderator = data.moderator || 'مشرف';
 
-        // إظهار رسالة الحجب
-        alert(`تم حجبك نهائياً من الدردشة بواسطة ${moderator}\nالسبب: ${reason}`);
-
-        // فصل المستخدم فوراً وإعادة توجيهه
-        clearSession(); // مسح بيانات الجلسة
-        socketInstance.disconnect();
-        setTimeout(() => {
-          window.location.href = '/';
-        }, 1000);
+        try { alert(`تم حجبك نهائياً من الدردشة بواسطة ${moderator}\nالسبب: ${reason}`); } catch {}
+        try { clearSession(); } catch {}
+        try { socketInstance.disconnect(); } catch {}
+        try {
+          dispatch({
+            type: 'ADD_NOTIFICATION',
+            payload: {
+              id: Date.now(),
+              type: 'moderation',
+              username: 'system',
+              content: `تم حظرك نهائياً. السبب: ${reason}`,
+              timestamp: new Date(),
+            } as any,
+          });
+        } catch {}
       }
     });
 
     // معالج أخطاء المصادقة
     socketInstance.on('error', (data: any) => {
       if (data.action === 'blocked' || data.action === 'device_blocked') {
-        alert(data.message);
-        clearSession(); // مسح بيانات الجلسة
-        socketInstance.disconnect();
-        setTimeout(() => {
-          window.location.href = '/';
-        }, 1000);
+        try { alert(data.message); } catch {}
+        try { clearSession(); } catch {}
+        try { socketInstance.disconnect(); } catch {}
+        try {
+          dispatch({
+            type: 'ADD_NOTIFICATION',
+            payload: {
+              id: Date.now(),
+              type: 'moderation',
+              username: 'system',
+              content: `تم حظرك نهائياً. السبب: ${data?.reason || 'غير محدد'}`,
+              timestamp: new Date(),
+            } as any,
+          });
+        } catch {}
       } else if (data.action === 'banned') {
         const timeLeft = data.timeLeft || 0;
         alert(`${data.message}\nالوقت المتبقي: ${timeLeft} دقيقة`);

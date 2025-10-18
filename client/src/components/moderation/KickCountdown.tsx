@@ -23,14 +23,7 @@ export default function KickCountdown({ isVisible, onClose, durationMinutes }: K
         if (prev <= 1) {
           clearInterval(timer);
           onClose();
-          // إعادة التوجيه للصفحة الرئيسية عند انتهاء الوقت
-          setTimeout(() => {
-            try {
-              window.location.replace('/');
-            } catch {
-              window.location.href = '/';
-            }
-          }, 1000);
+          // لا إعادة توجيه تلقائية؛ دع المستخدم يقرر لاحقاً
           return 0;
         }
         return prev - 1;

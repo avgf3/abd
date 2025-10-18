@@ -127,7 +127,8 @@ export class ConnectionManager {
   public enableBackupMode() {
     this.shouldBackupPoll = true;
     this.backupPollActive = true;
-    this.scheduleNextPoll(1000); // polling كل ثانية في وضع الطوارئ
+    // تجنب الحمل العالي جداً عند ضعف الشبكة: 2.5s بدلاً من 1s
+    this.scheduleNextPoll(2500);
   }
 
   public forceReload() {
@@ -151,8 +152,7 @@ export class ConnectionManager {
   }
 
   private hardReload() {
-    // استرجاع صامت بدلاً من إعادة تحميل الصفحة
-    // إعادة ضبط عداد الإخفاقات وتفعيل وضع النسخ الاحتياطي لفترة وجيزة
+    // لا إعادة تحميل للصفحة إطلاقاً — فعّل النسخ الاحتياطي فقط
     this.consecutiveFailures = 0;
     this.enableBackupMode();
   }
@@ -220,13 +220,10 @@ export class ConnectionManager {
       })
       .catch(() => {
         this.consecutiveFailures += 1;
+        // لا إعادة تحميل للصفحة — بدلاً من ذلك، فعّل وضع النسخ الاحتياطي عند فشل متكرر
         const reloadLimit = this.cfg.failuresBeforeHardReload;
-        // لا تقم بإعادة التحميل إذا كانت الصفحة مخفية — انتظر حتى تصبح مرئية
-        if (this.isVisible) {
-          if (typeof reloadLimit === 'number' && reloadLimit > 0 && this.consecutiveFailures >= reloadLimit) {
-            this.hardReload();
-            return;
-          }
+        if (typeof reloadLimit === 'number' && reloadLimit > 0 && this.consecutiveFailures >= reloadLimit) {
+          this.enableBackupMode();
         }
         this.scheduleNextPoll(this.backoffDelay());
       });
