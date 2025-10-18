@@ -4704,26 +4704,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // ===== Error collection endpoint to mimic competitor's auto-reload behavior =====
-  // Receives window error reports and responds with '1' so client can hard-reload
-  app.post('/collect/e.php', async (req, res) => {
-    try {
-      const raw = (req as any)?.body || {};
-      const message: string = String((raw?.e ?? raw?.error ?? raw?.message ?? ''));
-      const logLine = `[${new Date().toISOString()}] ${message.slice(0, 2000)}\n`;
-      try {
-        const logDir = path.join(process.cwd(), 'logs');
-        await fsp.mkdir(logDir, { recursive: true }).catch(() => {});
-        await fsp.appendFile(path.join(logDir, 'client-errors.log'), logLine).catch(() => {});
-      } catch {}
-    } catch {}
-    try {
-      res.setHeader('Cache-Control', 'no-store');
-      res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-    } catch {}
-    // Always return '1' to instruct the client to reload (matches competitor behavior)
-    res.status(200).send('1');
-  });
+  // Removed legacy error collection endpoint that instructed clients to hard-reload
 
   // تعيين مستوى المستخدم مباشرة (للمالك فقط)
   app.post('/api/points/set-level', async (req, res) => {
