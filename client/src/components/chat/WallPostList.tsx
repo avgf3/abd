@@ -126,7 +126,7 @@ export default function WallPostList({
                       (effectiveUser as any).profileTag = tagFromPost;
                     }
                     const hasFrame = Boolean((effectiveUser as any)?.profileFrame);
-                    const containerSize = hasFrame ? 54 : 40; // 40px image, 54px with frame
+                    const containerSize = 40; // حجم موحد لجميع المستخدمين
                     return (
                       <div style={{ width: containerSize, height: containerSize, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <ProfileImage

@@ -574,11 +574,11 @@ export default function UnifiedSidebar({
                 style={getUserListItemStyles(user)}
                 onClick={(e) => handleUserClick(e as any, user)}
               >
-                {/* حاوية الصورة - حجم محسن حسب وجود الإطار */}
+                {/* حاوية الصورة - حجم ثابت وموحد */}
                 <div style={{ 
                   marginLeft: 4, 
-                  width: hasFrame ? 50 : 46,  // حجم محسن للمستخدمين مع الإطار
-                  height: hasFrame ? 50 : 46, // حجم محسن للمستخدمين مع الإطار
+                  width: 47,  // حجم ثابت موحد (36 * 1.3 = 46.8 ≈ 47)
+                  height: 47, // حجم ثابت موحد
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -809,7 +809,7 @@ export default function UnifiedSidebar({
                             if (frameFromPost) (effectiveUser as any).profileFrame = frameFromPost;
                             if (tagFromPost) (effectiveUser as any).profileTag = tagFromPost;
                             const hasFrame = Boolean((effectiveUser as any)?.profileFrame);
-                            const containerSize = hasFrame ? 43 : 32;
+                            const containerSize = 32; // حجم موحد لجميع المستخدمين
                             return (
                               <div style={{ width: containerSize, height: containerSize, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                                 <ProfileImage 
@@ -962,7 +962,7 @@ export default function UnifiedSidebar({
                             if (frameFromPost) (effectiveUser as any).profileFrame = frameFromPost;
                             if (tagFromPost) (effectiveUser as any).profileTag = tagFromPost;
                             const hasFrame = Boolean((effectiveUser as any)?.profileFrame);
-                            const containerSize = hasFrame ? 43 : 32;
+                            const containerSize = 32; // حجم موحد لجميع المستخدمين
                             return (
                               <div style={{ width: containerSize, height: containerSize, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                                 <ProfileImage 

@@ -143,9 +143,9 @@ export default function ProfileImage({
     return Math.min(50, n) as any;
   })();
 
-  // حساب الأحجام - تحسين لضمان احتواء الإطارات والتيجان بشكل مثالي
+  // إصلاح حسابات الأحجام - متناسق مع VipAvatar
   const px = pixelSize ?? (size === 'small' ? 36 : size === 'large' ? 72 : 56);
-  const containerSize = px * 1.6; // حاوية أكبر لضمان احتواء الإطارات والتيجان بشكل مثالي
+  const containerSize = px * 1.3; // نفس نسبة VipAvatar للتوحيد
 
   // مع إطار
   if (!disableFrame && frameName && frameIndex) {
