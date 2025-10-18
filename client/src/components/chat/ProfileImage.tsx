@@ -3,7 +3,7 @@ import { memo, useMemo, useState } from 'react';
 import type { ChatUser } from '@/types/chat';
 import { getImageSrc } from '@/utils/imageUtils';
 import VipAvatar from '@/components/ui/VipAvatar';
-import { FRAME_SIZING, getContainerSize } from '@/constants/sizing';
+import { FRAME_SIZING, getFrameSize } from '@/constants/sizing';
 
 interface ProfileImageProps {
   user: ChatUser;
@@ -144,12 +144,17 @@ export default function ProfileImage({
     return Math.min(50, n) as any;
   })();
 
-  // حساب الأحجام باستخدام النظام الموحد
+  // حساب الأحجام باستخدام النظام البسيط
   const px = pixelSize ?? (size === 'small' ? FRAME_SIZING.SIZES.small : size === 'large' ? FRAME_SIZING.SIZES.large : FRAME_SIZING.SIZES.medium);
-  const containerSize = getContainerSize(px); // حاوية موحدة بنسبة 1.38 للتناسق الكامل
+  
+  // التحقق من وجود إطار
+  const hasFrame = !disableFrame && frameName && frameIndex;
+  
+  // حجم الحاوية: مع إطار = حجم الصورة + (2 × عرض الإطار)، بدون إطار = حجم الصورة فقط
+  const containerSize = hasFrame ? getFrameSize(px) : px;
 
   // مع إطار
-  if (!disableFrame && frameName && frameIndex) {
+  if (hasFrame) {
     return (
       <div
         className={`relative inline-block ${className || ''}`}

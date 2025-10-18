@@ -2,12 +2,12 @@
 /* @jsx React.createElement */
 import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { gsap } from 'gsap';
-import { FRAME_SIZING, getContainerSize } from '@/constants/sizing';
+import { FRAME_SIZING, getFrameSize } from '@/constants/sizing';
 
 interface VipAvatarProps {
   src: string;
   alt?: string;
-  size?: number; // pixels
+  size?: number; // حجم الصورة بالبكسل
   frame?: number;
   className?: string;
 }
@@ -22,14 +22,12 @@ export default function VipAvatar({
   // تعطيل الحركة نهائياً (المطلوب نسخة ثابتة)
   const duration = useMemo(() => '0s', []);
 
-  // الصورة تحتفظ بحجمها الأصلي المطلوب
+  // حجم الصورة
   const imageSize = size;
-  // الإطار (الحاوية) يتكيف ليكون أكبر من الصورة بنسبة موحدة (1.38)
-  // استخدام نظام الأحجام الموحد لضمان التناسق الكامل عبر كامل التطبيق
-  const frameSize = getContainerSize(imageSize);
-
-  // إلغاء أي تكبير إضافي في جميع السياقات لتوحيد القياس عبر كل الواجهات
-  const overlayScale = useMemo(() => 1, []);
+  
+  // حجم الإطار = حجم الصورة + (2 × عرض الإطار)
+  // ببساطة: الإطار أكبر من الصورة بمقدار عرض الإطار من كل جانب
+  const frameSize = getFrameSize(imageSize);
 
   const containerStyle: React.CSSProperties & { ['--vip-spin-duration']?: string } = {
     width: frameSize,
@@ -49,6 +47,9 @@ export default function VipAvatar({
     backfaceVisibility: 'hidden',
     transform: 'translateZ(0)',
   };
+
+  // حجم صورة الإطار = حجم الإطار الكامل (لتغطي كل الحاوية)
+  const overlaySize = frameSize;
 
   // Normalize frame number and prepare overlay source with extension fallback (.webp -> .png -> .jpg -> .jpeg)
   const hasValidFrame = Number.isFinite(frame as number) && (frame as number) > 0;
@@ -129,7 +130,10 @@ export default function VipAvatar({
             src={overlaySrc}
             alt="frame"
             className="vip-frame-overlay"
-            style={{ transform: overlayScale === 1 ? 'scale(1)' : `scale(${overlayScale})` }}
+            style={{ 
+              width: overlaySize,
+              height: overlaySize,
+            }}
             onError={(e) => {
               try {
                 const cur = overlaySrc || '';
