@@ -574,11 +574,11 @@ export default function UnifiedSidebar({
                 style={getUserListItemStyles(user)}
                 onClick={(e) => handleUserClick(e as any, user)}
               >
-                {/* حاوية الصورة - حجم ثابت مع محاذاة مركزية */}
+                {/* حاوية الصورة - حجم ثابت وموحد لجميع المستخدمين */}
                 <div style={{ 
                   marginLeft: 4, 
-                  width: hasFrame ? 54 : 46,  // تقليل العرض للمستخدمين بدون إطار
-                  height: hasFrame ? 54 : 46, // تقليل الارتفاع للمستخدمين بدون إطار
+                  width: 48,  // حجم ثابت وموحد
+                  height: 48, // حجم ثابت وموحد
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
