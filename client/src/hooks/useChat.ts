@@ -858,17 +858,21 @@ export const useChat = () => {
           }
         } catch {}
 
-        // جلب الرسائل التي فاتت أثناء الخلفية - فقط إذا مر وقت كافي
+        // جلب الرسائل التي فاتت أثناء الخلفية - بذكاء
         try {
           const roomId = currentRoomIdRef.current;
           if (roomId) {
             const { getConnectionHealth } = await import('@/lib/socket');
             const health = getConnectionHealth();
             
-            // فقط إذا مر أكثر من دقيقة، جلب الرسائل المفقودة
-            if (health.timeSinceLastConnection > 60000) {
+            // 🔥 منطق ذكي متعدد المستويات
+            if (health.timeSinceLastConnection > 30000) {
+              // أكثر من 30 ثانية: جلب الرسائل المفقودة
               fetchMissedMessagesForRoom(roomId).catch(() => {});
+            } else if (health.timeSinceLastConnection < 5000) {
+              // أقل من 5 ثوانٍ: لا نفعل شيء، الاتصال مستمر
             }
+            // بين 5-30 ثانية: Socket.IO يدير إعادة الاتصال تلقائياً
           }
         } catch {}
       }
