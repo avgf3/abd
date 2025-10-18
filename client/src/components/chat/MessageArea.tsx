@@ -730,8 +730,8 @@ export default function MessageArea({
                     {message.sender && (
                       <div className="flex-shrink-0">
                         <div style={{ 
-                          width: 38,
-                          height: 38,
+                          width: 44,
+                          height: 44,
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
@@ -740,7 +740,7 @@ export default function MessageArea({
                           <ProfileImage
                             user={message.sender}
                             size="small"
-                            pixelSize={28}
+                            pixelSize={32}
                             className="cursor-pointer hover:scale-110 transition-transform duration-200"
                             /* عرض الإطار للمستخدم صاحب الإطار */
                             onClick={(e) => onUserClick && onUserClick(e, message.sender!)}
@@ -870,8 +870,8 @@ export default function MessageArea({
                     {message.sender && (
                       <div className="flex-shrink-0">
                         <div style={{ 
-                          width: 38,
-                          height: 38,
+                          width: 44,
+                          height: 44,
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
@@ -880,7 +880,7 @@ export default function MessageArea({
                           <ProfileImage
                             user={message.sender}
                             size="small"
-                            pixelSize={28}
+                            pixelSize={32}
                             className="cursor-pointer hover:scale-110 transition-transform duration-200"
                             /* عرض الإطار للمستخدم صاحب الإطار */
                             onClick={(e) => onUserClick && onUserClick(e, message.sender!)}

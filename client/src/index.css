@@ -1861,19 +1861,20 @@ li > * > div.effect-snow {
 }
 .vip-frame-overlay {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  width: 100%;
-  height: 100%;
+  /* إضافة padding موحد (2%) لضمان ظهور الإطار بشكل كامل ومتناسق */
+  top: -2%;
+  left: -2%;
+  right: -2%;
+  bottom: -2%;
+  width: 104%;
+  height: 104%;
   object-fit: contain; /* منع أي قص أفقي/عمودي وضمان ثبات الحجم */
   border-radius: 9999px;
   pointer-events: none;
   z-index: 3;
   /* تعطيل أي دوران */
   animation: none !important;
-  /* الإطار يحيط بالصورة من الخارج */
+  /* الإطار يحيط بالصورة من الخارج مع مساحة إضافية 2% */
   transform-origin: center center;
   transform: scale(1);
 }
@@ -1913,10 +1914,11 @@ li > * > div.effect-snow {
 .vip-frame.base::before {
   content: '';
   position: absolute;
-  top: 0;
-  left: 0; /* توسيط الإطار */
-  width: 100%;
-  height: 100%;
+  /* padding موحد 2% لتوازن الإطار */
+  top: -2%;
+  left: -2%;
+  width: 104%;
+  height: 104%;
   border-radius: 9999px;
   z-index: 3;
   padding: 2px; /* frame thickness */
