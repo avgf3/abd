@@ -1,7 +1,6 @@
 /* @jsxRuntime classic */
 /* @jsx React.createElement */
 import React, { useMemo, useState, useEffect, useRef } from 'react';
-import { gsap } from 'gsap';
 
 interface VipAvatarProps {
   src: string;
