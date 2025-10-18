@@ -490,13 +490,11 @@ img.rounded-full {
   border-radius: 50%;
   object-fit: cover;
   margin-left: 10px;
-  border: 3px solid transparent;
+  border: 2px solid transparent;
   background: linear-gradient(white, white) padding-box,
               linear-gradient(135deg, var(--primary-solid), var(--accent-solid)) border-box;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 
-    0 4px 15px rgba(0, 0, 0, 0.2),
-    0 0 30px rgba(100, 200, 255, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   position: relative;
 }
 
@@ -513,10 +511,8 @@ img.rounded-full {
 }
 
 .user-img:hover {
-  transform: scale(1.1) rotate(5deg);
-  box-shadow: 
-    0 8px 25px rgba(0, 0, 0, 0.3),
-    0 0 50px rgba(100, 200, 255, 0.2);
+  transform: none;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
 }
 
 .user-img:hover::after {
@@ -1928,7 +1924,7 @@ li > * > div.effect-snow {
   height: 100%;
   border-radius: 9999px;
   z-index: 3;
-  padding: 2px; /* frame thickness */
+  padding: 1.5px; /* thinner frame thickness */
   -webkit-mask:
     linear-gradient(#000 0 0) content-box,
     linear-gradient(#000 0 0);
@@ -1947,39 +1943,39 @@ li > * > div.effect-snow {
 /* 9 distinct gradient frames matching modern VIP look */
 .vip-frame-1::before {
   background: conic-gradient(from 0deg, #ffcc33, #ff6633, #ffcc33);
-  box-shadow: 0 0 12px rgba(255, 204, 51, 0.5);
+  box-shadow: 0 0 6px rgba(255, 204, 51, 0.35);
 }
 .vip-frame-2::before {
   background: conic-gradient(from 0deg, #66e0ff, #4488ff, #66e0ff);
-  box-shadow: 0 0 12px rgba(68, 136, 255, 0.45);
+  box-shadow: 0 0 6px rgba(68, 136, 255, 0.3);
 }
 .vip-frame-3::before {
   background: conic-gradient(from 0deg, #444, #999, #444);
-  box-shadow: 0 0 12px rgba(200, 200, 200, 0.35);
+  box-shadow: 0 0 5px rgba(200, 200, 200, 0.25);
 }
 .vip-frame-4::before {
   background: conic-gradient(from 0deg, #b45309, #065f46, #b45309);
-  box-shadow: 0 0 12px rgba(6, 95, 70, 0.4);
+  box-shadow: 0 0 6px rgba(6, 95, 70, 0.28);
 }
 .vip-frame-5::before {
   background: conic-gradient(from 0deg, #ec4899, #8b5cf6, #ec4899);
-  box-shadow: 0 0 14px rgba(236, 72, 153, 0.5);
+  box-shadow: 0 0 7px rgba(236, 72, 153, 0.34);
 }
 .vip-frame-6::before {
   background: conic-gradient(from 0deg, #7c2d12, #f59e0b, #7c2d12);
-  box-shadow: 0 0 12px rgba(245, 158, 11, 0.4);
+  box-shadow: 0 0 6px rgba(245, 158, 11, 0.28);
 }
 .vip-frame-7::before {
   background: conic-gradient(from 0deg, #ffd700, #ffed4e, #ffa500, #ffd700);
-  box-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
+  box-shadow: 0 0 8px rgba(255, 215, 0, 0.4);
 }
 .vip-frame-8::before {
   background: conic-gradient(from 0deg, #e6f3ff, #87ceeb, #4682b4, #e6f3ff);
-  box-shadow: 0 0 12px rgba(70, 130, 180, 0.5);
+  box-shadow: 0 0 6px rgba(70, 130, 180, 0.3);
 }
 .vip-frame-9::before {
   background: conic-gradient(from 0deg, #f8f8ff, #c0c0c0, #a8a8a8, #f8f8ff);
-  box-shadow: 0 0 12px rgba(192, 192, 192, 0.5);
+  box-shadow: 0 0 6px rgba(192, 192, 192, 0.32);
 }
 
 /* Optional subtle pulsation */

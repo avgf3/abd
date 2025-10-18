@@ -144,8 +144,9 @@ export default function ProfileImage({
   })();
 
   // حساب الأحجام - تحسين لضمان احتواء الإطارات والتيجان بشكل مثالي
-  const px = pixelSize ?? (size === 'small' ? 36 : size === 'large' ? 72 : 56);
-  const containerSize = px * 1.6; // حاوية أكبر لضمان احتواء الإطارات والتيجان بشكل مثالي
+  const px = pixelSize ?? (size === 'small' ? 40 : size === 'large' ? 72 : 56);
+  // تبسيط: تقليل حجم الحاوية لتكون أقرب للصورة والإطار
+  const containerSize = Math.round(px * 1.3);
 
   // مع إطار
   if (!disableFrame && frameName && frameIndex) {
@@ -199,7 +200,7 @@ export default function ProfileImage({
         <img
           src={imageSrc}
           alt={`صورة ${user.username}`}
-          className={`rounded-full ring-[3px] ${borderColor} shadow-sm`}
+          className={`rounded-full ring-[2px] ${borderColor} shadow-sm`}
           style={{
             width: px,
             height: px,
