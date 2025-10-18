@@ -132,7 +132,7 @@ export default function WallPostList({
                         <ProfileImage
                           user={effectiveUser}
                           size="small"
-                          pixelSize={36}
+                          pixelSize={40}
                           className=""
                           hideRoleBadgeOverlay={true}
                         />

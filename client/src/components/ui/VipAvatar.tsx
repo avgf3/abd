@@ -2,6 +2,7 @@
 /* @jsx React.createElement */
 import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { gsap } from 'gsap';
+import { FRAME_SIZING, getContainerSize } from '@/constants/sizing';
 
 interface VipAvatarProps {
   src: string;
@@ -23,8 +24,9 @@ export default function VipAvatar({
 
   // الصورة تحتفظ بحجمها الأصلي المطلوب
   const imageSize = size;
-  // الإطار (الحاوية) يتكيف ليكون أكبر من الصورة بنسبة كافية لاستيعاب الإطار بالكامل
-  const frameSize = imageSize * 1.35; // الإطار أكبر بـ 35% لضمان احتواء الإطار بالكامل داخل الحاوية
+  // الإطار (الحاوية) يتكيف ليكون أكبر من الصورة بنسبة موحدة (1.38)
+  // استخدام نظام الأحجام الموحد لضمان التناسق الكامل عبر كامل التطبيق
+  const frameSize = getContainerSize(imageSize);
 
   // إلغاء أي تكبير إضافي في جميع السياقات لتوحيد القياس عبر كل الواجهات
   const overlayScale = useMemo(() => 1, []);

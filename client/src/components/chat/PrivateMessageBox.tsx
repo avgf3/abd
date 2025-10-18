@@ -439,7 +439,7 @@ export default function PrivateMessageBox({
                 <ProfileImage
                   user={user}
                   size="small"
-                  pixelSize={36}
+                  pixelSize={40}
                   className="cursor-pointer hover:opacity-90 transition"
                   onClick={handleViewProfileClick}
                 />

@@ -385,7 +385,7 @@ export default function MessagesPanel({
                           alignItems: 'center',
                           justifyContent: 'center'
                         }}>
-                          <ProfileImage user={user} size="small" pixelSize={36} hideRoleBadgeOverlay={true} />
+                          <ProfileImage user={user} size="small" pixelSize={40} hideRoleBadgeOverlay={true} />
                         </div>
                         <div className="flex-1 min-w-0 flex flex-col justify-center">
                           <div className="flex items-center justify-between gap-2 w-full">
