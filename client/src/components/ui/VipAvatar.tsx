@@ -21,9 +21,9 @@ export default function VipAvatar({
   // تعطيل الحركة نهائياً (المطلوب نسخة ثابتة)
   const duration = useMemo(() => '0s', []);
 
-  // إصلاح حسابات الأحجام - نسب ثابتة وموحدة
+  // إصلاح حسابات الأحجام - نسبة محسنة لإظهار الإطار كاملاً
   const imageSize = size;
-  const frameSize = imageSize * 1.3; // نسبة موحدة تتناسب مع containerSize
+  const frameSize = imageSize * 1.4; // نسبة محسنة مع object-fit: contain
   
   // مقياس ثابت لجميع الإطارات - لا توجد اختلافات
   const overlayScale = 1.0;

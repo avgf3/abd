@@ -577,8 +577,8 @@ export default function UnifiedSidebar({
                 {/* حاوية الصورة - حجم متكيف مع وجود الإطار */}
                 <div style={{ 
                   marginLeft: 4, 
-                  width: hasFrame ? 50 : 46,  // حجم متكيف: أكبر مع الإطار
-                  height: hasFrame ? 50 : 46, // حجم متكيف: أكبر مع الإطار
+                  width: hasFrame ? 52 : 46,  // حجم محسن: أكبر مع الإطار (36*1.4≈50)
+                  height: hasFrame ? 52 : 46, // حجم محسن: أكبر مع الإطار
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
