@@ -1557,6 +1557,9 @@ export function setupRealtime(httpServer: HttpServer): IOServer<ClientToServerEv
   // بدء نظام التحديث الدوري للبوتات
   startBotUpdater();
 
+  // بدء نظام الانتقال التلقائي للبوتات
+  startBotAutoMovement();
+
   return io;
 }
 
@@ -1665,6 +1668,288 @@ async function updateBotsPeriodically() {
     
     } catch (error) {
     console.error('خطأ في التحديث الدوري للبوتات:', error);
+  }
+}
+
+// ===== نظام انتقال تلقائي للبوتات بين الغرف =====
+let botMovementInterval: NodeJS.Timeout | null = null;
+let botMovementCycle = 0; // للتناوب بين أنواع الحركات
+let botMovementIndex = 0; // لتتبع البوت الحالي
+
+// دالة لنقل البوتات بشكل تلقائي
+async function moveBotAutomatically() {
+  try {
+    const { db } = await import('./database-adapter');
+    const { bots } = await import('../shared/schema');
+    const drizzleOrm = await import('drizzle-orm');
+    const { eq } = drizzleOrm;
+    
+    if (!db || !ioInstance) return;
+    
+    // جلب جميع البوتات النشطة
+    const activeBots = await db.select().from(bots).where(eq(bots.isActive, true));
+    if (activeBots.length === 0) return;
+    
+    // جلب جميع الغرف المتاحة
+    const allRooms = await roomService.getAllRooms();
+    if (allRooms.length === 0) return;
+    
+    // اختيار البوت التالي (بالتناوب)
+    const bot = activeBots[botMovementIndex % activeBots.length];
+    botMovementIndex++;
+    
+    // تحديد نوع الحركة بالتناوب (انضمام، مغادرة، تغيير غرفة)
+    const actionType = botMovementCycle % 3; // 0: انضمام، 1: مغادرة، 2: تغيير غرفة
+    botMovementCycle++;
+    
+    const currentRoom = (bot.currentRoom && bot.currentRoom.trim() !== '') ? bot.currentRoom : 'general';
+    
+    switch (actionType) {
+      case 0: // انضمام لغرفة جديدة
+        {
+          // اختيار غرفة عشوائية
+          const randomRoom = allRooms[Math.floor(Math.random() * allRooms.length)];
+          if (randomRoom.id !== currentRoom) {
+            // تحديث غرفة البوت في قاعدة البيانات
+            await db.update(bots)
+              .set({ currentRoom: randomRoom.id, lastActivity: new Date() })
+              .where(eq(bots.id, bot.id));
+            
+            // إرسال رسالة مغادرة للغرفة القديمة
+            const leaveContent = formatRoomEventMessage('leave', {
+              username: bot.username,
+              userType: 'bot',
+              level: bot.level,
+            });
+            const leaveMessage = await roomMessageService.sendMessage({
+              senderId: bot.id,
+              roomId: currentRoom,
+              content: leaveContent,
+              messageType: 'system',
+              isPrivate: false,
+            });
+            ioInstance.to(`room_${currentRoom}`).emit('message', {
+              type: 'newMessage',
+              message: {
+                ...leaveMessage,
+                sender: bot,
+                roomId: currentRoom,
+                reactions: { like: 0, dislike: 0, heart: 0 },
+                myReaction: null,
+              },
+            });
+            
+            // إرسال رسالة انضمام للغرفة الجديدة
+            const joinContent = formatRoomEventMessage('join', {
+              username: bot.username,
+              userType: 'bot',
+              level: bot.level,
+            });
+            const joinMessage = await roomMessageService.sendMessage({
+              senderId: bot.id,
+              roomId: randomRoom.id,
+              content: joinContent,
+              messageType: 'system',
+              isPrivate: false,
+            });
+            ioInstance.to(`room_${randomRoom.id}`).emit('message', {
+              type: 'newMessage',
+              message: {
+                ...joinMessage,
+                sender: bot,
+                roomId: randomRoom.id,
+                reactions: { like: 0, dislike: 0, heart: 0 },
+                myReaction: null,
+              },
+            });
+            
+            // تحديث قائمة المستخدمين في الغرفتين
+            await emitOnlineUsersForRoom(currentRoom);
+            await emitOnlineUsersForRoom(randomRoom.id);
+            
+            console.log(`✅ البوت ${bot.username} انتقل من ${currentRoom} إلى ${randomRoom.id}`);
+          }
+        }
+        break;
+        
+      case 1: // مغادرة الغرفة الحالية والذهاب إلى general
+        if (currentRoom !== 'general') {
+          // تحديث غرفة البوت في قاعدة البيانات
+          await db.update(bots)
+            .set({ currentRoom: 'general', lastActivity: new Date() })
+            .where(eq(bots.id, bot.id));
+          
+          // إرسال رسالة مغادرة
+          const leaveContent = formatRoomEventMessage('leave', {
+            username: bot.username,
+            userType: 'bot',
+            level: bot.level,
+          });
+          const leaveMessage = await roomMessageService.sendMessage({
+            senderId: bot.id,
+            roomId: currentRoom,
+            content: leaveContent,
+            messageType: 'system',
+            isPrivate: false,
+          });
+          ioInstance.to(`room_${currentRoom}`).emit('message', {
+            type: 'newMessage',
+            message: {
+              ...leaveMessage,
+              sender: bot,
+              roomId: currentRoom,
+              reactions: { like: 0, dislike: 0, heart: 0 },
+              myReaction: null,
+            },
+          });
+          
+          // تحديث قائمة المستخدمين
+          await emitOnlineUsersForRoom(currentRoom);
+          await emitOnlineUsersForRoom('general');
+          
+          console.log(`✅ البوت ${bot.username} غادر ${currentRoom}`);
+        }
+        break;
+        
+      case 2: // تغيير الغرفة
+        {
+          // اختيار غرفة عشوائية مختلفة عن الحالية
+          const availableRooms = allRooms.filter(r => r.id !== currentRoom);
+          if (availableRooms.length > 0) {
+            const newRoom = availableRooms[Math.floor(Math.random() * availableRooms.length)];
+            
+            // تحديث غرفة البوت
+            await db.update(bots)
+              .set({ currentRoom: newRoom.id, lastActivity: new Date() })
+              .where(eq(bots.id, bot.id));
+            
+            // إرسال رسالة مغادرة للغرفة القديمة
+            const leaveContent = formatRoomEventMessage('leave', {
+              username: bot.username,
+              userType: 'bot',
+              level: bot.level,
+            });
+            const leaveMessage = await roomMessageService.sendMessage({
+              senderId: bot.id,
+              roomId: currentRoom,
+              content: leaveContent,
+              messageType: 'system',
+              isPrivate: false,
+            });
+            ioInstance.to(`room_${currentRoom}`).emit('message', {
+              type: 'newMessage',
+              message: {
+                ...leaveMessage,
+                sender: bot,
+                roomId: currentRoom,
+                reactions: { like: 0, dislike: 0, heart: 0 },
+                myReaction: null,
+              },
+            });
+            
+            // إرسال رسالة انضمام للغرفة الجديدة
+            const joinContent = formatRoomEventMessage('join', {
+              username: bot.username,
+              userType: 'bot',
+              level: bot.level,
+            });
+            const joinMessage = await roomMessageService.sendMessage({
+              senderId: bot.id,
+              roomId: newRoom.id,
+              content: joinContent,
+              messageType: 'system',
+              isPrivate: false,
+            });
+            ioInstance.to(`room_${newRoom.id}`).emit('message', {
+              type: 'newMessage',
+              message: {
+                ...joinMessage,
+                sender: bot,
+                roomId: newRoom.id,
+                reactions: { like: 0, dislike: 0, heart: 0 },
+                myReaction: null,
+              },
+            });
+            
+            // تحديث قائمة المستخدمين في الغرفتين
+            await emitOnlineUsersForRoom(currentRoom);
+            await emitOnlineUsersForRoom(newRoom.id);
+            
+            console.log(`✅ البوت ${bot.username} غيّر الغرفة من ${currentRoom} إلى ${newRoom.id}`);
+          }
+        }
+        break;
+    }
+    
+    // تحديث cache البوت
+    const botUser = {
+      id: bot.id,
+      username: bot.username,
+      userType: 'bot',
+      role: 'bot',
+      profileImage: bot.profileImage,
+      profileBanner: bot.profileBanner,
+      profileBackgroundColor: bot.profileBackgroundColor,
+      status: bot.status,
+      gender: bot.gender,
+      country: bot.country,
+      relation: bot.relation,
+      bio: bot.bio,
+      usernameColor: bot.usernameColor,
+      profileEffect: bot.profileEffect,
+      points: bot.points,
+      level: bot.level,
+      totalPoints: bot.totalPoints,
+      levelProgress: bot.levelProgress,
+      isOnline: true,
+      currentRoom: (await db.select().from(bots).where(eq(bots.id, bot.id)))[0].currentRoom,
+      joinDate: bot.createdAt,
+      lastSeen: new Date(),
+    };
+    
+    await updateConnectedUserCache(bot.id, botUser);
+    
+  } catch (error) {
+    console.error('❌ خطأ في نقل البوت تلقائياً:', error);
+  }
+}
+
+// بدء نظام الانتقال التلقائي للبوتات
+export function startBotAutoMovement() {
+  if (botMovementInterval) {
+    clearInterval(botMovementInterval);
+  }
+  
+  // البدء بدقيقة واحدة، ثم التبديل إلى 30 ثانية
+  let useMinuteInterval = true;
+  
+  const scheduleNextMove = () => {
+    const interval = useMinuteInterval ? 60000 : 30000; // 1 دقيقة أو 30 ثانية
+    
+    botMovementInterval = setTimeout(() => {
+      moveBotAutomatically().then(() => {
+        // التبديل للفترة التالية
+        useMinuteInterval = !useMinuteInterval;
+        scheduleNextMove();
+      }).catch((error) => {
+        console.error('❌ خطأ في جدولة حركة البوت:', error);
+        scheduleNextMove();
+      });
+    }, interval);
+  };
+  
+  // بدء أول حركة بعد دقيقة واحدة
+  scheduleNextMove();
+  
+  console.log('🤖 تم تفعيل نظام الانتقال التلقائي للبوتات');
+}
+
+// إيقاف نظام الانتقال التلقائي للبوتات
+export function stopBotAutoMovement() {
+  if (botMovementInterval) {
+    clearTimeout(botMovementInterval);
+    botMovementInterval = null;
+    console.log('🛑 تم إيقاف نظام الانتقال التلقائي للبوتات');
   }
 }
 
