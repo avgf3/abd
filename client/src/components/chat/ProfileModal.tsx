@@ -718,6 +718,19 @@ export default function ProfileModal({
     
   };
 
+  // واجهة اختيار التاج للمستخدم نفسه
+  const handleSelectTag = async (tagIndex: number) => {
+    try {
+      if (!currentUser || currentUser.id !== localUser?.id) return;
+      const body: any = { profileTag: tagIndex > 0 ? `tag${tagIndex}.webp` : null };
+      await apiRequest(`/api/users/${currentUser.id}`, { method: 'PUT', body });
+      updateUserData({ profileTag: body.profileTag } as any);
+      toast({ title: 'تم', description: tagIndex > 0 ? `تم تعيين تاج ${tagIndex}` : 'تمت إزالة التاج' });
+    } catch (err: any) {
+      toast({ title: 'خطأ', description: err?.message || 'تعذر تحديث التاج', variant: 'destructive' });
+    }
+  };
+
   // Complete themes collection from original code
   const themes = [
     // الألوان الستة الجديدة من الصور
@@ -3565,6 +3578,56 @@ export default function ProfileModal({
                       />
                       <span style={{ fontSize: '12px' }}>{(localUser as any)?.globalSoundEnabled === false ? 'مطفأة' : 'مفعلة'}</span>
                     </label>
+                  </div>
+                </div>
+
+                {/* تاج البروفايل */}
+                <div style={{ marginBottom: '16px' }}>
+                  <h5 style={{
+                    margin: '0 0 8px 0',
+                    fontSize: '13px',
+                    fontWeight: 'bold',
+                    color: '#fff',
+                    borderBottom: '1px solid rgba(255,255,255,0.1)',
+                    paddingBottom: '4px'
+                  }}>تاج البروفايل</h5>
+
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 8 }}>
+                    <span style={{ color: '#ddd', fontSize: '12px' }}>
+                      { (localUser as any)?.profileTag ? `مُحدد: ${String((localUser as any)?.profileTag).replace('/tags/','')}` : 'لا يوجد تاج محدد' }
+                    </span>
+                    <button
+                      onClick={() => handleSelectTag(0)}
+                      style={{ padding: '4px 8px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(255,255,255,0.08)', color: '#fff', fontSize: 12, cursor: 'pointer' }}
+                    >إزالة التاج</button>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8, minmax(0, 1fr))', gap: 8 }}>
+                    {Array.from({ length: 34 }, (_, i) => i + 1).map((i) => {
+                      const isSelected = typeof (localUser as any)?.profileTag === 'string' && /\d+/.test(String((localUser as any)?.profileTag)) && Number(String((localUser as any)?.profileTag).match(/(\d+)/)?.[1]) === i;
+                      return (
+                        <button
+                          key={`tag-pick-${i}`}
+                          onClick={() => handleSelectTag(i)}
+                          title={`تاج ${i}`}
+                          style={{
+                            padding: 4,
+                            borderRadius: 8,
+                            background: isSelected ? 'rgba(84,160,255,0.18)' : 'rgba(255,255,255,0.05)',
+                            border: isSelected ? '2px solid #54a0ff' : '1px solid rgba(255,255,255,0.12)',
+                            cursor: 'pointer',
+                            lineHeight: 0
+                          }}
+                        >
+                          <img
+                            src={`/tags/tag${i}.webp`}
+                            alt={`tag-${i}`}
+                            style={{ width: 36, height: 24, objectFit: 'contain', display: 'block' }}
+                            onError={(e) => { try { const t = e.target as HTMLImageElement; t.src = `/tags/tag${i}.png`; } catch {} }}
+                          />
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
 

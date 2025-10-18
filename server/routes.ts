@@ -3375,6 +3375,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
+      // Normalize profileTag: treat 0/empty/none as null; accept tagN.(webp|png|jpg|jpeg) or numeric
+      if (Object.prototype.hasOwnProperty.call(normalizedUpdates, 'profileTag')) {
+        const v = (normalizedUpdates as any).profileTag;
+        if (
+          v === null ||
+          v === undefined ||
+          v === '' ||
+          v === 0 ||
+          v === '0' ||
+          String(v).toLowerCase() === 'null' ||
+          String(v).toLowerCase() === 'undefined' ||
+          String(v).toLowerCase() === 'none'
+        ) {
+          normalizedUpdates.profileTag = null;
+        } else if (typeof v === 'number') {
+          const n = v as number;
+          normalizedUpdates.profileTag = n >= 1 && Number.isFinite(n) ? `tag${Math.min(50, n)}.webp` : null;
+        } else if (typeof v === 'string') {
+          const s = v.trim();
+          // numeric string => tagN.webp
+          if (/^\d+$/.test(s)) {
+            const n = parseInt(s, 10);
+            normalizedUpdates.profileTag = n >= 1 && Number.isFinite(n) ? `tag${Math.min(50, n)}.webp` : null;
+          } else if (/^tag0(\.(webp|png|jpg|jpeg))?$/i.test(s)) {
+            normalizedUpdates.profileTag = null;
+          } else {
+            const m = s.match(/^tag(\d+)\.(webp|png|jpg|jpeg)$/i);
+            if (m) {
+              const n = parseInt(m[1], 10);
+              if (!Number.isFinite(n) || n < 1 || n > 50) {
+                normalizedUpdates.profileTag = null;
+              } else {
+                // normalize extension to .webp to leverage client fallback chain
+                normalizedUpdates.profileTag = `tag${n}.webp`;
+              }
+            }
+          }
+        }
+      }
+
       // امنع تمرير قيم غير مسموحة: نبيح حقول معينة فقط
       const allowed = [
         'username',
